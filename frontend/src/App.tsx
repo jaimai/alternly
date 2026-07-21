@@ -1,0 +1,42 @@
+import { Route, Routes } from 'react-router-dom'
+import { RequireAuth } from './auth'
+import CalendarPage from './pages/Calendar'
+import JoinPage from './pages/Join'
+import LoginPage from './pages/Login'
+import OnboardingPage from './pages/Onboarding'
+import RegisterPage from './pages/Register'
+import SettingsPage from './pages/Settings'
+
+export default function App() {
+  return (
+    <Routes>
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
+      <Route path="/join/:token" element={<JoinPage />} />
+      <Route
+        path="/onboarding"
+        element={
+          <RequireAuth>
+            <OnboardingPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/settings"
+        element={
+          <RequireAuth>
+            <SettingsPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/"
+        element={
+          <RequireAuth>
+            <CalendarPage />
+          </RequireAuth>
+        }
+      />
+    </Routes>
+  )
+}

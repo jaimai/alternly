@@ -1,0 +1,348 @@
+:root {
+  --bg: #f6f7f9;
+  --surface: #ffffff;
+  --text: #1d2733;
+  --text-soft: #5b6b7b;
+  --border: #e3e8ee;
+  --accent: #3b6ea5;
+  --accent-soft: #e8f0f9;
+  --danger: #b5484d;
+  --radius: 10px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+  color: var(--text);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+h1 { font-size: 1.4rem; margin: 0 0 4px; }
+h2 { font-size: 1.1rem; margin: 0 0 8px; }
+p { margin: 0 0 12px; }
+
+a { color: var(--accent); }
+
+button {
+  font: inherit;
+  cursor: pointer;
+  border: none;
+  border-radius: var(--radius);
+  padding: 9px 16px;
+  background: var(--accent);
+  color: white;
+}
+
+button.secondary {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+button.danger-link {
+  background: none;
+  color: var(--danger);
+  padding: 4px;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+input, select {
+  font: inherit;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  width: 100%;
+}
+
+label {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--text-soft);
+  margin: 12px 0 4px;
+}
+
+.auth-page {
+  max-width: 380px;
+  margin: 8vh auto;
+  padding: 0 16px;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+.brand {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.brand .logo {
+  font-size: 2rem;
+}
+
+.error {
+  background: #fbecec;
+  color: var(--danger);
+  border-radius: var(--radius);
+  padding: 8px 12px;
+  margin: 10px 0;
+  font-size: 0.9rem;
+}
+
+.info-banner {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-radius: var(--radius);
+  padding: 8px 12px;
+  margin: 10px 0;
+  font-size: 0.9rem;
+}
+
+.page-loading {
+  text-align: center;
+  padding: 20vh 0;
+  color: var(--text-soft);
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.topbar .title {
+  font-weight: 600;
+  margin-right: auto;
+}
+
+.layout {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.legend {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin: 12px 0;
+  font-size: 0.9rem;
+}
+
+.legend .dot {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin-right: 6px;
+  vertical-align: -1px;
+}
+
+.step-dots {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.step-dots span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--border);
+}
+
+.step-dots span.active {
+  background: var(--accent);
+}
+
+.choice-list {
+  display: grid;
+  gap: 8px;
+}
+
+.choice {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  cursor: pointer;
+}
+
+.choice.selected {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.choice input {
+  width: auto;
+  margin-top: 4px;
+}
+
+.choice .desc {
+  font-size: 0.85rem;
+  color: var(--text-soft);
+}
+
+.row {
+  display: flex;
+  gap: 12px;
+}
+
+.row > * {
+  flex: 1;
+}
+
+.chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 8px 0;
+}
+
+.chip {
+  background: var(--accent-soft);
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-size: 0.9rem;
+}
+
+.custom-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  margin: 8px 0;
+}
+
+.custom-grid button {
+  padding: 6px 2px;
+  font-size: 0.75rem;
+  border-radius: 6px;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(20, 30, 40, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+}
+
+.modal {
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 20px;
+  width: min(420px, 92vw);
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+.notif-panel {
+  position: absolute;
+  right: 12px;
+  top: 52px;
+  width: min(360px, 92vw);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  z-index: 40;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.notif-item {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.9rem;
+}
+
+.notif-item.unread {
+  background: var(--accent-soft);
+}
+
+.notif-empty {
+  padding: 16px;
+  color: var(--text-soft);
+  text-align: center;
+}
+
+.bell {
+  position: relative;
+  background: none;
+  color: var(--text);
+  padding: 6px;
+  font-size: 1.1rem;
+}
+
+.bell .badge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background: var(--danger);
+  color: white;
+  font-size: 0.65rem;
+  border-radius: 999px;
+  padding: 1px 5px;
+}
+
+/* FullCalendar */
+.fc {
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 8px;
+  border: 1px solid var(--border);
+}
+
+.fc .fc-toolbar-title {
+  font-size: 1.1rem;
+  text-transform: capitalize;
+}
+
+.fc .fc-button {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border: none;
+}
+
+.fc .fc-button-primary:not(:disabled).fc-button-active,
+.fc .fc-button-primary:not(:disabled):active {
+  background: var(--accent);
+  color: white;
+}
+
+.fc .fc-daygrid-day.fc-day-today {
+  background: #fff8e6;
+}
+
+.day-badges {
+  font-size: 0.7rem;
+  display: flex;
+  gap: 2px;
+  flex-wrap: wrap;
+}
