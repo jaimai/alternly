@@ -2,6 +2,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
+from . import models  # noqa: F401 — enregistre les tables
 from .db import Base, engine
 
 
