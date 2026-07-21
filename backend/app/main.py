@@ -26,6 +26,7 @@ from .routers import children as children_router
 from .routers import household as household_router
 from .routers import calendar as calendar_router
 from .routers import ical as ical_router
+from .routers import marketing as marketing_router
 from .routers import notifications as notifications_router
 from .routers import rules as rules_router
 
@@ -44,16 +45,20 @@ def health():
     return {"status": "ok"}
 
 
-# --- Monolithe : sert le build React (frontend/dist) si présent ---
+# --- Site marketing SSR (landing, blog, sitemap) + assets statiques ---
+STATIC_DIR = Path(__file__).resolve().parent / "static"
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+app.include_router(marketing_router.router)
+
+# --- Monolithe : l'app React est servie sous /app (frontend/dist) ---
 DIST_DIR = Path(__file__).resolve().parent.parent.parent / "frontend" / "dist"
 
 if DIST_DIR.is_dir():
     app.mount("/assets", StaticFiles(directory=DIST_DIR / "assets"), name="assets")
 
-    @app.get("/{full_path:path}", include_in_schema=False)
-    def spa(full_path: str):
-        if full_path.startswith("api/"):
-            raise HTTPException(status_code=404)
+    @app.get("/app", include_in_schema=False)
+    @app.get("/app/{full_path:path}", include_in_schema=False)
+    def spa(full_path: str = ""):
         candidate = DIST_DIR / full_path
         if full_path and candidate.is_file() and candidate.resolve().is_relative_to(DIST_DIR):
             return FileResponse(candidate)

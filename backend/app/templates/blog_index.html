@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Guides garde alternée &amp; coparentalité — Coparent{% endblock %}
+{% block description %}Guides pratiques : planning de garde alternée, partage des vacances scolaires, années paires et impaires, zones A/B/C.{% endblock %}
+{% block content %}
+<section class="blog-hero">
+  <div class="wrap narrow">
+    <p class="eyebrow">Guides</p>
+    <h1>Comprendre et organiser<br/>la garde alternée</h1>
+    <p class="lede">Des réponses concrètes aux questions que se posent tous les parents séparés.</p>
+  </div>
+</section>
+<section class="blog-list">
+  <div class="wrap narrow">
+    {% for a in articles %}
+    <a class="blog-item" href="/blog/{{ a.slug }}">
+      <time datetime="{{ a.date.isoformat() }}">{{ a.date | date_fr }}</time>
+      <h2>{{ a.title }}</h2>
+      <p>{{ a.description }}</p>
+      <span class="readmore">Lire le guide →</span>
+    </a>
+    {% else %}
+    <p>Les premiers guides arrivent bientôt.</p>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

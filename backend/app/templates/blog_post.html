@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}{{ article.title }} — Coparent{% endblock %}
+{% block description %}{{ article.description }}{% endblock %}
+{% block head %}
+<meta property="og:title" content="{{ article.title }}" />
+<meta property="og:description" content="{{ article.description }}" />
+<meta property="og:type" content="article" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"Article","headline":{{ article.title | tojson }},"datePublished":"{{ article.date.isoformat() }}","description":{{ article.description | tojson }},"inLanguage":"fr-FR"}
+</script>
+{% endblock %}
+{% block content %}
+<article class="post">
+  <div class="wrap narrow">
+    <p class="eyebrow"><a href="/blog">← Tous les guides</a></p>
+    <h1>{{ article.title }}</h1>
+    <time datetime="{{ article.date.isoformat() }}">{{ article.date | date_fr }}</time>
+    <div class="post-body">
+      {{ body | safe }}
+    </div>
+    <aside class="post-cta">
+      <h3>Marre de recalculer à la main&nbsp;?</h3>
+      <p>Coparent génère votre calendrier de garde — vacances de votre zone et années paires/impaires comprises.</p>
+      <a class="cta" href="/app/register">Créer mon calendrier gratuit</a>
+    </aside>
+  </div>
+</article>
+{% endblock %}

@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% block title %}Coparent — Le calendrier de garde alternée pensé pour la France{% endblock %}
+{% block content %}
+<section class="hero">
+  <div class="wrap hero-grid">
+    <div class="hero-text">
+      <p class="eyebrow reveal">Pour les parents séparés</p>
+      <h1 class="reveal d1">Qui a les enfants<br/><em>cette semaine&nbsp;?</em></h1>
+      <p class="lede reveal d2">
+        Semaine paire, zone B, moitié des vacances, un mercredi échangé… Coparent transforme
+        votre jugement ou votre accord en <strong>calendrier clair, partagé et à jour</strong> —
+        des années à l'avance.
+      </p>
+      <div class="hero-actions reveal d3">
+        <a class="cta big" href="/app/register">Créer mon calendrier gratuit</a>
+        <span class="hint">2 minutes · sans carte bancaire</span>
+      </div>
+      <ul class="trust reveal d4">
+        <li>🇫🇷 Vacances scolaires officielles A/B/C</li>
+        <li>🔁 Années paires / impaires automatiques</li>
+        <li>🇪🇺 Données hébergées en Europe</li>
+      </ul>
+    </div>
+    <div class="hero-visual reveal d2" aria-hidden="true">
+      <div class="cal-card">
+        <div class="cal-head">
+          <span>Février 2027</span>
+          <span class="cal-zone">Zone B</span>
+        </div>
+        <div class="cal-grid">
+          {% for d in range(1, 29) %}
+          <span class="cal-day {{ 'p1' if ((d - 1) // 7) % 2 == 0 else 'p2' }} {{ 'vac' if d >= 13 }}">{{ d }}</span>
+          {% endfor %}
+        </div>
+        <div class="cal-legend">
+          <span><i class="dot p1"></i>Camille</span>
+          <span><i class="dot p2"></i>Dominique</span>
+          <span class="vac-tag">🏖️ Vacances d'hiver — 1<sup>re</sup> moitié : Camille</span>
+        </div>
+      </div>
+      <div class="float-note">↔️ Mercredi 3 échangé — accepté</div>
+    </div>
+  </div>
+</section>
+
+<section class="pains">
+  <div class="wrap">
+    <h2>Le planning de garde, sans les disputes de planning</h2>
+    <div class="cards3">
+      <article>
+        <h3>📅 Le rythme, posé une fois pour toutes</h3>
+        <p>Semaine/semaine, 2-2-3, un week-end sur deux ou votre rythme à vous :
+        Coparent génère le calendrier sur plusieurs années, jour de passage compris.</p>
+      </article>
+      <article>
+        <h3>🏖️ Les vacances, enfin limpides</h3>
+        <p>Dates officielles de votre zone, partage par moitié ou alternance complète,
+        inversion automatique années paires/impaires. Noël compris.</p>
+      </article>
+      <article>
+        <h3>🤝 Le même calendrier pour les deux foyers</h3>
+        <p>Chaque parent voit la même chose, reçoit une notification à chaque changement,
+        et garde une trace des échanges de jours. Neutre, factuel, apaisé.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="how">
+  <div class="wrap">
+    <h2>Trois étapes, deux minutes</h2>
+    <ol class="steps">
+      <li><strong>Décrivez votre garde</strong><span>rythme, date de départ, zone scolaire, règle de vacances — comme dans votre accord ou votre jugement.</span></li>
+      <li><strong>Le calendrier se génère</strong><span>semaines, vacances, fériés et fêtes, des années à l'avance.</span></li>
+      <li><strong>Invitez l'autre parent</strong><span>un lien suffit. Et synchronisez le tout avec Google ou Apple Calendar.</span></li>
+    </ol>
+    <p class="center"><a class="cta big" href="/app/register">Commencer maintenant</a></p>
+  </div>
+</section>
+
+<section class="faq">
+  <div class="wrap narrow">
+    <h2>Questions fréquentes</h2>
+    <details>
+      <summary>Comment sont gérées les années paires et impaires&nbsp;?</summary>
+      <p>Vous indiquez une seule fois qui a la première moitié des vacances les années paires.
+      Coparent applique la règle à toutes les périodes — y compris les vacances de Noël qui
+      chevauchent deux années : c'est l'année du début des vacances qui compte.</p>
+    </details>
+    <details>
+      <summary>Et si l'autre parent n'utilise pas l'application&nbsp;?</summary>
+      <p>Coparent fonctionne très bien en solo : votre calendrier reste juste et exportable.
+      Vous pourrez inviter l'autre parent plus tard, en un lien.</p>
+    </details>
+    <details>
+      <summary>Les dates de vacances sont-elles fiables&nbsp;?</summary>
+      <p>Elles proviennent du calendrier scolaire officiel publié par l'Éducation nationale
+      (zones A, B et C), mis à jour automatiquement.</p>
+    </details>
+    <details>
+      <summary>Le calendrier a-t-il une valeur juridique&nbsp;?</summary>
+      <p>Coparent organise le quotidien et conserve l'historique des changements, mais ne remplace
+      ni une décision de justice ni un conseil juridique.</p>
+    </details>
+    <details>
+      <summary>Où sont hébergées les données&nbsp;?</summary>
+      <p>En Union européenne. Nous appliquons une stricte minimisation : le prénom de l'enfant
+      suffit, aucune donnée sensible n'est requise.</p>
+    </details>
+  </div>
+</section>
+
+<section class="final-cta">
+  <div class="wrap center">
+    <h2>Moins de messages, moins de malentendus.<br/>Un seul calendrier.</h2>
+    <a class="cta big" href="/app/register">Créer mon calendrier gratuit</a>
+  </div>
+</section>
+{% endblock %}

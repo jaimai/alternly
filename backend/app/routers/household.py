@@ -118,7 +118,7 @@ def create_invitation(member: HouseholdMember = Depends(get_membership), db: Ses
     db.add(invitation)
     db.commit()
     return InvitationOut(
-        invite_url=f"/join/{invitation.token}",
+        invite_url=f"/app/join/{invitation.token}",
         token=invitation.token,
         expires_at=invitation.expires_at,
     )
