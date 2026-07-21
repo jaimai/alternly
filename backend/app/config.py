@@ -10,3 +10,8 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+
+# Garde-fou : une base non-SQLite signale un déploiement réel — la clé de
+# signature JWT par défaut y rendrait tous les comptes usurpables.
+if settings.secret_key == "dev-secret-change-me" and not settings.database_url.startswith("sqlite"):
+    raise RuntimeError("SECRET_KEY doit être définie (voir .env.example) hors environnement SQLite local")

@@ -12,11 +12,15 @@ class ORMModel(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+COLOR_PATTERN = r"^#[0-9a-fA-F]{6}$"
+
+
 class UserCreate(BaseModel):
     email: EmailStr
-    password: str = Field(min_length=8)
-    display_name: str = Field(min_length=1)
-    color: str = "#4f7cac"
+    # bcrypt tronque à 72 octets : borne haute explicite
+    password: str = Field(min_length=8, max_length=72)
+    display_name: str = Field(min_length=1, max_length=50)
+    color: str = Field(default="#4f7cac", pattern=COLOR_PATTERN)
 
 
 class UserLogin(BaseModel):
@@ -32,8 +36,8 @@ class UserOut(ORMModel):
 
 
 class UserUpdate(BaseModel):
-    display_name: str | None = None
-    color: str | None = None
+    display_name: str | None = Field(default=None, min_length=1, max_length=50)
+    color: str | None = Field(default=None, pattern=COLOR_PATTERN)
 
 
 class Token(BaseModel):

@@ -14,6 +14,8 @@ router = APIRouter(prefix="/api/auth", tags=["auth"])
 def register(data: UserCreate, db: Session = Depends(get_db)):
     email = data.email.lower()
     if db.scalar(select(User).where(User.email == email)):
+        # Énumération d'e-mails possible ici : compromis UX assumé au MVP
+        # (le login reste uniforme ; pas de reset de mot de passe exposé).
         raise HTTPException(status_code=409, detail="Un compte existe déjà avec cet e-mail")
     user = User(
         email=email,
