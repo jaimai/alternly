@@ -18,7 +18,10 @@ async def lifespan(app: FastAPI):
     yield
 
 
+from .routers import auth as auth_router
+
 app = FastAPI(title="Coparent", lifespan=lifespan)
+app.include_router(auth_router.router)
 
 
 @app.get("/api/health")

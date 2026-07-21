@@ -1,0 +1,52 @@
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+
+from ..auth import create_token, get_current_user, hash_password, verify_password
+from ..db import get_db
+from ..models import User
+from ..schemas import Token, UserCreate, UserLogin, UserOut, UserUpdate
+
+router = APIRouter(prefix="/api/auth", tags=["auth"])
+
+
+@router.post("/register", response_model=Token, status_code=201)
+def register(data: UserCreate, db: Session = Depends(get_db)):
+    email = data.email.lower()
+    if db.scalar(select(User).where(User.email == email)):
+        raise HTTPException(status_code=409, detail="Un compte existe déjà avec cet e-mail")
+    user = User(
+        email=email,
+        password_hash=hash_password(data.password),
+        display_name=data.display_name,
+        color=data.color,
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return Token(access_token=create_token(user.id), user=UserOut.model_validate(user))
+
+
+@router.post("/login", response_model=Token)
+def login(data: UserLogin, db: Session = Depends(get_db)):
+    user = db.scalar(select(User).where(User.email == data.email.lower()))
+    if user is None or not verify_password(data.password, user.password_hash):
+        raise HTTPException(status_code=401, detail="E-mail ou mot de passe incorrect")
+    return Token(access_token=create_token(user.id), user=UserOut.model_validate(user))
+
+
+@router.get("/me", response_model=UserOut)
+def me(user: User = Depends(get_current_user)):
+    return user
+
+
+@router.patch("/me", response_model=UserOut)
+def update_me(data: UserUpdate, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if data.display_name is not None:
+        user.display_name = data.display_name
+    if data.color is not None:
+        user.color = data.color
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return user
