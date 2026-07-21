@@ -21,6 +21,7 @@ async def lifespan(app: FastAPI):
 from .routers import auth as auth_router
 from .routers import children as children_router
 from .routers import household as household_router
+from .routers import calendar as calendar_router
 from .routers import rules as rules_router
 
 app = FastAPI(title="Coparent", lifespan=lifespan)
@@ -28,6 +29,7 @@ app.include_router(auth_router.router)
 app.include_router(household_router.router)
 app.include_router(children_router.router)
 app.include_router(rules_router.router)
+app.include_router(calendar_router.router)
 
 
 @app.get("/api/health")
