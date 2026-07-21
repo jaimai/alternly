@@ -8,7 +8,8 @@ from .db import Base
 
 
 def utcnow() -> datetime:
-    return datetime.now(timezone.utc)
+    # naïf UTC : cohérent entre SQLite et Postgres (colonnes sans timezone)
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
 def new_token() -> str:
