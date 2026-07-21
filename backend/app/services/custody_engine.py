@@ -3,7 +3,8 @@
 Les parents sont des identifiants opaques (str). La granularité est le jour.
 Priorité de résolution : exception > fête > vacances scolaires > rythme de base.
 """
-from dataclasses import dataclass, field
+import math
+from dataclasses import dataclass
 from datetime import date, timedelta
 
 
@@ -22,6 +23,34 @@ class DayAssignment:
     day: date
     parent: str
     source: str  # rule | vacation | special | exception
+
+
+@dataclass
+class EngineVacationRule:
+    mode: str  # split_half | alternate_full
+    even_year_first_half_parent: str
+
+
+@dataclass
+class Period:
+    """Période de vacances scolaires, bornes incluses (jours sans école)."""
+    label: str
+    start: date
+    end: date
+
+
+@dataclass
+class EngineSpecialRule:
+    kind: str  # christmas_eve | christmas_day | mothers_day | fathers_day
+    parent: str
+    enabled: bool = True
+
+
+@dataclass
+class EngineException:
+    start: date
+    end: date
+    parent: str
 
 
 # Motif 2-2-3 standard sur 14 jours, ancré au lundi :
@@ -63,3 +92,115 @@ def base_pattern_parent(rule: EngineRule, day: date) -> str:
         return _pick(rule, rule.custom_weeks[idx])
 
     raise ValueError(f"pattern inconnu : {rule.pattern}")
+
+
+def easter_sunday(year: int) -> date:
+    """Dimanche de Pâques (algorithme de Butcher, calendrier grégorien)."""
+    a = year % 19
+    b, c = divmod(year, 100)
+    d, e = divmod(b, 4)
+    f = (b + 8) // 25
+    g = (b - f + 1) // 3
+    h = (19 * a + b - d - g + 15) % 30
+    i, k = divmod(c, 4)
+    l = (32 + 2 * e + 2 * i - h - k) % 7
+    m = (a + 11 * h + 22 * l) // 451
+    month, day = divmod(h + l - 7 * m + 114, 31)
+    return date(year, month, day + 1)
+
+
+def _last_sunday_of_may(year: int) -> date:
+    d = date(year, 5, 31)
+    return d - timedelta(days=(d.weekday() - 6) % 7)
+
+
+def mothers_day(year: int) -> date:
+    """Dernier dimanche de mai, décalé au 1er dimanche de juin si Pentecôte."""
+    candidate = _last_sunday_of_may(year)
+    pentecost = easter_sunday(year) + timedelta(days=49)
+    if candidate == pentecost:
+        d = date(year, 6, 1)
+        return d + timedelta(days=(6 - d.weekday()) % 7)
+    return candidate
+
+
+def fathers_day(year: int) -> date:
+    """3e dimanche de juin."""
+    d = date(year, 6, 1)
+    first_sunday = d + timedelta(days=(6 - d.weekday()) % 7)
+    return first_sunday + timedelta(days=14)
+
+
+def _special_day_date(kind: str, year: int) -> date:
+    if kind == "christmas_eve":
+        return date(year, 12, 24)
+    if kind == "christmas_day":
+        return date(year, 12, 25)
+    if kind == "mothers_day":
+        return mothers_day(year)
+    if kind == "fathers_day":
+        return fathers_day(year)
+    raise ValueError(f"fête inconnue : {kind}")
+
+
+def _vacation_parent(vac: EngineVacationRule, period: Period, day: date, other_parent_of: dict[str, str]) -> str:
+    even_parent = vac.even_year_first_half_parent
+    odd_parent = other_parent_of[even_parent]
+    first_half_parent = even_parent if period.start.year % 2 == 0 else odd_parent
+    second_half_parent = other_parent_of[first_half_parent]
+
+    if vac.mode == "alternate_full":
+        return first_half_parent
+
+    n_days = (period.end - period.start).days + 1
+    first_half_len = math.ceil(n_days / 2)
+    idx = (day - period.start).days
+    return first_half_parent if idx < first_half_len else second_half_parent
+
+
+def resolve_calendar(
+    rule: EngineRule,
+    vacation_rule: EngineVacationRule | None,
+    special_rules: list[EngineSpecialRule],
+    exceptions: list[EngineException],
+    school_periods: list[Period],
+    start: date,
+    end: date,
+) -> list[DayAssignment]:
+    """Attribue chaque jour de [start, end] (bornes incluses) à un parent.
+
+    Priorité : exception > fête > vacances scolaires > rythme de base.
+    """
+    other_parent_of = {
+        rule.reference_parent: rule.other_parent,
+        rule.other_parent: rule.reference_parent,
+    }
+
+    special_dates: dict[date, str] = {}
+    for sp in special_rules:
+        if not sp.enabled:
+            continue
+        for year in range(start.year - 1, end.year + 2):
+            special_dates[_special_day_date(sp.kind, year)] = sp.parent
+
+    result: list[DayAssignment] = []
+    day = start
+    while day <= end:
+        assignment = None
+        for exc in exceptions:
+            if exc.start <= day <= exc.end:
+                assignment = DayAssignment(day, exc.parent, "exception")
+                break
+        if assignment is None and day in special_dates:
+            assignment = DayAssignment(day, special_dates[day], "special")
+        if assignment is None and vacation_rule is not None:
+            for period in school_periods:
+                if period.start <= day <= period.end:
+                    parent = _vacation_parent(vacation_rule, period, day, other_parent_of)
+                    assignment = DayAssignment(day, parent, "vacation")
+                    break
+        if assignment is None:
+            assignment = DayAssignment(day, base_pattern_parent(rule, day), "rule")
+        result.append(assignment)
+        day += timedelta(days=1)
+    return result
