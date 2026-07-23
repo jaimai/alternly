@@ -34,8 +34,7 @@ export default function RegisterPage() {
   return (
     <div className="auth-page">
       <div className="brand">
-        <div className="logo">🗓️</div>
-        <h1>Coparent</h1>
+        <div className="wordmark">co<span>parent</span></div>
         <p>Le calendrier de garde partagée</p>
       </div>
       <form className="card" onSubmit={submit}>
@@ -43,7 +42,15 @@ export default function RegisterPage() {
         <label htmlFor="name">Votre prénom</label>
         <input id="name" value={displayName} onChange={(e) => setDisplayName(e.target.value)} required maxLength={50} />
         <label htmlFor="email">E-mail</label>
-        <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+        <input
+          id="email"
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+          pattern="[^@\s]+@[^@\s]+\.[^@\s]+"
+          title="Saisissez une adresse e-mail complète, avec un nom de domaine (ex. prenom@exemple.fr)."
+        />
         <label htmlFor="password">Mot de passe (8 caractères minimum)</label>
         <input
           id="password"

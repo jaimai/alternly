@@ -87,7 +87,7 @@ export default function OnboardingPage() {
   return (
     <div className="auth-page" style={{ maxWidth: 520 }}>
       <div className="brand">
-        <div className="logo">🗓️</div>
+        <div className="wordmark small">co<span>parent</span></div>
         <h1>Bienvenue !</h1>
         <p>Configurons votre calendrier en trois étapes.</p>
       </div>

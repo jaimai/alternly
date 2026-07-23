@@ -44,7 +44,7 @@ export default function JoinPage() {
   return (
     <div className="auth-page">
       <div className="brand">
-        <div className="logo">🤝</div>
+        <div className="wordmark small">co<span>parent</span></div>
         <h1>Invitation</h1>
       </div>
       <div className="card">

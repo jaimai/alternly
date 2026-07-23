@@ -32,8 +32,7 @@ export default function LoginPage() {
   return (
     <div className="auth-page">
       <div className="brand">
-        <div className="logo">🗓️</div>
-        <h1>Coparent</h1>
+        <div className="wordmark">co<span>parent</span></div>
         <p>Le calendrier de garde partagée</p>
       </div>
       <form className="card" onSubmit={submit}>
