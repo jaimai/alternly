@@ -3,6 +3,7 @@ export interface User {
   email: string
   display_name: string
   color: string
+  email_opt_in: boolean
 }
 
 export interface Member {
@@ -59,6 +60,15 @@ export interface CalendarDay {
   source: 'rule' | 'vacation' | 'special' | 'exception'
 }
 
+export interface PendingExchange {
+  id: number
+  date_start: string
+  date_end: string
+  proposed_parent_id: number
+  proposed_by: number
+  note: string
+}
+
 export interface CalendarResponse {
   days: CalendarDay[]
   public_holidays: { date: string; label: string }[]
@@ -67,7 +77,10 @@ export interface CalendarResponse {
   handover_day: number
   handover_time: string
   members: Member[]
+  pending_exchanges: PendingExchange[]
 }
+
+export type ExchangeStatus = 'pending' | 'accepted' | 'refused' | 'withdrawn'
 
 export interface ScheduleException {
   id: number
@@ -76,6 +89,11 @@ export interface ScheduleException {
   parent_id: number
   note: string
   created_by: number
+  status: ExchangeStatus
+  resolved_by: number | null
+  resolved_at: string | null
+  response_note: string
+  replaces_id: number | null
 }
 
 export interface Notification {

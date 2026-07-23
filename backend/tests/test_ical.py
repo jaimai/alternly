@@ -91,7 +91,7 @@ class TestNotifications:
         )
         notifs = client.get("/api/notifications", headers=headers2).json()
         types = {n["type"] for n in notifs}
-        assert "exception_created" in types
+        assert "exchange_proposed" in types
         unread_ids = [n["id"] for n in notifs if n["read_at"] is None]
         assert unread_ids
         client.post("/api/notifications/read", json={"ids": unread_ids}, headers=headers2)

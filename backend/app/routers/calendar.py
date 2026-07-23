@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from ..db import get_db
 from ..deps import get_membership, household_members
 from ..models import Household, HouseholdMember, User
-from ..schemas import CalendarDay, CalendarResponse, LabeledDate, LabeledPeriod, MemberOut
+from ..schemas import CalendarDay, CalendarResponse, LabeledDate, LabeledPeriod, MemberOut, PendingExchange
 from ..services.calendar_service import NoCustodyRule, build_calendar
 
 router = APIRouter(prefix="/api/households/{household_id}", tags=["calendar"])
@@ -55,4 +55,15 @@ def get_calendar(
         handover_day=data.rule.handover_day,
         handover_time=data.rule.handover_time,
         members=members_out,
+        pending_exchanges=[
+            PendingExchange(
+                id=e.id,
+                date_start=e.date_start,
+                date_end=e.date_end,
+                proposed_parent_id=e.parent_id,
+                proposed_by=e.created_by,
+                note=e.note,
+            )
+            for e in data.pending_exchanges
+        ],
     )

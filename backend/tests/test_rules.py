@@ -92,14 +92,14 @@ class TestExceptions:
         headers1, user1, headers2, user2, h = setup_family(client, auth_headers)
         resp = client.post(
             f"/api/households/{h['id']}/exceptions",
-            json={"date_start": "2026-03-04", "date_end": "2026-03-04", "parent_id": user2["id"], "note": "échange"},
+            json={"date_start": "2099-03-04", "date_end": "2099-03-04", "parent_id": user2["id"], "note": "échange"},
             headers=headers1,
         )
         assert resp.status_code == 201
         listing = client.get(f"/api/households/{h['id']}/exceptions", headers=headers2)
         assert len(listing.json()) == 1
         notifs = db_session.scalars(
-            select(Notification).where(Notification.user_id == user2["id"], Notification.type == "exception_created")
+            select(Notification).where(Notification.user_id == user2["id"], Notification.type == "exchange_proposed")
         ).all()
         assert len(notifs) == 1
 

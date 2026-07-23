@@ -2,9 +2,16 @@ import { useEffect, useRef, useState } from 'react'
 import { api } from '../api'
 import type { Notification } from '../types'
 
+function range(p: Record<string, string>): string {
+  return p.date_start === p.date_end ? p.date_start : `${p.date_start} → ${p.date_end}`
+}
+
 const LABELS: Record<string, (p: Record<string, string>) => string> = {
-  exception_created: (p) => `Échange de garde ajouté du ${p.date_start} au ${p.date_end}${p.note ? ` — « ${p.note} »` : ''}`,
-  exception_deleted: (p) => `Échange de garde annulé (${p.date_start} → ${p.date_end})`,
+  exchange_proposed: (p) => `Nouvel échange proposé (${range(p)})${p.note ? ` — « ${p.note} »` : ''} — à accepter ou refuser`,
+  exchange_accepted: (p) => `Votre proposition d'échange a été acceptée ✅ (${range(p)})`,
+  exchange_refused: (p) => `Votre proposition d'échange a été refusée (${range(p)})`,
+  exchange_withdrawn: (p) => `Une proposition d'échange a été retirée (${range(p)})`,
+  exception_deleted: (p) => `Échange de garde annulé (${range(p)})`,
   rule_changed: () => 'Les règles de garde ont été modifiées',
   parent_joined: (p) => `${p.display_name} a rejoint le foyer 🎉`,
 }
@@ -41,8 +48,11 @@ export default function NotificationBell() {
 
   return (
     <>
-      <button className="bell" onClick={toggle} title="Notifications">
-        🔔
+      <button className="bell" onClick={toggle} title="Notifications" aria-label="Notifications">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+          <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+        </svg>
         {unread.length > 0 && <span className="badge">{unread.length}</span>}
       </button>
       {open && (
@@ -51,7 +61,7 @@ export default function NotificationBell() {
           {items.map((n) => (
             <div key={n.id} className={`notif-item ${n.read_at === null ? 'unread' : ''}`}>
               {(LABELS[n.type] ?? (() => n.type))(n.payload)}
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-soft)' }}>
+              <div className="date">
                 {new Date(n.created_at + 'Z').toLocaleString('fr-FR')}
               </div>
             </div>

@@ -52,7 +52,7 @@ export default function SettingsPage() {
     if (!household) return
     try {
       const inv = await api.createInvitation(household.id)
-      setInviteUrl(`${window.location.origin}/join/${inv.token}`)
+      setInviteUrl(`${window.location.origin}/app/join/${inv.token}`)
     } catch (err) {
       fail(err)
     }
@@ -132,6 +132,16 @@ export default function SettingsPage() {
     }
   }
 
+  async function toggleEmails(next: boolean) {
+    try {
+      const updated = await api.updateMe({ email_opt_in: next })
+      setUser(updated)
+      flash(next ? 'E-mails activés ✓' : 'E-mails coupés ✓')
+    } catch (err) {
+      fail(err)
+    }
+  }
+
   if (!household || !user) return <div className="page-loading">Chargement…</div>
 
   return (
@@ -152,7 +162,7 @@ export default function SettingsPage() {
           ))}
           {household.members.length < 2 && (
             <>
-              <p style={{ color: 'var(--text-soft)' }}>
+              <p style={{ color: 'var(--ink-soft)' }}>
                 Invitez l'autre parent : il verra le même calendrier, sans pouvoir modifier votre profil.
               </p>
               {inviteUrl ? (
@@ -210,12 +220,12 @@ export default function SettingsPage() {
 
         <div className="card">
           <h2>Jours de fête</h2>
-          <p style={{ color: 'var(--text-soft)', fontSize: '0.9rem' }}>
+          <p style={{ color: 'var(--ink-soft)', fontSize: '0.9rem' }}>
             Ces jours passent outre le rythme habituel et le partage des vacances.
           </p>
           {household.special_day_rules.map((r) => (
             <div key={r.kind} className="row" style={{ alignItems: 'center', margin: '8px 0' }}>
-              <label style={{ margin: 0, display: 'flex', gap: 8, alignItems: 'center', color: 'var(--text)' }}>
+              <label style={{ margin: 0, display: 'flex', gap: 8, alignItems: 'center', color: 'var(--ink)' }}>
                 <input
                   type="checkbox"
                   style={{ width: 'auto' }}
@@ -262,7 +272,7 @@ export default function SettingsPage() {
 
         <div className="card">
           <h2>Synchronisation Google / Apple Calendar</h2>
-          <p style={{ color: 'var(--text-soft)', fontSize: '0.9rem' }}>
+          <p style={{ color: 'var(--ink-soft)', fontSize: '0.9rem' }}>
             Abonnez-vous à ce lien privé depuis votre application de calendrier. Régénérer le lien invalide
             l'ancien.
           </p>
@@ -283,6 +293,15 @@ export default function SettingsPage() {
             <input id="mycolor" type="color" value={color} onChange={(e) => setColor(e.target.value)} style={{ height: 42, padding: 4 }} />
             <button onClick={saveColor}>Enregistrer</button>
           </div>
+          <label style={{ display: 'flex', gap: 8, alignItems: 'center', color: 'var(--ink)', marginTop: 16 }}>
+            <input
+              type="checkbox"
+              style={{ width: 'auto' }}
+              checked={user.email_opt_in}
+              onChange={(e) => toggleEmails(e.target.checked)}
+            />
+            Recevoir un e-mail pour les propositions d'échange et leurs rappels
+          </label>
         </div>
       </div>
     </>

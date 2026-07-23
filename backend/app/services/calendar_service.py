@@ -27,6 +27,7 @@ class CalendarData:
     school_periods: list[Period]
     school_holidays_loaded: bool
     rule: CustodyRule
+    pending_exchanges: list[ScheduleException]
 
 
 class NoCustodyRule(Exception):
@@ -81,11 +82,21 @@ def build_calendar(db: Session, household: Household, start: date, end: date) ->
             parent_id = _auto_special_parent(sp.kind, members, users, rule.reference_parent_id)
         specials.append(EngineSpecialRule(kind=sp.kind, parent=str(parent_id), enabled=True))
 
+    all_exceptions = db.scalars(
+        select(ScheduleException).where(ScheduleException.household_id == household.id)
+    ).all()
+    # Seuls les échanges acceptés modifient la garde résolue.
     exceptions = [
         EngineException(start=e.date_start, end=e.date_end, parent=str(e.parent_id))
-        for e in db.scalars(
-            select(ScheduleException).where(ScheduleException.household_id == household.id)
-        )
+        for e in all_exceptions
+        if e.status == "accepted"
+    ]
+    # Propositions en attente non expirées, recoupant la plage demandée (overlay provisoire).
+    pending_exchanges = [
+        e
+        for e in all_exceptions
+        if e.status == "pending" and e.date_start >= date.today()
+        and e.date_start <= end and e.date_end >= start
     ]
 
     holidays: dict[date, str] = {}
@@ -119,4 +130,5 @@ def build_calendar(db: Session, household: Household, start: date, end: date) ->
         school_periods=periods,
         school_holidays_loaded=loaded,
         rule=rule,
+        pending_exchanges=pending_exchanges,
     )

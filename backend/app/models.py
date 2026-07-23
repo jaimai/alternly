@@ -25,6 +25,7 @@ class User(Base):
     display_name: Mapped[str] = mapped_column(String)
     color: Mapped[str] = mapped_column(String, default="#4f7cac")
     ical_token: Mapped[str] = mapped_column(String, unique=True, default=new_token)
+    email_opt_in: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
 
@@ -107,6 +108,14 @@ class ScheduleException(Base):
     note: Mapped[str] = mapped_column(String, default="")
     created_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    # Cycle de vie proposer/accepter. `expired` n'est jamais stocké : il se
+    # calcule (status == pending et date_start < aujourd'hui). Voir routers/rules.
+    status: Mapped[str] = mapped_column(String, default="pending")  # pending | accepted | refused | withdrawn
+    resolved_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    response_note: Mapped[str] = mapped_column(String, default="")
+    replaces_id: Mapped[int | None] = mapped_column(ForeignKey("schedule_exceptions.id"), nullable=True)
+    reminder_sent_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
 
 class Invitation(Base):

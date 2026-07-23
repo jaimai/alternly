@@ -33,11 +33,13 @@ class UserOut(ORMModel):
     email: str
     display_name: str
     color: str
+    email_opt_in: bool
 
 
 class UserUpdate(BaseModel):
     display_name: str | None = Field(default=None, min_length=1, max_length=50)
     color: str | None = Field(default=None, pattern=COLOR_PATTERN)
+    email_opt_in: bool | None = None
 
 
 class Token(BaseModel):
@@ -133,6 +135,11 @@ class ExceptionIn(BaseModel):
     date_end: date
     parent_id: int
     note: str = ""
+    replaces_id: int | None = None
+
+
+class ExchangeResponseIn(BaseModel):
+    response_note: str = ""
 
 
 class ExceptionOut(ORMModel):
@@ -142,6 +149,20 @@ class ExceptionOut(ORMModel):
     parent_id: int
     note: str
     created_by: int
+    status: str
+    resolved_by: int | None
+    resolved_at: datetime | None
+    response_note: str
+    replaces_id: int | None
+
+
+class PendingExchange(BaseModel):
+    id: int
+    date_start: date
+    date_end: date
+    proposed_parent_id: int
+    proposed_by: int
+    note: str
 
 
 class InvitationOut(BaseModel):
@@ -180,6 +201,7 @@ class CalendarResponse(BaseModel):
     handover_day: int
     handover_time: str
     members: list[MemberOut]
+    pending_exchanges: list[PendingExchange] = []
 
 
 class NotificationOut(ORMModel):

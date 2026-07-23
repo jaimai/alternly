@@ -36,14 +36,19 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const resp = await fetch(`/api${path}`, { ...options, headers })
   if (resp.status === 401 && !path.startsWith('/auth/')) {
     setToken(null)
-    window.location.href = '/login'
+    window.location.href = '/app/login'
     throw new ApiError(401, 'Session expirée')
   }
   if (!resp.ok) {
     let detail = resp.statusText
     try {
       const body = await resp.json()
-      if (typeof body.detail === 'string') detail = body.detail
+      if (typeof body.detail === 'string') {
+        detail = body.detail
+      } else if (Array.isArray(body.detail)) {
+        // Erreur de validation FastAPI/Pydantic : detail = liste d'objets {loc, msg}
+        detail = body.detail.map((e: { msg?: string }) => e.msg).filter(Boolean).join(' · ') || detail
+      }
     } catch {
       /* corps non JSON */
     }
@@ -64,7 +69,7 @@ export const api = {
   login: (data: { email: string; password: string }) =>
     request<TokenResponse>('/auth/login', { method: 'POST', body: JSON.stringify(data) }),
   me: () => request<User>('/auth/me'),
-  updateMe: (data: { display_name?: string; color?: string }) =>
+  updateMe: (data: { display_name?: string; color?: string; email_opt_in?: boolean }) =>
     request<User>('/auth/me', { method: 'PATCH', body: JSON.stringify(data) }),
 
   createHousehold: (data: { name: string; school_zone: string }) =>
@@ -98,12 +103,26 @@ export const api = {
   calendar: (householdId: number, start: string, end: string) =>
     request<CalendarResponse>(`/households/${householdId}/calendar?start=${start}&end=${end}`),
 
-  listExceptions: (householdId: number) =>
-    request<ScheduleException[]>(`/households/${householdId}/exceptions`),
+  listExceptions: (householdId: number, status?: 'pending' | 'accepted' | 'refused' | 'withdrawn') =>
+    request<ScheduleException[]>(
+      `/households/${householdId}/exceptions${status ? `?status=${status}` : ''}`,
+    ),
   createException: (
     householdId: number,
-    data: { date_start: string; date_end: string; parent_id: number; note: string },
+    data: { date_start: string; date_end: string; parent_id: number; note: string; replaces_id?: number },
   ) => request<ScheduleException>(`/households/${householdId}/exceptions`, { method: 'POST', body: JSON.stringify(data) }),
+  acceptExchange: (householdId: number, id: number, response_note = '') =>
+    request<ScheduleException>(`/households/${householdId}/exceptions/${id}/accept`, {
+      method: 'POST',
+      body: JSON.stringify({ response_note }),
+    }),
+  refuseExchange: (householdId: number, id: number, response_note = '') =>
+    request<ScheduleException>(`/households/${householdId}/exceptions/${id}/refuse`, {
+      method: 'POST',
+      body: JSON.stringify({ response_note }),
+    }),
+  withdrawExchange: (householdId: number, id: number) =>
+    request<ScheduleException>(`/households/${householdId}/exceptions/${id}/withdraw`, { method: 'POST' }),
   deleteException: (householdId: number, id: number) =>
     request<void>(`/households/${householdId}/exceptions/${id}`, { method: 'DELETE' }),
 

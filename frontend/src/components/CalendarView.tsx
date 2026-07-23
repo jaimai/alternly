@@ -71,7 +71,7 @@ export default function CalendarView({ data, onDayClick, onRangeChange }: Props)
           allDay: true,
           title: `${icon} ${member?.display_name ?? ''}`,
           color: 'transparent',
-          textColor: 'var(--text)',
+          textColor: 'var(--ink)',
         })
       }
     }
@@ -83,7 +83,7 @@ export default function CalendarView({ data, onDayClick, onRangeChange }: Props)
         allDay: true,
         title: `📌 ${h.label}`,
         color: 'transparent',
-        textColor: 'var(--text-soft)',
+        textColor: 'var(--ink-soft)',
       })
     }
 
@@ -96,6 +96,26 @@ export default function CalendarView({ data, onDayClick, onRangeChange }: Props)
         title: `🏖️ ${p.label}`,
         color: '#f3e8d2',
         textColor: '#7a5c1e',
+      })
+    }
+
+    // Propositions d'échange en attente : overlay provisoire (hachures), sans changer la garde
+    for (const px of data.pending_exchanges) {
+      const member = memberById.get(px.proposed_parent_id)
+      evts.push({
+        start: px.date_start,
+        end: addDays(px.date_end, 1),
+        allDay: true,
+        display: 'background',
+        classNames: ['pending-overlay'],
+        color: member?.color ?? '#888888',
+      })
+      evts.push({
+        start: px.date_start,
+        allDay: true,
+        title: `⏳ proposé — ${member?.display_name ?? ''}`,
+        color: 'transparent',
+        textColor: 'var(--ink-soft)',
       })
     }
 

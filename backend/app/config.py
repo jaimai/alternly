@@ -6,6 +6,13 @@ class Settings(BaseSettings):
     secret_key: str = "dev-secret-change-me"
     access_token_expire_minutes: int = 60 * 24 * 30
 
+    # Notifications e-mail (Resend). Vide → envoi désactivé (no-op).
+    resend_api_key: str = ""
+    email_from: str = "Coparent <no-reply@coparent.fr>"
+    app_base_url: str = "http://localhost:8000"
+    # Secret protégeant l'endpoint cron des rappels. Vide → endpoint désactivé.
+    cron_secret: str = ""
+
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 
