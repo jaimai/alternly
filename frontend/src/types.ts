@@ -103,3 +103,36 @@ export interface Notification {
   read_at: string | null
   created_at: string
 }
+
+export type ExpenseCategory = 'sante' | 'ecole' | 'activites' | 'vetements' | 'cantine' | 'autre'
+
+export interface Expense {
+  id: number
+  label: string
+  amount_cents: number
+  date: string
+  category: ExpenseCategory
+  child_id: number | null
+  paid_by: number
+  payer_percent: number
+  status: 'active' | 'disputed'
+  dispute_note: string
+  created_by: number
+}
+
+export interface Settlement {
+  id: number
+  from_user: number
+  to_user: number
+  amount_cents: number
+  date: string
+  note: string
+  created_by: number
+}
+
+export interface Balance {
+  net: { user_id: number; amount_cents: number }[]
+  debtor_id: number | null
+  creditor_id: number | null
+  amount_cents: number
+}

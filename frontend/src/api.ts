@@ -1,10 +1,13 @@
 import type {
+  Balance,
   CalendarResponse,
   Child,
   CustodyRule,
+  Expense,
   Household,
   Notification,
   ScheduleException,
+  Settlement,
   SpecialDayRule,
   User,
   VacationRule,
@@ -125,6 +128,33 @@ export const api = {
     request<ScheduleException>(`/households/${householdId}/exceptions/${id}/withdraw`, { method: 'POST' }),
   deleteException: (householdId: number, id: number) =>
     request<void>(`/households/${householdId}/exceptions/${id}`, { method: 'DELETE' }),
+
+  listExpenses: (householdId: number) =>
+    request<Expense[]>(`/households/${householdId}/expenses`),
+  createExpense: (
+    householdId: number,
+    data: {
+      label: string; amount_cents: number; date: string; category: string
+      child_id?: number | null; paid_by?: number; payer_percent?: number
+    },
+  ) => request<Expense>(`/households/${householdId}/expenses`, { method: 'POST', body: JSON.stringify(data) }),
+  updateExpense: (householdId: number, id: number, data: Partial<Omit<Expense, 'id' | 'status' | 'dispute_note' | 'created_by'>>) =>
+    request<Expense>(`/households/${householdId}/expenses/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+  deleteExpense: (householdId: number, id: number) =>
+    request<void>(`/households/${householdId}/expenses/${id}`, { method: 'DELETE' }),
+  disputeExpense: (householdId: number, id: number, dispute_note = '') =>
+    request<Expense>(`/households/${householdId}/expenses/${id}/dispute`, { method: 'POST', body: JSON.stringify({ dispute_note }) }),
+  resolveExpense: (householdId: number, id: number) =>
+    request<Expense>(`/households/${householdId}/expenses/${id}/resolve`, { method: 'POST' }),
+  balance: (householdId: number) => request<Balance>(`/households/${householdId}/balance`),
+  listSettlements: (householdId: number) =>
+    request<Settlement[]>(`/households/${householdId}/settlements`),
+  createSettlement: (
+    householdId: number,
+    data: { from_user: number; to_user: number; amount_cents: number; date: string; note?: string },
+  ) => request<Settlement>(`/households/${householdId}/settlements`, { method: 'POST', body: JSON.stringify(data) }),
+  deleteSettlement: (householdId: number, id: number) =>
+    request<void>(`/households/${householdId}/settlements/${id}`, { method: 'DELETE' }),
 
   notifications: () => request<Notification[]>('/notifications'),
   markRead: (ids: number[]) => request<{ updated: number }>('/notifications/read', { method: 'POST', body: JSON.stringify({ ids }) }),

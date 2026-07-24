@@ -1,15 +1,27 @@
-import { Link } from 'react-router-dom'
+import { Link, NavLink } from 'react-router-dom'
 import { useAuth } from '../auth'
 import NotificationBell from './NotificationBell'
+
+const navClass = ({ isActive }: { isActive: boolean }) => (isActive ? 'active' : undefined)
 
 export default function TopBar({ householdName }: { householdName?: string }) {
   const { logout } = useAuth()
   return (
     <div className="topbar">
-      <Link to="/" className="wordmark small" style={{ textDecoration: 'none' }}>
+      <Link to="/" className="wordmark small" style={{ textDecoration: 'none' }} title={householdName}>
         co<span>parent</span>
       </Link>
-      <span className="title">{householdName ?? ''}</span>
+      <nav className="topnav" style={{ marginRight: 'auto' }}>
+        <NavLink to="/" end className={navClass}>
+          Calendrier
+        </NavLink>
+        <NavLink to="/expenses" className={navClass}>
+          Dépenses
+        </NavLink>
+        <NavLink to="/wall" className={navClass}>
+          Mur
+        </NavLink>
+      </nav>
       <NotificationBell />
       <Link to="/settings" title="Réglages" className="icon-link" aria-label="Réglages">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

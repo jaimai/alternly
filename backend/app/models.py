@@ -118,6 +118,38 @@ class ScheduleException(Base):
     reminder_sent_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
 
+class Expense(Base):
+    __tablename__ = "expenses"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    household_id: Mapped[int] = mapped_column(ForeignKey("households.id"))
+    label: Mapped[str] = mapped_column(String)
+    amount_cents: Mapped[int] = mapped_column(Integer)  # > 0
+    date: Mapped[date] = mapped_column(Date)
+    category: Mapped[str] = mapped_column(String)  # sante|ecole|activites|vetements|cantine|autre
+    child_id: Mapped[int | None] = mapped_column(ForeignKey("children.id"), nullable=True)
+    paid_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    payer_percent: Mapped[int] = mapped_column(Integer, default=50)  # part à charge du payeur
+    status: Mapped[str] = mapped_column(String, default="active")  # active | disputed
+    dispute_note: Mapped[str] = mapped_column(String, default="")
+    created_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+
+class Settlement(Base):
+    __tablename__ = "settlements"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    household_id: Mapped[int] = mapped_column(ForeignKey("households.id"))
+    from_user: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    to_user: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    amount_cents: Mapped[int] = mapped_column(Integer)  # > 0
+    date: Mapped[date] = mapped_column(Date)
+    note: Mapped[str] = mapped_column(String, default="")
+    created_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+
 class Invitation(Base):
     __tablename__ = "invitations"
 

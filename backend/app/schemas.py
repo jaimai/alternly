@@ -2,10 +2,15 @@ from datetime import date, datetime
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
+# Alias : un champ nommé « date » masque le type `date` dans son annotation
+# quand il a une valeur par défaut (ex. `date: date | None = None`).
+DateType = date
+
 PATTERNS = {"alternate_weeks", "two_two_three", "every_other_weekend", "custom"}
 VACATION_MODES = {"split_half", "alternate_full"}
 SPECIAL_KINDS = {"christmas_eve", "christmas_day", "mothers_day", "fathers_day"}
 PARENT_MODES = {"auto", "fixed", "alternate"}
+EXPENSE_CATEGORIES = {"sante", "ecole", "activites", "vetements", "cantine", "autre"}
 ZONES = {"A", "B", "C"}
 
 
@@ -203,6 +208,74 @@ class CalendarResponse(BaseModel):
     handover_time: str
     members: list[MemberOut]
     pending_exchanges: list[PendingExchange] = []
+
+
+class ExpenseIn(BaseModel):
+    label: str = Field(min_length=1, max_length=120)
+    amount_cents: int = Field(gt=0)
+    date: date
+    category: str
+    child_id: int | None = None
+    paid_by: int | None = None  # défaut = créateur
+    payer_percent: int = Field(default=50, ge=0, le=100)
+
+
+class ExpensePatch(BaseModel):
+    label: str | None = Field(default=None, min_length=1, max_length=120)
+    amount_cents: int | None = Field(default=None, gt=0)
+    date: DateType | None = None
+    category: str | None = None
+    child_id: int | None = None
+    paid_by: int | None = None
+    payer_percent: int | None = Field(default=None, ge=0, le=100)
+
+
+class ExpenseOut(ORMModel):
+    id: int
+    label: str
+    amount_cents: int
+    date: date
+    category: str
+    child_id: int | None
+    paid_by: int
+    payer_percent: int
+    status: str
+    dispute_note: str
+    created_by: int
+
+
+class DisputeIn(BaseModel):
+    dispute_note: str = ""
+
+
+class SettlementIn(BaseModel):
+    from_user: int
+    to_user: int
+    amount_cents: int = Field(gt=0)
+    date: date
+    note: str = ""
+
+
+class SettlementOut(ORMModel):
+    id: int
+    from_user: int
+    to_user: int
+    amount_cents: int
+    date: date
+    note: str
+    created_by: int
+
+
+class BalanceNet(BaseModel):
+    user_id: int
+    amount_cents: int
+
+
+class BalanceOut(BaseModel):
+    net: list[BalanceNet]
+    debtor_id: int | None
+    creditor_id: int | None
+    amount_cents: int
 
 
 class NotificationOut(ORMModel):

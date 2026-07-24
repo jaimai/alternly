@@ -1,6 +1,7 @@
 import { Route, Routes } from 'react-router-dom'
 import { RequireAuth } from './auth'
 import CalendarPage from './pages/Calendar'
+import ExpensesPage from './pages/Expenses'
 import JoinPage from './pages/Join'
 import LoginPage from './pages/Login'
 import OnboardingPage from './pages/Onboarding'
@@ -26,6 +27,14 @@ export default function App() {
         element={
           <RequireAuth>
             <SettingsPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/expenses"
+        element={
+          <RequireAuth>
+            <ExpensesPage />
           </RequireAuth>
         }
       />

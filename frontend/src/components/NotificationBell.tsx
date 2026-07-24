@@ -14,6 +14,14 @@ const LABELS: Record<string, (p: Record<string, string>) => string> = {
   exception_deleted: (p) => `Échange de garde annulé (${range(p)})`,
   rule_changed: () => 'Les règles de garde ont été modifiées',
   parent_joined: (p) => `${p.display_name} a rejoint le foyer 🎉`,
+  expense_added: (p) => `Nouvelle dépense « ${p.label} » (${euros(p.amount_cents)})`,
+  expense_disputed: (p) => `Votre dépense « ${p.label} » a été contestée`,
+  expense_resolved: (p) => `La contestation sur « ${p.label} » a été levée`,
+  settlement_recorded: (p) => `Remboursement enregistré (${euros(p.amount_cents)})`,
+}
+
+function euros(cents: string): string {
+  return (Number(cents) / 100).toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })
 }
 
 export default function NotificationBell() {
