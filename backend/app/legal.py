@@ -1,10 +1,17 @@
 """Contenu des pages légales (SSR). Rédigé comme point de départ sérieux ;
-à faire relire par un professionnel du droit avant de s'y fier, et à compléter
-là où figurent des crochets [ ] (raison sociale, adresse, SIREN…)."""
+à faire relire par un professionnel du droit avant de s'y fier."""
 
 UPDATED = "24 juillet 2026"
 
-CONTACT = "contact@alternly.com"
+CONTACT = "honoentreprise@gmail.com"
+
+# Éditeur / responsable de traitement.
+EDITOR = (
+    "Hōnō, SASU au capital de 1 000 €, immatriculée au RCS de Lille sous le "
+    "numéro 939 911 897, dont le siège social est situé 229 rue de Solférino, "
+    "59000 Lille, France. Directeur de la publication : Thomas Ferrer, Président"
+)
+EDITOR_SHORT = "Hōnō, SASU — 229 rue de Solférino, 59000 Lille, France"
 
 # Sous-traitants / prestataires effectivement utilisés.
 _SUBPROCESSORS = """
@@ -19,8 +26,7 @@ _SUBPROCESSORS = """
 
 TERMS = f"""
 <p>Les présentes conditions générales régissent l'utilisation d'Alternly (« le Service »),
-édité par [Raison sociale de l'éditeur], [forme juridique], [adresse], immatriculée sous le
-numéro [SIREN]. En créant un compte, vous les acceptez.</p>
+édité par {EDITOR}. En créant un compte, vous les acceptez.</p>
 
 <h2>1. Le Service</h2>
 <p>Alternly est un calendrier de garde alternée et un ensemble d'outils de coordination pour
@@ -70,7 +76,7 @@ PRIVACY = f"""
 Règlement général sur la protection des données (RGPD).</p>
 
 <h2>1. Responsable de traitement</h2>
-<p>[Raison sociale de l'éditeur], [adresse]. Contact :
+<p>{EDITOR_SHORT}. Contact :
 <a href="mailto:{CONTACT}">{CONTACT}</a>.</p>
 
 <h2>2. Données collectées</h2>
