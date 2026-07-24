@@ -76,6 +76,15 @@ def build_calendar(db: Session, household: Household, start: date, end: date) ->
     for sp in db.scalars(select(SpecialDayRule).where(SpecialDayRule.household_id == household.id)):
         if not sp.enabled:
             continue
+        if sp.parent_mode == "alternate" and sp.parent_id is not None:
+            # Alternance annuelle : parent_id = parent des années paires, l'autre les impaires.
+            other = next((uid for uid in member_ids if uid != sp.parent_id), sp.parent_id)
+            specials.append(
+                EngineSpecialRule(
+                    kind=sp.kind, even_parent=str(sp.parent_id), odd_parent=str(other), enabled=True
+                )
+            )
+            continue
         if sp.parent_mode == "fixed" and sp.parent_id is not None:
             parent_id = sp.parent_id
         else:

@@ -42,8 +42,16 @@ class Period:
 @dataclass
 class EngineSpecialRule:
     kind: str  # christmas_eve | christmas_day | mothers_day | fathers_day
-    parent: str
+    parent: str | None = None       # mode fixe / auto : parent résolu
     enabled: bool = True
+    # mode alternance annuelle : années paires → even_parent, impaires → odd_parent
+    even_parent: str | None = None
+    odd_parent: str | None = None
+
+    def parent_for_year(self, year: int) -> str:
+        if self.even_parent is not None:
+            return self.even_parent if year % 2 == 0 else self.odd_parent
+        return self.parent
 
 
 @dataclass
@@ -181,7 +189,7 @@ def resolve_calendar(
         if not sp.enabled:
             continue
         for year in range(start.year - 1, end.year + 2):
-            special_dates[_special_day_date(sp.kind, year)] = sp.parent
+            special_dates[_special_day_date(sp.kind, year)] = sp.parent_for_year(year)
 
     result: list[DayAssignment] = []
     day = start

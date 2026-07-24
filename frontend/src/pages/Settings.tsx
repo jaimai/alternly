@@ -236,22 +236,34 @@ export default function SettingsPage() {
               </label>
               {r.enabled && (
                 <select
-                  value={r.parent_mode === 'fixed' && r.parent_id ? String(r.parent_id) : 'auto'}
-                  onChange={(e) =>
-                    toggleSpecial(
-                      r.kind,
-                      e.target.value === 'auto'
-                        ? { parent_mode: 'auto', parent_id: null }
-                        : { parent_mode: 'fixed', parent_id: Number(e.target.value) },
-                    )
+                  value={
+                    r.parent_id && r.parent_mode === 'fixed'
+                      ? `fixed:${r.parent_id}`
+                      : r.parent_id && r.parent_mode === 'alternate'
+                        ? `alt:${r.parent_id}`
+                        : 'auto'
                   }
+                  onChange={(e) => {
+                    const v = e.target.value
+                    if (v === 'auto') toggleSpecial(r.kind, { parent_mode: 'auto', parent_id: null })
+                    else if (v.startsWith('fixed:'))
+                      toggleSpecial(r.kind, { parent_mode: 'fixed', parent_id: Number(v.slice(6)) })
+                    else if (v.startsWith('alt:'))
+                      toggleSpecial(r.kind, { parent_mode: 'alternate', parent_id: Number(v.slice(4)) })
+                  }}
                 >
                   <option value="auto">Automatique</option>
                   {household.members.map((m) => (
-                    <option key={m.id} value={m.id}>
+                    <option key={`fixed-${m.id}`} value={`fixed:${m.id}`}>
                       Toujours chez {m.display_name}
                     </option>
                   ))}
+                  {(r.kind === 'christmas_eve' || r.kind === 'christmas_day') &&
+                    household.members.map((m) => (
+                      <option key={`alt-${m.id}`} value={`alt:${m.id}`}>
+                        Alterner — années paires chez {m.display_name}
+                      </option>
+                    ))}
                 </select>
               )}
             </div>

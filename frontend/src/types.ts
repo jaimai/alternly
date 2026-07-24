@@ -37,7 +37,7 @@ export interface VacationRule {
 
 export interface SpecialDayRule {
   kind: 'christmas_eve' | 'christmas_day' | 'mothers_day' | 'fathers_day'
-  parent_mode: 'auto' | 'fixed'
+  parent_mode: 'auto' | 'fixed' | 'alternate'
   parent_id: number | null
   enabled: boolean
 }

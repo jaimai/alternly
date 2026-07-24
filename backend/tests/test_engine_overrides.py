@@ -152,3 +152,38 @@ class TestFeteDates:
     def test_fathers_day(self):
         assert fathers_day(2026) == date(2026, 6, 21)
         assert fathers_day(2025) == date(2025, 6, 15)
+
+
+class TestSpecialAlternation:
+    """Alternance annuelle : parent des années paires = even_parent, sinon odd_parent."""
+
+    def test_even_year_goes_to_even_parent(self):
+        sp = EngineSpecialRule(kind="christmas_day", even_parent="A", odd_parent="B")
+        res = resolve(date(2026, 12, 25), date(2026, 12, 25), specials=[sp])
+        assert res[date(2026, 12, 25)].parent == "A"  # 2026 pair
+        assert res[date(2026, 12, 25)].source == "special"
+
+    def test_odd_year_goes_to_odd_parent(self):
+        sp = EngineSpecialRule(kind="christmas_day", even_parent="A", odd_parent="B")
+        res = resolve(date(2027, 12, 25), date(2027, 12, 25), specials=[sp])
+        assert res[date(2027, 12, 25)].parent == "B"  # 2027 impair
+
+    def test_eve_and_day_together_same_year(self):
+        # 24 et 25 configurés avec le même parent des années paires → ensemble
+        eve = EngineSpecialRule(kind="christmas_eve", even_parent="A", odd_parent="B")
+        day = EngineSpecialRule(kind="christmas_day", even_parent="A", odd_parent="B")
+        res = resolve(date(2026, 12, 24), date(2026, 12, 25), specials=[eve, day])
+        assert res[date(2026, 12, 24)].parent == "A"
+        assert res[date(2026, 12, 25)].parent == "A"
+
+    def test_alternation_flips_between_consecutive_years(self):
+        sp = EngineSpecialRule(kind="christmas_day", even_parent="A", odd_parent="B")
+        res = resolve(date(2026, 12, 1), date(2027, 12, 31), specials=[sp])
+        assert res[date(2026, 12, 25)].parent == "A"
+        assert res[date(2027, 12, 25)].parent == "B"
+
+    def test_fixed_parent_still_supported(self):
+        # rétro-compat : parent fixe inchangé
+        sp = EngineSpecialRule(kind="christmas_day", parent="B")
+        res = resolve(date(2026, 12, 25), date(2026, 12, 25), specials=[sp])
+        assert res[date(2026, 12, 25)].parent == "B"

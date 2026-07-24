@@ -121,3 +121,46 @@ class TestExceptions:
         ).json()["id"]
         assert client.delete(f"/api/households/{h['id']}/exceptions/{eid}", headers=headers1).status_code == 204
         assert client.get(f"/api/households/{h['id']}/exceptions", headers=headers1).json() == []
+
+
+class TestSpecialDayAlternate:
+    def test_alternate_mode_persists_parent(self, client, auth_headers):
+        headers1, user1, _, user2, h = setup_family(client, auth_headers)
+        resp = client.put(
+            f"/api/households/{h['id']}/special-day-rules",
+            json=[{"kind": "christmas_day", "parent_mode": "alternate", "parent_id": user1["id"], "enabled": True}],
+            headers=headers1,
+        )
+        assert resp.status_code == 200, resp.text
+        rule = next(r for r in resp.json() if r["kind"] == "christmas_day")
+        assert rule["parent_mode"] == "alternate"
+        assert rule["parent_id"] == user1["id"]
+
+    def test_alternate_requires_parent_id(self, client, auth_headers):
+        headers1, user1, _, _, h = setup_family(client, auth_headers)
+        resp = client.put(
+            f"/api/households/{h['id']}/special-day-rules",
+            json=[{"kind": "christmas_day", "parent_mode": "alternate", "parent_id": None, "enabled": True}],
+            headers=headers1,
+        )
+        assert resp.status_code == 422
+
+    def test_alternate_reflected_in_calendar(self, client, auth_headers):
+        headers1, user1, _, user2, h = setup_family(client, auth_headers)
+        client.put(
+            f"/api/households/{h['id']}/custody-rule",
+            json={"pattern": "alternate_weeks", "start_date": "2026-01-05", "reference_parent_id": user1["id"]},
+            headers=headers1,
+        )
+        client.put(
+            f"/api/households/{h['id']}/special-day-rules",
+            json=[{"kind": "christmas_day", "parent_mode": "alternate", "parent_id": user1["id"], "enabled": True}],
+            headers=headers1,
+        )
+        # 2026 (pair) → user1 ; 2027 (impair) → user2
+        cal26 = client.get(f"/api/households/{h['id']}/calendar?start=2026-12-25&end=2026-12-25", headers=headers1).json()
+        cal27 = client.get(f"/api/households/{h['id']}/calendar?start=2027-12-25&end=2027-12-25", headers=headers1).json()
+        d26 = next(d for d in cal26["days"] if d["date"] == "2026-12-25")
+        d27 = next(d for d in cal27["days"] if d["date"] == "2027-12-25")
+        assert d26["parent_id"] == user1["id"] and d26["source"] == "special"
+        assert d27["parent_id"] == user2["id"] and d27["source"] == "special"

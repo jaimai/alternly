@@ -5,6 +5,7 @@ from pydantic import BaseModel, ConfigDict, EmailStr, Field
 PATTERNS = {"alternate_weeks", "two_two_three", "every_other_weekend", "custom"}
 VACATION_MODES = {"split_half", "alternate_full"}
 SPECIAL_KINDS = {"christmas_eve", "christmas_day", "mothers_day", "fathers_day"}
+PARENT_MODES = {"auto", "fixed", "alternate"}
 ZONES = {"A", "B", "C"}
 
 

@@ -9,6 +9,7 @@ from ..deps import get_membership, household_members, notify, other_parent_id
 from ..models import CustodyRule, HouseholdMember, ScheduleException, SpecialDayRule, User, VacationRule, utcnow
 from ..services import email as email_service
 from ..schemas import (
+    PARENT_MODES,
     PATTERNS,
     SPECIAL_KINDS,
     VACATION_MODES,
@@ -95,9 +96,12 @@ def upsert_special_day_rules(
     for item in data:
         if item.kind not in SPECIAL_KINDS:
             raise HTTPException(status_code=422, detail=f"Fête inconnue : {item.kind}")
-        if item.parent_mode == "fixed":
+        if item.parent_mode not in PARENT_MODES:
+            raise HTTPException(status_code=422, detail=f"Mode inconnu : {item.parent_mode}")
+        # fixed et alternate exigent un parent_id membre du foyer.
+        if item.parent_mode in {"fixed", "alternate"}:
             if item.parent_id is None:
-                raise HTTPException(status_code=422, detail="parent_id requis en mode fixed")
+                raise HTTPException(status_code=422, detail="parent_id requis pour ce mode")
             _check_parent(db, member, item.parent_id)
         rule = db.scalar(
             select(SpecialDayRule).where(
@@ -109,7 +113,8 @@ def upsert_special_day_rules(
             rule = SpecialDayRule(household_id=member.household_id, kind=item.kind)
             db.add(rule)
         rule.parent_mode = item.parent_mode
-        rule.parent_id = item.parent_id if item.parent_mode == "fixed" else None
+        # parent_id conservé pour fixed (parent fixe) et alternate (parent des années paires).
+        rule.parent_id = item.parent_id if item.parent_mode in {"fixed", "alternate"} else None
         rule.enabled = item.enabled
     notify(db, other_parent_id(db, member.household_id, member.user_id), "rule_changed", {"what": "special_days"})
     db.commit()
