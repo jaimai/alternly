@@ -41,7 +41,7 @@ def send_email(to: str, subject: str, html: str) -> bool:
 
 
 def _button(label: str, path: str) -> str:
-    url = f"{settings.app_base_url.rstrip('/')}{path}"
+    url = f"{settings.app_url.rstrip('/')}{path}"
     return (
         f'<a href="{url}" style="display:inline-block;background:#1f4d3f;color:#fff;'
         f'padding:12px 22px;border-radius:999px;text-decoration:none;font-weight:600">{label}</a>'
@@ -52,7 +52,7 @@ def _layout(intro: str, cta_label: str, cta_path: str) -> str:
     return (
         '<div style="font-family:-apple-system,Segoe UI,sans-serif;max-width:480px;margin:0 auto;'
         'color:#24312b;line-height:1.6">'
-        '<p style="font-size:1.3rem;font-weight:600">co<span style="color:#1f4d3f">parent</span></p>'
+        '<p style="font-size:1.3rem;font-weight:600">altern<span style="color:#1f4d3f">ly</span></p>'
         f"<p>{intro}</p>"
         f'<p style="margin:24px 0">{_button(cta_label, cta_path)}</p>'
         '<p style="color:#5d6b63;font-size:0.85rem">Vous recevez cet e-mail car votre coparent utilise '
@@ -75,7 +75,7 @@ def exchange_proposed_email(payload: dict) -> tuple[str, str]:
         f"Votre coparent vous propose un échange de garde ({period})." + note +
         " Ouvrez Alternly pour l'accepter ou le refuser."
     )
-    return "Nouvelle proposition d'échange de garde", _layout(intro, "Voir la proposition", "/app/")
+    return "Nouvelle proposition d'échange de garde", _layout(intro, "Voir la proposition", "/")
 
 
 def exchange_reminder_email(payload: dict) -> tuple[str, str]:
@@ -85,4 +85,4 @@ def exchange_reminder_email(payload: dict) -> tuple[str, str]:
         f"Une proposition d'échange de garde ({period}) attend toujours votre réponse et "
         "expirera demain si elle n'est pas traitée."
     )
-    return "Rappel : une proposition d'échange expire demain", _layout(intro, "Répondre maintenant", "/app/")
+    return "Rappel : une proposition d'échange expire demain", _layout(intro, "Répondre maintenant", "/")

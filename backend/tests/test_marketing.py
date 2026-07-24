@@ -3,7 +3,7 @@ class TestMarketingPages:
         resp = client.get("/")
         assert resp.status_code == 200
         assert "calendrier de garde" in resp.text.lower()
-        assert "/app/register" in resp.text
+        assert "/register" in resp.text  # CTA vers l'app (hébergée séparément)
 
     def test_blog_index_lists_articles(self, client):
         resp = client.get("/blog")

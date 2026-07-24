@@ -15,6 +15,10 @@ import type {
   WallReply,
 } from './types'
 
+// Base de l'API : en prod (Vercel), pointe vers le backend Railway via
+// VITE_API_URL (ex. https://xxx.up.railway.app/api). En dev, proxy Vite sur /api.
+export const API_BASE = import.meta.env.VITE_API_URL || '/api'
+
 const TOKEN_KEY = 'coparent_token'
 
 export function getToken(): string | null {
@@ -38,10 +42,10 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' }
   const token = getToken()
   if (token) headers.Authorization = `Bearer ${token}`
-  const resp = await fetch(`/api${path}`, { ...options, headers })
+  const resp = await fetch(`${API_BASE}${path}`, { ...options, headers })
   if (resp.status === 401 && !path.startsWith('/auth/')) {
     setToken(null)
-    window.location.href = '/app/login'
+    window.location.href = '/login'
     throw new ApiError(401, 'Session expirée')
   }
   if (!resp.ok) {

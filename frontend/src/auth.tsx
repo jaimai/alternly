@@ -37,7 +37,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(() => {
     setToken(null)
     setUser(null)
-    window.location.href = '/app/login'
+    window.location.href = '/login'
   }, [])
 
   return (

@@ -2,8 +2,8 @@ import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException
-from fastapi.responses import FileResponse
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from . import models  # noqa: F401 — enregistre les tables
@@ -36,6 +36,16 @@ from .routers import rules as rules_router
 from .routers import wall as wall_router
 
 app = FastAPI(title="Alternly", lifespan=lifespan)
+
+# La SPA (Vercel) appelle l'API depuis une autre origine → CORS.
+# Auth par jeton Bearer (pas de cookies) : allow_credentials inutile.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.cors_origin_list,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 app.include_router(auth_router.router)
 app.include_router(household_router.router)
 app.include_router(children_router.router)
@@ -54,19 +64,8 @@ def health():
 
 
 # --- Site marketing SSR (landing, blog, sitemap) + assets statiques ---
+# L'app React (SPA) est hébergée séparément sur Vercel ; le backend ne sert que
+# l'API, le site marketing et les fichiers statiques.
 STATIC_DIR = Path(__file__).resolve().parent / "static"
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 app.include_router(marketing_router.router)
-
-# --- Monolithe : l'app React est servie sous /app (frontend/dist) ---
-DIST_DIR = Path(__file__).resolve().parent.parent.parent / "frontend" / "dist"
-
-if DIST_DIR.is_dir():
-
-    @app.get("/app", include_in_schema=False)
-    @app.get("/app/{full_path:path}", include_in_schema=False)
-    def spa(full_path: str = ""):
-        candidate = DIST_DIR / full_path
-        if full_path and candidate.is_file() and candidate.resolve().is_relative_to(DIST_DIR):
-            return FileResponse(candidate)
-        return FileResponse(DIST_DIR / "index.html")

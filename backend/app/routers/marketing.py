@@ -5,12 +5,16 @@ from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import HTMLResponse, PlainTextResponse, Response
 from fastapi.templating import Jinja2Templates
 
+from ..config import settings
 from ..services.blog import load_articles, render_article
 
 router = APIRouter(tags=["marketing"])
 
 TEMPLATES_DIR = Path(__file__).resolve().parent.parent / "templates"
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
+# URL de la SPA (Vercel) : les liens « se connecter / s'inscrire » de la landing
+# pointent vers l'app hébergée séparément.
+templates.env.globals["app_url"] = settings.app_url.rstrip("/")
 
 MONTHS_FR = [
     "janvier", "février", "mars", "avril", "mai", "juin",

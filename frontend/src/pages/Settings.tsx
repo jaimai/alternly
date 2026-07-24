@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { api, ApiError } from '../api'
+import { api, ApiError, API_BASE } from '../api'
 import { useAuth } from '../auth'
 import RuleForm from '../components/RuleForm'
 import type { RuleFormValue } from '../components/RuleForm'
@@ -52,7 +52,7 @@ export default function SettingsPage() {
     if (!household) return
     try {
       const inv = await api.createInvitation(household.id)
-      setInviteUrl(`${window.location.origin}/app/join/${inv.token}`)
+      setInviteUrl(`${window.location.origin}/join/${inv.token}`)
     } catch (err) {
       fail(err)
     }
@@ -116,7 +116,9 @@ export default function SettingsPage() {
   async function getIcalUrl() {
     try {
       const { ical_token } = await api.regenerateIcal()
-      setIcalUrl(`${window.location.origin}/api/ical/${ical_token}.ics`)
+      // Le flux iCal est servi par le backend : URL absolue vers l'API.
+      const apiOrigin = API_BASE.startsWith('http') ? API_BASE : `${window.location.origin}${API_BASE}`
+      setIcalUrl(`${apiOrigin}/ical/${ical_token}.ics`)
     } catch (err) {
       fail(err)
     }

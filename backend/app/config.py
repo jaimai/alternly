@@ -9,9 +9,17 @@ class Settings(BaseSettings):
     # Notifications e-mail (Resend). Vide → envoi désactivé (no-op).
     resend_api_key: str = ""
     email_from: str = "Alternly <no-reply@alternly.com>"
-    app_base_url: str = "http://localhost:8000"
+    # URL publique de la SPA (hébergée sur Vercel) : liens de la landing, CTAs
+    # e-mail, liens d'invitation. En dev : le serveur Vite.
+    app_url: str = "http://localhost:5173"
+    # Origines autorisées à appeler l'API (CORS), séparées par des virgules.
+    cors_origins: str = "http://localhost:5173"
     # Secret protégeant l'endpoint cron des rappels. Vide → endpoint désactivé.
     cron_secret: str = ""
+
+    @property
+    def cors_origin_list(self) -> list[str]:
+        return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

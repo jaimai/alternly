@@ -1,4 +1,5 @@
 import { Route, Routes } from 'react-router-dom'
+import { Analytics } from '@vercel/analytics/react'
 import { RequireAuth } from './auth'
 import CalendarPage from './pages/Calendar'
 import ExpensesPage from './pages/Expenses'
@@ -11,6 +12,7 @@ import WallPage from './pages/Wall'
 
 export default function App() {
   return (
+    <>
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
@@ -56,5 +58,7 @@ export default function App() {
         }
       />
     </Routes>
+    <Analytics />
+    </>
   )
 }
