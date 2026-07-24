@@ -115,6 +115,7 @@ export default function CalendarPage() {
                 handover_time: '18:00',
                 members: household.members,
                 pending_exchanges: [],
+                tasks: [],
               }
             }
             onDayClick={(date) => setSelectedDay(date)}

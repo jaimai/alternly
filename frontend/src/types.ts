@@ -69,6 +69,14 @@ export interface PendingExchange {
   note: string
 }
 
+export interface WallTask {
+  id: number
+  body: string
+  due_date: string
+  child_id: number | null
+  assigned_to: number | null
+}
+
 export interface CalendarResponse {
   days: CalendarDay[]
   public_holidays: { date: string; label: string }[]
@@ -78,6 +86,31 @@ export interface CalendarResponse {
   handover_time: string
   members: Member[]
   pending_exchanges: PendingExchange[]
+  tasks: WallTask[]
+}
+
+export type WallKind = 'message' | 'task' | 'question'
+
+export interface WallReply {
+  id: number
+  author_id: number
+  body: string
+  created_at: string
+}
+
+export interface WallPost {
+  id: number
+  author_id: number
+  kind: WallKind
+  body: string
+  child_id: number | null
+  due_date: string | null
+  assigned_to: number | null
+  completed_at: string | null
+  completed_by: number | null
+  created_at: string
+  edited_at: string | null
+  replies: WallReply[]
 }
 
 export type ExchangeStatus = 'pending' | 'accepted' | 'refused' | 'withdrawn'

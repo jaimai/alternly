@@ -3,10 +3,20 @@ from datetime import date, timedelta
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
+from sqlalchemy import select
+
 from ..db import get_db
 from ..deps import get_membership, household_members
-from ..models import Household, HouseholdMember, User
-from ..schemas import CalendarDay, CalendarResponse, LabeledDate, LabeledPeriod, MemberOut, PendingExchange
+from ..models import Household, HouseholdMember, User, WallPost
+from ..schemas import (
+    CalendarDay,
+    CalendarResponse,
+    LabeledDate,
+    LabeledPeriod,
+    MemberOut,
+    PendingExchange,
+    WallTaskOut,
+)
 from ..services.calendar_service import NoCustodyRule, build_calendar
 
 router = APIRouter(prefix="/api/households/{household_id}", tags=["calendar"])
@@ -31,6 +41,18 @@ def get_calendar(
         data = build_calendar(db, household, start, end)
     except NoCustodyRule:
         raise HTTPException(status_code=409, detail="Aucune règle de garde définie")
+
+    # Tâches datées du mur (non complétées) recoupant la plage → décoration.
+    tasks = db.scalars(
+        select(WallPost).where(
+            WallPost.household_id == member.household_id,
+            WallPost.kind == "task",
+            WallPost.due_date.is_not(None),
+            WallPost.due_date >= start,
+            WallPost.due_date <= end,
+            WallPost.completed_at.is_(None),
+        )
+    ).all()
 
     members_out = []
     for m in household_members(db, member.household_id):
@@ -65,5 +87,11 @@ def get_calendar(
                 note=e.note,
             )
             for e in data.pending_exchanges
+        ],
+        tasks=[
+            WallTaskOut(
+                id=t.id, body=t.body, due_date=t.due_date, child_id=t.child_id, assigned_to=t.assigned_to
+            )
+            for t in tasks
         ],
     )

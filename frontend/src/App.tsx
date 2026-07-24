@@ -7,6 +7,7 @@ import LoginPage from './pages/Login'
 import OnboardingPage from './pages/Onboarding'
 import RegisterPage from './pages/Register'
 import SettingsPage from './pages/Settings'
+import WallPage from './pages/Wall'
 
 export default function App() {
   return (
@@ -35,6 +36,14 @@ export default function App() {
         element={
           <RequireAuth>
             <ExpensesPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/wall"
+        element={
+          <RequireAuth>
+            <WallPage />
           </RequireAuth>
         }
       />

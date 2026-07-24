@@ -11,6 +11,7 @@ VACATION_MODES = {"split_half", "alternate_full"}
 SPECIAL_KINDS = {"christmas_eve", "christmas_day", "mothers_day", "fathers_day"}
 PARENT_MODES = {"auto", "fixed", "alternate"}
 EXPENSE_CATEGORIES = {"sante", "ecole", "activites", "vetements", "cantine", "autre"}
+WALL_KINDS = {"message", "task", "question"}
 ZONES = {"A", "B", "C"}
 
 
@@ -199,6 +200,14 @@ class LabeledPeriod(BaseModel):
     end: date
 
 
+class WallTaskOut(BaseModel):
+    id: int
+    body: str
+    due_date: DateType
+    child_id: int | None
+    assigned_to: int | None
+
+
 class CalendarResponse(BaseModel):
     days: list[CalendarDay]
     public_holidays: list[LabeledDate]
@@ -208,6 +217,7 @@ class CalendarResponse(BaseModel):
     handover_time: str
     members: list[MemberOut]
     pending_exchanges: list[PendingExchange] = []
+    tasks: list[WallTaskOut] = []
 
 
 class ExpenseIn(BaseModel):
@@ -276,6 +286,47 @@ class BalanceOut(BaseModel):
     debtor_id: int | None
     creditor_id: int | None
     amount_cents: int
+
+
+class WallPostIn(BaseModel):
+    kind: str
+    body: str = Field(min_length=1, max_length=2000)
+    child_id: int | None = None
+    due_date: DateType | None = None
+    assigned_to: int | None = None
+
+
+class WallPostPatch(BaseModel):
+    body: str | None = Field(default=None, min_length=1, max_length=2000)
+    child_id: int | None = None
+    due_date: DateType | None = None
+    assigned_to: int | None = None
+
+
+class WallReplyIn(BaseModel):
+    body: str = Field(min_length=1, max_length=2000)
+
+
+class WallReplyOut(ORMModel):
+    id: int
+    author_id: int
+    body: str
+    created_at: datetime
+
+
+class WallPostOut(ORMModel):
+    id: int
+    author_id: int
+    kind: str
+    body: str
+    child_id: int | None
+    due_date: DateType | None
+    assigned_to: int | None
+    completed_at: datetime | None
+    completed_by: int | None
+    created_at: datetime
+    edited_at: datetime | None
+    replies: list[WallReplyOut] = []
 
 
 class NotificationOut(ORMModel):

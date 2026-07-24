@@ -18,6 +18,9 @@ const LABELS: Record<string, (p: Record<string, string>) => string> = {
   expense_disputed: (p) => `Votre dépense « ${p.label} » a été contestée`,
   expense_resolved: (p) => `La contestation sur « ${p.label} » a été levée`,
   settlement_recorded: (p) => `Remboursement enregistré (${euros(p.amount_cents)})`,
+  wall_post_added: (p) => `Nouveau sur le mur : « ${p.body} »`,
+  wall_reply_added: (p) => `Nouvelle réponse : « ${p.body} »`,
+  wall_task_assigned: (p) => `Une tâche vous a été assignée : « ${p.body} »`,
 }
 
 function euros(cents: string): string {

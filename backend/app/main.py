@@ -33,6 +33,7 @@ from .routers import ical as ical_router
 from .routers import marketing as marketing_router
 from .routers import notifications as notifications_router
 from .routers import rules as rules_router
+from .routers import wall as wall_router
 
 app = FastAPI(title="Coparent", lifespan=lifespan)
 app.include_router(auth_router.router)
@@ -44,6 +45,7 @@ app.include_router(ical_router.router)
 app.include_router(notifications_router.router)
 app.include_router(cron_router.router)
 app.include_router(expenses_router.router)
+app.include_router(wall_router.router)
 
 
 @app.get("/api/health")

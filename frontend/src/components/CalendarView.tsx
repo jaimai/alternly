@@ -99,6 +99,17 @@ export default function CalendarView({ data, onDayClick, onRangeChange }: Props)
       })
     }
 
+    // Tâches datées du mur : repère 📝 sur le jour d'échéance
+    for (const t of data.tasks) {
+      evts.push({
+        start: t.due_date,
+        allDay: true,
+        title: `📝 ${t.body}`,
+        color: 'transparent',
+        textColor: 'var(--ink-soft)',
+      })
+    }
+
     // Propositions d'échange en attente : overlay provisoire (hachures), sans changer la garde
     for (const px of data.pending_exchanges) {
       const member = memberById.get(px.proposed_parent_id)

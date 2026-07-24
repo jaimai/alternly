@@ -11,6 +11,8 @@ import type {
   SpecialDayRule,
   User,
   VacationRule,
+  WallPost,
+  WallReply,
 } from './types'
 
 const TOKEN_KEY = 'coparent_token'
@@ -155,6 +157,22 @@ export const api = {
   ) => request<Settlement>(`/households/${householdId}/settlements`, { method: 'POST', body: JSON.stringify(data) }),
   deleteSettlement: (householdId: number, id: number) =>
     request<void>(`/households/${householdId}/settlements/${id}`, { method: 'DELETE' }),
+
+  listWall: (householdId: number) => request<WallPost[]>(`/households/${householdId}/wall`),
+  createPost: (
+    householdId: number,
+    data: { kind: string; body: string; child_id?: number | null; due_date?: string | null; assigned_to?: number | null },
+  ) => request<WallPost>(`/households/${householdId}/wall`, { method: 'POST', body: JSON.stringify(data) }),
+  deletePost: (householdId: number, id: number) =>
+    request<void>(`/households/${householdId}/wall/${id}`, { method: 'DELETE' }),
+  completePost: (householdId: number, id: number) =>
+    request<WallPost>(`/households/${householdId}/wall/${id}/complete`, { method: 'POST' }),
+  reopenPost: (householdId: number, id: number) =>
+    request<WallPost>(`/households/${householdId}/wall/${id}/reopen`, { method: 'POST' }),
+  addReply: (householdId: number, postId: number, body: string) =>
+    request<WallReply>(`/households/${householdId}/wall/${postId}/replies`, { method: 'POST', body: JSON.stringify({ body }) }),
+  deleteReply: (householdId: number, replyId: number) =>
+    request<void>(`/households/${householdId}/replies/${replyId}`, { method: 'DELETE' }),
 
   notifications: () => request<Notification[]>('/notifications'),
   markRead: (ids: number[]) => request<{ updated: number }>('/notifications/read', { method: 'POST', body: JSON.stringify({ ids }) }),

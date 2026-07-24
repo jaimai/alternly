@@ -150,6 +150,33 @@ class Settlement(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
 
+class WallPost(Base):
+    __tablename__ = "wall_posts"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    household_id: Mapped[int] = mapped_column(ForeignKey("households.id"))
+    author_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    kind: Mapped[str] = mapped_column(String)  # message | task | question
+    body: Mapped[str] = mapped_column(String)
+    child_id: Mapped[int | None] = mapped_column(ForeignKey("children.id"), nullable=True)
+    due_date: Mapped[date | None] = mapped_column(Date, nullable=True)  # tâche datée
+    assigned_to: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)  # fait / résolu
+    completed_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    edited_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+
+class WallReply(Base):
+    __tablename__ = "wall_replies"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    post_id: Mapped[int] = mapped_column(ForeignKey("wall_posts.id"))
+    author_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    body: Mapped[str] = mapped_column(String)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+
 class Invitation(Base):
     __tablename__ = "invitations"
 
