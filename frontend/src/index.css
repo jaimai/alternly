@@ -240,6 +240,19 @@ label {
   background: var(--pine-soft);
 }
 
+.trial-chip {
+  background: var(--terra-soft);
+  color: #8c4a2c;
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 999px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .trial-chip:hover { background: #f0d3c4; }
+}
+
 .topbar .icon-link {
   display: inline-flex;
   padding: 6px;

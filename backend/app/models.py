@@ -28,6 +28,13 @@ class User(Base):
     email_opt_in: Mapped[bool] = mapped_column(Boolean, default=True)
     onboarding_seen: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    # Abonnement Paddle. status : trialing | active | past_due | canceled | none.
+    subscription_status: Mapped[str] = mapped_column(String, default="trialing")
+    trial_ends_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    # Accès payé jusqu'à (fin de période) ; permet de garder l'accès après résiliation.
+    subscription_ends_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    paddle_customer_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    paddle_subscription_id: Mapped[str | None] = mapped_column(String, nullable=True)
 
 
 class Household(Base):

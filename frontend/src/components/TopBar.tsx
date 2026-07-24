@@ -1,11 +1,13 @@
 import { Link, NavLink } from 'react-router-dom'
 import { useAuth } from '../auth'
+import { openCheckout } from '../billing'
 import NotificationBell from './NotificationBell'
 
 const navClass = ({ isActive }: { isActive: boolean }) => (isActive ? 'active' : undefined)
 
 export default function TopBar({ householdName }: { householdName?: string }) {
-  const { logout } = useAuth()
+  const { logout, user, billing, refreshBilling } = useAuth()
+  const trialDays = billing?.status === 'trialing' ? billing.trial_days_left : null
   return (
     <div className="topbar">
       <Link to="/" className="wordmark small" style={{ textDecoration: 'none' }} title={householdName}>
@@ -22,6 +24,15 @@ export default function TopBar({ householdName }: { householdName?: string }) {
           Mur
         </NavLink>
       </nav>
+      {trialDays !== null && user && (
+        <button
+          className="trial-chip"
+          onClick={() => openCheckout(user, refreshBilling)}
+          title="S'abonner"
+        >
+          Essai&nbsp;: {trialDays}&nbsp;j · S'abonner
+        </button>
+      )}
       <NotificationBell />
       <Link to="/settings" title="Réglages" className="icon-link" aria-label="Réglages">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

@@ -19,6 +19,11 @@ _ADD_COLUMNS: dict[str, dict[str, str]] = {
     "users": {
         "email_opt_in": "BOOLEAN",
         "onboarding_seen": "BOOLEAN",
+        "subscription_status": "VARCHAR",
+        "trial_ends_at": "DATETIME",
+        "subscription_ends_at": "DATETIME",
+        "paddle_customer_id": "VARCHAR",
+        "paddle_subscription_id": "VARCHAR",
     },
 }
 
@@ -49,3 +54,7 @@ def run_migrations(engine: Engine) -> None:
             conn.execute(text("UPDATE users SET email_opt_in = TRUE WHERE email_opt_in IS NULL"))
             # Comptes existants : déjà onboardés, on ne leur montre pas le tour.
             conn.execute(text("UPDATE users SET onboarding_seen = TRUE WHERE onboarding_seen IS NULL"))
+            # Comptes antérieurs à Paddle : accès accordé (pré-lancement).
+            conn.execute(
+                text("UPDATE users SET subscription_status = 'active' WHERE subscription_status IS NULL")
+            )

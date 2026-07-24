@@ -17,6 +17,11 @@ class Settings(BaseSettings):
     # Secret protégeant l'endpoint cron des rappels. Vide → endpoint désactivé.
     cron_secret: str = ""
 
+    # Paiement Paddle (Merchant of Record). Durée de l'essai gratuit en jours.
+    trial_days: int = 14
+    paddle_webhook_secret: str = ""  # vérifie la signature des webhooks Paddle
+    paddle_api_key: str = ""  # appels API serveur (optionnel)
+
     @property
     def cors_origin_list(self) -> list[str]:
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]

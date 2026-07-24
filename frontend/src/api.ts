@@ -1,5 +1,6 @@
 import type {
   Balance,
+  BillingStatus,
   CalendarResponse,
   Child,
   CustodyRule,
@@ -177,6 +178,8 @@ export const api = {
     request<WallReply>(`/households/${householdId}/wall/${postId}/replies`, { method: 'POST', body: JSON.stringify({ body }) }),
   deleteReply: (householdId: number, replyId: number) =>
     request<void>(`/households/${householdId}/replies/${replyId}`, { method: 'DELETE' }),
+
+  billingStatus: () => request<BillingStatus>('/billing/status'),
 
   notifications: () => request<Notification[]>('/notifications'),
   markRead: (ids: number[]) => request<{ updated: number }>('/notifications/read', { method: 'POST', body: JSON.stringify({ ids }) }),

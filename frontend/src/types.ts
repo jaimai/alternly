@@ -7,6 +7,14 @@ export interface User {
   onboarding_seen: boolean
 }
 
+export interface BillingStatus {
+  status: 'trialing' | 'active' | 'past_due' | 'canceled' | 'none'
+  access: boolean
+  trial_days_left: number | null
+  trial_ends_at: string | null
+  subscription_ends_at: string | null
+}
+
 export interface Member {
   id: number
   display_name: string

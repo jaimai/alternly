@@ -2,9 +2,12 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from datetime import timedelta
+
 from ..auth import create_token, get_current_user, hash_password, verify_password
+from ..config import settings
 from ..db import get_db
-from ..models import User
+from ..models import User, utcnow
 from ..schemas import Token, UserCreate, UserLogin, UserOut, UserUpdate
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
@@ -22,6 +25,8 @@ def register(data: UserCreate, db: Session = Depends(get_db)):
         password_hash=hash_password(data.password),
         display_name=data.display_name,
         color=data.color,
+        subscription_status="trialing",
+        trial_ends_at=utcnow() + timedelta(days=settings.trial_days),
     )
     db.add(user)
     db.commit()
