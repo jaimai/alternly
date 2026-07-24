@@ -6,6 +6,8 @@ from fastapi.responses import HTMLResponse, PlainTextResponse, Response
 from fastapi.templating import Jinja2Templates
 
 from ..config import settings
+from ..legal import PAGES as LEGAL_PAGES
+from ..legal import UPDATED as LEGAL_UPDATED
 from ..services.blog import load_articles, render_article
 
 router = APIRouter(tags=["marketing"])
@@ -56,6 +58,24 @@ _AI_AGENTS = [
 ]
 
 
+@router.get("/terms", response_class=HTMLResponse, include_in_schema=False)
+@router.get("/privacy", response_class=HTMLResponse, include_in_schema=False)
+@router.get("/refund", response_class=HTMLResponse, include_in_schema=False)
+def legal_page(request: Request):
+    slug = request.url.path.strip("/")
+    page = LEGAL_PAGES[slug]
+    return templates.TemplateResponse(
+        request,
+        "legal.html",
+        {
+            "page_title": page["title"],
+            "eyebrow": page["eyebrow"],
+            "body": page["body"],
+            "updated": LEGAL_UPDATED,
+        },
+    )
+
+
 @router.get("/robots.txt", response_class=PlainTextResponse, include_in_schema=False)
 def robots(request: Request):
     base = str(request.base_url).rstrip("/")
@@ -72,6 +92,8 @@ def sitemap(request: Request):
     entries = [(f"{base}/", None, "1.0"), (f"{base}/blog", None, "0.7")]
     for a in load_articles():
         entries.append((f"{base}/blog/{a.slug}", a.date.isoformat(), "0.6"))
+    for slug in ("terms", "privacy", "refund"):
+        entries.append((f"{base}/{slug}", None, "0.3"))
     items = "\n".join(
         "  <url><loc>{}</loc>{}<priority>{}</priority></url>".format(
             loc, f"<lastmod>{lastmod}</lastmod>" if lastmod else "", prio
