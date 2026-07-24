@@ -43,5 +43,6 @@ def run_migrations(engine: Engine) -> None:
                 text("UPDATE schedule_exceptions SET response_note = '' WHERE response_note IS NULL")
             )
         # Les comptes existants reçoivent les e-mails par défaut.
+        # TRUE (et non 1) : Postgres est strict sur le type booléen, SQLite l'accepte aussi.
         if "users" in existing_tables:
-            conn.execute(text("UPDATE users SET email_opt_in = 1 WHERE email_opt_in IS NULL"))
+            conn.execute(text("UPDATE users SET email_opt_in = TRUE WHERE email_opt_in IS NULL"))

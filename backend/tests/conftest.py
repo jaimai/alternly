@@ -1,3 +1,10 @@
+import os
+
+# Hermétique : jamais la vraie base. Doit être défini AVANT d'importer app.config
+# (les variables d'environnement priment sur le fichier .env dans pydantic-settings).
+os.environ["DATABASE_URL"] = "sqlite://"
+os.environ["SECRET_KEY"] = "test-secret-key-uniquement-pour-les-tests"
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
