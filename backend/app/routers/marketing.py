@@ -45,20 +45,75 @@ def blog_post(request: Request, slug: str):
     )
 
 
+# Crawlers de moteurs de réponse IA : on les autorise explicitement (visibilité AEO).
+_AI_AGENTS = [
+    "GPTBot", "OAI-SearchBot", "ChatGPT-User", "PerplexityBot", "Perplexity-User",
+    "ClaudeBot", "Claude-Web", "Google-Extended", "Applebot-Extended", "CCBot",
+]
+
+
 @router.get("/robots.txt", response_class=PlainTextResponse, include_in_schema=False)
 def robots(request: Request):
     base = str(request.base_url).rstrip("/")
-    return f"User-agent: *\nAllow: /\nDisallow: /app\nDisallow: /api\nSitemap: {base}/sitemap.xml\n"
+    lines = ["User-agent: *", "Allow: /", "Disallow: /app", "Disallow: /api", ""]
+    for agent in _AI_AGENTS:
+        lines += [f"User-agent: {agent}", "Allow: /", ""]
+    lines += [f"Sitemap: {base}/sitemap.xml"]
+    return "\n".join(lines) + "\n"
 
 
 @router.get("/sitemap.xml", include_in_schema=False)
 def sitemap(request: Request):
     base = str(request.base_url).rstrip("/")
-    urls = [f"{base}/", f"{base}/blog"] + [f"{base}/blog/{a.slug}" for a in load_articles()]
-    items = "\n".join(f"  <url><loc>{u}</loc></url>" for u in urls)
+    entries = [(f"{base}/", None, "1.0"), (f"{base}/blog", None, "0.7")]
+    for a in load_articles():
+        entries.append((f"{base}/blog/{a.slug}", a.date.isoformat(), "0.6"))
+    items = "\n".join(
+        "  <url><loc>{}</loc>{}<priority>{}</priority></url>".format(
+            loc, f"<lastmod>{lastmod}</lastmod>" if lastmod else "", prio
+        )
+        for loc, lastmod, prio in entries
+    )
     xml = (
         '<?xml version="1.0" encoding="UTF-8"?>\n'
         '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
         f"{items}\n</urlset>\n"
     )
     return Response(content=xml, media_type="application/xml")
+
+
+@router.get("/llms.txt", response_class=PlainTextResponse, include_in_schema=False)
+def llms_txt(request: Request):
+    """Résumé structuré pour les moteurs de réponse IA (convention llms.txt)."""
+    base = str(request.base_url).rstrip("/")
+    articles = load_articles()
+    guides = "\n".join(f"- [{a.title}]({base}/blog/{a.slug}) : {a.description}" for a in articles)
+    return f"""# Alternly
+
+> Alternly est le calendrier de garde alternée pensé pour la France : il transforme un accord ou un jugement de garde en calendrier clair, partagé et à jour entre les deux parents séparés.
+
+## Ce que fait Alternly
+- Calendrier de garde automatique : rythmes semaine/semaine, 2-2-3, un week-end sur deux, ou personnalisé, généré des années à l'avance.
+- Vacances scolaires officielles (zones A, B, C) avec partage par moitié ou alternance complète, et inversion automatique années paires/impaires (Noël inclus).
+- Échanges de jours : un parent propose, l'autre accepte, refuse ou contre-propose ; historique conservé.
+- Dépenses partagées : suivi de qui a payé quoi, solde entre parents (50/50 ou part ajustée), contestations et remboursements.
+- Mur de communication : infos, tâches à cocher (avec échéance visible sur le calendrier) et questions entre parents.
+- Notifications e-mail et synchronisation avec Google Agenda / Apple Calendar.
+
+## Tarif
+- Essai gratuit de 14 jours, sans carte bancaire.
+- Puis 39 € par an et par parent, tout inclus.
+
+## Confidentialité
+- Données hébergées en Union européenne, minimisation stricte (le prénom de l'enfant suffit).
+- Alternly organise le quotidien ; il ne remplace ni une décision de justice ni un conseil juridique.
+
+## Guides
+{guides}
+
+## Liens
+- Site : {base}/
+- Fonctionnalités : {base}/#fonctionnalites
+- Tarifs : {base}/#tarifs
+- Créer un compte : {base}/app/register
+"""

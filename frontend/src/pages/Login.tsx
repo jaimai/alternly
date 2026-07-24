@@ -32,7 +32,7 @@ export default function LoginPage() {
   return (
     <div className="auth-page">
       <div className="brand">
-        <div className="wordmark">co<span>parent</span></div>
+        <div className="wordmark">altern<span>ly</span></div>
         <p>Le calendrier de garde partagée</p>
       </div>
       <form className="card" onSubmit={submit}>

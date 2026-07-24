@@ -5,6 +5,7 @@ import { useAuth } from '../auth'
 import CalendarView from '../components/CalendarView'
 import ExceptionDialog from '../components/ExceptionDialog'
 import TopBar from '../components/TopBar'
+import WelcomeTour from '../components/WelcomeTour'
 import type { CalendarResponse, Household, ScheduleException } from '../types'
 
 function todayIso(offset = 0): string {
@@ -62,6 +63,7 @@ export default function CalendarPage() {
 
   return (
     <>
+      {user && !user.onboarding_seen && <WelcomeTour />}
       <TopBar householdName={household?.name} />
       <div className="layout">
         {error && <div className="error">{error}</div>}
@@ -126,7 +128,7 @@ export default function CalendarPage() {
         )}
         {household?.members.length === 1 && (
           <div className="info-banner" style={{ marginTop: 12 }}>
-            Vous utilisez Coparent en solo pour l'instant. Invitez l'autre parent depuis les{' '}
+            Vous utilisez Alternly en solo pour l'instant. Invitez l'autre parent depuis les{' '}
             <a href="/app/settings">réglages</a> pour partager ce calendrier.
           </div>
         )}

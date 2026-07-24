@@ -35,7 +35,7 @@ from .routers import notifications as notifications_router
 from .routers import rules as rules_router
 from .routers import wall as wall_router
 
-app = FastAPI(title="Coparent", lifespan=lifespan)
+app = FastAPI(title="Alternly", lifespan=lifespan)
 app.include_router(auth_router.router)
 app.include_router(household_router.router)
 app.include_router(children_router.router)

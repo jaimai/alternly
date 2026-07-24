@@ -1,5 +1,46 @@
 {% extends "base.html" %}
-{% block title %}Coparent — Le calendrier de garde alternée pensé pour la France{% endblock %}
+{% block title %}Alternly — Le calendrier de garde alternée pensé pour la France{% endblock %}
+{% block description %}Alternly transforme votre accord de garde en calendrier clair et partagé : rythmes de garde, vacances scolaires A/B/C, années paires/impaires, échanges de jours, dépenses partagées et mur de communication. Essai 14 jours gratuit.{% endblock %}
+{% block head %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Comment sont gérées les années paires et impaires ?",
+      "acceptedAnswer": {"@type": "Answer", "text": "Vous indiquez une seule fois qui a la première moitié des vacances les années paires. Alternly applique la règle à toutes les périodes, y compris les vacances de Noël qui chevauchent deux années : c'est l'année du début des vacances qui compte."}
+    },
+    {
+      "@type": "Question",
+      "name": "Combien coûte Alternly ?",
+      "acceptedAnswer": {"@type": "Answer", "text": "Alternly est gratuit pendant 14 jours, sans carte bancaire. Ensuite l'abonnement est de 39 € par an et par parent, tout inclus : calendrier, échanges de jours, dépenses partagées, mur de communication et synchronisation."}
+    },
+    {
+      "@type": "Question",
+      "name": "Peut-on partager les dépenses des enfants ?",
+      "acceptedAnswer": {"@type": "Answer", "text": "Oui. Chaque parent note ce qu'il a payé (santé, école, activités…), Alternly calcule le solde entre les deux parents (50/50 ou part ajustée) et permet d'enregistrer les remboursements."}
+    },
+    {
+      "@type": "Question",
+      "name": "Et si l'autre parent n'utilise pas l'application ?",
+      "acceptedAnswer": {"@type": "Answer", "text": "Alternly fonctionne très bien en solo : votre calendrier reste juste et exportable. Vous pourrez inviter l'autre parent plus tard, en un lien."}
+    },
+    {
+      "@type": "Question",
+      "name": "Les dates de vacances sont-elles fiables ?",
+      "acceptedAnswer": {"@type": "Answer", "text": "Elles proviennent du calendrier scolaire officiel publié par l'Éducation nationale (zones A, B et C), mis à jour automatiquement."}
+    },
+    {
+      "@type": "Question",
+      "name": "Le calendrier a-t-il une valeur juridique ?",
+      "acceptedAnswer": {"@type": "Answer", "text": "Alternly organise le quotidien et conserve l'historique des changements, mais ne remplace ni une décision de justice ni un conseil juridique."}
+    }
+  ]
+}
+</script>
+{% endblock %}
 {% block content %}
 <section class="hero">
   <div class="wrap hero-grid">
@@ -7,13 +48,13 @@
       <p class="eyebrow reveal">Pour les parents séparés</p>
       <h1 class="reveal d1">Qui a les enfants<br/><em>cette semaine&nbsp;?</em></h1>
       <p class="lede reveal d2">
-        Semaine paire, zone B, moitié des vacances, un mercredi échangé… Coparent transforme
+        Semaine paire, zone B, moitié des vacances, un mercredi échangé… Alternly transforme
         votre jugement ou votre accord en <strong>calendrier clair, partagé et à jour</strong> —
         des années à l'avance.
       </p>
       <div class="hero-actions reveal d3">
-        <a class="cta big" href="/app/register">Créer mon calendrier gratuit</a>
-        <span class="hint">2 minutes · sans carte bancaire</span>
+        <a class="cta big" href="/app/register">Essayer gratuitement</a>
+        <span class="hint">14 jours offerts · sans carte bancaire</span>
       </div>
       <ul class="trust reveal d4">
         <li>🇫🇷 Vacances scolaires officielles A/B/C</li>
@@ -50,17 +91,62 @@
       <article>
         <h3>📅 Le rythme, posé une fois pour toutes</h3>
         <p>Semaine/semaine, 2-2-3, un week-end sur deux ou votre rythme à vous :
-        Coparent génère le calendrier sur plusieurs années, jour de passage compris.</p>
+        Alternly génère le calendrier sur plusieurs années, jour de passage compris.</p>
       </article>
       <article>
         <h3>🏖️ Les vacances, enfin limpides</h3>
         <p>Dates officielles de votre zone, partage par moitié ou alternance complète,
-        inversion automatique années paires/impaires. Noël compris.</p>
+        inversion automatique années paires/impaires. Noël alterné compris.</p>
       </article>
       <article>
         <h3>🤝 Le même calendrier pour les deux foyers</h3>
         <p>Chaque parent voit la même chose, reçoit une notification à chaque changement,
         et garde une trace des échanges de jours. Neutre, factuel, apaisé.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="features" id="fonctionnalites">
+  <div class="wrap">
+    <p class="eyebrow center">Tout au même endroit</p>
+    <h2 class="center">Bien plus qu'un calendrier</h2>
+    <div class="feature-rows">
+      <article class="feature-row">
+        <div class="feature-icon">↔️</div>
+        <div>
+          <h3>Échanges de jours, proposés et acceptés</h3>
+          <p>Besoin d'un mercredi&nbsp;? Proposez l'échange en deux clics. L'autre parent
+          l'accepte, le refuse ou contre-propose — et le calendrier se met à jour tout seul,
+          avec l'historique. Fini les «&nbsp;on avait dit quoi déjà&nbsp;?&nbsp;».</p>
+        </div>
+      </article>
+      <article class="feature-row">
+        <div class="feature-icon">💶</div>
+        <div>
+          <h3>Dépenses partagées &amp; solde clair</h3>
+          <p>Cantine, lunettes, foot… chacun note ce qu'il a payé. Alternly calcule qui doit
+          combien (50/50 ou part ajustée), gère les contestations et les remboursements.
+          Un solde, pas une dispute.</p>
+        </div>
+      </article>
+      <article class="feature-row">
+        <div class="feature-icon">📝</div>
+        <div>
+          <h3>Mur de communication</h3>
+          <p>Les devoirs à rendre, les démarches d'école, une question à l'autre parent&nbsp;:
+          un fil partagé avec tâches à cocher et échéances. Les tâches datées apparaissent
+          directement sur le calendrier.</p>
+        </div>
+      </article>
+      <article class="feature-row">
+        <div class="feature-icon">🔔</div>
+        <div>
+          <h3>Notifications &amp; synchronisation</h3>
+          <p>Un e-mail dès qu'une proposition d'échange arrive, un rappel avant échéance,
+          et un lien privé pour synchroniser tout le calendrier avec Google Agenda ou
+          Apple Calendar.</p>
+        </div>
       </article>
     </div>
   </div>
@@ -78,18 +164,55 @@
   </div>
 </section>
 
+<section class="pricing" id="tarifs">
+  <div class="wrap narrow">
+    <p class="eyebrow center">Tarif simple</p>
+    <h2 class="center">Un prix, tout compris</h2>
+    <div class="price-card">
+      <div class="price-head">
+        <span class="price-amount">39&nbsp;€</span>
+        <span class="price-per">/ an et par parent</span>
+      </div>
+      <p class="price-trial">✨ 14 jours d'essai gratuit — sans carte bancaire</p>
+      <ul class="price-list">
+        <li>Calendrier de garde illimité, des années à l'avance</li>
+        <li>Vacances scolaires A/B/C &amp; alternance années paires/impaires</li>
+        <li>Échanges de jours proposés / acceptés</li>
+        <li>Dépenses partagées &amp; solde entre parents</li>
+        <li>Mur de communication (infos, tâches, questions)</li>
+        <li>Notifications e-mail &amp; synchronisation Google / Apple</li>
+        <li>Données hébergées en Union européenne</li>
+      </ul>
+      <a class="cta big" href="/app/register">Démarrer mon essai gratuit</a>
+      <p class="hint center">Sans engagement — résiliable à tout moment.</p>
+    </div>
+  </div>
+</section>
+
 <section class="faq">
   <div class="wrap narrow">
     <h2>Questions fréquentes</h2>
     <details>
       <summary>Comment sont gérées les années paires et impaires&nbsp;?</summary>
       <p>Vous indiquez une seule fois qui a la première moitié des vacances les années paires.
-      Coparent applique la règle à toutes les périodes — y compris les vacances de Noël qui
+      Alternly applique la règle à toutes les périodes — y compris les vacances de Noël qui
       chevauchent deux années : c'est l'année du début des vacances qui compte.</p>
     </details>
     <details>
+      <summary>Combien coûte Alternly&nbsp;?</summary>
+      <p>Alternly est gratuit pendant 14 jours, sans carte bancaire. Ensuite l'abonnement est de
+      39&nbsp;€ par an et par parent, tout inclus : calendrier, échanges de jours, dépenses
+      partagées, mur de communication et synchronisation.</p>
+    </details>
+    <details>
+      <summary>Peut-on partager les dépenses des enfants&nbsp;?</summary>
+      <p>Oui. Chaque parent note ce qu'il a payé (santé, école, activités…), Alternly calcule le
+      solde entre les deux parents (50/50 ou part ajustée) et permet d'enregistrer les
+      remboursements.</p>
+    </details>
+    <details>
       <summary>Et si l'autre parent n'utilise pas l'application&nbsp;?</summary>
-      <p>Coparent fonctionne très bien en solo : votre calendrier reste juste et exportable.
+      <p>Alternly fonctionne très bien en solo : votre calendrier reste juste et exportable.
       Vous pourrez inviter l'autre parent plus tard, en un lien.</p>
     </details>
     <details>
@@ -99,7 +222,7 @@
     </details>
     <details>
       <summary>Le calendrier a-t-il une valeur juridique&nbsp;?</summary>
-      <p>Coparent organise le quotidien et conserve l'historique des changements, mais ne remplace
+      <p>Alternly organise le quotidien et conserve l'historique des changements, mais ne remplace
       ni une décision de justice ni un conseil juridique.</p>
     </details>
     <details>
@@ -113,7 +236,7 @@
 <section class="final-cta">
   <div class="wrap center">
     <h2>Moins de messages, moins de malentendus.<br/>Un seul calendrier.</h2>
-    <a class="cta big" href="/app/register">Créer mon calendrier gratuit</a>
+    <a class="cta big" href="/app/register">Essayer Alternly gratuitement</a>
   </div>
 </section>
 {% endblock %}

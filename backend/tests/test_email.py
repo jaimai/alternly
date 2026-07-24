@@ -136,3 +136,11 @@ class TestCronReminders:
         sent.clear()
         r = client.post("/api/cron/exchange-reminders", headers={"X-Cron-Key": "s3cr3t"})
         assert r.json()["sent"] == 0
+
+
+class TestOnboardingFlag:
+    def test_default_false_and_patch(self, client, auth_headers):
+        headers, user = auth_headers()
+        assert client.get("/api/auth/me", headers=headers).json()["onboarding_seen"] is False
+        r = client.patch("/api/auth/me", json={"onboarding_seen": True}, headers=headers)
+        assert r.status_code == 200 and r.json()["onboarding_seen"] is True

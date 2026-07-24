@@ -8,7 +8,7 @@ class Settings(BaseSettings):
 
     # Notifications e-mail (Resend). Vide → envoi désactivé (no-op).
     resend_api_key: str = ""
-    email_from: str = "Coparent <no-reply@coparent.fr>"
+    email_from: str = "Alternly <no-reply@alternly.com>"
     app_base_url: str = "http://localhost:8000"
     # Secret protégeant l'endpoint cron des rappels. Vide → endpoint désactivé.
     cron_secret: str = ""

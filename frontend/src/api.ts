@@ -74,7 +74,7 @@ export const api = {
   login: (data: { email: string; password: string }) =>
     request<TokenResponse>('/auth/login', { method: 'POST', body: JSON.stringify(data) }),
   me: () => request<User>('/auth/me'),
-  updateMe: (data: { display_name?: string; color?: string; email_opt_in?: boolean }) =>
+  updateMe: (data: { display_name?: string; color?: string; email_opt_in?: boolean; onboarding_seen?: boolean }) =>
     request<User>('/auth/me', { method: 'PATCH', body: JSON.stringify(data) }),
 
   createHousehold: (data: { name: string; school_zone: string }) =>

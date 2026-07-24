@@ -56,7 +56,7 @@ def _layout(intro: str, cta_label: str, cta_path: str) -> str:
         f"<p>{intro}</p>"
         f'<p style="margin:24px 0">{_button(cta_label, cta_path)}</p>'
         '<p style="color:#5d6b63;font-size:0.85rem">Vous recevez cet e-mail car votre coparent utilise '
-        "Coparent. Vous pouvez couper ces e-mails dans vos réglages.</p>"
+        "Alternly. Vous pouvez couper ces e-mails dans vos réglages.</p>"
         "</div>"
     )
 
@@ -73,7 +73,7 @@ def exchange_proposed_email(payload: dict) -> tuple[str, str]:
     note = f" Note : « {html.escape(raw_note)} »." if raw_note else ""
     intro = (
         f"Votre coparent vous propose un échange de garde ({period})." + note +
-        " Ouvrez Coparent pour l'accepter ou le refuser."
+        " Ouvrez Alternly pour l'accepter ou le refuser."
     )
     return "Nouvelle proposition d'échange de garde", _layout(intro, "Voir la proposition", "/app/")
 

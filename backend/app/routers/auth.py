@@ -50,6 +50,8 @@ def update_me(data: UserUpdate, user: User = Depends(get_current_user), db: Sess
         user.color = data.color
     if data.email_opt_in is not None:
         user.email_opt_in = data.email_opt_in
+    if data.onboarding_seen is not None:
+        user.onboarding_seen = data.onboarding_seen
     db.add(user)
     db.commit()
     db.refresh(user)

@@ -1,4 +1,4 @@
-/* Coparent — app. Même direction que la landing : « papier chaleureux ».
+/* Alternly — app. Même direction que la landing : « papier chaleureux ».
    Fraunces (display) + Instrument Sans (texte). Sapin #1f4d3f, terracotta #c96f4a.
    Motion : ease-out marqués, < 300ms, feedback au press, reduced-motion respecté. */
 
@@ -414,6 +414,40 @@ label {
     transform: scale(0.96) translateY(8px);
     opacity: 0;
   }
+}
+
+.modal.tour {
+  text-align: center;
+  width: min(440px, 92vw);
+}
+
+.modal.tour .tour-icon {
+  font-size: 2.6rem;
+  margin-bottom: 6px;
+}
+
+.modal.tour p {
+  color: var(--ink-soft);
+}
+
+.tour-dots {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  margin-top: 18px;
+}
+
+.tour-dots span {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--line);
+  transition: width 250ms var(--ease-out), background 250ms ease;
+}
+
+.tour-dots span.active {
+  width: 24px;
+  background: var(--pine);
 }
 
 .notif-panel {

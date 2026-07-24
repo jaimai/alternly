@@ -41,12 +41,14 @@ class UserOut(ORMModel):
     display_name: str
     color: str
     email_opt_in: bool
+    onboarding_seen: bool
 
 
 class UserUpdate(BaseModel):
     display_name: str | None = Field(default=None, min_length=1, max_length=50)
     color: str | None = Field(default=None, pattern=COLOR_PATTERN)
     email_opt_in: bool | None = None
+    onboarding_seen: bool | None = None
 
 
 class Token(BaseModel):

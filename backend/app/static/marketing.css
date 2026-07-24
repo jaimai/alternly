@@ -1,4 +1,4 @@
-/* Coparent — marketing. Direction : « papier chaleureux », éditorial et apaisant.
+/* Alternly — marketing. Direction : « papier chaleureux », éditorial et apaisant.
    Fraunces (display) + Instrument Sans (texte). Sapin #1f4d3f, terracotta #c96f4a. */
 
 :root {
@@ -164,6 +164,44 @@ h2 { font-size: clamp(1.6rem, 3.2vw, 2.3rem); }
 .cards3 h3 { font-size: 1.15rem; }
 .cards3 p { color: var(--ink-soft); margin: 0; font-size: 0.97rem; }
 
+/* ---------- features ---------- */
+.features { padding: 72px 0; background: var(--paper-deep); border-block: 1px solid var(--line); }
+.features .eyebrow.center, .pricing .eyebrow.center { text-align: center; }
+.feature-rows { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; margin-top: 34px; }
+.feature-row {
+  display: flex; gap: 18px; align-items: flex-start;
+  background: #fff; border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 24px 26px;
+  transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.2s ease-out;
+}
+.feature-row:hover { transform: translateY(-3px); box-shadow: var(--shadow); }
+.feature-icon {
+  flex: 0 0 auto; width: 46px; height: 46px; border-radius: 12px;
+  display: grid; place-items: center; font-size: 1.4rem;
+  background: var(--sage);
+}
+.feature-row h3 { font-size: 1.12rem; margin: 2px 0 6px; }
+.feature-row p { color: var(--ink-soft); margin: 0; font-size: 0.96rem; }
+
+/* ---------- pricing ---------- */
+.pricing { padding: 80px 0; }
+.price-card {
+  background: #fff; border: 1px solid var(--line); border-radius: var(--radius);
+  box-shadow: var(--shadow); padding: 36px; margin-top: 28px; text-align: center;
+}
+.price-head { display: flex; align-items: baseline; justify-content: center; gap: 8px; }
+.price-amount { font-family: var(--font-display); font-size: 3.4rem; color: var(--pine); line-height: 1; }
+.price-per { color: var(--ink-soft); font-size: 1rem; }
+.price-trial {
+  display: inline-block; margin: 14px 0 22px;
+  background: var(--terra-soft); color: #8c4a2c;
+  border-radius: 999px; padding: 6px 16px; font-weight: 600; font-size: 0.92rem;
+}
+.price-list { list-style: none; padding: 0; margin: 0 auto 26px; text-align: left; max-width: 30em; }
+.price-list li { padding: 8px 0 8px 30px; position: relative; color: var(--ink); border-bottom: 1px solid var(--line); }
+.price-list li::before { content: '✓'; position: absolute; left: 4px; color: var(--pine); font-weight: 700; }
+.price-list li:last-child { border-bottom: none; }
+
 .how { padding: 56px 0 72px; background: var(--paper-deep); border-block: 1px solid var(--line); }
 .steps { list-style: none; counter-reset: step; padding: 0; margin: 34px 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; }
 .steps li { counter-increment: step; }
@@ -277,9 +315,10 @@ h2 { font-size: clamp(1.6rem, 3.2vw, 2.3rem); }
 
 /* ---------- responsive ---------- */
 @media (max-width: 860px) {
-  .hero-grid, .cards3, .steps { grid-template-columns: 1fr; }
+  .hero-grid, .cards3, .steps, .feature-rows { grid-template-columns: 1fr; }
   .hero { padding-top: 44px; }
   .hero-visual { max-width: 420px; }
   .site-footer .wrap { grid-template-columns: 1fr; gap: 20px; }
   .nav-links a.ghost { display: none; }
+  .nav-links a:not(.cta) { display: none; }
 }

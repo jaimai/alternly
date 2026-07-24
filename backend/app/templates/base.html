@@ -3,23 +3,72 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>{% block title %}Coparent{% endblock %}</title>
-  <meta name="description" content="{% block description %}Le calendrier de garde alternée pensé pour la France : vacances scolaires zones A/B/C, années paires et impaires, partage entre les deux parents.{% endblock %}" />
+  <title>{% block title %}Alternly{% endblock %}</title>
+  <meta name="description" content="{% block description %}Alternly : le calendrier de garde alternée pensé pour la France. Vacances scolaires zones A/B/C, années paires et impaires, dépenses partagées et mur de communication entre les deux parents.{% endblock %}" />
+  <link rel="canonical" href="{{ request.url }}" />
+
+  <!-- Open Graph / Twitter -->
+  <meta property="og:site_name" content="Alternly" />
+  <meta property="og:locale" content="fr_FR" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="{% block og_title %}{{ self.title() }}{% endblock %}" />
+  <meta property="og:description" content="{{ self.description() }}" />
+  <meta property="og:url" content="{{ request.url }}" />
+  <meta property="og:image" content="{{ request.base_url }}static/favicon.svg" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="{{ self.title() }}" />
+  <meta name="twitter:description" content="{{ self.description() }}" />
+  <meta name="theme-color" content="#1f4d3f" />
+
   {% block head %}{% endblock %}
+
   <link rel="icon" href="/static/favicon.svg" type="image/svg+xml" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/static/marketing.css" />
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "{{ request.base_url }}#organization",
+        "name": "Alternly",
+        "url": "{{ request.base_url }}",
+        "description": "Calendrier de garde alternée et outils de coparentalité pour parents séparés en France.",
+        "areaServed": "FR"
+      },
+      {
+        "@type": "SoftwareApplication",
+        "name": "Alternly",
+        "operatingSystem": "Web, iOS, Android",
+        "applicationCategory": "LifestyleApplication",
+        "url": "{{ request.base_url }}",
+        "inLanguage": "fr-FR",
+        "description": "Calendrier de garde partagée : rythmes de garde, vacances scolaires A/B/C, alternance années paires/impaires, échanges de jours, dépenses partagées et mur de communication.",
+        "offers": {
+          "@type": "Offer",
+          "price": "39.00",
+          "priceCurrency": "EUR",
+          "description": "Abonnement annuel par parent, après 14 jours d'essai gratuit sans carte bancaire."
+        }
+      }
+    ]
+  }
+  </script>
 </head>
 <body>
   <header class="site-header">
     <nav class="wrap">
-      <a class="logo" href="/">co<span>parent</span></a>
+      <a class="logo" href="/">altern<span>ly</span></a>
       <div class="nav-links">
+        <a href="/#fonctionnalites">Fonctionnalités</a>
+        <a href="/#tarifs">Tarifs</a>
         <a href="/blog">Guides</a>
         <a href="/app/login" class="ghost">Se connecter</a>
-        <a href="/app/register" class="cta">Créer mon calendrier</a>
+        <a href="/app/register" class="cta">Essayer gratuitement</a>
       </div>
     </nav>
   </header>
@@ -29,17 +78,19 @@
   <footer class="site-footer">
     <div class="wrap">
       <div>
-        <span class="logo small">co<span>parent</span></span>
+        <span class="logo small">altern<span>ly</span></span>
         <p>Le calendrier de garde partagée, pensé pour la France.<br/>Données hébergées en Union européenne.</p>
       </div>
       <div>
-        <strong>Ressources</strong>
+        <strong>Produit</strong>
+        <a href="/#fonctionnalites">Fonctionnalités</a>
+        <a href="/#tarifs">Tarifs</a>
         <a href="/blog">Guides &amp; articles</a>
         <a href="/app/register">Créer un compte</a>
       </div>
       <div>
-        <strong>Coparent</strong>
-        <p class="fine">Coparent organise le quotidien ; il ne remplace ni une décision de justice ni un conseil juridique.</p>
+        <strong>Alternly</strong>
+        <p class="fine">Alternly organise le quotidien ; il ne remplace ni une décision de justice ni un conseil juridique.</p>
       </div>
     </div>
   </footer>

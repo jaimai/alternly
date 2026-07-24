@@ -4,6 +4,7 @@ export interface User {
   display_name: string
   color: string
   email_opt_in: boolean
+  onboarding_seen: boolean
 }
 
 export interface Member {

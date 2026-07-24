@@ -26,6 +26,7 @@ class User(Base):
     color: Mapped[str] = mapped_column(String, default="#4f7cac")
     ical_token: Mapped[str] = mapped_column(String, unique=True, default=new_token)
     email_opt_in: Mapped[bool] = mapped_column(Boolean, default=True)
+    onboarding_seen: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
 

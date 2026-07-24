@@ -24,7 +24,7 @@ def build_ics(days: list[DayAssignment], parent_names: dict[str, str], token: st
     lines = [
         "BEGIN:VCALENDAR",
         "VERSION:2.0",
-        "PRODID:-//Coparent//Calendrier de garde//FR",
+        "PRODID:-//Alternly//Calendrier de garde//FR",
         "CALSCALE:GREGORIAN",
         "X-WR-CALNAME:Garde des enfants",
     ]
@@ -33,7 +33,7 @@ def build_ics(days: list[DayAssignment], parent_names: dict[str, str], token: st
         dtend = end + timedelta(days=1)  # DTEND exclusif
         lines += [
             "BEGIN:VEVENT",
-            f"UID:{token}-{start.isoformat()}@coparent",
+            f"UID:{token}-{start.isoformat()}@alternly",
             f"DTSTAMP:{start.strftime('%Y%m%d')}T000000Z",
             f"DTSTART;VALUE=DATE:{start.strftime('%Y%m%d')}",
             f"DTEND;VALUE=DATE:{dtend.strftime('%Y%m%d')}",

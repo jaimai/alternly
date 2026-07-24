@@ -40,7 +40,7 @@ def ical_feed(ical_token: str, db: Session = Depends(get_db)):
     return Response(
         content=ics,
         media_type="text/calendar; charset=utf-8",
-        headers={"Content-Disposition": 'attachment; filename="coparent.ics"'},
+        headers={"Content-Disposition": 'attachment; filename="alternly.ics"'},
     )
 
 

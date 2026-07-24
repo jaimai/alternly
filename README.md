@@ -1,4 +1,4 @@
-# Coparent 🗓️
+# Alternly 🗓️
 
 Calendrier de garde partagée pour parents séparés, pensé pour la France :
 rythmes de garde (semaine/semaine, 2-2-3, un week-end sur deux, personnalisé),

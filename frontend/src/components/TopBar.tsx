@@ -9,7 +9,7 @@ export default function TopBar({ householdName }: { householdName?: string }) {
   return (
     <div className="topbar">
       <Link to="/" className="wordmark small" style={{ textDecoration: 'none' }} title={householdName}>
-        co<span>parent</span>
+        altern<span>ly</span>
       </Link>
       <nav className="topnav" style={{ marginRight: 'auto' }}>
         <NavLink to="/" end className={navClass}>

@@ -18,6 +18,7 @@ _ADD_COLUMNS: dict[str, dict[str, str]] = {
     },
     "users": {
         "email_opt_in": "BOOLEAN",
+        "onboarding_seen": "BOOLEAN",
     },
 }
 
@@ -46,3 +47,5 @@ def run_migrations(engine: Engine) -> None:
         # TRUE (et non 1) : Postgres est strict sur le type booléen, SQLite l'accepte aussi.
         if "users" in existing_tables:
             conn.execute(text("UPDATE users SET email_opt_in = TRUE WHERE email_opt_in IS NULL"))
+            # Comptes existants : déjà onboardés, on ne leur montre pas le tour.
+            conn.execute(text("UPDATE users SET onboarding_seen = TRUE WHERE onboarding_seen IS NULL"))
