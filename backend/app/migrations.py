@@ -24,6 +24,11 @@ _ADD_COLUMNS: dict[str, dict[str, str]] = {
         "subscription_ends_at": "TIMESTAMP",
         "paddle_customer_id": "VARCHAR",
         "paddle_subscription_id": "VARCHAR",
+        "is_placeholder": "BOOLEAN",
+    },
+    "expenses": {
+        "settled_at": "TIMESTAMP",
+        "settled_by": "INTEGER",
     },
 }
 
@@ -58,3 +63,5 @@ def run_migrations(engine: Engine) -> None:
             conn.execute(
                 text("UPDATE users SET subscription_status = 'active' WHERE subscription_status IS NULL")
             )
+            # Comptes réels existants : ce ne sont pas des parents fantômes.
+            conn.execute(text("UPDATE users SET is_placeholder = FALSE WHERE is_placeholder IS NULL"))

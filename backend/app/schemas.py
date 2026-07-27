@@ -62,6 +62,12 @@ class MemberOut(ORMModel):
     display_name: str
     color: str
     role: str
+    is_placeholder: bool = False
+
+
+class PartnerUpdate(BaseModel):
+    display_name: str = Field(min_length=1, max_length=50)
+    color: str | None = Field(default=None, pattern=COLOR_PATTERN)
 
 
 class ChildIn(BaseModel):
@@ -253,6 +259,7 @@ class ExpenseOut(ORMModel):
     payer_percent: int
     status: str
     dispute_note: str
+    settled_at: datetime | None = None
     created_by: int
 
 
@@ -288,6 +295,9 @@ class BalanceOut(BaseModel):
     debtor_id: int | None
     creditor_id: int | None
     amount_cents: int
+    # Visu rapide, du point de vue du parent qui interroge (dépenses ouvertes).
+    owed_to_me_cents: int = 0  # ce qu'on me doit (à me faire rembourser)
+    i_owe_cents: int = 0       # ce que je dois (à payer)
 
 
 class WallPostIn(BaseModel):

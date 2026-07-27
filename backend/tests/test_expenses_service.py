@@ -1,7 +1,7 @@
 """Calcul de solde entre deux parents (service pur, sans I/O)."""
 from dataclasses import dataclass
 
-from app.services.expenses_service import compute_balance, owed_to_payer
+from app.services.expenses_service import compute_balance, outstanding_for, owed_to_payer
 
 
 @dataclass
@@ -10,6 +10,7 @@ class Exp:
     amount_cents: int
     payer_percent: int = 50
     status: str = "active"
+    settled_at: object = None
 
 
 @dataclass
@@ -84,3 +85,30 @@ class TestComputeBalance:
         bal = compute_balance([], [], MEMBERS)
         assert bal.amount_cents == 0
         assert bal.debtor_id is None and bal.creditor_id is None
+
+    def test_settled_expense_excluded(self):
+        # une dépense marquée remboursée ne pèse plus dans le solde
+        exps = [
+            Exp(paid_by=A, amount_cents=1000),
+            Exp(paid_by=A, amount_cents=2000, settled_at="2026-07-20T10:00:00"),
+        ]
+        bal = compute_balance(exps, [], MEMBERS)
+        assert bal.amount_cents == 500  # seule la dépense non réglée compte
+
+
+class TestOutstanding:
+    def test_gross_directional_amounts(self):
+        # A a avancé 1000 (B lui doit 500) ; B a avancé 400 (A lui doit 200).
+        exps = [Exp(paid_by=A, amount_cents=1000), Exp(paid_by=B, amount_cents=400)]
+        owed_to_me, i_owe = outstanding_for(exps, me_id=A, other_id=B)
+        assert owed_to_me == 500  # ce qu'on me doit
+        assert i_owe == 200       # ce que je dois
+
+    def test_ignores_settled_and_disputed(self):
+        exps = [
+            Exp(paid_by=A, amount_cents=1000),
+            Exp(paid_by=A, amount_cents=2000, settled_at="x"),
+            Exp(paid_by=A, amount_cents=4000, status="disputed"),
+        ]
+        owed_to_me, i_owe = outstanding_for(exps, me_id=A, other_id=B)
+        assert owed_to_me == 500 and i_owe == 0

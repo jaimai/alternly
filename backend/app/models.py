@@ -27,6 +27,10 @@ class User(Base):
     ical_token: Mapped[str] = mapped_column(String, unique=True, default=new_token)
     email_opt_in: Mapped[bool] = mapped_column(Boolean, default=True)
     onboarding_seen: Mapped[bool] = mapped_column(Boolean, default=False)
+    # Second parent « fantôme » : créé automatiquement pour un foyer solo afin
+    # de pouvoir lui assigner des dépenses avant qu'il n'ait un vrai compte.
+    # Ne peut pas se connecter ; réclamé (claim) quand le vrai parent rejoint.
+    is_placeholder: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
     # Abonnement Paddle. status : trialing | active | past_due | canceled | none.
     subscription_status: Mapped[str] = mapped_column(String, default="trialing")
@@ -140,6 +144,9 @@ class Expense(Base):
     payer_percent: Mapped[int] = mapped_column(Integer, default=50)  # part à charge du payeur
     status: Mapped[str] = mapped_column(String, default="active")  # active | disputed
     dispute_note: Mapped[str] = mapped_column(String, default="")
+    # Marquée remboursée : sortie des soldes, indépendante des Settlements globaux.
+    settled_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    settled_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
     created_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 

@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from ..db import get_db
 from ..deps import get_membership, household_members, notify, other_parent_id, require_premium
-from ..models import Child, Expense, HouseholdMember, Settlement
+from ..models import Child, Expense, HouseholdMember, Settlement, utcnow
 from ..schemas import (
     EXPENSE_CATEGORIES,
     BalanceNet,
@@ -17,7 +17,7 @@ from ..schemas import (
     SettlementIn,
     SettlementOut,
 )
-from ..services.expenses_service import compute_balance
+from ..services.expenses_service import compute_balance, outstanding_for
 
 # Fonctionnalité premium : tout le routeur exige un abonnement.
 router = APIRouter(
@@ -176,6 +176,36 @@ def resolve_expense(
     return exp
 
 
+@router.post("/expenses/{expense_id}/settle", response_model=ExpenseOut)
+def settle_expense(
+    expense_id: int,
+    member: HouseholdMember = Depends(get_membership),
+    db: Session = Depends(get_db),
+):
+    """Marque une dépense comme remboursée : elle sort des soldes."""
+    exp = _get_expense(db, member, expense_id)
+    exp.settled_at = utcnow()
+    exp.settled_by = member.user_id
+    notify(db, other_parent_id(db, member.household_id, member.user_id), "expense_settled", _exp_payload(exp))
+    db.commit()
+    db.refresh(exp)
+    return exp
+
+
+@router.post("/expenses/{expense_id}/unsettle", response_model=ExpenseOut)
+def unsettle_expense(
+    expense_id: int,
+    member: HouseholdMember = Depends(get_membership),
+    db: Session = Depends(get_db),
+):
+    exp = _get_expense(db, member, expense_id)
+    exp.settled_at = None
+    exp.settled_by = None
+    db.commit()
+    db.refresh(exp)
+    return exp
+
+
 # ---------- remboursements ----------
 
 @router.get("/settlements", response_model=list[SettlementOut])
@@ -241,9 +271,13 @@ def get_balance(member: HouseholdMember = Depends(get_membership), db: Session =
     expenses = db.scalars(select(Expense).where(Expense.household_id == member.household_id)).all()
     settlements = db.scalars(select(Settlement).where(Settlement.household_id == member.household_id)).all()
     bal = compute_balance(expenses, settlements, member_ids)
+    other_id = next((uid for uid in member_ids if uid != member.user_id), None)
+    owed_to_me, i_owe = outstanding_for(expenses, member.user_id, other_id) if other_id else (0, 0)
     return BalanceOut(
         net=[BalanceNet(user_id=uid, amount_cents=v) for uid, v in bal.net.items()],
         debtor_id=bal.debtor_id,
         creditor_id=bal.creditor_id,
         amount_cents=bal.amount_cents,
+        owed_to_me_cents=owed_to_me,
+        i_owe_cents=i_owe,
     )

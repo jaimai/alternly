@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from ..auth import get_current_user
 from ..db import get_db
 from ..deps import get_membership, household_members, notify
+from ..services.parents import claim_placeholder, ensure_second_parent
 from ..models import (
     Child,
     CustodyRule,
@@ -27,6 +28,7 @@ from ..schemas import (
     InvitationOut,
     InvitationPreview,
     MemberOut,
+    PartnerUpdate,
 )
 
 router = APIRouter(prefix="/api", tags=["household"])
@@ -42,10 +44,19 @@ DEFAULT_SPECIAL_RULES = [
 
 def _member_out(db: Session, m: HouseholdMember) -> MemberOut:
     user = db.get(User, m.user_id)
-    return MemberOut(id=user.id, display_name=user.display_name, color=user.color, role=m.role)
+    return MemberOut(
+        id=user.id,
+        display_name=user.display_name,
+        color=user.color,
+        role=m.role,
+        is_placeholder=user.is_placeholder,
+    )
 
 
 def _household_out(db: Session, household: Household, my_user_id: int) -> HouseholdOut:
+    # Foyers solo (y compris antérieurs) : on garantit un second parent (placeholder).
+    if ensure_second_parent(db, household.id) is not None:
+        db.commit()
     members = household_members(db, household.id)
     my_role = next((m.role for m in members if m.user_id == my_user_id), None)
     return HouseholdOut(
@@ -105,9 +116,41 @@ def update_household(
     return _household_out(db, household, member.user_id)
 
 
+def _real_members(db: Session, household_id: int) -> list[HouseholdMember]:
+    """Membres réels (hors placeholder), pour les décomptes d'invitation."""
+    out = []
+    for m in household_members(db, household_id):
+        u = db.get(User, m.user_id)
+        if u is not None and not u.is_placeholder:
+            out.append(m)
+    return out
+
+
+@router.patch("/households/{household_id}/partner", response_model=MemberOut)
+def rename_partner(
+    data: PartnerUpdate,
+    member: HouseholdMember = Depends(get_membership),
+    db: Session = Depends(get_db),
+):
+    """Nomme le second parent placeholder (ex. « Camille ») tant qu'il n'a pas de compte."""
+    ensure_second_parent(db, member.household_id)
+    ghost_member = next(
+        (m for m in household_members(db, member.household_id) if db.get(User, m.user_id).is_placeholder),
+        None,
+    )
+    if ghost_member is None:
+        raise HTTPException(status_code=409, detail="Le second parent a déjà un compte")
+    ghost = db.get(User, ghost_member.user_id)
+    ghost.display_name = data.display_name
+    if data.color is not None:
+        ghost.color = data.color
+    db.commit()
+    return _member_out(db, ghost_member)
+
+
 @router.post("/households/{household_id}/invitations", response_model=InvitationOut, status_code=201)
 def create_invitation(member: HouseholdMember = Depends(get_membership), db: Session = Depends(get_db)):
-    if len(household_members(db, member.household_id)) >= 2:
+    if len(_real_members(db, member.household_id)) >= 2:
         raise HTTPException(status_code=409, detail="Le foyer a déjà deux parents")
     invitation = Invitation(
         household_id=member.household_id,
@@ -147,10 +190,12 @@ def accept_invitation(token: str, user: User = Depends(get_current_user), db: Se
     members = household_members(db, invitation.household_id)
     if any(m.user_id == user.id for m in members):
         raise HTTPException(status_code=409, detail="Vous êtes déjà membre de ce foyer")
-    if len(members) >= 2:
+    if len(_real_members(db, invitation.household_id)) >= 2:
         raise HTTPException(status_code=409, detail="Le foyer a déjà deux parents")
     if db.scalar(select(HouseholdMember).where(HouseholdMember.user_id == user.id)):
         raise HTTPException(status_code=409, detail="Vous appartenez déjà à un autre foyer")
+    # Le vrai parent réclame le placeholder (hérite des dépenses/tâches assignées).
+    claim_placeholder(db, invitation.household_id, user.id)
     db.add(HouseholdMember(household_id=invitation.household_id, user_id=user.id, role="parent2"))
     invitation.used_at = utcnow()
     notify(db, invitation.invited_by, "parent_joined", {"display_name": user.display_name})

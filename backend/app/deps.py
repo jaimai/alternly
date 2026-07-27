@@ -70,9 +70,13 @@ def household_members(db: Session, household_id: int) -> list[HouseholdMember]:
 
 
 def other_parent_id(db: Session, household_id: int, user_id: int) -> int | None:
+    """L'autre parent *réel* du foyer (destinataire de notifications/e-mails).
+    Ignore le second parent placeholder, qui ne peut ni agir ni être notifié."""
     for m in household_members(db, household_id):
         if m.user_id != user_id:
-            return m.user_id
+            u = db.get(User, m.user_id)
+            if u is not None and not u.is_placeholder:
+                return m.user_id
     return None
 
 
