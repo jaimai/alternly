@@ -36,3 +36,25 @@ class TestAuth:
         resp = client.patch("/api/auth/me", json={"color": "#aa3355"}, headers=headers)
         assert resp.status_code == 200
         assert resp.json()["color"] == "#aa3355"
+
+    def test_locale_defaults_to_fr(self, client, auth_headers):
+        _, user = auth_headers()
+        assert user["locale"] == "fr"
+
+    def test_register_detects_english_from_accept_language(self, client):
+        resp = client.post(
+            "/api/auth/register",
+            json={"email": "us@example.com", "password": "motdepasse1", "display_name": "Sam"},
+            headers={"Accept-Language": "en-US,en;q=0.9"},
+        )
+        assert resp.status_code == 201
+        assert resp.json()["user"]["locale"] == "en"
+
+    def test_update_locale(self, client, auth_headers):
+        headers, _ = auth_headers()
+        resp = client.patch("/api/auth/me", json={"locale": "en"}, headers=headers)
+        assert resp.status_code == 200 and resp.json()["locale"] == "en"
+
+    def test_reject_unknown_locale(self, client, auth_headers):
+        headers, _ = auth_headers()
+        assert client.patch("/api/auth/me", json={"locale": "de"}, headers=headers).status_code == 422

@@ -1,4 +1,5 @@
 from datetime import date, datetime
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
@@ -42,6 +43,7 @@ class UserOut(ORMModel):
     color: str
     email_opt_in: bool
     onboarding_seen: bool
+    locale: str
 
 
 class UserUpdate(BaseModel):
@@ -49,6 +51,7 @@ class UserUpdate(BaseModel):
     color: str | None = Field(default=None, pattern=COLOR_PATTERN)
     email_opt_in: bool | None = None
     onboarding_seen: bool | None = None
+    locale: Literal["fr", "en"] | None = None
 
 
 class Token(BaseModel):

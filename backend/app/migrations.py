@@ -25,6 +25,7 @@ _ADD_COLUMNS: dict[str, dict[str, str]] = {
         "paddle_customer_id": "VARCHAR",
         "paddle_subscription_id": "VARCHAR",
         "is_placeholder": "BOOLEAN",
+        "locale": "VARCHAR",
     },
     "expenses": {
         "settled_at": "TIMESTAMP",
@@ -65,3 +66,5 @@ def run_migrations(engine: Engine) -> None:
             )
             # Comptes réels existants : ce ne sont pas des parents fantômes.
             conn.execute(text("UPDATE users SET is_placeholder = FALSE WHERE is_placeholder IS NULL"))
+            # Comptes existants : langue française par défaut.
+            conn.execute(text("UPDATE users SET locale = 'fr' WHERE locale IS NULL"))

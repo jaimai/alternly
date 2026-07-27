@@ -27,6 +27,7 @@ class User(Base):
     ical_token: Mapped[str] = mapped_column(String, unique=True, default=new_token)
     email_opt_in: Mapped[bool] = mapped_column(Boolean, default=True)
     onboarding_seen: Mapped[bool] = mapped_column(Boolean, default=False)
+    locale: Mapped[str] = mapped_column(String, default="fr")  # langue de l'UI : fr | en
     # Second parent « fantôme » : créé automatiquement pour un foyer solo afin
     # de pouvoir lui assigner des dépenses avant qu'il n'ait un vrai compte.
     # Ne peut pas se connecter ; réclamé (claim) quand le vrai parent rejoint.
