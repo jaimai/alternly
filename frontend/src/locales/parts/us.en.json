@@ -14,5 +14,6 @@
   "settings.breakNamePlaceholder": "e.g. Winter Break",
   "settings.breakStartLabel": "Start",
   "settings.breakEndLabel": "End",
-  "settings.addBreak": "Add break"
+  "settings.addBreak": "Add break",
+  "settings.delete": "Delete"
 }

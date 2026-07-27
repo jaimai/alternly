@@ -265,6 +265,7 @@
   "settings.copy": "Copy",
   "settings.copyLink": "Copy link",
   "settings.createInviteLink": "Create an invitation link",
+  "settings.delete": "Delete",
   "settings.emailOptIn": "Receive an email for swap proposals and their reminders",
   "settings.emailsOff": "Emails turned off ✓",
   "settings.emailsOn": "Emails turned on ✓",

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { api, ApiError } from '../api'
@@ -17,7 +17,14 @@ export default function OnboardingPage() {
   const [household, setHousehold] = useState<Household | null>(null)
   const [name, setName] = useState('')
   const [country, setCountry] = useState<Country>(i18n.language.startsWith('en') ? 'US' : 'FR')
+  const countryTouched = useRef(false)
   const [zone, setZone] = useState<'A' | 'B' | 'C'>('A')
+
+  // Défaut du pays selon la langue du compte, une fois l'utilisateur chargé
+  // (sauf si le parent a déjà choisi manuellement).
+  useEffect(() => {
+    if (!countryTouched.current && user?.locale) setCountry(user.locale === 'en' ? 'US' : 'FR')
+  }, [user?.locale])
   const [childName, setChildName] = useState('')
   const [childNames, setChildNames] = useState<string[]>([])
   const [error, setError] = useState<string | null>(null)
@@ -131,7 +138,14 @@ export default function OnboardingPage() {
           <label htmlFor="hname">{t('onboarding.householdNameLabel')}</label>
           <input id="hname" value={name} onChange={(e) => setName(e.target.value)} placeholder={t('onboarding.householdNamePlaceholder')} />
           <label htmlFor="country">{t('onboarding.countryLabel')}</label>
-          <select id="country" value={country} onChange={(e) => setCountry(e.target.value as Country)}>
+          <select
+            id="country"
+            value={country}
+            onChange={(e) => {
+              countryTouched.current = true
+              setCountry(e.target.value as Country)
+            }}
+          >
             <option value="FR">{t('onboarding.countryFR')}</option>
             <option value="US">{t('onboarding.countryUS')}</option>
           </select>

@@ -14,5 +14,6 @@
   "settings.breakNamePlaceholder": "ex. Winter Break",
   "settings.breakStartLabel": "Début",
   "settings.breakEndLabel": "Fin",
-  "settings.addBreak": "Ajouter le congé"
+  "settings.addBreak": "Ajouter le congé",
+  "settings.delete": "Supprimer"
 }
