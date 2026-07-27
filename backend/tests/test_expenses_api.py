@@ -2,7 +2,7 @@
 from sqlalchemy import select
 
 from app.models import Notification
-from tests.test_rules import setup_family
+from tests.test_rules import premium_family
 
 
 def add_expense(client, headers, hid, *, amount=1000, paid_by=None, label="Cantine", percent=50):
@@ -14,7 +14,7 @@ def add_expense(client, headers, hid, *, amount=1000, paid_by=None, label="Canti
 
 class TestExpenseCrud:
     def test_create_defaults_paid_by_creator_and_notifies(self, client, auth_headers, db_session):
-        headers1, user1, headers2, user2, h = setup_family(client, auth_headers)
+        headers1, user1, headers2, user2, h = premium_family(client, auth_headers, db_session)
         resp = add_expense(client, headers1, h["id"])
         assert resp.status_code == 201, resp.text
         body = resp.json()
@@ -25,8 +25,8 @@ class TestExpenseCrud:
         ).all()
         assert len(notifs) == 1
 
-    def test_invalid_amount_rejected(self, client, auth_headers):
-        headers1, user1, _, _, h = setup_family(client, auth_headers)
+    def test_invalid_amount_rejected(self, client, auth_headers, db_session):
+        headers1, user1, _, _, h = premium_family(client, auth_headers, db_session)
         resp = client.post(
             f"/api/households/{h['id']}/expenses",
             json={"label": "x", "amount_cents": 0, "date": "2026-07-10", "category": "autre"},
@@ -34,8 +34,8 @@ class TestExpenseCrud:
         )
         assert resp.status_code == 422
 
-    def test_invalid_category_rejected(self, client, auth_headers):
-        headers1, user1, _, _, h = setup_family(client, auth_headers)
+    def test_invalid_category_rejected(self, client, auth_headers, db_session):
+        headers1, user1, _, _, h = premium_family(client, auth_headers, db_session)
         resp = client.post(
             f"/api/households/{h['id']}/expenses",
             json={"label": "x", "amount_cents": 500, "date": "2026-07-10", "category": "licorne"},
@@ -43,8 +43,8 @@ class TestExpenseCrud:
         )
         assert resp.status_code == 422
 
-    def test_creator_edits_and_deletes(self, client, auth_headers):
-        headers1, user1, headers2, user2, h = setup_family(client, auth_headers)
+    def test_creator_edits_and_deletes(self, client, auth_headers, db_session):
+        headers1, user1, headers2, user2, h = premium_family(client, auth_headers, db_session)
         eid = add_expense(client, headers1, h["id"]).json()["id"]
         patch = client.patch(f"/api/households/{h['id']}/expenses/{eid}", json={"amount_cents": 2000}, headers=headers1)
         assert patch.status_code == 200 and patch.json()["amount_cents"] == 2000
@@ -56,7 +56,7 @@ class TestExpenseCrud:
 
 class TestDispute:
     def test_non_payer_disputes_and_excluded_from_balance(self, client, auth_headers, db_session):
-        headers1, user1, headers2, user2, h = setup_family(client, auth_headers)
+        headers1, user1, headers2, user2, h = premium_family(client, auth_headers, db_session)
         eid = add_expense(client, headers1, h["id"], amount=1000).json()["id"]
         # avant contestation : B doit 500
         bal = client.get(f"/api/households/{h['id']}/balance", headers=headers1).json()
@@ -71,14 +71,14 @@ class TestDispute:
         ).all()
         assert len(notifs) == 1
 
-    def test_payer_cannot_dispute_own(self, client, auth_headers):
-        headers1, user1, headers2, user2, h = setup_family(client, auth_headers)
+    def test_payer_cannot_dispute_own(self, client, auth_headers, db_session):
+        headers1, user1, headers2, user2, h = premium_family(client, auth_headers, db_session)
         eid = add_expense(client, headers1, h["id"]).json()["id"]
         resp = client.post(f"/api/households/{h['id']}/expenses/{eid}/dispute", json={}, headers=headers1)
         assert resp.status_code == 403
 
-    def test_resolve_reactivates(self, client, auth_headers):
-        headers1, user1, headers2, user2, h = setup_family(client, auth_headers)
+    def test_resolve_reactivates(self, client, auth_headers, db_session):
+        headers1, user1, headers2, user2, h = premium_family(client, auth_headers, db_session)
         eid = add_expense(client, headers1, h["id"]).json()["id"]
         client.post(f"/api/households/{h['id']}/expenses/{eid}/dispute", json={}, headers=headers2)
         r = client.post(f"/api/households/{h['id']}/expenses/{eid}/resolve", json={}, headers=headers1)
@@ -87,7 +87,7 @@ class TestDispute:
 
 class TestSettlements:
     def test_settlement_updates_balance_and_notifies(self, client, auth_headers, db_session):
-        headers1, user1, headers2, user2, h = setup_family(client, auth_headers)
+        headers1, user1, headers2, user2, h = premium_family(client, auth_headers, db_session)
         add_expense(client, headers1, h["id"], amount=1000)  # B doit 500 à A
         s = client.post(
             f"/api/households/{h['id']}/settlements",
@@ -102,8 +102,8 @@ class TestSettlements:
         ).all()
         assert len(notifs) == 1
 
-    def test_creator_deletes_settlement(self, client, auth_headers):
-        headers1, user1, headers2, user2, h = setup_family(client, auth_headers)
+    def test_creator_deletes_settlement(self, client, auth_headers, db_session):
+        headers1, user1, headers2, user2, h = premium_family(client, auth_headers, db_session)
         sid = client.post(
             f"/api/households/{h['id']}/settlements",
             json={"from_user": user2["id"], "to_user": user1["id"], "amount_cents": 500, "date": "2026-07-12"},
@@ -113,9 +113,13 @@ class TestSettlements:
 
 
 class TestIsolation:
-    def test_other_household_cannot_read(self, client, auth_headers):
-        headers1, user1, headers2, user2, h = setup_family(client, auth_headers)
+    def test_other_household_cannot_read(self, client, auth_headers, db_session):
+        headers1, user1, headers2, user2, h = premium_family(client, auth_headers, db_session)
         add_expense(client, headers1, h["id"])
-        stranger, _ = auth_headers(email="stranger@test.fr", name="X")
+        stranger, stranger_user = auth_headers(email="stranger@test.fr", name="X")
+        # stranger premium (sinon 402 avant le contrôle d'appartenance) : on teste l'isolation.
+        from app.models import User
+        db_session.get(User, stranger_user["id"]).subscription_status = "active"
+        db_session.commit()
         resp = client.get(f"/api/households/{h['id']}/expenses", headers=stranger)
         assert resp.status_code == 404

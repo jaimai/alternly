@@ -4,7 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ..db import get_db
-from ..deps import get_membership, household_members, notify, other_parent_id
+from ..deps import get_membership, household_members, notify, other_parent_id, require_premium
 from ..models import Child, HouseholdMember, WallPost, WallReply, utcnow
 from ..schemas import (
     WALL_KINDS,
@@ -15,7 +15,10 @@ from ..schemas import (
     WallReplyOut,
 )
 
-router = APIRouter(prefix="/api/households/{household_id}", tags=["wall"])
+# Fonctionnalité premium : tout le routeur exige un abonnement.
+router = APIRouter(
+    prefix="/api/households/{household_id}", tags=["wall"], dependencies=[Depends(require_premium)]
+)
 
 
 def _member_ids(db: Session, household_id: int) -> list[int]:

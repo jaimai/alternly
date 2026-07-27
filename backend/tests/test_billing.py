@@ -106,3 +106,25 @@ class TestBillingApi:
         s = client.get("/api/billing/status", headers=headers).json()
         assert s["status"] == "canceled"
         assert s["access"] is True  # payé jusqu'à 2027
+
+
+class TestPremiumEnforcement:
+    """Les endpoints premium renvoient 402 aux utilisateurs gratuits."""
+
+    def test_free_user_blocked_on_expenses(self, client, auth_headers):
+        from tests.test_household import create_household
+        headers, user = auth_headers()
+        h = create_household(client, headers)
+        r = client.get(f"/api/households/{h['id']}/expenses", headers=headers)
+        assert r.status_code == 402
+
+    def test_free_user_blocked_on_wall(self, client, auth_headers):
+        from tests.test_household import create_household
+        headers, user = auth_headers()
+        h = create_household(client, headers)
+        r = client.get(f"/api/households/{h['id']}/wall", headers=headers)
+        assert r.status_code == 402
+
+    def test_free_user_blocked_on_ical_regenerate(self, client, auth_headers):
+        headers, user = auth_headers()
+        assert client.post("/api/ical/regenerate", headers=headers).status_code == 402

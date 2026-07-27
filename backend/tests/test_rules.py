@@ -14,6 +14,18 @@ def setup_family(client, auth_headers):
     return headers1, user1, headers2, user2, h
 
 
+def premium_family(client, auth_headers, db_session):
+    """Comme setup_family mais les deux parents sont abonnés (fonctions premium)."""
+    from app.models import User
+
+    result = setup_family(client, auth_headers)
+    _, user1, _, user2, _ = result
+    for uid in (user1["id"], user2["id"]):
+        db_session.get(User, uid).subscription_status = "active"
+    db_session.commit()
+    return result
+
+
 class TestCustodyRule:
     def test_upsert(self, client, auth_headers):
         headers1, user1, _, _, h = setup_family(client, auth_headers)

@@ -4,8 +4,8 @@ from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from ..auth import get_current_user
 from ..db import get_db
+from ..deps import require_premium
 from ..models import Household, HouseholdMember, User, new_token
 from ..services.calendar_service import NoCustodyRule, build_calendar
 from ..services.ical_export import build_ics
@@ -45,7 +45,7 @@ def ical_feed(ical_token: str, db: Session = Depends(get_db)):
 
 
 @router.post("/regenerate")
-def regenerate(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def regenerate(user: User = Depends(require_premium), db: Session = Depends(get_db)):
     user.ical_token = new_token()
     db.commit()
     return {"ical_token": user.ical_token}

@@ -4,7 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ..db import get_db
-from ..deps import get_membership, household_members, notify, other_parent_id
+from ..deps import get_membership, household_members, notify, other_parent_id, require_premium
 from ..models import Child, Expense, HouseholdMember, Settlement
 from ..schemas import (
     EXPENSE_CATEGORIES,
@@ -19,7 +19,10 @@ from ..schemas import (
 )
 from ..services.expenses_service import compute_balance
 
-router = APIRouter(prefix="/api/households/{household_id}", tags=["expenses"])
+# Fonctionnalité premium : tout le routeur exige un abonnement.
+router = APIRouter(
+    prefix="/api/households/{household_id}", tags=["expenses"], dependencies=[Depends(require_premium)]
+)
 
 
 def _member_ids(db: Session, household_id: int) -> list[int]:

@@ -5,7 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ..db import get_db
-from ..deps import get_membership, household_members, notify, other_parent_id
+from ..deps import get_membership, household_members, is_premium, notify, other_parent_id
 from ..models import CustodyRule, HouseholdMember, ScheduleException, SpecialDayRule, User, VacationRule, utcnow
 from ..services import email as email_service
 from ..schemas import (
@@ -196,7 +196,7 @@ def create_exception(
         payload = _exchange_payload(exc)
         notify(db, recipient_id, "exchange_proposed", payload)
         recipient = db.get(User, recipient_id)
-        if recipient is not None and recipient.email_opt_in:
+        if recipient is not None and recipient.email_opt_in and is_premium(recipient):
             subject, html = email_service.exchange_proposed_email(payload)
             email_service.send_email(recipient.email, subject, html)
     db.commit()

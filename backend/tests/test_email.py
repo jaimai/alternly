@@ -5,7 +5,7 @@ import httpx
 import pytest
 
 from app.services import email as email_service
-from tests.test_rules import setup_family
+from tests.test_rules import premium_family
 
 
 @pytest.fixture
@@ -60,8 +60,8 @@ class TestTemplateEscaping:
 
 
 class TestProposalEmail:
-    def test_proposed_emails_recipient(self, client, auth_headers, sent):
-        headers1, user1, headers2, user2, h = setup_family(client, auth_headers)
+    def test_proposed_emails_recipient(self, client, auth_headers, db_session, sent):
+        headers1, user1, headers2, user2, h = premium_family(client, auth_headers, db_session)
         client.post(
             f"/api/households/{h['id']}/exceptions",
             json={"date_start": "2099-03-04", "date_end": "2099-03-04", "parent_id": user2["id"]},
@@ -70,8 +70,8 @@ class TestProposalEmail:
         assert len(sent) == 1
         assert sent[0]["to"] == "parent2@test.fr"
 
-    def test_no_email_when_opted_out(self, client, auth_headers, sent):
-        headers1, user1, headers2, user2, h = setup_family(client, auth_headers)
+    def test_no_email_when_opted_out(self, client, auth_headers, db_session, sent):
+        headers1, user1, headers2, user2, h = premium_family(client, auth_headers, db_session)
         # parent2 coupe ses e-mails
         r = client.patch("/api/auth/me", json={"email_opt_in": False}, headers=headers2)
         assert r.status_code == 200
@@ -87,8 +87,8 @@ class TestProposalEmail:
         headers, user = auth_headers()
         assert client.get("/api/auth/me", headers=headers).json()["email_opt_in"] is True
 
-    def test_accept_does_not_email(self, client, auth_headers, sent):
-        headers1, user1, headers2, user2, h = setup_family(client, auth_headers)
+    def test_accept_does_not_email(self, client, auth_headers, db_session, sent):
+        headers1, user1, headers2, user2, h = premium_family(client, auth_headers, db_session)
         eid = client.post(
             f"/api/households/{h['id']}/exceptions",
             json={"date_start": "2099-03-04", "date_end": "2099-03-04", "parent_id": user2["id"]},
@@ -108,9 +108,9 @@ class TestCronReminders:
             headers=headers,
         ).json()["id"]
 
-    def test_reminder_sent_once(self, client, auth_headers, sent, monkeypatch):
+    def test_reminder_sent_once(self, client, auth_headers, db_session, sent, monkeypatch):
         monkeypatch.setattr(email_service.settings, "cron_secret", "s3cr3t")
-        headers1, user1, headers2, user2, h = setup_family(client, auth_headers)
+        headers1, user1, headers2, user2, h = premium_family(client, auth_headers, db_session)
         self._propose_tomorrow(client, headers1, h, user2["id"])
         sent.clear()
         r = client.post("/api/cron/exchange-reminders", headers={"X-Cron-Key": "s3cr3t"})
@@ -123,14 +123,14 @@ class TestCronReminders:
         assert r2.json()["sent"] == 0
         assert sent == []
 
-    def test_reminder_wrong_key_401(self, client, auth_headers, monkeypatch):
+    def test_reminder_wrong_key_401(self, client, auth_headers, db_session, monkeypatch):
         monkeypatch.setattr(email_service.settings, "cron_secret", "s3cr3t")
         r = client.post("/api/cron/exchange-reminders", headers={"X-Cron-Key": "mauvais"})
         assert r.status_code == 401
 
-    def test_reminder_skips_opted_out(self, client, auth_headers, sent, monkeypatch):
+    def test_reminder_skips_opted_out(self, client, auth_headers, db_session, sent, monkeypatch):
         monkeypatch.setattr(email_service.settings, "cron_secret", "s3cr3t")
-        headers1, user1, headers2, user2, h = setup_family(client, auth_headers)
+        headers1, user1, headers2, user2, h = premium_family(client, auth_headers, db_session)
         client.patch("/api/auth/me", json={"email_opt_in": False}, headers=headers2)
         self._propose_tomorrow(client, headers1, h, user2["id"])
         sent.clear()
