@@ -1,19 +1,16 @@
 {
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "framework": "vite",
-  "buildCommand": "npm run build",
-  "outputDirectory": "dist",
-  "rewrites": [
-    { "source": "/", "destination": "https://web-production-d1aa3.up.railway.app/" },
-    { "source": "/blog", "destination": "https://web-production-d1aa3.up.railway.app/blog" },
-    { "source": "/blog/:path*", "destination": "https://web-production-d1aa3.up.railway.app/blog/:path*" },
-    { "source": "/terms", "destination": "https://web-production-d1aa3.up.railway.app/terms" },
-    { "source": "/privacy", "destination": "https://web-production-d1aa3.up.railway.app/privacy" },
-    { "source": "/refund", "destination": "https://web-production-d1aa3.up.railway.app/refund" },
-    { "source": "/robots.txt", "destination": "https://web-production-d1aa3.up.railway.app/robots.txt" },
-    { "source": "/sitemap.xml", "destination": "https://web-production-d1aa3.up.railway.app/sitemap.xml" },
-    { "source": "/llms.txt", "destination": "https://web-production-d1aa3.up.railway.app/llms.txt" },
-    { "source": "/static/:path*", "destination": "https://web-production-d1aa3.up.railway.app/static/:path*" },
-    { "source": "/(.*)", "destination": "/index.html" }
+  "routes": [
+    { "src": "/", "dest": "https://web-production-d1aa3.up.railway.app/" },
+    { "src": "/blog", "dest": "https://web-production-d1aa3.up.railway.app/blog" },
+    { "src": "/blog/(.*)", "dest": "https://web-production-d1aa3.up.railway.app/blog/$1" },
+    { "src": "/terms", "dest": "https://web-production-d1aa3.up.railway.app/terms" },
+    { "src": "/privacy", "dest": "https://web-production-d1aa3.up.railway.app/privacy" },
+    { "src": "/refund", "dest": "https://web-production-d1aa3.up.railway.app/refund" },
+    { "src": "/robots.txt", "dest": "https://web-production-d1aa3.up.railway.app/robots.txt" },
+    { "src": "/sitemap.xml", "dest": "https://web-production-d1aa3.up.railway.app/sitemap.xml" },
+    { "src": "/llms.txt", "dest": "https://web-production-d1aa3.up.railway.app/llms.txt" },
+    { "src": "/static/(.*)", "dest": "https://web-production-d1aa3.up.railway.app/static/$1" },
+    { "handle": "filesystem" },
+    { "src": "/(.*)", "dest": "/index.html" }
   ]
 }
