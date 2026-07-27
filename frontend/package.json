@@ -16,6 +16,7 @@
     "@fullcalendar/react": "^6.1.21",
     "@paddle/paddle-js": "^1.6.4",
     "@vercel/analytics": "^2.0.1",
+    "qrcode.react": "^4.2.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "react-router-dom": "^7.18.1"

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { api, API_BASE } from '../api'
+import { QRCodeSVG } from 'qrcode.react'
+import { api } from '../api'
 import { useAuth, usePremium } from '../auth'
 import { openCheckout } from '../billing'
 import Icon from '../components/Icon'
@@ -8,6 +9,7 @@ import RuleForm from '../components/RuleForm'
 import Spinner from '../components/Spinner'
 import type { RuleFormValue } from '../components/RuleForm'
 import TopBar from '../components/TopBar'
+import { isSolo } from '../members'
 import type { SpecialDayRule } from '../types'
 
 const SPECIAL_LABELS: Record<SpecialDayRule['kind'], string> = {
@@ -113,9 +115,10 @@ export default function SettingsPage() {
   async function getIcalUrl() {
     try {
       const { ical_token } = await api.regenerateIcal()
-      // Le flux iCal est servi par le backend : URL absolue vers l'API.
-      const apiOrigin = API_BASE.startsWith('http') ? API_BASE : `${window.location.origin}${API_BASE}`
-      setIcalUrl(`${apiOrigin}/ical/${ical_token}.ics`)
+      // URL de marque servie sous le domaine de l'app (alternly.com/ical/…),
+      // proxifiée vers le backend par Vercel. Plus lisible et stable qu'un lien
+      // vers le domaine Railway, et insensible à un changement d'hébergeur.
+      setIcalUrl(`${window.location.origin}/ical/${ical_token}.ics`)
     } catch (err) {
       fail(err)
     }
@@ -157,17 +160,28 @@ export default function SettingsPage() {
             <p key={m.id}>
               <span className="dot" style={{ background: m.color, display: 'inline-block', width: 12, height: 12, borderRadius: '50%', marginRight: 8 }} />
               {m.display_name} {m.id === user.id && '(vous)'}
+              {m.is_placeholder && <span className="hint"> · en attente d'inscription</span>}
             </p>
           ))}
-          {household.members.length < 2 && (
+          {isSolo(household.members) && (
             <>
               <p style={{ color: 'var(--ink-soft)' }}>
                 Invitez l'autre parent : il verra le même calendrier, sans pouvoir modifier votre profil.
               </p>
               {inviteUrl ? (
-                <div className="row">
-                  <input readOnly value={inviteUrl} onFocus={(e) => e.target.select()} />
-                  <button onClick={() => copy(inviteUrl)}>Copier</button>
+                <div className="invite-share">
+                  <div className="invite-qr">
+                    <QRCodeSVG value={inviteUrl} size={148} bgColor="#ffffff" fgColor="#1f4d3f" marginSize={2} />
+                  </div>
+                  <div className="invite-share-body">
+                    <p className="hint" style={{ marginTop: 0 }}>
+                      Faites scanner ce QR code avec le téléphone de l'autre parent, ou envoyez-lui le lien.
+                    </p>
+                    <div className="row">
+                      <input readOnly value={inviteUrl} onFocus={(e) => e.target.select()} />
+                      <button onClick={() => copy(inviteUrl)}>Copier le lien</button>
+                    </div>
+                  </div>
                 </div>
               ) : (
                 <button onClick={createInvite}>Créer un lien d'invitation</button>

@@ -876,6 +876,26 @@ label {
 .wall-check:hover { border-color: var(--pine); }
 .wall-check.checked { background: var(--pine); border-color: var(--pine); color: #fff; }
 
+/* Partage d'invitation : QR + lien */
+.invite-share {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+.invite-qr {
+  flex: 0 0 auto;
+  background: #fff;
+  padding: 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+  line-height: 0;
+}
+.invite-share-body {
+  flex: 1 1 240px;
+  min-width: 220px;
+}
+
 /* Reduced motion : on garde les fondus (opacité, couleurs), on retire le mouvement */
 @media (prefers-reduced-motion: reduce) {
   * {

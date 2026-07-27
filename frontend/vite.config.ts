@@ -8,6 +8,11 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': 'http://localhost:8000',
+      // Flux iCal de marque (/ical/…) → backend /api/ical/… (comme le proxy Vercel en prod)
+      '/ical': {
+        target: 'http://localhost:8000',
+        rewrite: (path) => path.replace(/^\/ical/, '/api/ical'),
+      },
     },
   },
 })

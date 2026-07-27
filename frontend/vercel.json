@@ -10,6 +10,7 @@
     { "src": "/sitemap.xml", "dest": "https://web-production-d1aa3.up.railway.app/sitemap.xml" },
     { "src": "/llms.txt", "dest": "https://web-production-d1aa3.up.railway.app/llms.txt" },
     { "src": "/static/(.*)", "dest": "https://web-production-d1aa3.up.railway.app/static/$1" },
+    { "src": "/ical/(.*)", "dest": "https://web-production-d1aa3.up.railway.app/api/ical/$1" },
     { "handle": "filesystem" },
     { "src": "/(.*)", "dest": "/index.html" }
   ]

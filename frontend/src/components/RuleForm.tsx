@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { isSolo } from '../members'
 import type { CustodyRule, Member, Pattern, VacationRule } from '../types'
 
 const PATTERN_OPTIONS: { value: Pattern; title: string; desc: string }[] = [
@@ -63,7 +64,7 @@ export default function RuleForm({ members, myId, initialCustody, initialVacatio
     initialVacation?.even_year_first_half_parent_id ?? myId,
   )
 
-  const soloNote = members.length < 2
+  const soloNote = isSolo(members)
 
   function toggleCustom(i: number) {
     setCustomWeeks((weeks) => weeks.map((v, j) => (j === i ? (v === 'ref' ? 'other' : 'ref') : v)))

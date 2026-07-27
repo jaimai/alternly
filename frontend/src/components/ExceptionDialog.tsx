@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { api } from '../api'
 import { useAuth } from '../auth'
+import { isSolo } from '../members'
 import type { Member, ScheduleException } from '../types'
 
 interface Props {
@@ -14,7 +15,7 @@ interface Props {
 
 export default function ExceptionDialog({ householdId, date, members, existing, onClose, onChanged }: Props) {
   const { user } = useAuth()
-  const solo = members.length < 2
+  const solo = isSolo(members)
 
   const [dateStart, setDateStart] = useState(date)
   const [dateEnd, setDateEnd] = useState(date)

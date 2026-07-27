@@ -7,6 +7,7 @@ import ExceptionDialog from '../components/ExceptionDialog'
 import Icon from '../components/Icon'
 import TopBar from '../components/TopBar'
 import WelcomeTour from '../components/WelcomeTour'
+import { isSolo } from '../members'
 import type { CalendarResponse, ScheduleException } from '../types'
 
 function todayIso(offset = 0): string {
@@ -132,7 +133,7 @@ export default function CalendarPage() {
             }
           />
         )}
-        {household?.members.length === 1 && (
+        {household && isSolo(household.members) && (
           <div className="info-banner" style={{ marginTop: 12 }}>
             Vous utilisez Alternly en solo pour l'instant. Invitez l'autre parent depuis les{' '}
             <a href="/settings">réglages</a> pour partager ce calendrier.
