@@ -289,6 +289,37 @@ label {
   border-radius: 999px;
 }
 
+.plan-toggle {
+  display: flex;
+  gap: 8px;
+  margin: 16px 0 4px;
+}
+.plan-toggle button {
+  flex: 1;
+  background: var(--surface);
+  color: var(--ink);
+  border: 1.5px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 10px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-weight: 500;
+}
+.plan-toggle button strong {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  color: var(--pine);
+}
+.plan-toggle button span {
+  font-size: 0.72rem;
+  color: var(--ink-soft);
+}
+.plan-toggle button.active {
+  border-color: var(--pine);
+  background: var(--pine-soft);
+}
+
 .premium-tag {
   display: inline-block;
   background: var(--terra-soft);

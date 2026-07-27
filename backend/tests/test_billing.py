@@ -128,3 +128,17 @@ class TestPremiumEnforcement:
     def test_free_user_blocked_on_ical_regenerate(self, client, auth_headers):
         headers, user = auth_headers()
         assert client.post("/api/ical/regenerate", headers=headers).status_code == 402
+
+
+class TestHouseholdPremium:
+    def test_premium_propagates_to_household(self, client, auth_headers, db_session):
+        from app.models import User
+        from tests.test_rules import setup_family
+
+        headers1, user1, headers2, user2, h = setup_family(client, auth_headers)
+        # seul parent1 paie
+        db_session.get(User, user1["id"]).subscription_status = "active"
+        db_session.commit()
+        # parent2 (non payeur) a quand même accès aux fonctions premium
+        assert client.get(f"/api/households/{h['id']}/expenses", headers=headers2).status_code == 200
+        assert client.get("/api/billing/status", headers=headers2).json()["access"] is True

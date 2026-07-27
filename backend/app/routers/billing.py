@@ -6,20 +6,21 @@ from sqlalchemy.orm import Session
 from ..auth import get_current_user
 from ..config import settings
 from ..db import get_db
+from ..deps import user_has_premium
 from ..models import User, utcnow
 from ..services import billing
+from sqlalchemy.orm import Session
 
 router = APIRouter(prefix="/api/billing", tags=["billing"])
 
 
 @router.get("/status")
-def billing_status(user: User = Depends(get_current_user)):
+def billing_status(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     now = utcnow()
     return {
         "status": user.subscription_status,
-        "access": billing.has_access(
-            user.subscription_status, user.trial_ends_at, user.subscription_ends_at, now
-        ),
+        # Accès premium au niveau du foyer : un membre abonné débloque tout le foyer.
+        "access": user_has_premium(db, user),
         "trial_days_left": billing.trial_days_left(user.subscription_status, user.trial_ends_at, now),
         "trial_ends_at": user.trial_ends_at.isoformat() if user.trial_ends_at else None,
         "subscription_ends_at": user.subscription_ends_at.isoformat() if user.subscription_ends_at else None,

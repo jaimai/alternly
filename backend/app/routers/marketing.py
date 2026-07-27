@@ -128,8 +128,8 @@ def llms_txt(request: Request):
 - Notifications e-mail et synchronisation avec Google Agenda / Apple Calendar.
 
 ## Tarif
-- Essai gratuit de 14 jours, sans carte bancaire.
-- Puis 39 € par an et par parent, tout inclus.
+- Le calendrier de garde est entièrement gratuit.
+- Premium (dépenses partagées, mur de communication, notifications e-mail, synchronisation) : 69 € par an et par foyer, ou 8,99 € par mois. Un seul parent paie et tout le foyer en profite.
 
 ## Confidentialité
 - Données hébergées en Union européenne, minimisation stricte (le prénom de l'enfant suffit).

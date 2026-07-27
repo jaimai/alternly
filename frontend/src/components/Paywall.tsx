@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { openCheckout, paddleConfigured } from '../billing'
+import type { Plan } from '../billing'
 import { API_BASE, setToken } from '../api'
 import type { User } from '../types'
 
@@ -25,14 +26,19 @@ interface Props {
 export default function Paywall({ user, onSubscribed, onSkip, title, subtitle }: Props) {
   const [busy, setBusy] = useState(false)
   const [done, setDone] = useState(false)
+  const [plan, setPlan] = useState<Plan>('annual')
 
   async function subscribe() {
     setBusy(true)
-    await openCheckout(user, () => {
-      setDone(true)
-      onSubscribed()
-      window.setTimeout(onSubscribed, 4000)
-    })
+    await openCheckout(
+      user,
+      () => {
+        setDone(true)
+        onSubscribed()
+        window.setTimeout(onSubscribed, 4000)
+      },
+      plan,
+    )
     setBusy(false)
   }
 
@@ -49,12 +55,17 @@ export default function Paywall({ user, onSubscribed, onSkip, title, subtitle }:
       <div className="card" style={{ textAlign: 'center' }}>
         <h2>{title ?? 'Passez à Alternly Premium'}</h2>
         <p className="hint">
-          {subtitle ?? 'Le calendrier reste gratuit. L’abonnement débloque les outils du quotidien.'}
+          {subtitle ?? 'Le calendrier reste gratuit. L’abonnement débloque les outils du quotidien pour tout le foyer.'}
         </p>
-        <div style={{ margin: '16px 0' }}>
-          <span style={{ fontFamily: 'var(--font-display)', fontSize: '2.6rem', color: 'var(--pine)' }}>39&nbsp;€</span>
-          <span className="hint"> / an et par parent</span>
+        <div className="plan-toggle">
+          <button className={plan === 'annual' ? 'active' : ''} onClick={() => setPlan('annual')}>
+            Annuel <strong>69&nbsp;€</strong><span>/an · -36 %</span>
+          </button>
+          <button className={plan === 'monthly' ? 'active' : ''} onClick={() => setPlan('monthly')}>
+            Mensuel <strong>8,99&nbsp;€</strong><span>/mois</span>
+          </button>
         </div>
+        <p className="hint" style={{ marginTop: 4 }}>Un seul parent paie — les deux en profitent.</p>
         <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 20px', textAlign: 'left' }}>
           {PERKS.map((p) => (
             <li key={p} style={{ padding: '6px 0 6px 26px', position: 'relative', fontSize: '0.92rem' }}>

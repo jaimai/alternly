@@ -40,9 +40,11 @@ probante en justice.</p>
 vos identifiants. Le Service est réservé aux personnes majeures. Vous vous engagez à un usage
 loyal et à ne pas porter atteinte aux droits de l'autre parent ou de tiers.</p>
 
-<h2>3. Essai et abonnement</h2>
-<p>Alternly est proposé avec un essai gratuit de 14 jours, sans carte bancaire. À l'issue de
-l'essai, l'accès complet nécessite un abonnement annuel de 39&nbsp;€ TTC par parent. Les
+<h2>3. Gratuit et abonnement premium</h2>
+<p>Le calendrier de garde d'Alternly est gratuit. Les fonctionnalités premium (dépenses
+partagées, mur de communication, notifications e-mail et synchronisation) nécessitent un
+abonnement : 69&nbsp;€ TTC par an et par foyer, ou 8,99&nbsp;€ TTC par mois. L'abonnement est
+souscrit par un parent et bénéficie à l'ensemble du foyer. Les
 paiements et la facturation sont assurés par notre partenaire <strong>Paddle</strong>, qui
 agit en qualité de revendeur (Merchant of Record) et dont les conditions s'appliquent à la
 transaction. L'abonnement est sans engagement et résiliable à tout moment ; voir la
@@ -122,18 +124,18 @@ et les échanges chiffrés en transit (HTTPS).</p>
 REFUND = f"""
 <p>Cette politique décrit les conditions de remboursement de l'abonnement Alternly.</p>
 
-<h2>1. Essai gratuit</h2>
-<p>L'essai de 14 jours est entièrement gratuit et ne nécessite pas de carte bancaire : aucun
-montant n'est prélevé pendant l'essai. Si vous ne souscrivez pas, aucun paiement n'a lieu.</p>
+<h2>1. Version gratuite</h2>
+<p>Le calendrier de garde est gratuit : aucun paiement n'est requis pour l'utiliser. Seul
+l'abonnement premium (mensuel ou annuel) est payant.</p>
 
 <h2>2. Droit de rétractation</h2>
 <p>Conformément au droit de la consommation de l'Union européenne, vous disposez d'un délai de
 rétractation de 14 jours à compter de la souscription de l'abonnement pour demander un
 remboursement intégral, sauf renonciation expresse à ce droit.</p>
 
-<h2>3. Abonnement annuel</h2>
-<p>L'abonnement est annuel et sans engagement de reconduction forcée : vous pouvez le résilier à
-tout moment, ce qui interrompt le renouvellement. Au-delà du délai de rétractation, les périodes
+<h2>3. Abonnement</h2>
+<p>L'abonnement (mensuel ou annuel) est sans engagement de reconduction forcée : vous pouvez le
+résilier à tout moment, ce qui interrompt le renouvellement. Au-delà du délai de rétractation, les périodes
 déjà entamées ne sont pas remboursées au prorata, sauf disposition légale contraire ou geste
 commercial.</p>
 

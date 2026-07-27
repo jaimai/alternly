@@ -9,19 +9,41 @@ from .models import Household, HouseholdMember, Notification, User, utcnow
 from .services import billing
 
 
-def require_premium(user: User = Depends(get_current_user)) -> User:
-    """Réserve un endpoint aux abonnés (fonctions premium). 402 sinon."""
-    if not billing.has_access(
+def _user_is_premium(db: Session, user: User) -> bool:
+    return billing.has_access(
         user.subscription_status, user.trial_ends_at, user.subscription_ends_at, utcnow()
-    ):
+    )
+
+
+def household_has_premium(db: Session, household_id: int) -> bool:
+    """Premium au niveau du foyer : un seul membre abonné débloque tout le foyer."""
+    for m in db.scalars(select(HouseholdMember).where(HouseholdMember.household_id == household_id)):
+        u = db.get(User, m.user_id)
+        if u is not None and _user_is_premium(db, u):
+            return True
+    return False
+
+
+def user_has_premium(db: Session, user: User) -> bool:
+    """Accès premium d'un utilisateur : via son foyer (un payeur suffit), sinon
+    via son propre abonnement s'il n'a pas encore de foyer."""
+    member = db.scalar(select(HouseholdMember).where(HouseholdMember.user_id == user.id))
+    if member is not None:
+        return household_has_premium(db, member.household_id)
+    return _user_is_premium(db, user)
+
+
+def require_premium(
+    user: User = Depends(get_current_user), db: Session = Depends(get_db)
+) -> User:
+    """Réserve un endpoint aux foyers abonnés (fonctions premium). 402 sinon."""
+    if not user_has_premium(db, user):
         raise HTTPException(status_code=402, detail="Abonnement premium requis")
     return user
 
 
-def is_premium(user: User) -> bool:
-    return billing.has_access(
-        user.subscription_status, user.trial_ends_at, user.subscription_ends_at, utcnow()
-    )
+def is_premium(db: Session, user: User) -> bool:
+    return user_has_premium(db, user)
 
 
 def get_membership(

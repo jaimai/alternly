@@ -196,7 +196,7 @@ def create_exception(
         payload = _exchange_payload(exc)
         notify(db, recipient_id, "exchange_proposed", payload)
         recipient = db.get(User, recipient_id)
-        if recipient is not None and recipient.email_opt_in and is_premium(recipient):
+        if recipient is not None and recipient.email_opt_in and is_premium(db, recipient):
             subject, html = email_service.exchange_proposed_email(payload)
             email_service.send_email(recipient.email, subject, html)
     db.commit()

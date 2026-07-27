@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block title %}Alternly — Le calendrier de garde alternée pensé pour la France{% endblock %}
-{% block description %}Alternly transforme votre accord de garde en calendrier clair et partagé : rythmes de garde, vacances scolaires A/B/C, années paires/impaires, échanges de jours, dépenses partagées et mur de communication. Essai 14 jours gratuit.{% endblock %}
+{% block description %}Alternly transforme votre accord de garde en calendrier clair et partagé : rythmes de garde, vacances scolaires A/B/C, années paires/impaires, échanges de jours, dépenses partagées et mur de communication. Le calendrier est gratuit ; premium à 69 € par an et par foyer.{% endblock %}
 {% block head %}
 <script type="application/ld+json">
 {
@@ -15,7 +15,7 @@
     {
       "@type": "Question",
       "name": "Combien coûte Alternly ?",
-      "acceptedAnswer": {"@type": "Answer", "text": "Alternly est gratuit pendant 14 jours, sans carte bancaire. Ensuite l'abonnement est de 39 € par an et par parent, tout inclus : calendrier, échanges de jours, dépenses partagées, mur de communication et synchronisation."}
+      "acceptedAnswer": {"@type": "Answer", "text": "Le calendrier de garde (rythmes, vacances, fêtes, échanges de jours, invitation du second parent) est entièrement gratuit. Les fonctions premium — dépenses partagées, mur de communication, notifications e-mail et synchronisation — coûtent 69 € par an et par foyer, ou 8,99 € par mois. Un seul parent paie et les deux en profitent."}
     },
     {
       "@type": "Question",
@@ -54,7 +54,7 @@
       </p>
       <div class="hero-actions reveal d3">
         <a class="cta big" href="/register">Essayer gratuitement</a>
-        <span class="hint">14 jours offerts · sans carte bancaire</span>
+        <span class="hint">Calendrier gratuit · sans carte bancaire</span>
       </div>
       <ul class="trust reveal d4">
         <li>🇫🇷 Vacances scolaires officielles A/B/C</li>
@@ -166,25 +166,37 @@
 
 <section class="pricing" id="tarifs">
   <div class="wrap narrow">
-    <p class="eyebrow center">Tarif simple</p>
-    <h2 class="center">Un prix, tout compris</h2>
-    <div class="price-card">
-      <div class="price-head">
-        <span class="price-amount">39&nbsp;€</span>
-        <span class="price-per">/ an et par parent</span>
+    <p class="eyebrow center">Tarifs</p>
+    <h2 class="center">Le calendrier est gratuit</h2>
+    <div class="price-grid">
+      <div class="price-card">
+        <h3>Gratuit</h3>
+        <div class="price-head"><span class="price-amount">0&nbsp;€</span></div>
+        <ul class="price-list">
+          <li>Calendrier de garde illimité, des années à l'avance</li>
+          <li>Vacances scolaires A/B/C &amp; années paires/impaires</li>
+          <li>Échanges de jours proposés / acceptés</li>
+          <li>Invitation du second parent</li>
+        </ul>
+        <a class="cta big secondary-cta" href="/register">Créer mon calendrier</a>
       </div>
-      <p class="price-trial">✨ 14 jours d'essai gratuit — sans carte bancaire</p>
-      <ul class="price-list">
-        <li>Calendrier de garde illimité, des années à l'avance</li>
-        <li>Vacances scolaires A/B/C &amp; alternance années paires/impaires</li>
-        <li>Échanges de jours proposés / acceptés</li>
-        <li>Dépenses partagées &amp; solde entre parents</li>
-        <li>Mur de communication (infos, tâches, questions)</li>
-        <li>Notifications e-mail &amp; synchronisation Google / Apple</li>
-        <li>Données hébergées en Union européenne</li>
-      </ul>
-      <a class="cta big" href="/register">Démarrer mon essai gratuit</a>
-      <p class="hint center">Sans engagement — résiliable à tout moment.</p>
+      <div class="price-card featured">
+        <span class="price-badge">Premium</span>
+        <div class="price-head">
+          <span class="price-amount">69&nbsp;€</span>
+          <span class="price-per">/ an et par foyer</span>
+        </div>
+        <p class="price-trial">ou 8,99&nbsp;€ / mois · un seul parent paie, les deux en profitent</p>
+        <ul class="price-list">
+          <li>Tout le gratuit, plus&nbsp;:</li>
+          <li>Dépenses partagées &amp; solde entre parents</li>
+          <li>Mur de communication (infos, tâches, questions)</li>
+          <li>Notifications e-mail &amp; rappels</li>
+          <li>Synchronisation Google / Apple Calendar</li>
+        </ul>
+        <a class="cta big" href="/register">Commencer</a>
+        <p class="hint center">Sans engagement — résiliable à tout moment.</p>
+      </div>
     </div>
   </div>
 </section>
@@ -200,9 +212,11 @@
     </details>
     <details>
       <summary>Combien coûte Alternly&nbsp;?</summary>
-      <p>Alternly est gratuit pendant 14 jours, sans carte bancaire. Ensuite l'abonnement est de
-      39&nbsp;€ par an et par parent, tout inclus : calendrier, échanges de jours, dépenses
-      partagées, mur de communication et synchronisation.</p>
+      <p>Le calendrier de garde est <strong>entièrement gratuit</strong> (rythmes, vacances,
+      fêtes, échanges de jours, invitation du second parent). Les fonctions premium — dépenses
+      partagées, mur de communication, notifications e-mail et synchronisation — coûtent
+      <strong>69&nbsp;€ par an et par foyer</strong> (ou 8,99&nbsp;€ par mois). Un seul parent
+      paie et les deux en profitent.</p>
     </details>
     <details>
       <summary>Peut-on partager les dépenses des enfants&nbsp;?</summary>

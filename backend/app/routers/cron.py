@@ -45,7 +45,7 @@ def exchange_reminders(
         recipient_id = other_parent_id(db, exc.household_id, exc.created_by)
         recipient = db.get(User, recipient_id) if recipient_id else None
         exc.reminder_sent_at = utcnow()  # marqué même si opt-out, pour ne pas repasser dessus
-        if recipient is None or not recipient.email_opt_in or not is_premium(recipient):
+        if recipient is None or not recipient.email_opt_in or not is_premium(db, recipient):
             continue
         subject, html = email_service.exchange_reminder_email(
             {"date_start": exc.date_start.isoformat(), "date_end": exc.date_end.isoformat()}
