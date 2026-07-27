@@ -1,3 +1,5 @@
+export type Locale = 'fr' | 'en'
+
 export interface User {
   id: number
   email: string
@@ -5,6 +7,7 @@ export interface User {
   color: string
   email_opt_in: boolean
   onboarding_seen: boolean
+  locale: Locale
 }
 
 export interface BillingStatus {

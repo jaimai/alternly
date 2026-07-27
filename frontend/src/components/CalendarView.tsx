@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import FullCalendar from '@fullcalendar/react'
 import dayGridPlugin from '@fullcalendar/daygrid'
 import interactionPlugin from '@fullcalendar/interaction'
@@ -37,6 +38,7 @@ function renderEvent(arg: EventContentArg) {
 }
 
 export default function CalendarView({ data, onDayClick, onRangeChange }: Props) {
+  const { t, i18n } = useTranslation()
   const memberById = useMemo(() => {
     const map = new Map<number, Member>()
     data.members.forEach((m) => map.set(m.id, m))
@@ -141,7 +143,7 @@ export default function CalendarView({ data, onDayClick, onRangeChange }: Props)
       evts.push({
         start: px.date_start,
         allDay: true,
-        title: `proposé — ${member?.display_name ?? ''}`,
+        title: t('calendar.proposedLabel', { name: member?.display_name ?? '' }),
         extendedProps: { icon: 'clock' },
         color: 'transparent',
         textColor: 'var(--ink-soft)',
@@ -149,13 +151,13 @@ export default function CalendarView({ data, onDayClick, onRangeChange }: Props)
     }
 
     return evts
-  }, [data, memberById])
+  }, [data, memberById, t])
 
   return (
     <FullCalendar
       plugins={[dayGridPlugin, interactionPlugin]}
       initialView="dayGridMonth"
-      locale={frLocale}
+      locale={i18n.language.startsWith('fr') ? frLocale : 'en'}
       headerToolbar={{
         left: 'prevYear,prev,next,nextYear today',
         center: 'title',

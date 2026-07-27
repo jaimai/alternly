@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useAuth } from '../auth'
 import Spinner from './Spinner'
 import Paywall from './Paywall'
@@ -9,6 +10,7 @@ import Paywall from './Paywall'
 export default function PremiumGate({ feature, children }: { feature: string; children: ReactNode }) {
   const { user, billing, refreshBilling } = useAuth()
   const navigate = useNavigate()
+  const { t } = useTranslation()
 
   if (!user || billing === null) return <Spinner />
   if (!billing.access) {
@@ -17,8 +19,8 @@ export default function PremiumGate({ feature, children }: { feature: string; ch
         user={user}
         onSubscribed={refreshBilling}
         onSkip={() => navigate('/app')}
-        title={`${feature} — fonctionnalité premium`}
-        subtitle="Le calendrier est gratuit. Cette fonctionnalité est incluse dans l’abonnement Alternly."
+        title={t('paywall.gateTitle', { feature })}
+        subtitle={t('paywall.gateSubtitle')}
       />
     )
   }

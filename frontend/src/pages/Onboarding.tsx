@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { api, ApiError } from '../api'
 import { useAuth } from '../auth'
 import Paywall from '../components/Paywall'
@@ -9,6 +10,7 @@ import type { RuleFormValue } from '../components/RuleForm'
 import type { Household } from '../types'
 
 export default function OnboardingPage() {
+  const { t } = useTranslation()
   const { user, billing, refreshHousehold, refreshBilling } = useAuth()
   const navigate = useNavigate()
   const [step, setStep] = useState(0)
@@ -31,7 +33,7 @@ export default function OnboardingPage() {
       })
       .catch((err) => {
         if (!(err instanceof ApiError && err.status === 404)) {
-          setError(err instanceof Error ? err.message : 'Erreur')
+          setError(err instanceof Error ? err.message : t('onboarding.errorGeneric'))
         }
       })
       .finally(() => setLoading(false))
@@ -41,11 +43,11 @@ export default function OnboardingPage() {
     setBusy(true)
     setError(null)
     try {
-      const h = await api.createHousehold({ name: name || `Foyer de ${user?.display_name}`, school_zone: zone })
+      const h = await api.createHousehold({ name: name || t('onboarding.defaultHouseholdName', { name: user?.display_name }), school_zone: zone })
       setHousehold(h)
       setStep(1)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur')
+      setError(err instanceof Error ? err.message : t('onboarding.errorGeneric'))
     } finally {
       setBusy(false)
     }
@@ -63,7 +65,7 @@ export default function OnboardingPage() {
       setHousehold(fresh)
       setStep(2)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur')
+      setError(err instanceof Error ? err.message : t('onboarding.errorGeneric'))
     } finally {
       setBusy(false)
     }
@@ -81,7 +83,7 @@ export default function OnboardingPage() {
       if (billing && !billing.access) setStep(3)
       else navigate('/app')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur')
+      setError(err instanceof Error ? err.message : t('onboarding.errorGeneric'))
     } finally {
       setBusy(false)
     }
@@ -98,8 +100,8 @@ export default function OnboardingPage() {
           navigate('/app')
         }}
         onSkip={() => navigate('/app')}
-        title="Votre calendrier est prêt"
-        subtitle="Le calendrier est gratuit. Débloquez les dépenses, le mur et la synchronisation quand vous voulez."
+        title={t('onboarding.paywallTitle')}
+        subtitle={t('onboarding.paywallSubtitle')}
       />
     )
   }
@@ -108,8 +110,8 @@ export default function OnboardingPage() {
     <div className="auth-page" style={{ maxWidth: 520 }}>
       <div className="brand">
         <div className="wordmark small">altern<span>ly</span></div>
-        <h1>Bienvenue !</h1>
-        <p>Configurons votre calendrier en trois étapes.</p>
+        <h1>{t('onboarding.welcomeTitle')}</h1>
+        <p>{t('onboarding.welcomeSubtitle')}</p>
       </div>
       <div className="step-dots">
         {[0, 1, 2].map((i) => (
@@ -120,18 +122,18 @@ export default function OnboardingPage() {
 
       {step === 0 && (
         <div className="card">
-          <h2>Votre foyer</h2>
-          <label htmlFor="hname">Nom du foyer (ex. « Famille de Léo »)</label>
-          <input id="hname" value={name} onChange={(e) => setName(e.target.value)} placeholder="Famille de…" />
-          <label htmlFor="zone">Zone scolaire</label>
+          <h2>{t('onboarding.householdHeading')}</h2>
+          <label htmlFor="hname">{t('onboarding.householdNameLabel')}</label>
+          <input id="hname" value={name} onChange={(e) => setName(e.target.value)} placeholder={t('onboarding.householdNamePlaceholder')} />
+          <label htmlFor="zone">{t('onboarding.schoolZoneLabel')}</label>
           <select id="zone" value={zone} onChange={(e) => setZone(e.target.value as 'A' | 'B' | 'C')}>
-            <option value="A">Zone A (Besançon, Bordeaux, Clermont, Dijon, Grenoble, Limoges, Lyon, Poitiers)</option>
-            <option value="B">Zone B (Aix-Marseille, Amiens, Lille, Nancy-Metz, Nantes, Nice, Normandie, Orléans-Tours, Reims, Rennes, Strasbourg)</option>
-            <option value="C">Zone C (Créteil, Montpellier, Paris, Toulouse, Versailles)</option>
+            <option value="A">{t('onboarding.zoneA')}</option>
+            <option value="B">{t('onboarding.zoneB')}</option>
+            <option value="C">{t('onboarding.zoneC')}</option>
           </select>
           <p style={{ marginTop: 16 }}>
             <button onClick={createHousehold} disabled={busy} style={{ width: '100%' }}>
-              Continuer
+              {t('onboarding.continue')}
             </button>
           </p>
         </div>
@@ -139,8 +141,8 @@ export default function OnboardingPage() {
 
       {step === 1 && (
         <div className="card">
-          <h2>Vos enfants</h2>
-          <label htmlFor="child">Prénom</label>
+          <h2>{t('onboarding.childrenHeading')}</h2>
+          <label htmlFor="child">{t('onboarding.firstNameLabel')}</label>
           <div className="row">
             <input
               id="child"
@@ -166,7 +168,7 @@ export default function OnboardingPage() {
                 }
               }}
             >
-              Ajouter
+              {t('onboarding.add')}
             </button>
           </div>
           <div className="chip-list">
@@ -187,7 +189,7 @@ export default function OnboardingPage() {
           </div>
           <p style={{ marginTop: 16 }}>
             <button onClick={saveChildren} disabled={busy || childNames.length === 0} style={{ width: '100%' }}>
-              Continuer
+              {t('onboarding.continue')}
             </button>
           </p>
         </div>
@@ -200,7 +202,7 @@ export default function OnboardingPage() {
             myId={user.id}
             initialCustody={household.custody_rule}
             initialVacation={household.vacation_rule}
-            submitLabel="Générer mon calendrier"
+            submitLabel={t('onboarding.generateCalendar')}
             busy={busy}
             onSubmit={saveRules}
           />

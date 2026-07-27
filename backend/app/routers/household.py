@@ -55,7 +55,8 @@ def _member_out(db: Session, m: HouseholdMember) -> MemberOut:
 
 def _household_out(db: Session, household: Household, my_user_id: int) -> HouseholdOut:
     # Foyers solo (y compris antérieurs) : on garantit un second parent (placeholder).
-    if ensure_second_parent(db, household.id) is not None:
+    me = db.get(User, my_user_id)
+    if ensure_second_parent(db, household.id, locale=(me.locale if me else "fr")) is not None:
         db.commit()
     members = household_members(db, household.id)
     my_role = next((m.role for m in members if m.user_id == my_user_id), None)

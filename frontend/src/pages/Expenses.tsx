@@ -1,30 +1,30 @@
 import { useCallback, useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../api'
 import { useAuth } from '../auth'
 import Spinner from '../components/Spinner'
 import TopBar from '../components/TopBar'
+import { useFormat } from '../format'
 import type { Balance, Expense, ExpenseCategory, Household, Settlement } from '../types'
 
-const CATEGORIES: { value: ExpenseCategory; label: string }[] = [
-  { value: 'sante', label: 'Santé' },
-  { value: 'ecole', label: 'École' },
-  { value: 'activites', label: 'Activités' },
-  { value: 'vetements', label: 'Vêtements' },
-  { value: 'cantine', label: 'Cantine' },
-  { value: 'autre', label: 'Autre' },
+const CATEGORIES: { value: ExpenseCategory; labelKey: string }[] = [
+  { value: 'sante', labelKey: 'expenses.categorySante' },
+  { value: 'ecole', labelKey: 'expenses.categoryEcole' },
+  { value: 'activites', labelKey: 'expenses.categoryActivites' },
+  { value: 'vetements', labelKey: 'expenses.categoryVetements' },
+  { value: 'cantine', labelKey: 'expenses.categoryCantine' },
+  { value: 'autre', labelKey: 'expenses.categoryAutre' },
 ]
-const CAT_LABEL = Object.fromEntries(CATEGORIES.map((c) => [c.value, c.label]))
-
-function euros(cents: number): string {
-  return (cents / 100).toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })
-}
+const CAT_LABEL = Object.fromEntries(CATEGORIES.map((c) => [c.value, c.labelKey]))
 
 function todayIso(): string {
   return new Date().toISOString().slice(0, 10)
 }
 
 export default function ExpensesPage() {
+  const { t } = useTranslation()
+  const { money, date } = useFormat()
   const navigate = useNavigate()
   const { user, household, householdLoaded, refreshHousehold } = useAuth()
   const [expenses, setExpenses] = useState<Expense[]>([])
@@ -43,7 +43,7 @@ export default function ExpensesPage() {
     if (!household) return
     api.listExpenses(household.id).then(setExpenses).catch(() => {})
     api.listSettlements(household.id).then(setSettlements).catch(() => {})
-    api.balance(household.id).then(setBalance).catch(() => setError("Impossible de charger le solde"))
+    api.balance(household.id).then(setBalance).catch(() => setError(t('expenses.balanceLoadError')))
   }, [household])
 
   useEffect(load, [load])
@@ -51,17 +51,17 @@ export default function ExpensesPage() {
   if (!household || !user) return <Spinner />
 
   const name = (id: number | null) =>
-    id === null ? 'Tous' : household.members.find((m) => m.id === id)?.display_name ?? '?'
+    id === null ? t('expenses.everyone') : household.members.find((m) => m.id === id)?.display_name ?? '?'
   const childName = (id: number | null) =>
     id === null ? null : household.children.find((c) => c.id === id)?.first_name ?? null
 
   function balanceLabel(): string {
-    if (!balance || balance.amount_cents === 0) return 'Comptes à jour'
+    if (!balance || balance.amount_cents === 0) return t('expenses.balanceSettled')
     const debtor = name(balance.debtor_id)
     const creditor = name(balance.creditor_id)
-    if (balance.debtor_id === user!.id) return `Tu dois ${euros(balance.amount_cents)} à ${creditor}`
-    if (balance.creditor_id === user!.id) return `${debtor} te doit ${euros(balance.amount_cents)}`
-    return `${debtor} doit ${euros(balance.amount_cents)} à ${creditor}`
+    if (balance.debtor_id === user!.id) return t('expenses.youOweTo', { amount: money(balance.amount_cents), name: creditor })
+    if (balance.creditor_id === user!.id) return t('expenses.owesYou', { name: debtor, amount: money(balance.amount_cents) })
+    return t('expenses.owesTo', { debtor, amount: money(balance.amount_cents), creditor })
   }
 
   const otherMember = household.members.find((m) => m.id !== user.id)
@@ -79,42 +79,42 @@ export default function ExpensesPage() {
     return (
       <div key={e.id} className={`card expense${isSettled ? ' settled' : ''}`} style={{ padding: 14 }}>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
-          <strong style={{ fontSize: '1.05rem' }}>{euros(e.amount_cents)}</strong>
+          <strong style={{ fontSize: '1.05rem' }}>{money(e.amount_cents)}</strong>
           <span>{e.label}</span>
-          {e.status === 'disputed' && <span className="tag tag-pending">Contestée</span>}
-          {isSettled && <span className="tag tag-settled">Remboursée</span>}
-          <span className="hint" style={{ marginLeft: 'auto' }}>{e.date}</span>
+          {e.status === 'disputed' && <span className="tag tag-pending">{t('expenses.tagDisputed')}</span>}
+          {isSettled && <span className="tag tag-settled">{t('expenses.tagReimbursed')}</span>}
+          <span className="hint" style={{ marginLeft: 'auto' }}>{date(e.date)}</span>
         </div>
         <div className="hint" style={{ marginTop: 4 }}>
-          {CAT_LABEL[e.category]}
-          {childName(e.child_id) ? ` · ${childName(e.child_id)}` : ''} · payé par {name(e.paid_by)} · partage{' '}
+          {t(CAT_LABEL[e.category])}
+          {childName(e.child_id) ? ` · ${childName(e.child_id)}` : ''} · {t('expenses.paidBy', { name: name(e.paid_by) })} · {t('expenses.split')}{' '}
           {e.payer_percent}/{100 - e.payer_percent}
           {e.dispute_note ? ` · « ${e.dispute_note} »` : ''}
         </div>
         <div className="row" style={{ gap: 8, marginTop: 10 }}>
           {!isSettled && e.status === 'active' && (
             <button className="secondary" onClick={() => api.settleExpense(household!.id, e.id).then(load)}>
-              Marquer remboursée
+              {t('expenses.markReimbursed')}
             </button>
           )}
           {isSettled && (
             <button className="secondary" onClick={() => api.unsettleExpense(household!.id, e.id).then(load)}>
-              Annuler le remboursement
+              {t('expenses.undoReimbursement')}
             </button>
           )}
           {!isSettled && e.status === 'active' && !iAmPayer && (
             <button className="secondary" onClick={() => api.disputeExpense(household!.id, e.id).then(load)}>
-              Contester
+              {t('expenses.dispute')}
             </button>
           )}
           {e.status === 'disputed' && (
             <button className="secondary" onClick={() => api.resolveExpense(household!.id, e.id).then(load)}>
-              Rétablir
+              {t('expenses.restore')}
             </button>
           )}
           {iAmCreator && (
             <button className="danger-link" onClick={() => api.deleteExpense(household!.id, e.id).then(load)}>
-              Supprimer
+              {t('expenses.delete')}
             </button>
           )}
         </div>
@@ -126,29 +126,29 @@ export default function ExpensesPage() {
     <>
       <TopBar householdName={household.name} />
       <div className="layout" style={{ maxWidth: 760 }}>
-        <h1>Dépenses partagées</h1>
+        <h1>{t('expenses.title')}</h1>
         {error && <div className="error">{error}</div>}
 
         <div className="card">
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
             <strong style={{ fontSize: '1.1rem', marginRight: 'auto' }}>{balanceLabel()}</strong>
             <button className="secondary" onClick={() => setShowSettle((v) => !v)}>
-              Enregistrer un remboursement
+              {t('expenses.recordReimbursement')}
             </button>
-            <button onClick={() => setShowAdd((v) => !v)}>Ajouter une dépense</button>
+            <button onClick={() => setShowAdd((v) => !v)}>{t('expenses.addExpense')}</button>
           </div>
           <div className="stat-grid">
             <div className={`stat ${owedToMe > 0 ? 'credit' : 'zero'}`}>
-              <div className="stat-label">On me doit</div>
-              <div className="stat-num">{euros(owedToMe)}</div>
+              <div className="stat-label">{t('expenses.statOwedToMe')}</div>
+              <div className="stat-num">{money(owedToMe)}</div>
             </div>
             <div className={`stat ${iOwe > 0 ? 'debit' : 'zero'}`}>
-              <div className="stat-label">Je dois</div>
-              <div className="stat-num">{euros(iOwe)}</div>
+              <div className="stat-label">{t('expenses.statIOwe')}</div>
+              <div className="stat-num">{money(iOwe)}</div>
             </div>
           </div>
           <p className="hint" style={{ margin: 0 }}>
-            Sur les dépenses en cours (hors dépenses remboursées et contestées).
+            {t('expenses.statsHint')}
           </p>
         </div>
 
@@ -166,12 +166,11 @@ export default function ExpensesPage() {
             ) : (
               <>
                 <span>
-                  <strong>{otherMember!.display_name}</strong> n'a pas encore de compte. Tu peux déjà
-                  lui attribuer des dépenses — il en héritera dès qu'il rejoindra le foyer.
+                  <strong>{otherMember!.display_name}</strong> {t('expenses.partnerBanner')}
                 </span>
                 <span className="banner-actions">
-                  <button className="secondary" onClick={() => setRenaming(true)}>Le nommer</button>
-                  <button className="secondary" onClick={() => navigate('/settings')}>L'inviter</button>
+                  <button className="secondary" onClick={() => setRenaming(true)}>{t('expenses.nameThem')}</button>
+                  <button className="secondary" onClick={() => navigate('/settings')}>{t('expenses.inviteThem')}</button>
                 </span>
               </>
             )}
@@ -199,27 +198,27 @@ export default function ExpensesPage() {
           />
         )}
 
-        {expenses.length === 0 && <p className="hint">Aucune dépense pour l'instant.</p>}
+        {expenses.length === 0 && <p className="hint">{t('expenses.emptyState')}</p>}
         {active.map(renderExpense)}
         {settled.length > 0 && (
           <>
-            <div className="expense-group-title">Remboursées ({settled.length})</div>
+            <div className="expense-group-title">{t('expenses.reimbursedGroup', { count: settled.length })}</div>
             {settled.map(renderExpense)}
           </>
         )}
 
         {settlements.length > 0 && (
           <div className="card">
-            <h2>Remboursements</h2>
+            <h2>{t('expenses.settlementsTitle')}</h2>
             {settlements.map((s) => (
               <div key={s.id} className="row" style={{ alignItems: 'center', margin: '6px 0' }}>
                 <span style={{ marginRight: 'auto' }}>
-                  {name(s.from_user)} → {name(s.to_user)} : <strong>{euros(s.amount_cents)}</strong>
-                  <span className="hint"> · {s.date}{s.note ? ` · ${s.note}` : ''}</span>
+                  {name(s.from_user)} → {name(s.to_user)} : <strong>{money(s.amount_cents)}</strong>
+                  <span className="hint"> · {date(s.date)}{s.note ? ` · ${s.note}` : ''}</span>
                 </span>
                 {s.created_by === user.id && (
                   <button className="danger-link" onClick={() => api.deleteSettlement(household.id, s.id).then(load)}>
-                    Supprimer
+                    {t('expenses.delete')}
                   </button>
                 )}
               </div>
@@ -232,6 +231,7 @@ export default function ExpensesPage() {
 }
 
 function RenamePartner({ householdId, current, onDone }: { householdId: number; current: string; onDone: () => void }) {
+  const { t } = useTranslation()
   const [name, setName] = useState(current === "L'autre parent" ? '' : current)
   const [busy, setBusy] = useState(false)
   async function save() {
@@ -247,16 +247,17 @@ function RenamePartner({ householdId, current, onDone }: { householdId: number; 
   return (
     <div className="row" style={{ gap: 8, width: '100%', alignItems: 'flex-end' }}>
       <div style={{ flex: 1 }}>
-        <label htmlFor="pn">Prénom du second parent</label>
-        <input id="pn" value={name} autoFocus onChange={(e) => setName(e.target.value)} placeholder="ex. Camille" />
+        <label htmlFor="pn">{t('expenses.secondParentName')}</label>
+        <input id="pn" value={name} autoFocus onChange={(e) => setName(e.target.value)} placeholder={t('expenses.secondParentNamePlaceholder')} />
       </div>
-      <button onClick={save} disabled={busy}>Enregistrer</button>
-      <button className="secondary" onClick={onDone}>Annuler</button>
+      <button onClick={save} disabled={busy}>{t('expenses.save')}</button>
+      <button className="secondary" onClick={onDone}>{t('expenses.cancel')}</button>
     </div>
   )
 }
 
 function ExpenseForm({ household, myId, onDone }: { household: Household; myId: number; onDone: () => void }) {
+  const { t } = useTranslation()
   const [amount, setAmount] = useState('')
   const [label, setLabel] = useState('')
   const [date, setDate] = useState(todayIso())
@@ -270,7 +271,7 @@ function ExpenseForm({ household, myId, onDone }: { household: Household; myId: 
   async function submit() {
     const cents = Math.round(parseFloat(amount.replace(',', '.')) * 100)
     if (!cents || cents <= 0 || !label.trim()) {
-      setError('Montant et libellé requis')
+      setError(t('expenses.errorAmountLabelRequired'))
       return
     }
     setBusy(true)
@@ -287,39 +288,39 @@ function ExpenseForm({ household, myId, onDone }: { household: Household; myId: 
       })
       onDone()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur')
+      setError(err instanceof Error ? err.message : t('expenses.errorGeneric'))
       setBusy(false)
     }
   }
 
   return (
     <div className="card">
-      <h2>Nouvelle dépense</h2>
+      <h2>{t('expenses.newExpense')}</h2>
       <div className="row">
         <div>
-          <label htmlFor="amt">Montant (€)</label>
+          <label htmlFor="amt">{t('expenses.amountLabel')}</label>
           <input id="amt" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="24,50" />
         </div>
         <div>
-          <label htmlFor="edate">Date</label>
+          <label htmlFor="edate">{t('expenses.dateLabel')}</label>
           <input id="edate" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
         </div>
       </div>
-      <label htmlFor="lbl">Libellé</label>
-      <input id="lbl" value={label} onChange={(e) => setLabel(e.target.value)} placeholder="ex. lunettes de Léo" />
+      <label htmlFor="lbl">{t('expenses.labelLabel')}</label>
+      <input id="lbl" value={label} onChange={(e) => setLabel(e.target.value)} placeholder={t('expenses.labelPlaceholder')} />
       <div className="row">
         <div>
-          <label htmlFor="cat">Catégorie</label>
+          <label htmlFor="cat">{t('expenses.categoryLabel')}</label>
           <select id="cat" value={category} onChange={(e) => setCategory(e.target.value as ExpenseCategory)}>
             {CATEGORIES.map((c) => (
-              <option key={c.value} value={c.value}>{c.label}</option>
+              <option key={c.value} value={c.value}>{t(c.labelKey)}</option>
             ))}
           </select>
         </div>
         <div>
-          <label htmlFor="ch">Enfant</label>
+          <label htmlFor="ch">{t('expenses.childLabel')}</label>
           <select id="ch" value={childId} onChange={(e) => setChildId(e.target.value === '' ? '' : Number(e.target.value))}>
-            <option value="">Tous</option>
+            <option value="">{t('expenses.everyone')}</option>
             {household.children.map((c) => (
               <option key={c.id} value={c.id}>{c.first_name}</option>
             ))}
@@ -328,7 +329,7 @@ function ExpenseForm({ household, myId, onDone }: { household: Household; myId: 
       </div>
       <div className="row">
         <div>
-          <label htmlFor="pb">Payé par</label>
+          <label htmlFor="pb">{t('expenses.paidByLabel')}</label>
           <select id="pb" value={paidBy} onChange={(e) => setPaidBy(Number(e.target.value))}>
             {household.members.map((m) => (
               <option key={m.id} value={m.id}>{m.display_name}</option>
@@ -336,20 +337,21 @@ function ExpenseForm({ household, myId, onDone }: { household: Household; myId: 
           </select>
         </div>
         <div>
-          <label htmlFor="pp">Part du payeur : {payerPercent}%</label>
+          <label htmlFor="pp">{t('expenses.payerShareLabel', { percent: payerPercent })}</label>
           <input id="pp" type="range" min={0} max={100} step={5} value={payerPercent} onChange={(e) => setPayerPercent(Number(e.target.value))} />
         </div>
       </div>
       {error && <div className="error">{error}</div>}
       <div className="row" style={{ marginTop: 14 }}>
-        <button onClick={submit} disabled={busy}>Enregistrer</button>
-        <button className="secondary" onClick={onDone}>Annuler</button>
+        <button onClick={submit} disabled={busy}>{t('expenses.save')}</button>
+        <button className="secondary" onClick={onDone}>{t('expenses.cancel')}</button>
       </div>
     </div>
   )
 }
 
 function SettlementForm({ household, myId, onDone }: { household: Household; myId: number; onDone: () => void }) {
+  const { t } = useTranslation()
   const other = household.members.find((m) => m.id !== myId)
   const [fromUser, setFromUser] = useState<number>(myId)
   const [toUser, setToUser] = useState<number>(other?.id ?? myId)
@@ -362,7 +364,7 @@ function SettlementForm({ household, myId, onDone }: { household: Household; myI
   async function submit() {
     const cents = Math.round(parseFloat(amount.replace(',', '.')) * 100)
     if (!cents || cents <= 0 || fromUser === toUser) {
-      setError('Montant valide et deux parents distincts requis')
+      setError(t('expenses.errorSettlementInvalid'))
       return
     }
     setBusy(true)
@@ -371,17 +373,17 @@ function SettlementForm({ household, myId, onDone }: { household: Household; myI
       await api.createSettlement(household.id, { from_user: fromUser, to_user: toUser, amount_cents: cents, date, note })
       onDone()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur')
+      setError(err instanceof Error ? err.message : t('expenses.errorGeneric'))
       setBusy(false)
     }
   }
 
   return (
     <div className="card">
-      <h2>Remboursement</h2>
+      <h2>{t('expenses.reimbursementTitle')}</h2>
       <div className="row">
         <div>
-          <label htmlFor="fu">De</label>
+          <label htmlFor="fu">{t('expenses.fromLabel')}</label>
           <select id="fu" value={fromUser} onChange={(e) => setFromUser(Number(e.target.value))}>
             {household.members.map((m) => (
               <option key={m.id} value={m.id}>{m.display_name}</option>
@@ -389,7 +391,7 @@ function SettlementForm({ household, myId, onDone }: { household: Household; myI
           </select>
         </div>
         <div>
-          <label htmlFor="tu">Vers</label>
+          <label htmlFor="tu">{t('expenses.toLabel')}</label>
           <select id="tu" value={toUser} onChange={(e) => setToUser(Number(e.target.value))}>
             {household.members.map((m) => (
               <option key={m.id} value={m.id}>{m.display_name}</option>
@@ -399,20 +401,20 @@ function SettlementForm({ household, myId, onDone }: { household: Household; myI
       </div>
       <div className="row">
         <div>
-          <label htmlFor="samt">Montant (€)</label>
+          <label htmlFor="samt">{t('expenses.amountLabel')}</label>
           <input id="samt" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="120" />
         </div>
         <div>
-          <label htmlFor="sdate">Date</label>
+          <label htmlFor="sdate">{t('expenses.dateLabel')}</label>
           <input id="sdate" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
         </div>
       </div>
-      <label htmlFor="snote">Note (facultatif)</label>
-      <input id="snote" value={note} onChange={(e) => setNote(e.target.value)} placeholder="ex. virement" />
+      <label htmlFor="snote">{t('expenses.noteLabel')}</label>
+      <input id="snote" value={note} onChange={(e) => setNote(e.target.value)} placeholder={t('expenses.notePlaceholder')} />
       {error && <div className="error">{error}</div>}
       <div className="row" style={{ marginTop: 14 }}>
-        <button onClick={submit} disabled={busy}>Enregistrer</button>
-        <button className="secondary" onClick={onDone}>Annuler</button>
+        <button onClick={submit} disabled={busy}>{t('expenses.save')}</button>
+        <button className="secondary" onClick={onDone}>{t('expenses.cancel')}</button>
       </div>
     </div>
   )

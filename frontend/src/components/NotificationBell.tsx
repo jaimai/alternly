@@ -1,37 +1,60 @@
 import { useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { api } from '../api'
+import { useFormat } from '../format'
 import type { Notification } from '../types'
 
-function range(p: Record<string, string>): string {
-  return p.date_start === p.date_end ? p.date_start : `${p.date_start} → ${p.date_end}`
-}
-
-const LABELS: Record<string, (p: Record<string, string>) => string> = {
-  exchange_proposed: (p) => `Nouvel échange proposé (${range(p)})${p.note ? ` — « ${p.note} »` : ''} — à accepter ou refuser`,
-  exchange_accepted: (p) => `Votre proposition d'échange a été acceptée (${range(p)})`,
-  exchange_refused: (p) => `Votre proposition d'échange a été refusée (${range(p)})`,
-  exchange_withdrawn: (p) => `Une proposition d'échange a été retirée (${range(p)})`,
-  exception_deleted: (p) => `Échange de garde annulé (${range(p)})`,
-  rule_changed: () => 'Les règles de garde ont été modifiées',
-  parent_joined: (p) => `${p.display_name} a rejoint le foyer`,
-  expense_added: (p) => `Nouvelle dépense « ${p.label} » (${euros(p.amount_cents)})`,
-  expense_disputed: (p) => `Votre dépense « ${p.label} » a été contestée`,
-  expense_resolved: (p) => `La contestation sur « ${p.label} » a été levée`,
-  settlement_recorded: (p) => `Remboursement enregistré (${euros(p.amount_cents)})`,
-  wall_post_added: (p) => `Nouveau sur le mur : « ${p.body} »`,
-  wall_reply_added: (p) => `Nouvelle réponse : « ${p.body} »`,
-  wall_task_assigned: (p) => `Une tâche vous a été assignée : « ${p.body} »`,
-}
-
-function euros(cents: string): string {
-  return (Number(cents) / 100).toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })
-}
-
 export default function NotificationBell() {
+  const { t, i18n } = useTranslation()
+  const { money, date } = useFormat()
   const [items, setItems] = useState<Notification[]>([])
   const [open, setOpen] = useState(false)
   const timer = useRef<number | undefined>(undefined)
   const wrapRef = useRef<HTMLDivElement | null>(null)
+
+  function range(p: Record<string, string>): string {
+    return p.date_start === p.date_end
+      ? date(p.date_start)
+      : `${date(p.date_start)} → ${date(p.date_end)}`
+  }
+
+  function message(n: Notification): string {
+    const p = n.payload
+    switch (n.type) {
+      case 'exchange_proposed':
+        return p.note
+          ? t('common.notifExchangeProposedNote', { range: range(p), note: p.note })
+          : t('common.notifExchangeProposed', { range: range(p) })
+      case 'exchange_accepted':
+        return t('common.notifExchangeAccepted', { range: range(p) })
+      case 'exchange_refused':
+        return t('common.notifExchangeRefused', { range: range(p) })
+      case 'exchange_withdrawn':
+        return t('common.notifExchangeWithdrawn', { range: range(p) })
+      case 'exception_deleted':
+        return t('common.notifExceptionDeleted', { range: range(p) })
+      case 'rule_changed':
+        return t('common.notifRuleChanged')
+      case 'parent_joined':
+        return t('common.notifParentJoined', { name: p.display_name })
+      case 'expense_added':
+        return t('common.notifExpenseAdded', { label: p.label, amount: money(Number(p.amount_cents)) })
+      case 'expense_disputed':
+        return t('common.notifExpenseDisputed', { label: p.label })
+      case 'expense_resolved':
+        return t('common.notifExpenseResolved', { label: p.label })
+      case 'settlement_recorded':
+        return t('common.notifSettlementRecorded', { amount: money(Number(p.amount_cents)) })
+      case 'wall_post_added':
+        return t('common.notifWallPostAdded', { body: p.body })
+      case 'wall_reply_added':
+        return t('common.notifWallReplyAdded', { body: p.body })
+      case 'wall_task_assigned':
+        return t('common.notifWallTaskAssigned', { body: p.body })
+      default:
+        return n.type
+    }
+  }
 
   async function refresh() {
     try {
@@ -77,7 +100,7 @@ export default function NotificationBell() {
 
   return (
     <div className="notif-wrap" ref={wrapRef}>
-      <button className="bell" onClick={toggle} title="Notifications" aria-label="Notifications">
+      <button className="bell" onClick={toggle} title={t('common.notifications')} aria-label={t('common.notifications')}>
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
           <path d="M13.73 21a2 2 0 0 1-3.46 0" />
@@ -86,12 +109,12 @@ export default function NotificationBell() {
       </button>
       {open && (
         <div className="notif-panel">
-          {items.length === 0 && <div className="notif-empty">Aucune notification pour l'instant</div>}
+          {items.length === 0 && <div className="notif-empty">{t('common.notifEmpty')}</div>}
           {items.map((n) => (
             <div key={n.id} className={`notif-item ${n.read_at === null ? 'unread' : ''}`}>
-              {(LABELS[n.type] ?? (() => n.type))(n.payload)}
+              {message(n)}
               <div className="date">
-                {new Date(n.created_at + 'Z').toLocaleString('fr-FR')}
+                {new Date(n.created_at + 'Z').toLocaleString(i18n.language)}
               </div>
             </div>
           ))}

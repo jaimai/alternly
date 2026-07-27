@@ -1,32 +1,16 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { isSolo } from '../members'
 import type { CustodyRule, Member, Pattern, VacationRule } from '../types'
 
-const PATTERN_OPTIONS: { value: Pattern; title: string; desc: string }[] = [
-  {
-    value: 'alternate_weeks',
-    title: 'Semaine / semaine',
-    desc: "L'enfant change de foyer chaque semaine, au jour et à l'heure choisis.",
-  },
-  {
-    value: 'two_two_three',
-    title: '2-2-3',
-    desc: '2 jours chez un parent, 2 jours chez l’autre, puis 3 jours (week-end compris). Alterné chaque semaine.',
-  },
-  {
-    value: 'every_other_weekend',
-    title: 'Un week-end sur deux',
-    desc: 'Résidence principale chez un parent ; l’autre accueille l’enfant un week-end sur deux (ven-dim).',
-  },
-  {
-    value: 'custom',
-    title: 'Personnalisé',
-    desc: 'Définissez jour par jour un cycle de deux semaines.',
-  },
-]
+const PATTERN_OPTIONS: Pattern[] = ['alternate_weeks', 'two_two_three', 'every_other_weekend', 'custom']
 
-const DAY_NAMES = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche']
-const DAY_SHORT = ['L', 'M', 'M', 'J', 'V', 'S', 'D']
+const PATTERN_KEY: Record<Pattern, string> = {
+  alternate_weeks: 'AlternateWeeks',
+  two_two_three: 'TwoTwoThree',
+  every_other_weekend: 'EveryOtherWeekend',
+  custom: 'Custom',
+}
 
 export interface RuleFormValue {
   custody: {
@@ -51,6 +35,7 @@ interface Props {
 }
 
 export default function RuleForm({ members, myId, initialCustody, initialVacation, submitLabel, busy, onSubmit }: Props) {
+  const { t } = useTranslation()
   const [pattern, setPattern] = useState<Pattern>(initialCustody?.pattern ?? 'alternate_weeks')
   const [startDate, setStartDate] = useState(initialCustody?.start_date ?? new Date().toISOString().slice(0, 10))
   const [referenceParent, setReferenceParent] = useState<number>(initialCustody?.reference_parent_id ?? myId)
@@ -66,12 +51,31 @@ export default function RuleForm({ members, myId, initialCustody, initialVacatio
 
   const soloNote = isSolo(members)
 
+  const DAY_NAMES = [
+    t('rules.weekdayMon'),
+    t('rules.weekdayTue'),
+    t('rules.weekdayWed'),
+    t('rules.weekdayThu'),
+    t('rules.weekdayFri'),
+    t('rules.weekdaySat'),
+    t('rules.weekdaySun'),
+  ]
+  const DAY_SHORT = [
+    t('rules.weekdayShortMon'),
+    t('rules.weekdayShortTue'),
+    t('rules.weekdayShortWed'),
+    t('rules.weekdayShortThu'),
+    t('rules.weekdayShortFri'),
+    t('rules.weekdayShortSat'),
+    t('rules.weekdayShortSun'),
+  ]
+
   function toggleCustom(i: number) {
     setCustomWeeks((weeks) => weeks.map((v, j) => (j === i ? (v === 'ref' ? 'other' : 'ref') : v)))
   }
 
   function parentName(id: number) {
-    return members.find((m) => m.id === id)?.display_name ?? 'Moi'
+    return members.find((m) => m.id === id)?.display_name ?? t('rules.me')
   }
 
   return (
@@ -91,19 +95,19 @@ export default function RuleForm({ members, myId, initialCustody, initialVacatio
         })
       }}
     >
-      <h2>Rythme de garde</h2>
+      <h2>{t('rules.custodyScheduleTitle')}</h2>
       <div className="choice-list">
         {PATTERN_OPTIONS.map((opt) => (
-          <label key={opt.value} className={`choice ${pattern === opt.value ? 'selected' : ''}`}>
+          <label key={opt} className={`choice ${pattern === opt ? 'selected' : ''}`}>
             <input
               type="radio"
               name="pattern"
-              checked={pattern === opt.value}
-              onChange={() => setPattern(opt.value)}
+              checked={pattern === opt}
+              onChange={() => setPattern(opt)}
             />
             <span>
-              <strong>{opt.title}</strong>
-              <div className="desc">{opt.desc}</div>
+              <strong>{t(`rules.pattern${PATTERN_KEY[opt]}Title`)}</strong>
+              <div className="desc">{t(`rules.pattern${PATTERN_KEY[opt]}Desc`)}</div>
             </span>
           </label>
         ))}
@@ -111,12 +115,12 @@ export default function RuleForm({ members, myId, initialCustody, initialVacatio
 
       <div className="row">
         <div>
-          <label htmlFor="start">Date de départ du rythme</label>
+          <label htmlFor="start">{t('rules.startDateLabel')}</label>
           <input id="start" type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} required />
         </div>
         <div>
           <label htmlFor="refparent">
-            {pattern === 'every_other_weekend' ? 'Parent qui a les week-ends' : 'Qui a l’enfant au départ ?'}
+            {pattern === 'every_other_weekend' ? t('rules.weekendParentLabel') : t('rules.referenceParentLabel')}
           </label>
           <select id="refparent" value={referenceParent} onChange={(e) => setReferenceParent(Number(e.target.value))}>
             {members.map((m) => (
@@ -131,7 +135,7 @@ export default function RuleForm({ members, myId, initialCustody, initialVacatio
       {pattern === 'alternate_weeks' && (
         <div className="row">
           <div>
-            <label htmlFor="hday">Jour de changement</label>
+            <label htmlFor="hday">{t('rules.handoverDayLabel')}</label>
             <select id="hday" value={handoverDay} onChange={(e) => setHandoverDay(Number(e.target.value))}>
               {DAY_NAMES.map((d, i) => (
                 <option key={d} value={i}>
@@ -141,7 +145,7 @@ export default function RuleForm({ members, myId, initialCustody, initialVacatio
             </select>
           </div>
           <div>
-            <label htmlFor="htime">Heure de passage</label>
+            <label htmlFor="htime">{t('rules.handoverTimeLabel')}</label>
             <input id="htime" type="time" value={handoverTime} onChange={(e) => setHandoverTime(e.target.value)} />
           </div>
         </div>
@@ -149,7 +153,7 @@ export default function RuleForm({ members, myId, initialCustody, initialVacatio
 
       {pattern === 'custom' && (
         <>
-          <label>Cycle de 2 semaines — cliquez pour basculer chaque jour ({parentName(referenceParent)} en bleu)</label>
+          <label>{t('rules.customCycleLabel', { parent: parentName(referenceParent) })}</label>
           <div className="custom-grid">
             {customWeeks.map((v, i) => (
               <button
@@ -157,7 +161,7 @@ export default function RuleForm({ members, myId, initialCustody, initialVacatio
                 type="button"
                 className={v === 'ref' ? '' : 'secondary'}
                 onClick={() => toggleCustom(i)}
-                title={`Semaine ${i < 7 ? 1 : 2} — ${DAY_NAMES[i % 7]}`}
+                title={t('rules.customDayTitle', { week: i < 7 ? 1 : 2, day: DAY_NAMES[i % 7] })}
               >
                 {DAY_SHORT[i % 7]}
               </button>
@@ -166,14 +170,14 @@ export default function RuleForm({ members, myId, initialCustody, initialVacatio
         </>
       )}
 
-      <h2 style={{ marginTop: 24 }}>Vacances scolaires</h2>
+      <h2 style={{ marginTop: 24 }}>{t('rules.vacationsTitle')}</h2>
       <div className="choice-list">
         <label className={`choice ${vacMode === 'split_half' ? 'selected' : ''}`}>
           <input type="radio" name="vac" checked={vacMode === 'split_half'} onChange={() => setVacMode('split_half')} />
           <span>
-            <strong>Partage par moitié</strong>
+            <strong>{t('rules.vacSplitHalfTitle')}</strong>
             <div className="desc">
-              Chaque période de vacances est coupée en deux ; l'ordre s'inverse entre années paires et impaires.
+              {t('rules.vacSplitHalfDesc')}
             </div>
           </span>
         </label>
@@ -185,15 +189,15 @@ export default function RuleForm({ members, myId, initialCustody, initialVacatio
             onChange={() => setVacMode('alternate_full')}
           />
           <span>
-            <strong>Vacances entières alternées</strong>
-            <div className="desc">Toute la période chez un parent, en alternance selon l'année paire ou impaire.</div>
+            <strong>{t('rules.vacAlternateFullTitle')}</strong>
+            <div className="desc">{t('rules.vacAlternateFullDesc')}</div>
           </span>
         </label>
       </div>
       <label htmlFor="evenparent">
         {vacMode === 'split_half'
-          ? 'Années paires : qui a la première moitié ?'
-          : 'Années paires : qui a les vacances ?'}
+          ? t('rules.evenYearFirstHalfLabel')
+          : t('rules.evenYearVacationLabel')}
       </label>
       <select id="evenparent" value={evenParent} onChange={(e) => setEvenParent(Number(e.target.value))}>
         {members.map((m) => (
@@ -205,14 +209,13 @@ export default function RuleForm({ members, myId, initialCustody, initialVacatio
 
       {soloNote && (
         <div className="info-banner">
-          Vous êtes seul·e pour l'instant : le calendrier fonctionne déjà. Invitez l'autre parent depuis les
-          réglages quand vous serez prêt·e.
+          {t('rules.soloNote')}
         </div>
       )}
 
       <p style={{ marginTop: 20 }}>
         <button type="submit" disabled={busy} style={{ width: '100%' }}>
-          {busy ? 'Enregistrement…' : submitLabel}
+          {busy ? t('rules.saving') : submitLabel}
         </button>
       </p>
     </form>

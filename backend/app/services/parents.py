@@ -21,7 +21,9 @@ from ..models import (
     new_token,
 )
 
-DEFAULT_PARTNER_NAME = "L'autre parent"
+# Nom par défaut du second parent placeholder, selon la langue du créateur.
+DEFAULT_PARTNER_NAME_BY_LOCALE = {"fr": "L'autre parent", "en": "Co-parent"}
+DEFAULT_PARTNER_NAME = DEFAULT_PARTNER_NAME_BY_LOCALE["fr"]
 PLACEHOLDER_COLOR = "#c9784f"
 
 # Colonnes où un placeholder peut apparaître comme « sujet » (à qui l'on assigne
@@ -48,19 +50,23 @@ def _placeholder_member(db: Session, household_id: int) -> HouseholdMember | Non
     return None
 
 
-def ensure_second_parent(db: Session, household_id: int, name: str | None = None) -> User | None:
+def ensure_second_parent(
+    db: Session, household_id: int, name: str | None = None, locale: str = "fr"
+) -> User | None:
     """Garantit qu'un second parent existe. Crée un placeholder si le foyer n'a
     qu'un membre. Idempotent : ne fait rien si deux membres existent déjà.
+    Le nom par défaut suit la langue du créateur (`locale`).
     Renvoie le placeholder créé, sinon None. Ne commit pas."""
     members = list(
         db.scalars(select(HouseholdMember).where(HouseholdMember.household_id == household_id))
     )
     if len(members) >= 2:
         return None
+    default_name = DEFAULT_PARTNER_NAME_BY_LOCALE.get(locale, DEFAULT_PARTNER_NAME)
     ghost = User(
         email=f"placeholder-{household_id}-{new_token()}@alternly.invalid",
         password_hash="",  # inutilisable : aucune connexion possible
-        display_name=(name or DEFAULT_PARTNER_NAME),
+        display_name=(name or default_name),
         color=PLACEHOLDER_COLOR,
         is_placeholder=True,
         email_opt_in=False,

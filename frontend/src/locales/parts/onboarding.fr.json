@@ -1,0 +1,20 @@
+{
+  "onboarding.errorGeneric": "Erreur",
+  "onboarding.defaultHouseholdName": "Foyer de {{name}}",
+  "onboarding.paywallTitle": "Votre calendrier est prêt",
+  "onboarding.paywallSubtitle": "Le calendrier est gratuit. Débloquez les dépenses, le mur et la synchronisation quand vous voulez.",
+  "onboarding.welcomeTitle": "Bienvenue !",
+  "onboarding.welcomeSubtitle": "Configurons votre calendrier en trois étapes.",
+  "onboarding.householdHeading": "Votre foyer",
+  "onboarding.householdNameLabel": "Nom du foyer (ex. « Famille de Léo »)",
+  "onboarding.householdNamePlaceholder": "Famille de…",
+  "onboarding.schoolZoneLabel": "Zone scolaire",
+  "onboarding.zoneA": "Zone A (Besançon, Bordeaux, Clermont, Dijon, Grenoble, Limoges, Lyon, Poitiers)",
+  "onboarding.zoneB": "Zone B (Aix-Marseille, Amiens, Lille, Nancy-Metz, Nantes, Nice, Normandie, Orléans-Tours, Reims, Rennes, Strasbourg)",
+  "onboarding.zoneC": "Zone C (Créteil, Montpellier, Paris, Toulouse, Versailles)",
+  "onboarding.continue": "Continuer",
+  "onboarding.childrenHeading": "Vos enfants",
+  "onboarding.firstNameLabel": "Prénom",
+  "onboarding.add": "Ajouter",
+  "onboarding.generateCalendar": "Générer mon calendrier"
+}

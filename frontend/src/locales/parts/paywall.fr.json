@@ -1,0 +1,23 @@
+{
+  "paywall.perkExpenses": "Dépenses partagées & solde entre parents",
+  "paywall.perkMessageBoard": "Mur de communication (infos, tâches, questions)",
+  "paywall.perkEmailReminders": "Notifications par e-mail",
+  "paywall.perkCalendarSync": "Synchronisation Google / Apple Calendar",
+  "paywall.title": "Passez à Alternly Premium",
+  "paywall.subtitle": "Le calendrier reste gratuit. L’abonnement débloque les outils du quotidien pour tout le foyer.",
+  "paywall.planAnnual": "Annuel",
+  "paywall.planAnnualSuffix": "/an · -36 %",
+  "paywall.planMonthly": "Mensuel",
+  "paywall.planMonthlySuffix": "/mois",
+  "paywall.oneParentPays": "Un seul parent paie — les deux en profitent.",
+  "paywall.activating": "Merci ! Activation de votre abonnement en cours…",
+  "paywall.opening": "Ouverture du paiement…",
+  "paywall.subscribe": "S'abonner",
+  "paywall.paymentSoon": "Le paiement sera bientôt disponible.",
+  "paywall.continueFree": "Continuer en gratuit",
+  "paywall.logout": "Se déconnecter",
+  "paywall.securePayment": "Paiement sécurisé par Paddle. Voir nos",
+  "paywall.refundTerms": "conditions de remboursement",
+  "paywall.gateTitle": "{{feature}} — fonctionnalité premium",
+  "paywall.gateSubtitle": "Le calendrier est gratuit. Cette fonctionnalité est incluse dans l’abonnement Alternly."
+}

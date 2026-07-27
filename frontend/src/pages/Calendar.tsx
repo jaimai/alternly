@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { api } from '../api'
 import { useAuth } from '../auth'
 import CalendarView from '../components/CalendarView'
@@ -17,6 +18,7 @@ function todayIso(offset = 0): string {
 }
 
 export default function CalendarPage() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const { user, household, householdLoaded } = useAuth()
   const [data, setData] = useState<CalendarResponse | null>(null)
@@ -34,7 +36,7 @@ export default function CalendarPage() {
     api
       .calendar(household.id, range.start, range.end)
       .then(setData)
-      .catch((err) => setError(err instanceof Error ? err.message : 'Erreur'))
+      .catch((err) => setError(err instanceof Error ? err.message : t('calendar.genericError')))
     api.listExceptions(household.id).then(setExceptions).catch(() => {})
   }, [household, range])
 
@@ -63,8 +65,10 @@ export default function CalendarPage() {
           <div className="info-banner banner-ic">
             <Icon name="clock" size={16} />
             <span>
-              {pendingForMe.length === 1 ? 'Une proposition d’échange attend' : `${pendingForMe.length} propositions d’échange attendent`}{' '}
-              votre réponse — cliquez sur le jour concerné pour accepter ou refuser.
+              {pendingForMe.length === 1
+                ? t('calendar.pendingForMeOne')
+                : t('calendar.pendingForMeMany', { count: pendingForMe.length })}{' '}
+              {t('calendar.pendingForMeTail')}
             </span>
           </div>
         )}
@@ -72,8 +76,10 @@ export default function CalendarPage() {
           <div className="info-banner banner-ic">
             <Icon name="alert" size={16} />
             <span>
-              {expiringTomorrow.length === 1 ? 'Une proposition expire demain' : `${expiringTomorrow.length} propositions expirent demain`}{' '}
-              si elles ne sont pas traitées.
+              {expiringTomorrow.length === 1
+                ? t('calendar.expiringTomorrowOne')
+                : t('calendar.expiringTomorrowMany', { count: expiringTomorrow.length })}{' '}
+              {t('calendar.expiringTomorrowTail')}
             </span>
           </div>
         )}
@@ -81,15 +87,17 @@ export default function CalendarPage() {
           <div className="info-banner banner-ic">
             <Icon name="swap" size={16} />
             <span>
-              Changement de foyer demain : {household?.children.map((c) => c.first_name).join(', ') || "l'enfant"}{' '}
-              sera chez <strong>{tomorrowParent.display_name}</strong>
-              {data && ` (passage vers ${data.handover_time})`}.
+              {t('calendar.handoverLead', {
+                children: household?.children.map((c) => c.first_name).join(', ') || t('calendar.theChild'),
+              })}{' '}
+              <strong>{tomorrowParent.display_name}</strong>
+              {data && t('calendar.handoverTime', { time: data.handover_time })}.
             </span>
           </div>
         )}
         {data && !data.school_holidays_loaded && (
           <div className="error">
-            Les vacances scolaires n'ont pas pu être chargées — le calendrier affiche uniquement le rythme de base.
+            {t('calendar.schoolHolidaysError')}
           </div>
         )}
         {data && (
@@ -101,14 +109,14 @@ export default function CalendarPage() {
               </span>
             ))}
             <span className="legend-icons">
-              <span><Icon name="sun" size={13} /> vacances</span>
-              <span><Icon name="flag" size={13} /> férié</span>
-              <span><Icon name="swap" size={13} /> échange</span>
-              <span><Icon name="star" size={13} /> fête</span>
-              <span><Icon name="clock" size={13} /> proposé</span>
+              <span><Icon name="sun" size={13} /> {t('calendar.legendHolidays')}</span>
+              <span><Icon name="flag" size={13} /> {t('calendar.legendPublicHoliday')}</span>
+              <span><Icon name="swap" size={13} /> {t('calendar.legendExchange')}</span>
+              <span><Icon name="star" size={13} /> {t('calendar.legendSpecial')}</span>
+              <span><Icon name="clock" size={13} /> {t('calendar.legendProposed')}</span>
             </span>
             <span style={{ marginLeft: 'auto', color: 'var(--ink-soft)' }}>
-              Cliquez sur un jour pour proposer un échange
+              {t('calendar.legendClickHint')}
             </span>
           </div>
         )}
@@ -135,8 +143,8 @@ export default function CalendarPage() {
         )}
         {household && isSolo(household.members) && (
           <div className="info-banner" style={{ marginTop: 12 }}>
-            Vous utilisez Alternly en solo pour l'instant. Invitez l'autre parent depuis les{' '}
-            <a href="/settings">réglages</a> pour partager ce calendrier.
+            {t('calendar.soloLead')}{' '}
+            <a href="/settings">{t('calendar.soloSettingsLink')}</a> {t('calendar.soloTail')}
           </div>
         )}
       </div>

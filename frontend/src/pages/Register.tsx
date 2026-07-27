@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { api, setToken } from '../api'
 import { useAuth } from '../auth'
 
@@ -13,6 +14,7 @@ export default function RegisterPage() {
   const [busy, setBusy] = useState(false)
   const { setUser } = useAuth()
   const navigate = useNavigate()
+  const { t } = useTranslation()
 
   async function submit(e: FormEvent) {
     e.preventDefault()
@@ -25,7 +27,7 @@ export default function RegisterPage() {
       const pending = localStorage.getItem('pending_invite')
       navigate(pending ? `/join/${pending}` : '/onboarding')
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erreur d'inscription")
+      setError(err instanceof Error ? err.message : t('auth.registerError'))
     } finally {
       setBusy(false)
     }
@@ -35,13 +37,13 @@ export default function RegisterPage() {
     <div className="auth-page">
       <div className="brand">
         <div className="wordmark">altern<span>ly</span></div>
-        <p>Le calendrier de garde partagée</p>
+        <p>{t('auth.tagline')}</p>
       </div>
       <form className="card" onSubmit={submit}>
-        <h2>Créer un compte</h2>
-        <label htmlFor="name">Votre prénom</label>
+        <h2>{t('auth.registerTitle')}</h2>
+        <label htmlFor="name">{t('auth.firstNameLabel')}</label>
         <input id="name" value={displayName} onChange={(e) => setDisplayName(e.target.value)} required maxLength={50} />
-        <label htmlFor="email">E-mail</label>
+        <label htmlFor="email">{t('auth.emailLabel')}</label>
         <input
           id="email"
           type="email"
@@ -49,9 +51,9 @@ export default function RegisterPage() {
           onChange={(e) => setEmail(e.target.value)}
           required
           pattern="[^@\s]+@[^@\s]+\.[^@\s]+"
-          title="Saisissez une adresse e-mail complète, avec un nom de domaine (ex. prenom@exemple.fr)."
+          title={t('auth.emailPatternTitle')}
         />
-        <label htmlFor="password">Mot de passe (8 caractères minimum)</label>
+        <label htmlFor="password">{t('auth.passwordLabelMin')}</label>
         <input
           id="password"
           type="password"
@@ -61,16 +63,16 @@ export default function RegisterPage() {
           minLength={8}
           maxLength={72}
         />
-        <label htmlFor="color">Votre couleur sur le calendrier</label>
+        <label htmlFor="color">{t('auth.colorLabel')}</label>
         <input id="color" type="color" value={color} onChange={(e) => setColor(e.target.value)} style={{ height: 42, padding: 4 }} />
         {error && <div className="error">{error}</div>}
         <p style={{ marginTop: 16 }}>
           <button type="submit" disabled={busy} style={{ width: '100%' }}>
-            {busy ? 'Création…' : 'Créer mon compte'}
+            {busy ? t('auth.registerBusy') : t('auth.registerSubmit')}
           </button>
         </p>
         <p style={{ textAlign: 'center', margin: 0 }}>
-          Déjà inscrit·e ? <Link to="/login">Se connecter</Link>
+          {t('auth.haveAccountPrompt')} <Link to="/login">{t('auth.loginLink')}</Link>
         </p>
       </form>
     </div>

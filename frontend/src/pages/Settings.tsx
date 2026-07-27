@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { QRCodeSVG } from 'qrcode.react'
 import { api } from '../api'
@@ -12,14 +13,15 @@ import TopBar from '../components/TopBar'
 import { isSolo } from '../members'
 import type { SpecialDayRule } from '../types'
 
-const SPECIAL_LABELS: Record<SpecialDayRule['kind'], string> = {
-  mothers_day: 'Fête des mères',
-  fathers_day: 'Fête des pères',
-  christmas_eve: 'Réveillon de Noël (24 déc.)',
-  christmas_day: 'Jour de Noël (25 déc.)',
+const SPECIAL_LABEL_KEYS: Record<SpecialDayRule['kind'], string> = {
+  mothers_day: 'settings.mothersDay',
+  fathers_day: 'settings.fathersDay',
+  christmas_eve: 'settings.christmasEve',
+  christmas_day: 'settings.christmasDay',
 }
 
 export default function SettingsPage() {
+  const { t, i18n } = useTranslation()
   const { user, setUser, household, householdLoaded, refreshHousehold, refreshBilling } = useAuth()
   const premium = usePremium()
   const navigate = useNavigate()
@@ -44,7 +46,7 @@ export default function SettingsPage() {
   }
 
   function fail(err: unknown) {
-    setError(err instanceof Error ? err.message : 'Erreur')
+    setError(err instanceof Error ? err.message : t('settings.errorGeneric'))
   }
 
   async function createInvite() {
@@ -59,7 +61,7 @@ export default function SettingsPage() {
 
   async function copy(text: string) {
     await navigator.clipboard.writeText(text)
-    flash('Copié dans le presse-papier ✓')
+    flash(t('settings.copied'))
   }
 
   async function saveRules(value: RuleFormValue) {
@@ -68,7 +70,7 @@ export default function SettingsPage() {
     try {
       await api.setCustodyRule(household.id, value.custody)
       await api.setVacationRule(household.id, value.vacation)
-      flash('Règles enregistrées ✓')
+      flash(t('settings.rulesSaved'))
       refresh()
     } catch (err) {
       fail(err)
@@ -81,7 +83,7 @@ export default function SettingsPage() {
     if (!household) return
     try {
       await api.updateHousehold(household.id, { school_zone: zone })
-      flash('Zone mise à jour ✓')
+      flash(t('settings.zoneUpdated'))
       refresh()
     } catch (err) {
       fail(err)
@@ -128,7 +130,7 @@ export default function SettingsPage() {
     try {
       const updated = await api.updateMe({ color })
       setUser(updated)
-      flash('Profil mis à jour ✓')
+      flash(t('settings.profileUpdated'))
     } catch (err) {
       fail(err)
     }
@@ -138,7 +140,7 @@ export default function SettingsPage() {
     try {
       const updated = await api.updateMe({ email_opt_in: next })
       setUser(updated)
-      flash(next ? 'E-mails activés ✓' : 'E-mails coupés ✓')
+      flash(next ? t('settings.emailsOn') : t('settings.emailsOff'))
     } catch (err) {
       fail(err)
     }
@@ -150,23 +152,23 @@ export default function SettingsPage() {
     <>
       <TopBar householdName={household.name} />
       <div className="layout" style={{ maxWidth: 700 }}>
-        <h1>Réglages</h1>
+        <h1>{t('settings.title')}</h1>
         {message && <div className="info-banner">{message}</div>}
         {error && <div className="error">{error}</div>}
 
         <div className="card">
-          <h2>Parents</h2>
+          <h2>{t('settings.parents')}</h2>
           {household.members.map((m) => (
             <p key={m.id}>
               <span className="dot" style={{ background: m.color, display: 'inline-block', width: 12, height: 12, borderRadius: '50%', marginRight: 8 }} />
-              {m.display_name} {m.id === user.id && '(vous)'}
-              {m.is_placeholder && <span className="hint"> · en attente d'inscription</span>}
+              {m.display_name} {m.id === user.id && t('settings.you')}
+              {m.is_placeholder && <span className="hint"> · {t('settings.awaitingSignup')}</span>}
             </p>
           ))}
           {isSolo(household.members) && (
             <>
               <p style={{ color: 'var(--ink-soft)' }}>
-                Invitez l'autre parent : il verra le même calendrier, sans pouvoir modifier votre profil.
+                {t('settings.inviteOtherParent')}
               </p>
               {inviteUrl ? (
                 <div className="invite-share">
@@ -175,23 +177,23 @@ export default function SettingsPage() {
                   </div>
                   <div className="invite-share-body">
                     <p className="hint" style={{ marginTop: 0 }}>
-                      Faites scanner ce QR code avec le téléphone de l'autre parent, ou envoyez-lui le lien.
+                      {t('settings.scanQr')}
                     </p>
                     <div className="row">
                       <input readOnly value={inviteUrl} onFocus={(e) => e.target.select()} />
-                      <button onClick={() => copy(inviteUrl)}>Copier le lien</button>
+                      <button onClick={() => copy(inviteUrl)}>{t('settings.copyLink')}</button>
                     </div>
                   </div>
                 </div>
               ) : (
-                <button onClick={createInvite}>Créer un lien d'invitation</button>
+                <button onClick={createInvite}>{t('settings.createInviteLink')}</button>
               )}
             </>
           )}
         </div>
 
         <div className="card">
-          <h2>Enfants</h2>
+          <h2>{t('settings.children')}</h2>
           <div className="chip-list">
             {household.children.map((c) => (
               <span key={c.id} className="chip">
@@ -211,30 +213,30 @@ export default function SettingsPage() {
           </div>
           <div className="row">
             <input
-              placeholder="Prénom"
+              placeholder={t('settings.firstNamePlaceholder')}
               value={childName}
               onChange={(e) => setChildName(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addChild())}
             />
             <button className="secondary" onClick={addChild}>
-              Ajouter
+              {t('settings.add')}
             </button>
           </div>
         </div>
 
         <div className="card">
-          <h2>Zone scolaire</h2>
+          <h2>{t('settings.schoolZone')}</h2>
           <select value={household.school_zone} onChange={(e) => updateZone(e.target.value)}>
-            <option value="A">Zone A</option>
-            <option value="B">Zone B</option>
-            <option value="C">Zone C</option>
+            <option value="A">{t('settings.zoneA')}</option>
+            <option value="B">{t('settings.zoneB')}</option>
+            <option value="C">{t('settings.zoneC')}</option>
           </select>
         </div>
 
         <div className="card">
-          <h2>Jours de fête</h2>
+          <h2>{t('settings.holidays')}</h2>
           <p style={{ color: 'var(--ink-soft)', fontSize: '0.9rem' }}>
-            Ces jours passent outre le rythme habituel et le partage des vacances.
+            {t('settings.holidaysHint')}
           </p>
           {household.special_day_rules.map((r) => (
             <div key={r.kind} className="row" style={{ alignItems: 'center', margin: '8px 0' }}>
@@ -245,7 +247,7 @@ export default function SettingsPage() {
                   checked={r.enabled}
                   onChange={(e) => toggleSpecial(r.kind, { enabled: e.target.checked })}
                 />
-                {SPECIAL_LABELS[r.kind]}
+                {t(SPECIAL_LABEL_KEYS[r.kind])}
               </label>
               {r.enabled && (
                 <select
@@ -265,16 +267,16 @@ export default function SettingsPage() {
                       toggleSpecial(r.kind, { parent_mode: 'alternate', parent_id: Number(v.slice(4)) })
                   }}
                 >
-                  <option value="auto">Automatique</option>
+                  <option value="auto">{t('settings.automatic')}</option>
                   {household.members.map((m) => (
                     <option key={`fixed-${m.id}`} value={`fixed:${m.id}`}>
-                      Toujours chez {m.display_name}
+                      {t('settings.alwaysWith', { name: m.display_name })}
                     </option>
                   ))}
                   {(r.kind === 'christmas_eve' || r.kind === 'christmas_day') &&
                     household.members.map((m) => (
                       <option key={`alt-${m.id}`} value={`alt:${m.id}`}>
-                        Alterner — années paires chez {m.display_name}
+                        {t('settings.alternateEvenYears', { name: m.display_name })}
                       </option>
                     ))}
                 </select>
@@ -289,17 +291,16 @@ export default function SettingsPage() {
             myId={user.id}
             initialCustody={household.custody_rule}
             initialVacation={household.vacation_rule}
-            submitLabel="Enregistrer les règles"
+            submitLabel={t('settings.saveRules')}
             busy={busy}
             onSubmit={saveRules}
           />
         </div>
 
         <div className="card">
-          <h2>Synchronisation Google / Apple Calendar <span className="premium-tag">Premium</span></h2>
+          <h2>{t('settings.calendarSync')} <span className="premium-tag">{t('settings.premium')}</span></h2>
           <p style={{ color: 'var(--ink-soft)', fontSize: '0.9rem' }}>
-            Abonnez-vous à ce lien privé depuis votre application de calendrier. Régénérer le lien invalide
-            l'ancien.
+            {t('settings.icalHint')}
           </p>
           {!premium ? (
             <button
@@ -307,24 +308,43 @@ export default function SettingsPage() {
               onClick={() => user && openCheckout(user, refreshBilling)}
               style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
             >
-              <Icon name="lock" size={15} /> Débloquer avec Premium
+              <Icon name="lock" size={15} /> {t('settings.unlockWithPremium')}
             </button>
           ) : icalUrl ? (
             <div className="row">
               <input readOnly value={icalUrl} onFocus={(e) => e.target.select()} />
-              <button onClick={() => copy(icalUrl)}>Copier</button>
+              <button onClick={() => copy(icalUrl)}>{t('settings.copy')}</button>
             </div>
           ) : (
-            <button onClick={getIcalUrl}>Générer mon lien iCal</button>
+            <button onClick={getIcalUrl}>{t('settings.generateIcal')}</button>
           )}
         </div>
 
         <div className="card">
-          <h2>Mon profil</h2>
-          <label htmlFor="mycolor">Ma couleur sur le calendrier</label>
+          <h2>{t('settings.myProfile')}</h2>
+          <label htmlFor="mylocale">{t('settings.languageLabel')}</label>
+          <select
+            id="mylocale"
+            value={user.locale}
+            onChange={async (e) => {
+              const locale = e.target.value as 'fr' | 'en'
+              i18n.changeLanguage(locale)
+              try {
+                const updated = await api.updateMe({ locale })
+                setUser(updated)
+              } catch (err) {
+                fail(err)
+              }
+            }}
+            style={{ maxWidth: 220, marginBottom: 16 }}
+          >
+            <option value="fr">Français</option>
+            <option value="en">English</option>
+          </select>
+          <label htmlFor="mycolor">{t('settings.myCalendarColor')}</label>
           <div className="row">
             <input id="mycolor" type="color" value={color} onChange={(e) => setColor(e.target.value)} style={{ height: 42, padding: 4 }} />
-            <button onClick={saveColor}>Enregistrer</button>
+            <button onClick={saveColor}>{t('settings.save')}</button>
           </div>
           <label style={{ display: 'flex', gap: 8, alignItems: 'center', color: premium ? 'var(--ink)' : 'var(--ink-soft)', marginTop: 16 }}>
             <input
@@ -334,8 +354,8 @@ export default function SettingsPage() {
               disabled={!premium}
               onChange={(e) => toggleEmails(e.target.checked)}
             />
-            Recevoir un e-mail pour les propositions d'échange et leurs rappels
-            {!premium && <span className="premium-tag">Premium</span>}
+            {t('settings.emailOptIn')}
+            {!premium && <span className="premium-tag">{t('settings.premium')}</span>}
           </label>
         </div>
       </div>

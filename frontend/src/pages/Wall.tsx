@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../api'
 import { useAuth } from '../auth'
@@ -6,20 +7,21 @@ import Icon from '../components/Icon'
 import type { IconName } from '../components/Icon'
 import Spinner from '../components/Spinner'
 import TopBar from '../components/TopBar'
+import { useFormat } from '../format'
 import type { Household, WallKind, WallPost } from '../types'
 
-const KIND_META: Record<WallKind, { label: string; icon: IconName; tag: string }> = {
-  message: { label: 'Info', icon: 'message', tag: 'tag-message' },
-  task: { label: 'Tâche', icon: 'task', tag: 'tag-task' },
-  question: { label: 'Question', icon: 'question', tag: 'tag-question' },
+const KIND_META: Record<WallKind, { labelKey: string; icon: IconName; tag: string }> = {
+  message: { labelKey: 'wall.kindInfo', icon: 'message', tag: 'tag-message' },
+  task: { labelKey: 'wall.kindTask', icon: 'task', tag: 'tag-task' },
+  question: { labelKey: 'wall.kindQuestion', icon: 'question', tag: 'tag-question' },
 }
 
 type Segment = 'todo' | 'questions' | 'infos' | 'all'
-const SEGMENTS: { value: Segment; label: string }[] = [
-  { value: 'todo', label: 'À faire' },
-  { value: 'questions', label: 'Questions' },
-  { value: 'infos', label: 'Infos' },
-  { value: 'all', label: 'Tout' },
+const SEGMENTS: { value: Segment; labelKey: string }[] = [
+  { value: 'todo', labelKey: 'wall.segTodo' },
+  { value: 'questions', labelKey: 'wall.segQuestions' },
+  { value: 'infos', labelKey: 'wall.segInfos' },
+  { value: 'all', labelKey: 'wall.segAll' },
 ]
 
 function todayIso(): string {
@@ -27,6 +29,8 @@ function todayIso(): string {
 }
 
 export default function WallPage() {
+  const { t } = useTranslation()
+  const { date } = useFormat()
   const navigate = useNavigate()
   const { user, household, householdLoaded } = useAuth()
   const [posts, setPosts] = useState<WallPost[]>([])
@@ -42,7 +46,7 @@ export default function WallPage() {
 
   const load = useCallback(() => {
     if (!household) return
-    api.listWall(household.id).then(setPosts).catch(() => setError("Impossible de charger le mur"))
+    api.listWall(household.id).then(setPosts).catch(() => setError(t('wall.loadError')))
   }, [household])
 
   useEffect(load, [load])
@@ -112,7 +116,7 @@ export default function WallPage() {
           {actionable && (
             <button
               className={`wall-check${isDone ? ' checked' : ''}`}
-              title={isDone ? 'Rouvrir' : p.kind === 'task' ? 'Marquer fait' : 'Marquer résolu'}
+              title={isDone ? t('wall.reopen') : p.kind === 'task' ? t('wall.markDone') : t('wall.markResolved')}
               onClick={() =>
                 (isDone ? api.reopenPost(household!.id, p.id) : api.completePost(household!.id, p.id)).then(load)
               }
@@ -121,17 +125,17 @@ export default function WallPage() {
             </button>
           )}
           <span className={`tag ${meta.tag}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-            <Icon name={meta.icon} size={12} /> {meta.label}
+            <Icon name={meta.icon} size={12} /> {t(meta.labelKey)}
           </span>
-          {overdue && <span className="tag tag-overdue">En retard</span>}
+          {overdue && <span className="tag tag-overdue">{t('wall.overdue')}</span>}
           {childName(p.child_id) && <span className="hint">{childName(p.child_id)}</span>}
           {p.due_date && (
             <span className="hint" style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
-              <Icon name="calendar" size={12} /> {p.due_date}
+              <Icon name="calendar" size={12} /> {date(p.due_date)}
             </span>
           )}
-          {p.assigned_to && <span className="hint">pour {name(p.assigned_to)}</span>}
-          <span className="hint" style={{ marginLeft: 'auto' }}>{name(p.author_id)} · {p.created_at.slice(0, 10)}</span>
+          {p.assigned_to && <span className="hint">{t('wall.forWhom', { name: name(p.assigned_to) })}</span>}
+          <span className="hint" style={{ marginLeft: 'auto' }}>{name(p.author_id)} · {date(p.created_at.slice(0, 10))}</span>
         </div>
         <p className="wall-body">{p.body}</p>
         <Replies post={p} householdId={household!.id} myId={user!.id} names={name} onChanged={load} />
@@ -141,7 +145,7 @@ export default function WallPage() {
             style={{ marginTop: 8 }}
             onClick={() => api.deletePost(household!.id, p.id).then(load)}
           >
-            Supprimer
+            {t('wall.delete')}
           </button>
         )}
       </div>
@@ -150,21 +154,21 @@ export default function WallPage() {
 
   const emptyLabel =
     q !== ''
-      ? 'Aucun résultat pour cette recherche.'
+      ? t('wall.emptySearch')
       : segment === 'todo'
-        ? 'Rien à faire — tout est à jour. 🎉'
+        ? t('wall.emptyTodo')
         : segment === 'questions'
-          ? 'Aucune question en attente.'
-          : 'Rien ici pour l’instant.'
+          ? t('wall.emptyQuestions')
+          : t('wall.emptyDefault')
 
   return (
     <>
       <TopBar householdName={household.name} />
       <div className="layout" style={{ maxWidth: 720 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <h1 style={{ marginRight: 'auto' }}>Mur</h1>
+          <h1 style={{ marginRight: 'auto' }}>{t('wall.title')}</h1>
           <button className="wall-fab" onClick={() => setShowComposer((v) => !v)}>
-            <Icon name={showComposer ? 'x' : 'plus'} size={16} /> {showComposer ? 'Fermer' : 'Nouveau'}
+            <Icon name={showComposer ? 'x' : 'plus'} size={16} /> {showComposer ? t('wall.close') : t('wall.new')}
           </button>
         </div>
         {error && <div className="error">{error}</div>}
@@ -192,7 +196,7 @@ export default function WallPage() {
                     setShowDone(false)
                   }}
                 >
-                  {s.label}
+                  {t(s.labelKey)}
                   {count > 0 && <span className="count">{count}</span>}
                 </button>
               )
@@ -202,8 +206,8 @@ export default function WallPage() {
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Rechercher dans le mur…"
-              aria-label="Rechercher"
+              placeholder={t('wall.searchPlaceholder')}
+              aria-label={t('wall.searchAria')}
             />
           </div>
         </div>
@@ -218,7 +222,7 @@ export default function WallPage() {
               style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'block' }}
               onClick={() => setShowDone((v) => !v)}
             >
-              {showDone ? '▾' : '▸'} {done.length} {segment === 'todo' ? 'terminée' : 'résolue'}{done.length > 1 ? 's' : ''}
+              {showDone ? '▾' : '▸'} {done.length} {t(segment === 'todo' ? 'wall.doneTask' : 'wall.doneQuestion')}{done.length > 1 ? 's' : ''}
             </button>
             {showDone && done.map(renderItem)}
           </>
@@ -229,6 +233,7 @@ export default function WallPage() {
 }
 
 function Composer({ household, onDone }: { household: Household; onDone: () => void }) {
+  const { t } = useTranslation()
   const [kind, setKind] = useState<WallKind>('message')
   const [body, setBody] = useState('')
   const [childId, setChildId] = useState<number | ''>('')
@@ -239,7 +244,7 @@ function Composer({ household, onDone }: { household: Household; onDone: () => v
 
   async function submit() {
     if (!body.trim()) {
-      setError('Le message ne peut pas être vide')
+      setError(t('wall.emptyBodyError'))
       return
     }
     setBusy(true)
@@ -254,7 +259,7 @@ function Composer({ household, onDone }: { household: Household; onDone: () => v
       })
       onDone()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur')
+      setError(err instanceof Error ? err.message : t('wall.genericError'))
     } finally {
       setBusy(false)
     }
@@ -271,7 +276,7 @@ function Composer({ household, onDone }: { household: Household; onDone: () => v
             onClick={() => setKind(k)}
             style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
           >
-            <Icon name={KIND_META[k].icon} size={15} /> {KIND_META[k].label}
+            <Icon name={KIND_META[k].icon} size={15} /> {t(KIND_META[k].labelKey)}
           </button>
         ))}
       </div>
@@ -279,15 +284,15 @@ function Composer({ household, onDone }: { household: Household; onDone: () => v
         value={body}
         autoFocus
         onChange={(e) => setBody(e.target.value)}
-        placeholder={kind === 'question' ? 'Ta question à l’autre parent…' : kind === 'task' ? 'Ce qu’il y a à faire…' : 'Une info à partager…'}
+        placeholder={kind === 'question' ? t('wall.placeholderQuestion') : kind === 'task' ? t('wall.placeholderTask') : t('wall.placeholderInfo')}
         rows={2}
         style={{ width: '100%', font: 'inherit', padding: '9px 12px', border: '1px solid var(--line)', borderRadius: 'var(--radius-sm)', background: 'var(--surface)', color: 'var(--ink)', resize: 'vertical' }}
       />
       <div className="row" style={{ marginTop: 8 }}>
         <div>
-          <label htmlFor="wch">Enfant concerné</label>
+          <label htmlFor="wch">{t('wall.childLabel')}</label>
           <select id="wch" value={childId} onChange={(e) => setChildId(e.target.value === '' ? '' : Number(e.target.value))}>
-            <option value="">Aucun</option>
+            <option value="">{t('wall.childNone')}</option>
             {household.children.map((c) => (
               <option key={c.id} value={c.id}>{c.first_name}</option>
             ))}
@@ -296,13 +301,13 @@ function Composer({ household, onDone }: { household: Household; onDone: () => v
         {kind === 'task' && (
           <>
             <div>
-              <label htmlFor="wdue">Échéance</label>
+              <label htmlFor="wdue">{t('wall.dueLabel')}</label>
               <input id="wdue" type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
             </div>
             <div>
-              <label htmlFor="wass">Pour</label>
+              <label htmlFor="wass">{t('wall.assignLabel')}</label>
               <select id="wass" value={assignedTo} onChange={(e) => setAssignedTo(e.target.value === '' ? '' : Number(e.target.value))}>
-                <option value="">L'un ou l'autre</option>
+                <option value="">{t('wall.assignAnyone')}</option>
                 {household.members.map((m) => (
                   <option key={m.id} value={m.id}>{m.display_name}</option>
                 ))}
@@ -313,7 +318,7 @@ function Composer({ household, onDone }: { household: Household; onDone: () => v
       </div>
       {error && <div className="error">{error}</div>}
       <div style={{ marginTop: 12 }}>
-        <button onClick={submit} disabled={busy}>Publier</button>
+        <button onClick={submit} disabled={busy}>{t('wall.publish')}</button>
       </div>
     </div>
   )
@@ -332,6 +337,7 @@ function Replies({
   names: (id: number | null) => string | null
   onChanged: () => void
 }) {
+  const { t } = useTranslation()
   const [text, setText] = useState('')
   const [open, setOpen] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -352,7 +358,7 @@ function Replies({
   if (!open && count === 0) {
     return (
       <button className="danger-link" style={{ marginTop: 8, color: 'var(--ink-soft)' }} onClick={() => setOpen(true)}>
-        Répondre
+        {t('wall.reply')}
       </button>
     )
   }
@@ -361,7 +367,7 @@ function Replies({
     <div style={{ marginTop: 10, borderTop: '1px solid var(--line)', paddingTop: 8 }}>
       {post.replies.map((r) => (
         <div key={r.id} className="hint" style={{ display: 'flex', gap: 6, margin: '4px 0' }}>
-          <strong style={{ color: 'var(--ink)' }}>{names(r.author_id)} :</strong>
+          <strong style={{ color: 'var(--ink)' }}>{t('wall.replyAuthor', { name: names(r.author_id) })}</strong>
           <span style={{ marginRight: 'auto' }}>{r.body}</span>
           {r.author_id === myId && (
             <button className="danger-link" style={{ padding: '0 6px' }} onClick={() => api.deleteReply(householdId, r.id).then(onChanged)}>
@@ -375,7 +381,7 @@ function Replies({
           value={text}
           autoFocus={open && count === 0}
           onChange={(e) => setText(e.target.value)}
-          placeholder="Répondre…"
+          placeholder={t('wall.replyPlaceholder')}
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
               e.preventDefault()
@@ -384,7 +390,7 @@ function Replies({
           }}
         />
         <button className="secondary" onClick={send} disabled={busy || !text.trim()} style={{ flex: '0 0 auto' }}>
-          Envoyer
+          {t('wall.send')}
         </button>
       </div>
     </div>

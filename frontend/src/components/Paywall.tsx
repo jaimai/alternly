@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { openCheckout, paddleConfigured } from '../billing'
 import type { Plan } from '../billing'
 import { API_BASE, setToken } from '../api'
@@ -7,11 +8,11 @@ import type { User } from '../types'
 // Les pages légales sont servies par le backend (site marketing).
 const MARKETING = API_BASE.replace(/\/api\/?$/, '')
 
-const PERKS = [
-  'Dépenses partagées & solde entre parents',
-  'Mur de communication (infos, tâches, questions)',
-  'Notifications par e-mail',
-  'Synchronisation Google / Apple Calendar',
+const PERK_KEYS = [
+  'paywall.perkExpenses',
+  'paywall.perkMessageBoard',
+  'paywall.perkEmailReminders',
+  'paywall.perkCalendarSync',
 ]
 
 interface Props {
@@ -24,6 +25,7 @@ interface Props {
 }
 
 export default function Paywall({ user, onSubscribed, onSkip, title, subtitle }: Props) {
+  const { t } = useTranslation()
   const [busy, setBusy] = useState(false)
   const [done, setDone] = useState(false)
   const [plan, setPlan] = useState<Plan>('annual')
@@ -53,44 +55,44 @@ export default function Paywall({ user, onSubscribed, onSkip, title, subtitle }:
         <div className="wordmark">altern<span>ly</span></div>
       </div>
       <div className="card" style={{ textAlign: 'center' }}>
-        <h2>{title ?? 'Passez à Alternly Premium'}</h2>
+        <h2>{title ?? t('paywall.title')}</h2>
         <p className="hint">
-          {subtitle ?? 'Le calendrier reste gratuit. L’abonnement débloque les outils du quotidien pour tout le foyer.'}
+          {subtitle ?? t('paywall.subtitle')}
         </p>
         <div className="plan-toggle">
           <button className={plan === 'annual' ? 'active' : ''} onClick={() => setPlan('annual')}>
-            Annuel <strong>69&nbsp;€</strong><span>/an · -36 %</span>
+            {t('paywall.planAnnual')} <strong>69&nbsp;€</strong><span>{t('paywall.planAnnualSuffix')}</span>
           </button>
           <button className={plan === 'monthly' ? 'active' : ''} onClick={() => setPlan('monthly')}>
-            Mensuel <strong>8,99&nbsp;€</strong><span>/mois</span>
+            {t('paywall.planMonthly')} <strong>8,99&nbsp;€</strong><span>{t('paywall.planMonthlySuffix')}</span>
           </button>
         </div>
-        <p className="hint" style={{ marginTop: 4 }}>Un seul parent paie — les deux en profitent.</p>
+        <p className="hint" style={{ marginTop: 4 }}>{t('paywall.oneParentPays')}</p>
         <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 20px', textAlign: 'left' }}>
-          {PERKS.map((p) => (
-            <li key={p} style={{ padding: '6px 0 6px 26px', position: 'relative', fontSize: '0.92rem' }}>
+          {PERK_KEYS.map((k) => (
+            <li key={k} style={{ padding: '6px 0 6px 26px', position: 'relative', fontSize: '0.92rem' }}>
               <span style={{ position: 'absolute', left: 2, color: 'var(--pine)', fontWeight: 700 }}>✓</span>
-              {p}
+              {t(k)}
             </li>
           ))}
         </ul>
-        {done && <div className="info-banner">Merci ! Activation de votre abonnement en cours…</div>}
+        {done && <div className="info-banner">{t('paywall.activating')}</div>}
         <button onClick={subscribe} disabled={busy} style={{ width: '100%' }}>
-          {busy ? 'Ouverture du paiement…' : "S'abonner"}
+          {busy ? t('paywall.opening') : t('paywall.subscribe')}
         </button>
         {!paddleConfigured && (
-          <p className="hint" style={{ marginTop: 10 }}>Le paiement sera bientôt disponible.</p>
+          <p className="hint" style={{ marginTop: 10 }}>{t('paywall.paymentSoon')}</p>
         )}
         <p style={{ marginTop: 14 }}>
           {onSkip ? (
-            <button className="danger-link" onClick={onSkip}>Continuer en gratuit</button>
+            <button className="danger-link" onClick={onSkip}>{t('paywall.continueFree')}</button>
           ) : (
-            <button className="danger-link" onClick={logout}>Se déconnecter</button>
+            <button className="danger-link" onClick={logout}>{t('paywall.logout')}</button>
           )}
         </p>
         <p className="hint" style={{ fontSize: '0.8rem' }}>
-          Paiement sécurisé par Paddle. Voir nos{' '}
-          <a href={`${MARKETING}/refund`} target="_blank" rel="noreferrer">conditions de remboursement</a>.
+          {t('paywall.securePayment')}{' '}
+          <a href={`${MARKETING}/refund`} target="_blank" rel="noreferrer">{t('paywall.refundTerms')}</a>.
         </p>
       </div>
     </div>
