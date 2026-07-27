@@ -48,22 +48,45 @@ export interface VacationRule {
   even_year_first_half_parent_id: number | null
 }
 
+export type SpecialDayKind =
+  | 'christmas_eve'
+  | 'christmas_day'
+  | 'mothers_day'
+  | 'fathers_day'
+  | 'thanksgiving'
+  | 'halloween'
+  | 'independence_day'
+  | 'new_years_day'
+
 export interface SpecialDayRule {
-  kind: 'christmas_eve' | 'christmas_day' | 'mothers_day' | 'fathers_day'
+  kind: SpecialDayKind
   parent_mode: 'auto' | 'fixed' | 'alternate'
   parent_id: number | null
   enabled: boolean
+}
+
+export type Country = 'FR' | 'US'
+export type Currency = 'EUR' | 'USD'
+
+export interface SchoolVacation {
+  id: number
+  label: string
+  start: string
+  end: string
 }
 
 export interface Household {
   id: number
   name: string
   school_zone: 'A' | 'B' | 'C'
+  country: Country
+  currency: Currency
   members: Member[]
   children: Child[]
   custody_rule: CustodyRule | null
   vacation_rule: VacationRule | null
   special_day_rules: SpecialDayRule[]
+  school_vacations: SchoolVacation[]
   my_role: string | null
 }
 

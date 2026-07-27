@@ -10,14 +10,19 @@ import RuleForm from '../components/RuleForm'
 import Spinner from '../components/Spinner'
 import type { RuleFormValue } from '../components/RuleForm'
 import TopBar from '../components/TopBar'
+import { useFormat } from '../format'
 import { isSolo } from '../members'
-import type { SpecialDayRule } from '../types'
+import type { Household, SpecialDayRule } from '../types'
 
 const SPECIAL_LABEL_KEYS: Record<SpecialDayRule['kind'], string> = {
   mothers_day: 'settings.mothersDay',
   fathers_day: 'settings.fathersDay',
   christmas_eve: 'settings.christmasEve',
   christmas_day: 'settings.christmasDay',
+  thanksgiving: 'settings.thanksgiving',
+  halloween: 'settings.halloween',
+  independence_day: 'settings.independenceDay',
+  new_years_day: 'settings.newYearsDay',
 }
 
 export default function SettingsPage() {
@@ -224,14 +229,18 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        <div className="card">
-          <h2>{t('settings.schoolZone')}</h2>
-          <select value={household.school_zone} onChange={(e) => updateZone(e.target.value)}>
-            <option value="A">{t('settings.zoneA')}</option>
-            <option value="B">{t('settings.zoneB')}</option>
-            <option value="C">{t('settings.zoneC')}</option>
-          </select>
-        </div>
+        {household.country === 'FR' ? (
+          <div className="card">
+            <h2>{t('settings.schoolZone')}</h2>
+            <select value={household.school_zone} onChange={(e) => updateZone(e.target.value)}>
+              <option value="A">{t('settings.zoneA')}</option>
+              <option value="B">{t('settings.zoneB')}</option>
+              <option value="C">{t('settings.zoneC')}</option>
+            </select>
+          </div>
+        ) : (
+          <SchoolBreaks household={household} onChanged={refresh} />
+        )}
 
         <div className="card">
           <h2>{t('settings.holidays')}</h2>
@@ -360,5 +369,75 @@ export default function SettingsPage() {
         </div>
       </div>
     </>
+  )
+}
+
+function SchoolBreaks({ household, onChanged }: { household: Household; onChanged: () => void }) {
+  const { t } = useTranslation()
+  const { date } = useFormat()
+  const [label, setLabel] = useState('')
+  const [start, setStart] = useState('')
+  const [end, setEnd] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
+
+  async function add() {
+    if (!label.trim() || !start || !end) return
+    setBusy(true)
+    setError(null)
+    try {
+      await api.addSchoolVacation(household.id, { label: label.trim(), start, end })
+      setLabel('')
+      setStart('')
+      setEnd('')
+      onChanged()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function remove(id: number) {
+    await api.deleteSchoolVacation(household.id, id)
+    onChanged()
+  }
+
+  return (
+    <div className="card">
+      <h2>{t('settings.schoolBreaksTitle')}</h2>
+      <p style={{ color: 'var(--ink-soft)', fontSize: '0.9rem' }}>{t('settings.schoolBreaksHint')}</p>
+      {household.school_vacations.length === 0 && (
+        <p className="hint">{t('settings.schoolBreaksEmpty')}</p>
+      )}
+      {household.school_vacations.map((v) => (
+        <div key={v.id} className="row" style={{ alignItems: 'center', margin: '6px 0' }}>
+          <span style={{ marginRight: 'auto' }}>
+            <strong>{v.label}</strong> <span className="hint">{date(v.start)} – {date(v.end)}</span>
+          </span>
+          <button className="danger-link" onClick={() => remove(v.id)}>{t('settings.delete')}</button>
+        </div>
+      ))}
+      <div className="row" style={{ marginTop: 12 }}>
+        <div style={{ flex: 2 }}>
+          <label htmlFor="brk-label">{t('settings.breakNameLabel')}</label>
+          <input id="brk-label" value={label} onChange={(e) => setLabel(e.target.value)} placeholder={t('settings.breakNamePlaceholder')} />
+        </div>
+      </div>
+      <div className="row">
+        <div>
+          <label htmlFor="brk-start">{t('settings.breakStartLabel')}</label>
+          <input id="brk-start" type="date" value={start} onChange={(e) => setStart(e.target.value)} />
+        </div>
+        <div>
+          <label htmlFor="brk-end">{t('settings.breakEndLabel')}</label>
+          <input id="brk-end" type="date" value={end} onChange={(e) => setEnd(e.target.value)} />
+        </div>
+      </div>
+      {error && <div className="error">{error}</div>}
+      <div style={{ marginTop: 12 }}>
+        <button onClick={add} disabled={busy || !label.trim() || !start || !end}>{t('settings.addBreak')}</button>
+      </div>
+    </div>
   )
 }

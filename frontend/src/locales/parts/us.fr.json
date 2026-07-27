@@ -1,0 +1,18 @@
+{
+  "onboarding.countryLabel": "Pays",
+  "onboarding.countryFR": "France",
+  "onboarding.countryUS": "États-Unis",
+  "onboarding.usSchoolBreaksHint": "Vous ajouterez les congés scolaires de votre district dans les réglages (pas de calendrier national aux États-Unis).",
+  "settings.thanksgiving": "Thanksgiving",
+  "settings.halloween": "Halloween",
+  "settings.independenceDay": "Independence Day (4 juillet)",
+  "settings.newYearsDay": "Jour de l'An (1er janv.)",
+  "settings.schoolBreaksTitle": "Congés scolaires",
+  "settings.schoolBreaksHint": "Ajoutez les congés de votre district (hiver, printemps, été). Ils alimentent le partage des vacances du calendrier.",
+  "settings.schoolBreaksEmpty": "Aucun congé pour l'instant.",
+  "settings.breakNameLabel": "Nom",
+  "settings.breakNamePlaceholder": "ex. Winter Break",
+  "settings.breakStartLabel": "Début",
+  "settings.breakEndLabel": "Fin",
+  "settings.addBreak": "Ajouter le congé"
+}

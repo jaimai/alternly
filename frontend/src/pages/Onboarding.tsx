@@ -7,15 +7,16 @@ import Paywall from '../components/Paywall'
 import Spinner from '../components/Spinner'
 import RuleForm from '../components/RuleForm'
 import type { RuleFormValue } from '../components/RuleForm'
-import type { Household } from '../types'
+import type { Country, Household } from '../types'
 
 export default function OnboardingPage() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const { user, billing, refreshHousehold, refreshBilling } = useAuth()
   const navigate = useNavigate()
   const [step, setStep] = useState(0)
   const [household, setHousehold] = useState<Household | null>(null)
   const [name, setName] = useState('')
+  const [country, setCountry] = useState<Country>(i18n.language.startsWith('en') ? 'US' : 'FR')
   const [zone, setZone] = useState<'A' | 'B' | 'C'>('A')
   const [childName, setChildName] = useState('')
   const [childNames, setChildNames] = useState<string[]>([])
@@ -43,7 +44,11 @@ export default function OnboardingPage() {
     setBusy(true)
     setError(null)
     try {
-      const h = await api.createHousehold({ name: name || t('onboarding.defaultHouseholdName', { name: user?.display_name }), school_zone: zone })
+      const h = await api.createHousehold({
+        name: name || t('onboarding.defaultHouseholdName', { name: user?.display_name }),
+        country,
+        school_zone: zone,
+      })
       setHousehold(h)
       setStep(1)
     } catch (err) {
@@ -125,12 +130,23 @@ export default function OnboardingPage() {
           <h2>{t('onboarding.householdHeading')}</h2>
           <label htmlFor="hname">{t('onboarding.householdNameLabel')}</label>
           <input id="hname" value={name} onChange={(e) => setName(e.target.value)} placeholder={t('onboarding.householdNamePlaceholder')} />
-          <label htmlFor="zone">{t('onboarding.schoolZoneLabel')}</label>
-          <select id="zone" value={zone} onChange={(e) => setZone(e.target.value as 'A' | 'B' | 'C')}>
-            <option value="A">{t('onboarding.zoneA')}</option>
-            <option value="B">{t('onboarding.zoneB')}</option>
-            <option value="C">{t('onboarding.zoneC')}</option>
+          <label htmlFor="country">{t('onboarding.countryLabel')}</label>
+          <select id="country" value={country} onChange={(e) => setCountry(e.target.value as Country)}>
+            <option value="FR">{t('onboarding.countryFR')}</option>
+            <option value="US">{t('onboarding.countryUS')}</option>
           </select>
+          {country === 'FR' ? (
+            <>
+              <label htmlFor="zone">{t('onboarding.schoolZoneLabel')}</label>
+              <select id="zone" value={zone} onChange={(e) => setZone(e.target.value as 'A' | 'B' | 'C')}>
+                <option value="A">{t('onboarding.zoneA')}</option>
+                <option value="B">{t('onboarding.zoneB')}</option>
+                <option value="C">{t('onboarding.zoneC')}</option>
+              </select>
+            </>
+          ) : (
+            <p className="hint" style={{ marginTop: 8 }}>{t('onboarding.usSchoolBreaksHint')}</p>
+          )}
           <p style={{ marginTop: 16 }}>
             <button onClick={createHousehold} disabled={busy} style={{ width: '100%' }}>
               {t('onboarding.continue')}

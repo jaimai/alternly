@@ -1,0 +1,18 @@
+{
+  "onboarding.countryLabel": "Country",
+  "onboarding.countryFR": "France",
+  "onboarding.countryUS": "United States",
+  "onboarding.usSchoolBreaksHint": "You'll add your district's school breaks in Settings (there's no national school calendar in the U.S.).",
+  "settings.thanksgiving": "Thanksgiving",
+  "settings.halloween": "Halloween",
+  "settings.independenceDay": "Independence Day (Jul 4)",
+  "settings.newYearsDay": "New Year's Day (Jan 1)",
+  "settings.schoolBreaksTitle": "School breaks",
+  "settings.schoolBreaksHint": "Add your district's breaks (winter, spring, summer). They drive how vacations are split on the calendar.",
+  "settings.schoolBreaksEmpty": "No breaks added yet.",
+  "settings.breakNameLabel": "Name",
+  "settings.breakNamePlaceholder": "e.g. Winter Break",
+  "settings.breakStartLabel": "Start",
+  "settings.breakEndLabel": "End",
+  "settings.addBreak": "Add break"
+}

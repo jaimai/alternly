@@ -24,7 +24,7 @@ function todayIso(): string {
 
 export default function ExpensesPage() {
   const { t } = useTranslation()
-  const { money, date } = useFormat()
+  const { money: fmtMoney, date } = useFormat()
   const navigate = useNavigate()
   const { user, household, householdLoaded, refreshHousehold } = useAuth()
   const [expenses, setExpenses] = useState<Expense[]>([])
@@ -49,6 +49,9 @@ export default function ExpensesPage() {
   useEffect(load, [load])
 
   if (!household || !user) return <Spinner />
+
+  // Montants dans la devise du foyer (EUR en France, USD aux US).
+  const money = (cents: number) => fmtMoney(cents, household.currency)
 
   const name = (id: number | null) =>
     id === null ? t('expenses.everyone') : household.members.find((m) => m.id === id)?.display_name ?? '?'

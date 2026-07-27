@@ -5,10 +5,12 @@ import type {
   Child,
   CustodyRule,
   Expense,
+  Country,
   Household,
   Locale,
   Member,
   Notification,
+  SchoolVacation,
   ScheduleException,
   Settlement,
   SpecialDayRule,
@@ -84,13 +86,17 @@ export const api = {
   updateMe: (data: { display_name?: string; color?: string; email_opt_in?: boolean; onboarding_seen?: boolean; locale?: Locale }) =>
     request<User>('/auth/me', { method: 'PATCH', body: JSON.stringify(data) }),
 
-  createHousehold: (data: { name: string; school_zone: string }) =>
+  createHousehold: (data: { name: string; school_zone?: string; country?: Country }) =>
     request<Household>('/households', { method: 'POST', body: JSON.stringify(data) }),
   myHousehold: () => request<Household>('/households/mine'),
-  updateHousehold: (id: number, data: { name?: string; school_zone?: string }) =>
+  updateHousehold: (id: number, data: { name?: string; school_zone?: string; country?: Country }) =>
     request<Household>(`/households/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
   renamePartner: (householdId: number, data: { display_name: string; color?: string }) =>
     request<Member>(`/households/${householdId}/partner`, { method: 'PATCH', body: JSON.stringify(data) }),
+  addSchoolVacation: (householdId: number, data: { label: string; start: string; end: string }) =>
+    request<SchoolVacation>(`/households/${householdId}/school-vacations`, { method: 'POST', body: JSON.stringify(data) }),
+  deleteSchoolVacation: (householdId: number, periodId: number) =>
+    request<void>(`/households/${householdId}/school-vacations/${periodId}`, { method: 'DELETE' }),
 
   createInvitation: (householdId: number) =>
     request<{ invite_url: string; token: string; expires_at: string }>(
