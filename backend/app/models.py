@@ -47,11 +47,25 @@ class Household(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String)
-    school_zone: Mapped[str] = mapped_column(String, default="A")
+    school_zone: Mapped[str] = mapped_column(String, default="A")  # FR uniquement (A/B/C)
+    country: Mapped[str] = mapped_column(String, default="FR")     # FR | US
+    currency: Mapped[str] = mapped_column(String, default="EUR")   # EUR | USD
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
     members: Mapped[list["HouseholdMember"]] = relationship(back_populates="household")
     children: Mapped[list["Child"]] = relationship()
+
+
+class SchoolVacationPeriod(Base):
+    """Congés scolaires saisis manuellement (pays sans calendrier national, ex. US).
+    Alimentent le partage des vacances comme les zones A/B/C en France."""
+    __tablename__ = "school_vacation_periods"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    household_id: Mapped[int] = mapped_column(ForeignKey("households.id"))
+    label: Mapped[str] = mapped_column(String)
+    start: Mapped[date] = mapped_column(Date)
+    end: Mapped[date] = mapped_column(Date)  # borne incluse
 
 
 class HouseholdMember(Base):

@@ -133,22 +133,52 @@ def mothers_day(year: int) -> date:
 
 
 def fathers_day(year: int) -> date:
-    """3e dimanche de juin."""
+    """3e dimanche de juin (identique FR/US)."""
     d = date(year, 6, 1)
     first_sunday = d + timedelta(days=(6 - d.weekday()) % 7)
     return first_sunday + timedelta(days=14)
 
 
-def _special_day_date(kind: str, year: int) -> date:
+def _nth_weekday(year: int, month: int, weekday: int, n: int) -> date:
+    """n-ième `weekday` (0=lundi … 6=dimanche) du mois."""
+    d = date(year, month, 1)
+    first = d + timedelta(days=(weekday - d.weekday()) % 7)
+    return first + timedelta(days=7 * (n - 1))
+
+
+def mothers_day_us(year: int) -> date:
+    """Mother's Day US : 2e dimanche de mai."""
+    return _nth_weekday(year, 5, 6, 2)
+
+
+def thanksgiving(year: int) -> date:
+    """Thanksgiving US : 4e jeudi de novembre."""
+    return _nth_weekday(year, 11, 3, 4)
+
+
+def special_day_date(kind: str, year: int, country: str = "FR") -> date:
     if kind == "christmas_eve":
         return date(year, 12, 24)
     if kind == "christmas_day":
         return date(year, 12, 25)
+    if kind == "new_years_day":
+        return date(year, 1, 1)
+    if kind == "independence_day":  # US : 4 juillet
+        return date(year, 7, 4)
+    if kind == "halloween":
+        return date(year, 10, 31)
+    if kind == "thanksgiving":
+        return thanksgiving(year)
     if kind == "mothers_day":
-        return mothers_day(year)
+        return mothers_day_us(year) if country == "US" else mothers_day(year)
     if kind == "fathers_day":
         return fathers_day(year)
     raise ValueError(f"fête inconnue : {kind}")
+
+
+# Compat : ancien nom interne (sans pays).
+def _special_day_date(kind: str, year: int) -> date:
+    return special_day_date(kind, year, "FR")
 
 
 def _vacation_parent(vac: EngineVacationRule, period: Period, day: date, other_parent_of: dict[str, str]) -> str:
@@ -174,10 +204,12 @@ def resolve_calendar(
     school_periods: list[Period],
     start: date,
     end: date,
+    country: str = "FR",
 ) -> list[DayAssignment]:
     """Attribue chaque jour de [start, end] (bornes incluses) à un parent.
 
     Priorité : exception > fête > vacances scolaires > rythme de base.
+    `country` fixe les dates dépendant du pays (Mother's Day, Thanksgiving…).
     """
     other_parent_of = {
         rule.reference_parent: rule.other_parent,
@@ -189,7 +221,7 @@ def resolve_calendar(
         if not sp.enabled:
             continue
         for year in range(start.year - 1, end.year + 2):
-            special_dates[_special_day_date(sp.kind, year)] = sp.parent_for_year(year)
+            special_dates[special_day_date(sp.kind, year, country)] = sp.parent_for_year(year)
 
     result: list[DayAssignment] = []
     day = start

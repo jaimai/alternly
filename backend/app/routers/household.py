@@ -15,6 +15,7 @@ from ..models import (
     Household,
     HouseholdMember,
     Invitation,
+    SchoolVacationPeriod,
     SpecialDayRule,
     User,
     VacationRule,
@@ -29,17 +30,29 @@ from ..schemas import (
     InvitationPreview,
     MemberOut,
     PartnerUpdate,
+    SchoolVacationIn,
+    SchoolVacationOut,
 )
 
 router = APIRouter(prefix="/api", tags=["household"])
 
-DEFAULT_SPECIAL_RULES = [
-    # Fêtes des mères/pères actives par défaut ; Noël désactivé (à configurer explicitement)
-    ("mothers_day", True),
-    ("fathers_day", True),
-    ("christmas_eve", False),
-    ("christmas_day", False),
-]
+# Fêtes par défaut selon le pays (mères/pères actives ; grandes fêtes à configurer).
+DEFAULT_SPECIAL_RULES_BY_COUNTRY = {
+    "FR": [
+        ("mothers_day", True),
+        ("fathers_day", True),
+        ("christmas_eve", False),
+        ("christmas_day", False),
+    ],
+    "US": [
+        ("mothers_day", True),
+        ("fathers_day", True),
+        ("thanksgiving", False),
+        ("christmas_eve", False),
+        ("christmas_day", False),
+    ],
+}
+CURRENCY_BY_COUNTRY = {"FR": "EUR", "US": "USD"}
 
 
 def _member_out(db: Session, m: HouseholdMember) -> MemberOut:
@@ -64,6 +77,8 @@ def _household_out(db: Session, household: Household, my_user_id: int) -> Househ
         id=household.id,
         name=household.name,
         school_zone=household.school_zone,
+        country=household.country,
+        currency=household.currency,
         members=[_member_out(db, m) for m in members],
         children=db.scalars(select(Child).where(Child.household_id == household.id)).all(),
         custody_rule=db.scalar(select(CustodyRule).where(CustodyRule.household_id == household.id)),
@@ -71,22 +86,33 @@ def _household_out(db: Session, household: Household, my_user_id: int) -> Househ
         special_day_rules=db.scalars(
             select(SpecialDayRule).where(SpecialDayRule.household_id == household.id)
         ).all(),
+        school_vacations=db.scalars(
+            select(SchoolVacationPeriod)
+            .where(SchoolVacationPeriod.household_id == household.id)
+            .order_by(SchoolVacationPeriod.start)
+        ).all(),
         my_role=my_role,
     )
 
 
 @router.post("/households", response_model=HouseholdOut, status_code=201)
 def create_household(data: HouseholdCreate, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    if data.school_zone not in ZONES:
+    if data.country == "FR" and data.school_zone not in ZONES:
         raise HTTPException(status_code=422, detail="Zone invalide (A, B ou C)")
     existing = db.scalar(select(HouseholdMember).where(HouseholdMember.user_id == user.id))
     if existing:
         raise HTTPException(status_code=409, detail="Vous appartenez déjà à un foyer")
-    household = Household(name=data.name, school_zone=data.school_zone)
+    household = Household(
+        name=data.name,
+        country=data.country,
+        currency=CURRENCY_BY_COUNTRY.get(data.country, "EUR"),
+        # La zone A/B/C n'a de sens qu'en France.
+        school_zone=data.school_zone if data.country == "FR" else "A",
+    )
     db.add(household)
     db.flush()
     db.add(HouseholdMember(household_id=household.id, user_id=user.id, role="parent1"))
-    for kind, enabled in DEFAULT_SPECIAL_RULES:
+    for kind, enabled in DEFAULT_SPECIAL_RULES_BY_COUNTRY.get(data.country, DEFAULT_SPECIAL_RULES_BY_COUNTRY["FR"]):
         db.add(SpecialDayRule(household_id=household.id, kind=kind, parent_mode="auto", enabled=enabled))
     db.commit()
     return _household_out(db, household, user.id)
@@ -109,12 +135,47 @@ def update_household(
     household = db.get(Household, member.household_id)
     if data.name is not None:
         household.name = data.name
+    if data.country is not None:
+        household.country = data.country
+        household.currency = CURRENCY_BY_COUNTRY.get(data.country, household.currency)
     if data.school_zone is not None:
         if data.school_zone not in ZONES:
             raise HTTPException(status_code=422, detail="Zone invalide (A, B ou C)")
         household.school_zone = data.school_zone
     db.commit()
     return _household_out(db, household, member.user_id)
+
+
+# ---------- congés scolaires (saisie manuelle, ex. US) ----------
+
+@router.post("/households/{household_id}/school-vacations", response_model=SchoolVacationOut, status_code=201)
+def add_school_vacation(
+    data: SchoolVacationIn,
+    member: HouseholdMember = Depends(get_membership),
+    db: Session = Depends(get_db),
+):
+    if data.end < data.start:
+        raise HTTPException(status_code=422, detail="La date de fin précède la date de début")
+    period = SchoolVacationPeriod(
+        household_id=member.household_id, label=data.label, start=data.start, end=data.end
+    )
+    db.add(period)
+    db.commit()
+    db.refresh(period)
+    return period
+
+
+@router.delete("/households/{household_id}/school-vacations/{period_id}", status_code=204)
+def delete_school_vacation(
+    period_id: int,
+    member: HouseholdMember = Depends(get_membership),
+    db: Session = Depends(get_db),
+):
+    period = db.get(SchoolVacationPeriod, period_id)
+    if period is None or period.household_id != member.household_id:
+        raise HTTPException(status_code=404, detail="Congé introuvable")
+    db.delete(period)
+    db.commit()
 
 
 def _real_members(db: Session, household_id: int) -> list[HouseholdMember]:

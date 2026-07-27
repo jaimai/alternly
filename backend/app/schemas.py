@@ -9,7 +9,11 @@ DateType = date
 
 PATTERNS = {"alternate_weeks", "two_two_three", "every_other_weekend", "custom"}
 VACATION_MODES = {"split_half", "alternate_full"}
-SPECIAL_KINDS = {"christmas_eve", "christmas_day", "mothers_day", "fathers_day"}
+SPECIAL_KINDS = {
+    "christmas_eve", "christmas_day", "mothers_day", "fathers_day",
+    # États-Unis
+    "thanksgiving", "halloween", "independence_day", "new_years_day",
+}
 PARENT_MODES = {"auto", "fixed", "alternate"}
 EXPENSE_CATEGORIES = {"sante", "ecole", "activites", "vetements", "cantine", "autre"}
 WALL_KINDS = {"message", "task", "question"}
@@ -128,23 +132,41 @@ class SpecialDayRuleOut(ORMModel):
 
 class HouseholdCreate(BaseModel):
     name: str = Field(min_length=1)
-    school_zone: str = "A"
+    country: Literal["FR", "US"] = "FR"
+    school_zone: str = "A"  # FR uniquement
 
 
 class HouseholdUpdate(BaseModel):
     name: str | None = None
     school_zone: str | None = None
+    country: Literal["FR", "US"] | None = None
+
+
+class SchoolVacationIn(BaseModel):
+    label: str = Field(min_length=1, max_length=80)
+    start: date
+    end: date
+
+
+class SchoolVacationOut(ORMModel):
+    id: int
+    label: str
+    start: date
+    end: date
 
 
 class HouseholdOut(ORMModel):
     id: int
     name: str
     school_zone: str
+    country: str
+    currency: str
     members: list[MemberOut] = []
     children: list[ChildOut] = []
     custody_rule: CustodyRuleOut | None = None
     vacation_rule: VacationRuleOut | None = None
     special_day_rules: list[SpecialDayRuleOut] = []
+    school_vacations: list[SchoolVacationOut] = []
     my_role: str | None = None
 
 
