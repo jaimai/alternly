@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { api, ApiError } from '../api'
+import { api } from '../api'
 import { useAuth } from '../auth'
+import Spinner from '../components/Spinner'
 import TopBar from '../components/TopBar'
 import type { Balance, Expense, ExpenseCategory, Household, Settlement } from '../types'
 
@@ -25,8 +26,7 @@ function todayIso(): string {
 
 export default function ExpensesPage() {
   const navigate = useNavigate()
-  const { user } = useAuth()
-  const [household, setHousehold] = useState<Household | null>(null)
+  const { user, household, householdLoaded } = useAuth()
   const [expenses, setExpenses] = useState<Expense[]>([])
   const [settlements, setSettlements] = useState<Settlement[]>([])
   const [balance, setBalance] = useState<Balance | null>(null)
@@ -35,28 +35,19 @@ export default function ExpensesPage() {
   const [showSettle, setShowSettle] = useState(false)
 
   useEffect(() => {
-    api
-      .myHousehold()
-      .then((h) => {
-        if (!h.custody_rule) navigate('/onboarding')
-        else setHousehold(h)
-      })
-      .catch((err) => {
-        if (err instanceof ApiError && err.status === 404) navigate('/onboarding')
-        else setError(err instanceof Error ? err.message : 'Erreur')
-      })
-  }, [navigate])
+    if (householdLoaded && (!household || !household.custody_rule)) navigate('/onboarding')
+  }, [householdLoaded, household, navigate])
 
   const load = useCallback(() => {
     if (!household) return
     api.listExpenses(household.id).then(setExpenses).catch(() => {})
     api.listSettlements(household.id).then(setSettlements).catch(() => {})
-    api.balance(household.id).then(setBalance).catch(() => {})
+    api.balance(household.id).then(setBalance).catch(() => setError("Impossible de charger le solde"))
   }, [household])
 
   useEffect(load, [load])
 
-  if (!household || !user) return <div className="page-loading">Chargement…</div>
+  if (!household || !user) return <Spinner />
 
   const name = (id: number | null) =>
     id === null ? 'Tous' : household.members.find((m) => m.id === id)?.display_name ?? '?'

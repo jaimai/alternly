@@ -195,6 +195,27 @@ label {
   color: var(--ink-soft);
 }
 
+.spinner {
+  display: inline-block;
+  width: 30px;
+  height: 30px;
+  border: 3px solid var(--pine-soft);
+  border-top-color: var(--pine);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+.spinner-inline {
+  width: 16px;
+  height: 16px;
+  border-width: 2px;
+  vertical-align: -3px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
 .topbar {
   display: flex;
   align-items: center;
@@ -463,10 +484,15 @@ label {
   background: var(--pine);
 }
 
+.notif-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
 .notif-panel {
   position: absolute;
-  right: 12px;
-  top: 52px;
+  right: 0;
+  top: calc(100% + 8px);
   width: min(360px, 92vw);
   background: var(--surface);
   border: 1px solid var(--line);

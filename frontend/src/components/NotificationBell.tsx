@@ -31,6 +31,7 @@ export default function NotificationBell() {
   const [items, setItems] = useState<Notification[]>([])
   const [open, setOpen] = useState(false)
   const timer = useRef<number | undefined>(undefined)
+  const wrapRef = useRef<HTMLDivElement | null>(null)
 
   async function refresh() {
     try {
@@ -46,6 +47,23 @@ export default function NotificationBell() {
     return () => window.clearInterval(timer.current)
   }, [])
 
+  // Fermeture au clic en dehors + touche Échap.
+  useEffect(() => {
+    if (!open) return
+    function onDown(e: MouseEvent) {
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false)
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') setOpen(false)
+    }
+    document.addEventListener('mousedown', onDown)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDown)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [open])
+
   const unread = items.filter((n) => n.read_at === null)
 
   async function toggle() {
@@ -58,7 +76,7 @@ export default function NotificationBell() {
   }
 
   return (
-    <>
+    <div className="notif-wrap" ref={wrapRef}>
       <button className="bell" onClick={toggle} title="Notifications" aria-label="Notifications">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
@@ -68,7 +86,7 @@ export default function NotificationBell() {
       </button>
       {open && (
         <div className="notif-panel">
-          {items.length === 0 && <div className="notif-empty">Aucune notification</div>}
+          {items.length === 0 && <div className="notif-empty">Aucune notification pour l'instant</div>}
           {items.map((n) => (
             <div key={n.id} className={`notif-item ${n.read_at === null ? 'unread' : ''}`}>
               {(LABELS[n.type] ?? (() => n.type))(n.payload)}
@@ -79,6 +97,6 @@ export default function NotificationBell() {
           ))}
         </div>
       )}
-    </>
+    </div>
   )
 }

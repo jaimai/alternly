@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { api, ApiError, API_BASE } from '../api'
+import { api, API_BASE } from '../api'
 import { useAuth } from '../auth'
 import RuleForm from '../components/RuleForm'
+import Spinner from '../components/Spinner'
 import type { RuleFormValue } from '../components/RuleForm'
 import TopBar from '../components/TopBar'
-import type { Household, SpecialDayRule } from '../types'
+import type { SpecialDayRule } from '../types'
 
 const SPECIAL_LABELS: Record<SpecialDayRule['kind'], string> = {
   mothers_day: 'Fête des mères',
@@ -15,9 +16,8 @@ const SPECIAL_LABELS: Record<SpecialDayRule['kind'], string> = {
 }
 
 export default function SettingsPage() {
-  const { user, setUser } = useAuth()
+  const { user, setUser, household, householdLoaded, refreshHousehold } = useAuth()
   const navigate = useNavigate()
-  const [household, setHousehold] = useState<Household | null>(null)
   const [inviteUrl, setInviteUrl] = useState<string | null>(null)
   const [icalUrl, setIcalUrl] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
@@ -26,17 +26,11 @@ export default function SettingsPage() {
   const [color, setColor] = useState(user?.color ?? '#3b6ea5')
   const [childName, setChildName] = useState('')
 
-  function refresh() {
-    api
-      .myHousehold()
-      .then(setHousehold)
-      .catch((err) => {
-        if (err instanceof ApiError && err.status === 404) navigate('/onboarding')
-        else setError(err instanceof Error ? err.message : 'Erreur')
-      })
-  }
+  const refresh = refreshHousehold
 
-  useEffect(refresh, [navigate])
+  useEffect(() => {
+    if (householdLoaded && !household) navigate('/onboarding')
+  }, [householdLoaded, household, navigate])
 
   function flash(msg: string) {
     setMessage(msg)
@@ -144,7 +138,7 @@ export default function SettingsPage() {
     }
   }
 
-  if (!household || !user) return <div className="page-loading">Chargement…</div>
+  if (!household || !user) return <Spinner />
 
   return (
     <>

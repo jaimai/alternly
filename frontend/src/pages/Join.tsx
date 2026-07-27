@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { api } from '../api'
 import { useAuth } from '../auth'
+import Spinner from '../components/Spinner'
 
 export default function JoinPage() {
   const { token } = useParams<{ token: string }>()
@@ -39,7 +40,7 @@ export default function JoinPage() {
     navigate(path)
   }
 
-  if (loading) return <div className="page-loading">Chargement…</div>
+  if (loading) return <Spinner />
 
   return (
     <div className="auth-page">

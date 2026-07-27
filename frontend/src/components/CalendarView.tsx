@@ -138,7 +138,11 @@ export default function CalendarView({ data, onDayClick, onRangeChange }: Props)
       plugins={[dayGridPlugin, interactionPlugin]}
       initialView="dayGridMonth"
       locale={frLocale}
-      headerToolbar={{ left: 'prev,next today', center: 'title', right: 'dayGridMonth,dayGridWeek' }}
+      headerToolbar={{
+        left: 'prevYear,prev,next,nextYear today',
+        center: 'title',
+        right: 'dayGridMonth,dayGridWeek',
+      }}
       events={events}
       dateClick={(info) => onDayClick(info.dateStr)}
       datesSet={(info) => {

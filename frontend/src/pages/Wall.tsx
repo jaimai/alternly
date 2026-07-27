@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { api, ApiError } from '../api'
+import { api } from '../api'
 import { useAuth } from '../auth'
+import Spinner from '../components/Spinner'
 import TopBar from '../components/TopBar'
 import type { Household, WallKind, WallPost } from '../types'
 
@@ -13,32 +14,22 @@ const KIND_META: Record<WallKind, { label: string; icon: string }> = {
 
 export default function WallPage() {
   const navigate = useNavigate()
-  const { user } = useAuth()
-  const [household, setHousehold] = useState<Household | null>(null)
+  const { user, household, householdLoaded } = useAuth()
   const [posts, setPosts] = useState<WallPost[]>([])
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    api
-      .myHousehold()
-      .then((h) => {
-        if (!h.custody_rule) navigate('/onboarding')
-        else setHousehold(h)
-      })
-      .catch((err) => {
-        if (err instanceof ApiError && err.status === 404) navigate('/onboarding')
-        else setError(err instanceof Error ? err.message : 'Erreur')
-      })
-  }, [navigate])
+    if (householdLoaded && (!household || !household.custody_rule)) navigate('/onboarding')
+  }, [householdLoaded, household, navigate])
 
   const load = useCallback(() => {
     if (!household) return
-    api.listWall(household.id).then(setPosts).catch(() => {})
+    api.listWall(household.id).then(setPosts).catch(() => setError("Impossible de charger le mur"))
   }, [household])
 
   useEffect(load, [load])
 
-  if (!household || !user) return <div className="page-loading">Chargement…</div>
+  if (!household || !user) return <Spinner />
 
   const name = (id: number | null) =>
     id === null ? null : household.members.find((m) => m.id === id)?.display_name ?? '?'

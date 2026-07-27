@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { api, ApiError } from '../api'
+import { api } from '../api'
 import { useAuth } from '../auth'
 import CalendarView from '../components/CalendarView'
 import ExceptionDialog from '../components/ExceptionDialog'
 import TopBar from '../components/TopBar'
 import WelcomeTour from '../components/WelcomeTour'
-import type { CalendarResponse, Household, ScheduleException } from '../types'
+import type { CalendarResponse, ScheduleException } from '../types'
 
 function todayIso(offset = 0): string {
   const d = new Date()
@@ -16,8 +16,7 @@ function todayIso(offset = 0): string {
 
 export default function CalendarPage() {
   const navigate = useNavigate()
-  const { user } = useAuth()
-  const [household, setHousehold] = useState<Household | null>(null)
+  const { user, household, householdLoaded } = useAuth()
   const [data, setData] = useState<CalendarResponse | null>(null)
   const [exceptions, setExceptions] = useState<ScheduleException[]>([])
   const [range, setRange] = useState<{ start: string; end: string } | null>(null)
@@ -25,17 +24,8 @@ export default function CalendarPage() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    api
-      .myHousehold()
-      .then((h) => {
-        if (!h.custody_rule) navigate('/onboarding')
-        else setHousehold(h)
-      })
-      .catch((err) => {
-        if (err instanceof ApiError && err.status === 404) navigate('/onboarding')
-        else setError(err instanceof Error ? err.message : 'Erreur')
-      })
-  }, [navigate])
+    if (householdLoaded && (!household || !household.custody_rule)) navigate('/onboarding')
+  }, [householdLoaded, household, navigate])
 
   const loadCalendar = useCallback(() => {
     if (!household || !range) return
