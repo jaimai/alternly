@@ -8,12 +8,12 @@ function range(p: Record<string, string>): string {
 
 const LABELS: Record<string, (p: Record<string, string>) => string> = {
   exchange_proposed: (p) => `Nouvel échange proposé (${range(p)})${p.note ? ` — « ${p.note} »` : ''} — à accepter ou refuser`,
-  exchange_accepted: (p) => `Votre proposition d'échange a été acceptée ✅ (${range(p)})`,
+  exchange_accepted: (p) => `Votre proposition d'échange a été acceptée (${range(p)})`,
   exchange_refused: (p) => `Votre proposition d'échange a été refusée (${range(p)})`,
   exchange_withdrawn: (p) => `Une proposition d'échange a été retirée (${range(p)})`,
   exception_deleted: (p) => `Échange de garde annulé (${range(p)})`,
   rule_changed: () => 'Les règles de garde ont été modifiées',
-  parent_joined: (p) => `${p.display_name} a rejoint le foyer 🎉`,
+  parent_joined: (p) => `${p.display_name} a rejoint le foyer`,
   expense_added: (p) => `Nouvelle dépense « ${p.label} » (${euros(p.amount_cents)})`,
   expense_disputed: (p) => `Votre dépense « ${p.label} » a été contestée`,
   expense_resolved: (p) => `La contestation sur « ${p.label} » a été levée`,

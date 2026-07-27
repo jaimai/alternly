@@ -189,6 +189,25 @@ label {
 
 .info-banner a { color: inherit; font-weight: 600; }
 
+.info-banner.banner-ic {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.info-banner.banner-ic svg { flex: 0 0 auto; }
+
+.legend-icons {
+  display: inline-flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  color: var(--ink-soft);
+}
+.legend-icons span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
 .page-loading {
   text-align: center;
   padding: 20vh 0;
@@ -621,6 +640,20 @@ label {
   display: flex;
   gap: 2px;
   flex-wrap: wrap;
+}
+
+/* icône + libellé dans une cellule du calendrier */
+.fc-ic {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  overflow: hidden;
+}
+.fc-ic svg { flex: 0 0 auto; }
+.fc-ic-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* Overlay provisoire d'une proposition en attente : hachures par-dessus la garde réelle */

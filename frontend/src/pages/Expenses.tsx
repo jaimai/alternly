@@ -55,7 +55,7 @@ export default function ExpensesPage() {
     id === null ? null : household.children.find((c) => c.id === id)?.first_name ?? null
 
   function balanceLabel(): string {
-    if (!balance || balance.amount_cents === 0) return 'Comptes à jour 🎉'
+    if (!balance || balance.amount_cents === 0) return 'Comptes à jour'
     const debtor = name(balance.debtor_id)
     const creditor = name(balance.creditor_id)
     if (balance.debtor_id === user!.id) return `Tu dois ${euros(balance.amount_cents)} à ${creditor}`

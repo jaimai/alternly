@@ -1,16 +1,16 @@
 import { Link, NavLink } from 'react-router-dom'
 import { useAuth } from '../auth'
 import { openCheckout } from '../billing'
+import Icon from './Icon'
 import NotificationBell from './NotificationBell'
 
 const navClass = ({ isActive }: { isActive: boolean }) => (isActive ? 'active' : undefined)
 
-const LOCK = ' 🔒'
-
 export default function TopBar({ householdName }: { householdName?: string }) {
   const { logout, user, billing, refreshBilling } = useAuth()
   const premium = billing?.access === true
-  const lock = billing !== null && !premium ? LOCK : ''
+  const locked = billing !== null && !premium
+  const lock = locked ? <Icon name="lock" size={12} style={{ marginLeft: 5, verticalAlign: -1 }} /> : null
   return (
     <div className="topbar">
       <Link to="/app" className="wordmark small" style={{ textDecoration: 'none' }} title={householdName}>

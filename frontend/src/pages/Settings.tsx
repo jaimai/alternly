@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { api, API_BASE } from '../api'
 import { useAuth, usePremium } from '../auth'
 import { openCheckout } from '../billing'
+import Icon from '../components/Icon'
 import RuleForm from '../components/RuleForm'
 import Spinner from '../components/Spinner'
 import type { RuleFormValue } from '../components/RuleForm'
@@ -287,8 +288,12 @@ export default function SettingsPage() {
             l'ancien.
           </p>
           {!premium ? (
-            <button className="secondary" onClick={() => user && openCheckout(user, refreshBilling)}>
-              🔒 Débloquer avec Premium
+            <button
+              className="secondary"
+              onClick={() => user && openCheckout(user, refreshBilling)}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+            >
+              <Icon name="lock" size={15} /> Débloquer avec Premium
             </button>
           ) : icalUrl ? (
             <div className="row">

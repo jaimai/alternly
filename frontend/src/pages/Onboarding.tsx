@@ -98,7 +98,7 @@ export default function OnboardingPage() {
           navigate('/app')
         }}
         onSkip={() => navigate('/app')}
-        title="Votre calendrier est prêt 🎉"
+        title="Votre calendrier est prêt"
         subtitle="Le calendrier est gratuit. Débloquez les dépenses, le mur et la synchronisation quand vous voulez."
       />
     )

@@ -2,14 +2,16 @@ import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../api'
 import { useAuth } from '../auth'
+import Icon from '../components/Icon'
+import type { IconName } from '../components/Icon'
 import Spinner from '../components/Spinner'
 import TopBar from '../components/TopBar'
 import type { Household, WallKind, WallPost } from '../types'
 
-const KIND_META: Record<WallKind, { label: string; icon: string }> = {
-  message: { label: 'Info', icon: '💬' },
-  task: { label: 'Tâche', icon: '✅' },
-  question: { label: 'Question', icon: '❓' },
+const KIND_META: Record<WallKind, { label: string; icon: IconName }> = {
+  message: { label: 'Info', icon: 'message' },
+  task: { label: 'Tâche', icon: 'task' },
+  question: { label: 'Question', icon: 'question' },
 }
 
 export default function WallPage() {
@@ -52,10 +54,16 @@ export default function WallPage() {
           return (
             <div key={p.id} className="card" style={{ padding: 14 }}>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
-                <span className="tag tag-accepted">{meta.icon} {meta.label}</span>
+                <span className="tag tag-accepted" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                  <Icon name={meta.icon} size={13} /> {meta.label}
+                </span>
                 <span className="hint">{name(p.author_id)}</span>
                 {childName(p.child_id) && <span className="hint">· {childName(p.child_id)}</span>}
-                {p.due_date && <span className="hint">· 📅 {p.due_date}</span>}
+                {p.due_date && (
+                  <span className="hint" style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                    · <Icon name="calendar" size={12} /> {p.due_date}
+                  </span>
+                )}
                 {p.assigned_to && <span className="hint">· pour {name(p.assigned_to)}</span>}
                 <span className="hint" style={{ marginLeft: 'auto' }}>{p.created_at.slice(0, 10)}</span>
               </div>
@@ -135,8 +143,9 @@ function Composer({ household, onDone }: { household: Household; onDone: () => v
             type="button"
             className={kind === k ? '' : 'secondary'}
             onClick={() => setKind(k)}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
           >
-            {KIND_META[k].icon} {KIND_META[k].label}
+            <Icon name={KIND_META[k].icon} size={15} /> {KIND_META[k].label}
           </button>
         ))}
       </div>

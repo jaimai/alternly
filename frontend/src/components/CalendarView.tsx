@@ -3,7 +3,9 @@ import FullCalendar from '@fullcalendar/react'
 import dayGridPlugin from '@fullcalendar/daygrid'
 import interactionPlugin from '@fullcalendar/interaction'
 import frLocale from '@fullcalendar/core/locales/fr'
-import type { EventInput } from '@fullcalendar/core'
+import type { EventContentArg, EventInput } from '@fullcalendar/core'
+import Icon from './Icon'
+import type { IconName } from './Icon'
 import type { CalendarResponse, Member } from '../types'
 
 interface Props {
@@ -18,9 +20,20 @@ function addDays(iso: string, n: number): string {
   return d.toISOString().slice(0, 10)
 }
 
-const SOURCE_ICONS: Record<string, string> = {
-  exception: '↔️',
-  special: '⭐',
+const SOURCE_ICONS: Record<string, IconName> = {
+  exception: 'swap',
+  special: 'star',
+}
+
+function renderEvent(arg: EventContentArg) {
+  if (arg.event.display === 'background') return undefined // garde / overlay : rendu par défaut
+  const icon = arg.event.extendedProps.icon as IconName | undefined
+  return (
+    <div className="fc-ic">
+      {icon && <Icon name={icon} size={12} />}
+      <span className="fc-ic-label">{arg.event.title}</span>
+    </div>
+  )
 }
 
 export default function CalendarView({ data, onDayClick, onRangeChange }: Props) {
@@ -69,7 +82,8 @@ export default function CalendarView({ data, onDayClick, onRangeChange }: Props)
         evts.push({
           start: d.date,
           allDay: true,
-          title: `${icon} ${member?.display_name ?? ''}`,
+          title: member?.display_name ?? '',
+          extendedProps: { icon },
           color: 'transparent',
           textColor: 'var(--ink)',
         })
@@ -81,7 +95,8 @@ export default function CalendarView({ data, onDayClick, onRangeChange }: Props)
       evts.push({
         start: h.date,
         allDay: true,
-        title: `📌 ${h.label}`,
+        title: h.label,
+        extendedProps: { icon: 'flag' },
         color: 'transparent',
         textColor: 'var(--ink-soft)',
       })
@@ -93,18 +108,20 @@ export default function CalendarView({ data, onDayClick, onRangeChange }: Props)
         start: p.start,
         end: addDays(p.end, 1),
         allDay: true,
-        title: `🏖️ ${p.label}`,
+        title: p.label,
+        extendedProps: { icon: 'sun' },
         color: '#f3e8d2',
         textColor: '#7a5c1e',
       })
     }
 
-    // Tâches datées du mur : repère 📝 sur le jour d'échéance
+    // Tâches datées du mur : repère sur le jour d'échéance
     for (const t of data.tasks) {
       evts.push({
         start: t.due_date,
         allDay: true,
-        title: `📝 ${t.body}`,
+        title: t.body,
+        extendedProps: { icon: 'note' },
         color: 'transparent',
         textColor: 'var(--ink-soft)',
       })
@@ -124,7 +141,8 @@ export default function CalendarView({ data, onDayClick, onRangeChange }: Props)
       evts.push({
         start: px.date_start,
         allDay: true,
-        title: `⏳ proposé — ${member?.display_name ?? ''}`,
+        title: `proposé — ${member?.display_name ?? ''}`,
+        extendedProps: { icon: 'clock' },
         color: 'transparent',
         textColor: 'var(--ink-soft)',
       })
@@ -144,6 +162,7 @@ export default function CalendarView({ data, onDayClick, onRangeChange }: Props)
         right: 'dayGridMonth,dayGridWeek',
       }}
       events={events}
+      eventContent={renderEvent}
       dateClick={(info) => onDayClick(info.dateStr)}
       datesSet={(info) => {
         const start = info.start.toISOString().slice(0, 10)

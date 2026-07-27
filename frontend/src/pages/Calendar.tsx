@@ -4,6 +4,7 @@ import { api } from '../api'
 import { useAuth } from '../auth'
 import CalendarView from '../components/CalendarView'
 import ExceptionDialog from '../components/ExceptionDialog'
+import Icon from '../components/Icon'
 import TopBar from '../components/TopBar'
 import WelcomeTour from '../components/WelcomeTour'
 import type { CalendarResponse, ScheduleException } from '../types'
@@ -58,22 +59,31 @@ export default function CalendarPage() {
       <div className="layout">
         {error && <div className="error">{error}</div>}
         {pendingForMe.length > 0 && (
-          <div className="info-banner">
-            ⏳ {pendingForMe.length === 1 ? 'Une proposition d’échange attend' : `${pendingForMe.length} propositions d’échange attendent`}{' '}
-            votre réponse — cliquez sur le jour concerné pour accepter ou refuser.
+          <div className="info-banner banner-ic">
+            <Icon name="clock" size={16} />
+            <span>
+              {pendingForMe.length === 1 ? 'Une proposition d’échange attend' : `${pendingForMe.length} propositions d’échange attendent`}{' '}
+              votre réponse — cliquez sur le jour concerné pour accepter ou refuser.
+            </span>
           </div>
         )}
         {expiringTomorrow.length > 0 && (
-          <div className="info-banner">
-            ⚠️ {expiringTomorrow.length === 1 ? 'Une proposition expire demain' : `${expiringTomorrow.length} propositions expirent demain`}{' '}
-            si elles ne sont pas traitées.
+          <div className="info-banner banner-ic">
+            <Icon name="alert" size={16} />
+            <span>
+              {expiringTomorrow.length === 1 ? 'Une proposition expire demain' : `${expiringTomorrow.length} propositions expirent demain`}{' '}
+              si elles ne sont pas traitées.
+            </span>
           </div>
         )}
         {handoverTomorrow && tomorrowParent && (
-          <div className="info-banner">
-            🔁 Changement de foyer demain : {household?.children.map((c) => c.first_name).join(', ') || "l'enfant"}{' '}
-            sera chez <strong>{tomorrowParent.display_name}</strong>
-            {data && ` (passage vers ${data.handover_time})`}.
+          <div className="info-banner banner-ic">
+            <Icon name="swap" size={16} />
+            <span>
+              Changement de foyer demain : {household?.children.map((c) => c.first_name).join(', ') || "l'enfant"}{' '}
+              sera chez <strong>{tomorrowParent.display_name}</strong>
+              {data && ` (passage vers ${data.handover_time})`}.
+            </span>
           </div>
         )}
         {data && !data.school_holidays_loaded && (
@@ -89,7 +99,13 @@ export default function CalendarPage() {
                 {m.display_name}
               </span>
             ))}
-            <span style={{ color: 'var(--ink-soft)' }}>🏖️ vacances · 📌 férié · ↔️ échange · ⭐ fête · ⏳ proposé</span>
+            <span className="legend-icons">
+              <span><Icon name="sun" size={13} /> vacances</span>
+              <span><Icon name="flag" size={13} /> férié</span>
+              <span><Icon name="swap" size={13} /> échange</span>
+              <span><Icon name="star" size={13} /> fête</span>
+              <span><Icon name="clock" size={13} /> proposé</span>
+            </span>
             <span style={{ marginLeft: 'auto', color: 'var(--ink-soft)' }}>
               Cliquez sur un jour pour proposer un échange
             </span>
