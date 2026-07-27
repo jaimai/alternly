@@ -26,7 +26,7 @@ export default function JoinPage() {
     try {
       await api.acceptInvitation(token)
       localStorage.removeItem('pending_invite')
-      navigate('/')
+      navigate('/app')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Impossible de rejoindre le foyer')
     } finally {

@@ -24,7 +24,7 @@ export default function OnboardingPage() {
       .myHousehold()
       .then((h) => {
         setHousehold(h)
-        if (h.custody_rule) navigate('/')
+        if (h.custody_rule) navigate('/app')
         else setStep(2) // foyer déjà créé : reste la règle de garde
       })
       .catch((err) => {
@@ -74,7 +74,7 @@ export default function OnboardingPage() {
     try {
       await api.setCustodyRule(household.id, value.custody)
       await api.setVacationRule(household.id, value.vacation)
-      navigate('/')
+      navigate('/app')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur')
     } finally {

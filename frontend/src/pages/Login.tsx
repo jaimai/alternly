@@ -21,7 +21,7 @@ export default function LoginPage() {
       setToken(resp.access_token)
       setUser(resp.user)
       const pending = localStorage.getItem('pending_invite')
-      navigate(pending ? `/join/${pending}` : '/')
+      navigate(pending ? `/join/${pending}` : '/app')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur de connexion')
     } finally {

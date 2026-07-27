@@ -1,4 +1,4 @@
-import { Route, Routes } from 'react-router-dom'
+import { Navigate, Route, Routes } from 'react-router-dom'
 import { Analytics } from '@vercel/analytics/react'
 import { RequireAuth } from './auth'
 import CalendarPage from './pages/Calendar'
@@ -50,13 +50,16 @@ export default function App() {
         }
       />
       <Route
-        path="/"
+        path="/app"
         element={
           <RequireAuth>
             <CalendarPage />
           </RequireAuth>
         }
       />
+      {/* `/` = landing (servie par le backend, proxifiée par Vercel). En dev ou en
+          navigation directe côté SPA, on renvoie vers l'app. */}
+      <Route path="/" element={<Navigate to="/app" replace />} />
     </Routes>
     <Analytics />
     </>

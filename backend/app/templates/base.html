@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>{% block title %}Alternly{% endblock %}</title>
   <meta name="description" content="{% block description %}Alternly : le calendrier de garde alternée pensé pour la France. Vacances scolaires zones A/B/C, années paires et impaires, dépenses partagées et mur de communication entre les deux parents.{% endblock %}" />
-  <link rel="canonical" href="{{ request.url }}" />
+  <link rel="canonical" href="{{ site_url }}{{ request.url.path }}" />
 
   <!-- Open Graph / Twitter -->
   <meta property="og:site_name" content="Alternly" />
@@ -13,8 +13,8 @@
   <meta property="og:type" content="website" />
   <meta property="og:title" content="{% block og_title %}{{ self.title() }}{% endblock %}" />
   <meta property="og:description" content="{{ self.description() }}" />
-  <meta property="og:url" content="{{ request.url }}" />
-  <meta property="og:image" content="{{ request.base_url }}static/favicon.svg" />
+  <meta property="og:url" content="{{ site_url }}{{ request.url.path }}" />
+  <meta property="og:image" content="{{ site_url }}/static/favicon.svg" />
   <meta name="twitter:card" content="summary" />
   <meta name="twitter:title" content="{{ self.title() }}" />
   <meta name="twitter:description" content="{{ self.description() }}" />
@@ -34,9 +34,9 @@
     "@graph": [
       {
         "@type": "Organization",
-        "@id": "{{ request.base_url }}#organization",
+        "@id": "{{ site_url }}/#organization",
         "name": "Alternly",
-        "url": "{{ request.base_url }}",
+        "url": "{{ site_url }}/",
         "description": "Calendrier de garde alternée et outils de coparentalité pour parents séparés en France.",
         "areaServed": "FR"
       },
@@ -45,7 +45,7 @@
         "name": "Alternly",
         "operatingSystem": "Web, iOS, Android",
         "applicationCategory": "LifestyleApplication",
-        "url": "{{ request.base_url }}",
+        "url": "{{ site_url }}/",
         "inLanguage": "fr-FR",
         "description": "Calendrier de garde partagée : rythmes de garde, vacances scolaires A/B/C, alternance années paires/impaires, échanges de jours, dépenses partagées et mur de communication.",
         "offers": {
@@ -67,8 +67,8 @@
         <a href="/#fonctionnalites">Fonctionnalités</a>
         <a href="/#tarifs">Tarifs</a>
         <a href="/blog">Guides</a>
-        <a href="{{ app_url }}/login" class="ghost">Se connecter</a>
-        <a href="{{ app_url }}/register" class="cta">Essayer gratuitement</a>
+        <a href="/login" class="ghost">Se connecter</a>
+        <a href="/register" class="cta">Essayer gratuitement</a>
       </div>
     </nav>
   </header>
@@ -86,7 +86,7 @@
         <a href="/#fonctionnalites">Fonctionnalités</a>
         <a href="/#tarifs">Tarifs</a>
         <a href="/blog">Guides &amp; articles</a>
-        <a href="{{ app_url }}/register">Créer un compte</a>
+        <a href="/register">Créer un compte</a>
       </div>
       <div>
         <strong>Légal</strong>

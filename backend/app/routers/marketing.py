@@ -14,9 +14,10 @@ router = APIRouter(tags=["marketing"])
 
 TEMPLATES_DIR = Path(__file__).resolve().parent.parent / "templates"
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
-# URL de la SPA (Vercel) : les liens « se connecter / s'inscrire » de la landing
-# pointent vers l'app hébergée séparément.
-templates.env.globals["app_url"] = settings.app_url.rstrip("/")
+# URL publique du site (Vercel). La landing et l'app sont sous la même origine :
+# les liens « se connecter/s'inscrire » sont donc relatifs (/login, /register).
+# `site_url` sert au canonical/OG (la landing est proxifiée par Vercel).
+templates.env.globals["site_url"] = settings.public_site_url.rstrip("/")
 
 MONTHS_FR = [
     "janvier", "février", "mars", "avril", "mai", "juin",

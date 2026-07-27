@@ -9,9 +9,11 @@ class Settings(BaseSettings):
     # Notifications e-mail (Resend). Vide → envoi désactivé (no-op).
     resend_api_key: str = ""
     email_from: str = "Alternly <no-reply@alternly.com>"
-    # URL publique de la SPA (hébergée sur Vercel) : liens de la landing, CTAs
-    # e-mail, liens d'invitation. En dev : le serveur Vite.
+    # URL publique du site (Vercel sert la landing en / et l'app). Utilisée pour
+    # les liens absolus des e-mails et le canonical/OG (la landing est proxifiée,
+    # donc request.url refléterait l'URL interne Railway).
     app_url: str = "http://localhost:5173"
+    public_site_url: str = "http://localhost:8000"
     # Origines autorisées à appeler l'API (CORS), séparées par des virgules.
     cors_origins: str = "http://localhost:5173"
     # Secret protégeant l'endpoint cron des rappels. Vide → endpoint désactivé.

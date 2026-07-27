@@ -75,7 +75,7 @@ def exchange_proposed_email(payload: dict) -> tuple[str, str]:
         f"Votre coparent vous propose un échange de garde ({period})." + note +
         " Ouvrez Alternly pour l'accepter ou le refuser."
     )
-    return "Nouvelle proposition d'échange de garde", _layout(intro, "Voir la proposition", "/")
+    return "Nouvelle proposition d'échange de garde", _layout(intro, "Voir la proposition", "/app")
 
 
 def exchange_reminder_email(payload: dict) -> tuple[str, str]:
@@ -85,4 +85,4 @@ def exchange_reminder_email(payload: dict) -> tuple[str, str]:
         f"Une proposition d'échange de garde ({period}) attend toujours votre réponse et "
         "expirera demain si elle n'est pas traitée."
     )
-    return "Rappel : une proposition d'échange expire demain", _layout(intro, "Répondre maintenant", "/")
+    return "Rappel : une proposition d'échange expire demain", _layout(intro, "Répondre maintenant", "/app")

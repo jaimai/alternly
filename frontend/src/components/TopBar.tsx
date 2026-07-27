@@ -10,11 +10,11 @@ export default function TopBar({ householdName }: { householdName?: string }) {
   const trialDays = billing?.status === 'trialing' ? billing.trial_days_left : null
   return (
     <div className="topbar">
-      <Link to="/" className="wordmark small" style={{ textDecoration: 'none' }} title={householdName}>
+      <Link to="/app" className="wordmark small" style={{ textDecoration: 'none' }} title={householdName}>
         altern<span>ly</span>
       </Link>
       <nav className="topnav" style={{ marginRight: 'auto' }}>
-        <NavLink to="/" end className={navClass}>
+        <NavLink to="/app" end className={navClass}>
           Calendrier
         </NavLink>
         <NavLink to="/expenses" className={navClass}>

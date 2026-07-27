@@ -2,7 +2,13 @@
   "permissions": {
     "allow": [
       "Bash(.venv/bin/python -c ' *)",
-      "Bash(.venv/bin/pytest tests/test_billing.py -q --no-header)"
+      "Bash(.venv/bin/pytest tests/test_billing.py -q --no-header)",
+      "Bash(/bin/sleep 45)",
+      "Bash(RAILWAY_CALLER=\"skill:use-railway@1.2.4\" RAILWAY_AGENT_SESSION=\"railway-check2\" railway deployment list --service web --json)",
+      "Bash(python3 -c \"import json,sys;d=json.load\\(sys.stdin\\);print\\(d[0]['status'],'|',\\(d[0].get\\('meta'\\) or {}\\).get\\('commitMessage',''\\)[:35]\\)\")",
+      "Bash(curl -s -o /dev/null -w \"GET /api/billing/status → %{http_code}\\\\n\" https://web-production-d1aa3.up.railway.app/api/billing/status)",
+      "Bash(RAILWAY_CALLER=\"skill:use-railway@1.2.4\" RAILWAY_AGENT_SESSION=\"railway-logs\" railway logs --service web --lines 40)",
+      "Bash(RAILWAY_CALLER=\"skill:use-railway@1.2.4\" RAILWAY_AGENT_SESSION=\"railway-logs2\" railway logs --service web --lines 60)"
     ]
   }
 }
