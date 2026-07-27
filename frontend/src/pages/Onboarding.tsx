@@ -2,13 +2,14 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api, ApiError } from '../api'
 import { useAuth } from '../auth'
+import Paywall from '../components/Paywall'
 import Spinner from '../components/Spinner'
 import RuleForm from '../components/RuleForm'
 import type { RuleFormValue } from '../components/RuleForm'
 import type { Household } from '../types'
 
 export default function OnboardingPage() {
-  const { user, refreshHousehold } = useAuth()
+  const { user, billing, refreshHousehold, refreshBilling } = useAuth()
   const navigate = useNavigate()
   const [step, setStep] = useState(0)
   const [household, setHousehold] = useState<Household | null>(null)
@@ -76,7 +77,9 @@ export default function OnboardingPage() {
       await api.setCustodyRule(household.id, value.custody)
       await api.setVacationRule(household.id, value.vacation)
       await refreshHousehold()  // met à jour le cache avant d'entrer dans l'app
-      navigate('/app')
+      // Freemium : on propose l'abonnement (skippable) à la fin de l'inscription.
+      if (billing && !billing.access) setStep(3)
+      else navigate('/app')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur')
     } finally {
@@ -85,6 +88,21 @@ export default function OnboardingPage() {
   }
 
   if (loading) return <Spinner />
+
+  if (step === 3 && user) {
+    return (
+      <Paywall
+        user={user}
+        onSubscribed={() => {
+          refreshBilling()
+          navigate('/app')
+        }}
+        onSkip={() => navigate('/app')}
+        title="Votre calendrier est prêt 🎉"
+        subtitle="Le calendrier est gratuit. Débloquez les dépenses, le mur et la synchronisation quand vous voulez."
+      />
+    )
+  }
 
   return (
     <div className="auth-page" style={{ maxWidth: 520 }}>

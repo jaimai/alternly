@@ -7,22 +7,28 @@ import type { User } from '../types'
 const MARKETING = API_BASE.replace(/\/api\/?$/, '')
 
 const PERKS = [
-  'Calendrier de garde illimité, des années à l’avance',
-  'Vacances scolaires A/B/C & alternance années paires/impaires',
-  'Échanges de jours proposés / acceptés',
   'Dépenses partagées & solde entre parents',
   'Mur de communication (infos, tâches, questions)',
-  'Notifications e-mail & synchronisation Google / Apple',
+  'Notifications par e-mail',
+  'Synchronisation Google / Apple Calendar',
 ]
 
-export default function Paywall({ user, onSubscribed }: { user: User; onSubscribed: () => void }) {
+interface Props {
+  user: User
+  onSubscribed: () => void
+  /** Si fourni, affiche « Continuer en gratuit » au lieu de « Se déconnecter ». */
+  onSkip?: () => void
+  title?: string
+  subtitle?: string
+}
+
+export default function Paywall({ user, onSubscribed, onSkip, title, subtitle }: Props) {
   const [busy, setBusy] = useState(false)
   const [done, setDone] = useState(false)
 
   async function subscribe() {
     setBusy(true)
     await openCheckout(user, () => {
-      // Paiement terminé : l'activation arrive via webhook (léger délai).
       setDone(true)
       onSubscribed()
       window.setTimeout(onSubscribed, 4000)
@@ -41,8 +47,10 @@ export default function Paywall({ user, onSubscribed }: { user: User; onSubscrib
         <div className="wordmark">altern<span>ly</span></div>
       </div>
       <div className="card" style={{ textAlign: 'center' }}>
-        <h2>Votre essai est terminé</h2>
-        <p className="hint">Abonnez-vous pour continuer à organiser la garde en toute sérénité.</p>
+        <h2>{title ?? 'Passez à Alternly Premium'}</h2>
+        <p className="hint">
+          {subtitle ?? 'Le calendrier reste gratuit. L’abonnement débloque les outils du quotidien.'}
+        </p>
         <div style={{ margin: '16px 0' }}>
           <span style={{ fontFamily: 'var(--font-display)', fontSize: '2.6rem', color: 'var(--pine)' }}>39&nbsp;€</span>
           <span className="hint"> / an et par parent</span>
@@ -63,7 +71,11 @@ export default function Paywall({ user, onSubscribed }: { user: User; onSubscrib
           <p className="hint" style={{ marginTop: 10 }}>Le paiement sera bientôt disponible.</p>
         )}
         <p style={{ marginTop: 14 }}>
-          <button className="danger-link" onClick={logout}>Se déconnecter</button>
+          {onSkip ? (
+            <button className="danger-link" onClick={onSkip}>Continuer en gratuit</button>
+          ) : (
+            <button className="danger-link" onClick={logout}>Se déconnecter</button>
+          )}
         </p>
         <p className="hint" style={{ fontSize: '0.8rem' }}>
           Paiement sécurisé par Paddle. Voir nos{' '}

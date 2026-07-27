@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { Analytics } from '@vercel/analytics/react'
 import { RequireAuth } from './auth'
+import PremiumGate from './components/PremiumGate'
 import CalendarPage from './pages/Calendar'
 import ExpensesPage from './pages/Expenses'
 import JoinPage from './pages/Join'
@@ -37,7 +38,9 @@ export default function App() {
         path="/expenses"
         element={
           <RequireAuth>
-            <ExpensesPage />
+            <PremiumGate feature="Dépenses partagées">
+              <ExpensesPage />
+            </PremiumGate>
           </RequireAuth>
         }
       />
@@ -45,7 +48,9 @@ export default function App() {
         path="/wall"
         element={
           <RequireAuth>
-            <WallPage />
+            <PremiumGate feature="Mur de communication">
+              <WallPage />
+            </PremiumGate>
           </RequireAuth>
         }
       />

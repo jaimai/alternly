@@ -56,12 +56,11 @@ def _signed(body: dict, secret: str) -> tuple[str, bytes]:
 
 
 class TestBillingApi:
-    def test_register_starts_trial(self, client, auth_headers):
+    def test_register_is_free_no_premium(self, client, auth_headers):
         headers, user = auth_headers()
         s = client.get("/api/billing/status", headers=headers).json()
-        assert s["status"] == "trialing"
-        assert s["access"] is True
-        assert 13 <= s["trial_days_left"] <= 14
+        assert s["status"] == "free"
+        assert s["access"] is False  # calendrier gratuit, premium bloqué
 
     def test_webhook_activates_subscription(self, client, auth_headers, monkeypatch):
         monkeypatch.setattr(billing.settings, "paddle_webhook_secret", "sk_test")

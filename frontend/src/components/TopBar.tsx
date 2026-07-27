@@ -5,9 +5,12 @@ import NotificationBell from './NotificationBell'
 
 const navClass = ({ isActive }: { isActive: boolean }) => (isActive ? 'active' : undefined)
 
+const LOCK = ' 🔒'
+
 export default function TopBar({ householdName }: { householdName?: string }) {
   const { logout, user, billing, refreshBilling } = useAuth()
-  const trialDays = billing?.status === 'trialing' ? billing.trial_days_left : null
+  const premium = billing?.access === true
+  const lock = billing !== null && !premium ? LOCK : ''
   return (
     <div className="topbar">
       <Link to="/app" className="wordmark small" style={{ textDecoration: 'none' }} title={householdName}>
@@ -18,19 +21,19 @@ export default function TopBar({ householdName }: { householdName?: string }) {
           Calendrier
         </NavLink>
         <NavLink to="/expenses" className={navClass}>
-          Dépenses
+          Dépenses{lock}
         </NavLink>
         <NavLink to="/wall" className={navClass}>
-          Mur
+          Mur{lock}
         </NavLink>
       </nav>
-      {trialDays !== null && user && (
+      {billing !== null && !premium && user && (
         <button
           className="trial-chip"
           onClick={() => openCheckout(user, refreshBilling)}
-          title="S'abonner"
+          title="Passer à la version premium"
         >
-          Essai&nbsp;: {trialDays}&nbsp;j · S'abonner
+          Gratuit · Passer premium
         </button>
       )}
       <NotificationBell />

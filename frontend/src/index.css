@@ -270,6 +270,20 @@ label {
   border-radius: 999px;
 }
 
+.premium-tag {
+  display: inline-block;
+  background: var(--terra-soft);
+  color: #8c4a2c;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 2px 8px;
+  border-radius: 999px;
+  vertical-align: middle;
+  margin-left: 6px;
+}
+
 @media (hover: hover) and (pointer: fine) {
   .trial-chip:hover { background: #f0d3c4; }
 }

@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api, API_BASE } from '../api'
-import { useAuth } from '../auth'
+import { useAuth, usePremium } from '../auth'
+import { openCheckout } from '../billing'
 import RuleForm from '../components/RuleForm'
 import Spinner from '../components/Spinner'
 import type { RuleFormValue } from '../components/RuleForm'
@@ -16,7 +17,8 @@ const SPECIAL_LABELS: Record<SpecialDayRule['kind'], string> = {
 }
 
 export default function SettingsPage() {
-  const { user, setUser, household, householdLoaded, refreshHousehold } = useAuth()
+  const { user, setUser, household, householdLoaded, refreshHousehold, refreshBilling } = useAuth()
+  const premium = usePremium()
   const navigate = useNavigate()
   const [inviteUrl, setInviteUrl] = useState<string | null>(null)
   const [icalUrl, setIcalUrl] = useState<string | null>(null)
@@ -279,12 +281,16 @@ export default function SettingsPage() {
         </div>
 
         <div className="card">
-          <h2>Synchronisation Google / Apple Calendar</h2>
+          <h2>Synchronisation Google / Apple Calendar <span className="premium-tag">Premium</span></h2>
           <p style={{ color: 'var(--ink-soft)', fontSize: '0.9rem' }}>
             Abonnez-vous à ce lien privé depuis votre application de calendrier. Régénérer le lien invalide
             l'ancien.
           </p>
-          {icalUrl ? (
+          {!premium ? (
+            <button className="secondary" onClick={() => user && openCheckout(user, refreshBilling)}>
+              🔒 Débloquer avec Premium
+            </button>
+          ) : icalUrl ? (
             <div className="row">
               <input readOnly value={icalUrl} onFocus={(e) => e.target.select()} />
               <button onClick={() => copy(icalUrl)}>Copier</button>
@@ -301,14 +307,16 @@ export default function SettingsPage() {
             <input id="mycolor" type="color" value={color} onChange={(e) => setColor(e.target.value)} style={{ height: 42, padding: 4 }} />
             <button onClick={saveColor}>Enregistrer</button>
           </div>
-          <label style={{ display: 'flex', gap: 8, alignItems: 'center', color: 'var(--ink)', marginTop: 16 }}>
+          <label style={{ display: 'flex', gap: 8, alignItems: 'center', color: premium ? 'var(--ink)' : 'var(--ink-soft)', marginTop: 16 }}>
             <input
               type="checkbox"
               style={{ width: 'auto' }}
-              checked={user.email_opt_in}
+              checked={premium && user.email_opt_in}
+              disabled={!premium}
               onChange={(e) => toggleEmails(e.target.checked)}
             />
             Recevoir un e-mail pour les propositions d'échange et leurs rappels
+            {!premium && <span className="premium-tag">Premium</span>}
           </label>
         </div>
       </div>

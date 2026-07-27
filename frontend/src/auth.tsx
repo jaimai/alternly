@@ -2,7 +2,6 @@ import { createContext, useCallback, useContext, useEffect, useState } from 'rea
 import type { ReactNode } from 'react'
 import { Navigate } from 'react-router-dom'
 import { api, ApiError, getToken, setToken } from './api'
-import Paywall from './components/Paywall'
 import Spinner from './components/Spinner'
 import type { BillingStatus, Household, User } from './types'
 
@@ -91,10 +90,16 @@ export function useAuth() {
 }
 
 export function RequireAuth({ children }: { children: ReactNode }) {
-  const { user, billing, loading, refreshBilling } = useAuth()
+  const { user, loading } = useAuth()
   if (loading) return <Spinner />
   if (!user) return <Navigate to="/login" replace />
-  // Accès bloqué (essai expiré, non abonné) → paywall.
-  if (billing && !billing.access) return <Paywall user={user} onSubscribed={refreshBilling} />
+  // Freemium : l'app (calendrier) est toujours accessible. Les fonctions premium
+  // sont protégées séparément par <PremiumGate>.
   return <>{children}</>
+}
+
+/** Accès premium (abonnement actif). `billing === null` = pas encore chargé. */
+export function usePremium(): boolean {
+  const { billing } = useAuth()
+  return billing?.access === true
 }

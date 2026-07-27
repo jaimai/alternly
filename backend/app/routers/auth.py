@@ -20,13 +20,14 @@ def register(data: UserCreate, db: Session = Depends(get_db)):
         # Énumération d'e-mails possible ici : compromis UX assumé au MVP
         # (le login reste uniforme ; pas de reset de mot de passe exposé).
         raise HTTPException(status_code=409, detail="Un compte existe déjà avec cet e-mail")
+    # Modèle freemium : le calendrier est gratuit ; les fonctions premium
+    # (dépenses, mur, e-mails, sync) nécessitent un abonnement.
     user = User(
         email=email,
         password_hash=hash_password(data.password),
         display_name=data.display_name,
         color=data.color,
-        subscription_status="trialing",
-        trial_ends_at=utcnow() + timedelta(days=settings.trial_days),
+        subscription_status="free",
     )
     db.add(user)
     db.commit()
