@@ -6,6 +6,7 @@ import type {
   CustodyRule,
   Expense,
   Household,
+  Member,
   Notification,
   ScheduleException,
   Settlement,
@@ -87,6 +88,8 @@ export const api = {
   myHousehold: () => request<Household>('/households/mine'),
   updateHousehold: (id: number, data: { name?: string; school_zone?: string }) =>
     request<Household>(`/households/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+  renamePartner: (householdId: number, data: { display_name: string; color?: string }) =>
+    request<Member>(`/households/${householdId}/partner`, { method: 'PATCH', body: JSON.stringify(data) }),
 
   createInvitation: (householdId: number) =>
     request<{ invite_url: string; token: string; expires_at: string }>(
@@ -153,6 +156,10 @@ export const api = {
     request<Expense>(`/households/${householdId}/expenses/${id}/dispute`, { method: 'POST', body: JSON.stringify({ dispute_note }) }),
   resolveExpense: (householdId: number, id: number) =>
     request<Expense>(`/households/${householdId}/expenses/${id}/resolve`, { method: 'POST' }),
+  settleExpense: (householdId: number, id: number) =>
+    request<Expense>(`/households/${householdId}/expenses/${id}/settle`, { method: 'POST' }),
+  unsettleExpense: (householdId: number, id: number) =>
+    request<Expense>(`/households/${householdId}/expenses/${id}/unsettle`, { method: 'POST' }),
   balance: (householdId: number) => request<Balance>(`/households/${householdId}/balance`),
   listSettlements: (householdId: number) =>
     request<Settlement[]>(`/households/${householdId}/settlements`),

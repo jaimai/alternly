@@ -724,6 +724,66 @@ label {
   font-size: 0.9rem;
 }
 
+/* --- Dépenses : visu rapide « reste à payer / à me faire rembourser » --- */
+.stat-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 14px 0 6px;
+}
+.stat {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  background: var(--surface);
+}
+.stat .stat-label {
+  font-size: 0.82rem;
+  color: var(--ink-soft);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.stat .stat-num {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-top: 4px;
+  line-height: 1.1;
+}
+.stat.credit { background: var(--pine-soft); border-color: transparent; }
+.stat.credit .stat-num { color: var(--pine-deep); }
+.stat.debit { background: var(--terra-soft); border-color: transparent; }
+.stat.debit .stat-num { color: #8c4a2c; }
+.stat.zero .stat-num { color: var(--ink-soft); }
+
+/* Bandeau : second parent sans compte */
+.partner-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  background: var(--sage);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  font-size: 0.9rem;
+}
+.partner-banner .banner-actions { margin-left: auto; display: flex; gap: 8px; }
+
+/* Dépense réglée : atténuée */
+.expense.settled { opacity: 0.62; }
+.expense.settled strong { text-decoration: line-through; text-decoration-color: var(--ink-soft); }
+.tag-settled { background: var(--pine-soft); color: var(--pine-deep); }
+
+.expense-group-title {
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-soft);
+  margin: 20px 2px 8px;
+}
+
 /* Reduced motion : on garde les fondus (opacité, couleurs), on retire le mouvement */
 @media (prefers-reduced-motion: reduce) {
   * {

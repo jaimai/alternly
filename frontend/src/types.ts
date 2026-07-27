@@ -20,6 +20,7 @@ export interface Member {
   display_name: string
   color: string
   role: 'parent1' | 'parent2'
+  is_placeholder: boolean
 }
 
 export interface Child {
@@ -159,6 +160,7 @@ export interface Expense {
   payer_percent: number
   status: 'active' | 'disputed'
   dispute_note: string
+  settled_at: string | null
   created_by: number
 }
 
@@ -177,4 +179,6 @@ export interface Balance {
   debtor_id: number | null
   creditor_id: number | null
   amount_cents: number
+  owed_to_me_cents: number
+  i_owe_cents: number
 }
