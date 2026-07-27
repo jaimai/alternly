@@ -37,6 +37,12 @@ def landing(request: Request):
     return templates.TemplateResponse(request, "landing.html", {})
 
 
+@router.get("/en", response_class=HTMLResponse, include_in_schema=False)
+def landing_en(request: Request):
+    """Landing anglaise, orientée parents américains (garde alternée, fêtes US)."""
+    return templates.TemplateResponse(request, "landing_en.html", {})
+
+
 @router.get("/blog", response_class=HTMLResponse, include_in_schema=False)
 def blog_index(request: Request):
     return templates.TemplateResponse(request, "blog_index.html", {"articles": load_articles()})
@@ -90,7 +96,7 @@ def robots(request: Request):
 @router.get("/sitemap.xml", include_in_schema=False)
 def sitemap(request: Request):
     base = str(request.base_url).rstrip("/")
-    entries = [(f"{base}/", None, "1.0"), (f"{base}/blog", None, "0.7")]
+    entries = [(f"{base}/", None, "1.0"), (f"{base}/en", None, "0.9"), (f"{base}/blog", None, "0.7")]
     for a in load_articles():
         entries.append((f"{base}/blog/{a.slug}", a.date.isoformat(), "0.6"))
     for slug in ("terms", "privacy", "refund"):

@@ -1,19 +1,19 @@
 <!doctype html>
-<html lang="fr">
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>{% block title %}Alternly{% endblock %}</title>
-  <meta name="description" content="{% block description %}Alternly : le calendrier de garde alternée pensé pour la France. Vacances scolaires zones A/B/C, années paires et impaires, dépenses partagées et mur de communication entre les deux parents.{% endblock %}" />
-  <link rel="canonical" href="{{ site_url }}{{ request.url.path }}" />
+  <meta name="description" content="{% block description %}Alternly: the shared-custody calendar built for co-parents. Custody schedules, school breaks and vacation splits, holidays that alternate by even/odd year, shared expenses and a message board between both households.{% endblock %}" />
+  <link rel="canonical" href="{{ site_url }}/en" />
 
   <!-- Open Graph / Twitter -->
   <meta property="og:site_name" content="Alternly" />
-  <meta property="og:locale" content="fr_FR" />
+  <meta property="og:locale" content="en_US" />
   <meta property="og:type" content="website" />
   <meta property="og:title" content="{% block og_title %}{{ self.title() }}{% endblock %}" />
   <meta property="og:description" content="{{ self.description() }}" />
-  <meta property="og:url" content="{{ site_url }}{{ request.url.path }}" />
+  <meta property="og:url" content="{{ site_url }}/en" />
   <meta property="og:image" content="{{ site_url }}/static/favicon.svg" />
   <meta name="twitter:card" content="summary" />
   <meta name="twitter:title" content="{{ self.title() }}" />
@@ -40,23 +40,23 @@
         "@type": "Organization",
         "@id": "{{ site_url }}/#organization",
         "name": "Alternly",
-        "url": "{{ site_url }}/",
-        "description": "Calendrier de garde alternée et outils de coparentalité pour parents séparés en France.",
-        "areaServed": "FR"
+        "url": "{{ site_url }}/en",
+        "description": "Shared-custody calendar and co-parenting tools for separated parents in the United States.",
+        "areaServed": "US"
       },
       {
         "@type": "SoftwareApplication",
         "name": "Alternly",
         "operatingSystem": "Web, iOS, Android",
         "applicationCategory": "LifestyleApplication",
-        "url": "{{ site_url }}/",
-        "inLanguage": "fr-FR",
-        "description": "Calendrier de garde partagée : rythmes de garde, vacances scolaires A/B/C, alternance années paires/impaires, échanges de jours, dépenses partagées et mur de communication.",
+        "url": "{{ site_url }}/en",
+        "inLanguage": "en-US",
+        "description": "Shared-custody calendar: custody schedules and parenting time, school breaks and vacation splits, major holidays that alternate by even/odd year, day swaps, shared expenses and a message board.",
         "offers": {
           "@type": "Offer",
-          "price": "69.00",
-          "priceCurrency": "EUR",
-          "description": "Calendrier gratuit. Premium (dépenses, mur, e-mails, synchronisation) à 69 € par an et par foyer, ou 8,99 € par mois. Un seul parent paie pour tout le foyer."
+          "price": "79.00",
+          "priceCurrency": "USD",
+          "description": "Free custody calendar. Premium (shared expenses, message board, email reminders, calendar sync) is $79/year per household or $8.99/month, one parent pays for the whole household."
         }
       }
     ]
@@ -66,14 +66,14 @@
 <body>
   <header class="site-header">
     <nav class="wrap">
-      <a class="logo" href="/">altern<span>ly</span></a>
+      <a class="logo" href="/en">altern<span>ly</span></a>
       <div class="nav-links">
-        <a href="/#fonctionnalites">Fonctionnalités</a>
-        <a href="/#tarifs">Tarifs</a>
+        <a href="/en#features">Features</a>
+        <a href="/en#pricing">Pricing</a>
         <a href="/blog">Guides</a>
-        <a href="/en">EN</a>
-        <a href="/login" class="ghost">Se connecter</a>
-        <a href="/register" class="cta">Essayer gratuitement</a>
+        <a href="/">FR</a>
+        <a href="/login" class="ghost">Sign in</a>
+        <a href="/register" class="cta">Try for free</a>
       </div>
     </nav>
   </header>
@@ -84,21 +84,21 @@
     <div class="wrap">
       <div>
         <span class="logo small">altern<span>ly</span></span>
-        <p>Le calendrier de garde partagée, pensé pour la France.<br/>Données hébergées en Union européenne.</p>
+        <p>The shared-custody calendar, built for co-parents.<br/>One plan for the whole household.</p>
       </div>
       <div>
-        <strong>Produit</strong>
-        <a href="/#fonctionnalites">Fonctionnalités</a>
-        <a href="/#tarifs">Tarifs</a>
+        <strong>Product</strong>
+        <a href="/en#features">Features</a>
+        <a href="/en#pricing">Pricing</a>
         <a href="/blog">Guides &amp; articles</a>
-        <a href="/register">Créer un compte</a>
+        <a href="/register">Create an account</a>
       </div>
       <div>
-        <strong>Légal</strong>
-        <a href="/terms">Conditions générales</a>
-        <a href="/privacy">Confidentialité</a>
-        <a href="/refund">Remboursement</a>
-        <p class="fine">Alternly organise le quotidien ; il ne remplace ni une décision de justice ni un conseil juridique.</p>
+        <strong>Legal</strong>
+        <a href="/terms">Terms of Service</a>
+        <a href="/privacy">Privacy</a>
+        <a href="/refund">Refund policy</a>
+        <p class="fine">Alternly organizes day-to-day parenting time; it does not replace a court order or legal advice.</p>
       </div>
     </div>
   </footer>

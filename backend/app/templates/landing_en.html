@@ -1,0 +1,261 @@
+{% extends "base_en.html" %}
+{% block title %}Alternly — The shared-custody calendar built for co-parents{% endblock %}
+{% block description %}Alternly turns your parenting plan into a clear, shared custody calendar: parenting-time schedules, school breaks and vacation splits, major holidays that alternate by even/odd year, day swaps, shared expenses and a message board. The calendar is free; premium is $79/year per household.{% endblock %}
+{% block head %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "inLanguage": "en-US",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Does my co-parent have to have an account?",
+      "acceptedAnswer": {"@type": "Answer", "text": "No. Alternly works great solo: your custody calendar stays accurate and exportable on its own. You can invite your co-parent later with a single link, and both households will see the same schedule."}
+    },
+    {
+      "@type": "Question",
+      "name": "Does Alternly replace a court order or parenting plan?",
+      "acceptedAnswer": {"@type": "Answer", "text": "No. Alternly organizes your day-to-day parenting time and keeps a history of every change, but it does not replace a custody order, a parenting plan, or legal advice. Think of it as the calendar that carries out the plan you already have."}
+    },
+    {
+      "@type": "Question",
+      "name": "How are holidays split between two households?",
+      "acceptedAnswer": {"@type": "Answer", "text": "You set the rule once and Alternly alternates the major holidays by even and odd year — for example one parent has Thanksgiving in even years and the other in odd years, and the same for Christmas and spring break. Federal holidays are shown automatically, and Christmas break that spans two years is handled by the year the break begins."}
+    },
+    {
+      "@type": "Question",
+      "name": "How much does Alternly cost?",
+      "acceptedAnswer": {"@type": "Answer", "text": "The custody calendar (schedules, school breaks, holidays, day swaps, inviting your co-parent) is completely free. Premium features — shared expenses, message board, email reminders and Google/Apple Calendar sync — are $79/year per household or $8.99/month. One parent pays, and both get access."}
+    },
+    {
+      "@type": "Question",
+      "name": "Can we track shared expenses for the kids?",
+      "acceptedAnswer": {"@type": "Answer", "text": "Yes. Each parent logs what they paid (medical, school, activities), Alternly calculates the running balance between the two households (50/50 or an adjusted share), and lets you record reimbursements. One balance instead of an argument."}
+    },
+    {
+      "@type": "Question",
+      "name": "How do school breaks and vacations work?",
+      "acceptedAnswer": {"@type": "Answer", "text": "You add your school district's breaks — winter break, spring break, summer — and Alternly splits each one in half or alternates it in full, flipping automatically between even and odd years. Federal holidays appear on the calendar without any setup."}
+    }
+  ]
+}
+</script>
+{% endblock %}
+{% block content %}
+<section class="hero">
+  <div class="wrap hero-grid">
+    <div class="hero-text">
+      <p class="eyebrow reveal">For separated and divorced parents</p>
+      <h1 class="reveal d1">Who has the kids<br/><em>this week?</em></h1>
+      <p class="lede reveal d2">
+        Week on, week off, half of spring break, a swapped Wednesday… Alternly turns
+        your <strong>parenting plan into a clear, shared, always-current calendar</strong> —
+        years in advance.
+      </p>
+      <div class="hero-actions reveal d3">
+        <a class="cta big" href="/register">Create my calendar</a>
+        <span class="hint">Free calendar · no credit card</span>
+      </div>
+      <ul class="trust reveal d4">
+        <li>🎒 Your district's school breaks &amp; vacation splits</li>
+        <li>🔁 Holidays that alternate by even/odd year</li>
+        <li>🇺🇸 Federal holidays shown automatically</li>
+      </ul>
+    </div>
+    <div class="hero-visual reveal d2" aria-hidden="true">
+      <div class="cal-card">
+        <div class="cal-head">
+          <span>March 2027</span>
+          <span class="cal-zone">Spring break</span>
+        </div>
+        <div class="cal-grid">
+          {% for d in range(1, 29) %}
+          <span class="cal-day {{ 'p1' if ((d - 1) // 7) % 2 == 0 else 'p2' }} {{ 'vac' if d >= 13 }}">{{ d }}</span>
+          {% endfor %}
+        </div>
+        <div class="cal-legend">
+          <span><i class="dot p1"></i>Alex</span>
+          <span><i class="dot p2"></i>Jordan</span>
+          <span class="vac-tag">🏖️ Spring break — 1<sup>st</sup> half: Alex</span>
+        </div>
+      </div>
+      <div class="float-note">↔️ Wednesday the 3rd swapped — accepted</div>
+    </div>
+  </div>
+</section>
+
+<section class="pains">
+  <div class="wrap">
+    <h2>The custody schedule, without the scheduling fights</h2>
+    <div class="cards3">
+      <article>
+        <h3>📅 The routine, set once and for all</h3>
+        <p>Week-on/week-off, 2-2-3, every other weekend or your own rhythm:
+        Alternly builds the calendar years out, handoff day included.</p>
+      </article>
+      <article>
+        <h3>🏖️ School breaks, finally clear</h3>
+        <p>Add your district's breaks, split each one in half or alternate it in full,
+        with an automatic flip between even and odd years. Christmas break included.</p>
+      </article>
+      <article>
+        <h3>🤝 One calendar for both households</h3>
+        <p>Each parent sees the same thing, gets a notification on every change,
+        and keeps a record of day swaps. Neutral, factual, calmer.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="features" id="features">
+  <div class="wrap">
+    <p class="eyebrow center">Everything in one place</p>
+    <h2 class="center">Much more than a calendar</h2>
+    <div class="feature-rows">
+      <article class="feature-row">
+        <div class="feature-icon">↔️</div>
+        <div>
+          <h3>Day swaps, proposed and accepted</h3>
+          <p>Need to trade a Wednesday? Propose the swap in two clicks. Your co-parent
+          accepts, declines or counter-proposes — and the calendar updates itself,
+          with a full history. No more "wait, what did we agree on?"</p>
+        </div>
+      </article>
+      <article class="feature-row">
+        <div class="feature-icon">💵</div>
+        <div>
+          <h3>Shared expenses &amp; a clear balance</h3>
+          <p>Medical bills, glasses, soccer… each parent logs what they paid. Alternly
+          works out who owes what (50/50 or an adjusted share), handles disputes and
+          reimbursements. One balance, not an argument.</p>
+        </div>
+      </article>
+      <article class="feature-row">
+        <div class="feature-icon">📝</div>
+        <div>
+          <h3>Message board</h3>
+          <p>Homework due, school paperwork, a question for your co-parent:
+          a shared thread with checkable tasks and due dates. Dated tasks show up
+          right on the calendar.</p>
+        </div>
+      </article>
+      <article class="feature-row">
+        <div class="feature-icon">🔔</div>
+        <div>
+          <h3>Reminders &amp; calendar sync</h3>
+          <p>An email the moment a swap request arrives, a reminder before a due date,
+          and a private link to sync the whole calendar with Google Calendar or
+          Apple Calendar.</p>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="how">
+  <div class="wrap">
+    <h2>Three steps, two minutes</h2>
+    <ol class="steps">
+      <li><strong>Describe your custody schedule</strong><span>rhythm, start date, school breaks, holiday rule — just like in your parenting plan or court order.</span></li>
+      <li><strong>The calendar builds itself</strong><span>weeks, school breaks, federal holidays and major holidays, years in advance.</span></li>
+      <li><strong>Invite your co-parent</strong><span>one link is all it takes. Then sync everything with Google or Apple Calendar.</span></li>
+    </ol>
+    <p class="center"><a class="cta big" href="/register">Get started now</a></p>
+  </div>
+</section>
+
+<section class="pricing" id="pricing">
+  <div class="wrap narrow">
+    <p class="eyebrow center">Pricing</p>
+    <h2 class="center">The calendar is free</h2>
+    <div class="price-grid">
+      <div class="price-card">
+        <h3>Free</h3>
+        <div class="price-head"><span class="price-amount">$0</span></div>
+        <ul class="price-list">
+          <li>Unlimited custody calendar, years in advance</li>
+          <li>School breaks &amp; holidays that alternate by even/odd year</li>
+          <li>Day swaps proposed / accepted</li>
+          <li>Invite your co-parent</li>
+        </ul>
+        <a class="cta big secondary-cta" href="/register">Create my calendar</a>
+      </div>
+      <div class="price-card featured">
+        <span class="price-badge">Premium</span>
+        <div class="price-head">
+          <span class="price-amount">$79</span>
+          <span class="price-per">/ year per household</span>
+        </div>
+        <p class="price-trial">or $8.99 / month · one parent pays, both get access</p>
+        <ul class="price-list">
+          <li>Everything in Free, plus:</li>
+          <li>Shared expenses &amp; balance between parents</li>
+          <li>Message board (notes, tasks, questions)</li>
+          <li>Email reminders &amp; alerts</li>
+          <li>Google / Apple Calendar sync</li>
+        </ul>
+        <a class="cta big" href="/register">Get started</a>
+        <p class="hint center">No commitment — cancel anytime.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="faq">
+  <div class="wrap narrow">
+    <h2>Frequently asked questions</h2>
+    <details>
+      <summary>Does my co-parent have to have an account?</summary>
+      <p>No. Alternly works great solo: your custody calendar stays accurate and exportable
+      on its own. You can invite your co-parent later with a single link, and both households
+      will see the same schedule.</p>
+    </details>
+    <details>
+      <summary>Does Alternly replace a court order or parenting plan?</summary>
+      <p>No. Alternly organizes your day-to-day parenting time and keeps a history of every
+      change, but it <strong>does not replace</strong> a custody order, a parenting plan, or
+      legal advice. Think of it as the calendar that carries out the plan you already have.</p>
+    </details>
+    <details>
+      <summary>How are holidays split between two households?</summary>
+      <p>You set the rule once and Alternly alternates the major holidays by even and odd year —
+      one parent has <strong>Thanksgiving</strong> in even years and the other in odd years, and
+      the same for <strong>Christmas</strong> and <strong>spring break</strong>. Federal holidays
+      are shown automatically, and Christmas break that spans two years is handled by the year the
+      break begins.</p>
+    </details>
+    <details>
+      <summary>How much does Alternly cost?</summary>
+      <p>The custody calendar is <strong>completely free</strong> (schedules, school breaks,
+      holidays, day swaps, inviting your co-parent). Premium features — shared expenses, message
+      board, email reminders and Google/Apple Calendar sync — are <strong>$79/year per
+      household</strong> (or $8.99/month). One parent pays, and both get access.</p>
+    </details>
+    <details>
+      <summary>Can we track shared expenses for the kids?</summary>
+      <p>Yes. Each parent logs what they paid (medical, school, activities), Alternly calculates
+      the running balance between the two households (50/50 or an adjusted share) and lets you
+      record reimbursements.</p>
+    </details>
+    <details>
+      <summary>How do school breaks and vacations work?</summary>
+      <p>You add your school district's breaks — winter break, spring break, summer — and Alternly
+      splits each one in half or alternates it in full, flipping automatically between even and odd
+      years. Federal holidays appear on the calendar without any setup.</p>
+    </details>
+    <details>
+      <summary>Where is our data stored?</summary>
+      <p>We apply strict data minimization: a child's first name is enough, and no sensitive
+      information is required to build your calendar.</p>
+    </details>
+  </div>
+</section>
+
+<section class="final-cta">
+  <div class="wrap center">
+    <h2>Fewer messages, fewer misunderstandings.<br/>One shared calendar.</h2>
+    <a class="cta big" href="/register">Try Alternly for free</a>
+  </div>
+</section>
+{% endblock %}
