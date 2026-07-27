@@ -784,6 +784,98 @@ label {
   margin: 20px 2px 8px;
 }
 
+/* --- Mur : barre de segments + recherche --- */
+.wall-toolbar {
+  position: sticky;
+  top: 53px;
+  z-index: 15;
+  background: color-mix(in srgb, var(--paper) 92%, transparent);
+  backdrop-filter: blur(10px);
+  padding: 10px 0 12px;
+  margin: 0 -4px 4px;
+}
+.segbar {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: 2px 4px;
+}
+.segbar::-webkit-scrollbar { display: none; }
+.seg {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.16s var(--ease-out), color 0.16s var(--ease-out), border-color 0.16s var(--ease-out);
+}
+.seg:hover { border-color: var(--pine); color: var(--pine); }
+.seg.active {
+  background: var(--pine);
+  border-color: var(--pine);
+  color: #fff;
+}
+.seg .count {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--pine-soft);
+  color: var(--pine-deep);
+}
+.seg.active .count { background: rgba(255, 255, 255, 0.22); color: #fff; }
+
+.wall-search {
+  margin-top: 8px;
+  padding: 0 4px;
+}
+.wall-search input { margin: 0; }
+
+.wall-fab {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+/* Élément de mur (fil compact) */
+.wall-item.done .wall-body { text-decoration: line-through; color: var(--ink-soft); }
+.wall-item .wall-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.wall-body { margin: 8px 0 0; }
+.tag-overdue { background: var(--danger-soft); color: var(--danger); }
+.tag-message { background: var(--sage); color: var(--pine-deep); }
+.tag-task { background: var(--terra-soft); color: #8c4a2c; }
+.tag-question { background: #e6e2f2; color: #5a4b8a; }
+
+.wall-check {
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: 1.5px solid var(--line);
+  background: var(--surface);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: transparent;
+  transition: all 0.15s var(--ease-out);
+}
+.wall-check:hover { border-color: var(--pine); }
+.wall-check.checked { background: var(--pine); border-color: var(--pine); color: #fff; }
+
 /* Reduced motion : on garde les fondus (opacité, couleurs), on retire le mouvement */
 @media (prefers-reduced-motion: reduce) {
   * {

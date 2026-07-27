@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../api'
 import { useAuth } from '../auth'
@@ -8,10 +8,22 @@ import Spinner from '../components/Spinner'
 import TopBar from '../components/TopBar'
 import type { Household, WallKind, WallPost } from '../types'
 
-const KIND_META: Record<WallKind, { label: string; icon: IconName }> = {
-  message: { label: 'Info', icon: 'message' },
-  task: { label: 'Tâche', icon: 'task' },
-  question: { label: 'Question', icon: 'question' },
+const KIND_META: Record<WallKind, { label: string; icon: IconName; tag: string }> = {
+  message: { label: 'Info', icon: 'message', tag: 'tag-message' },
+  task: { label: 'Tâche', icon: 'task', tag: 'tag-task' },
+  question: { label: 'Question', icon: 'question', tag: 'tag-question' },
+}
+
+type Segment = 'todo' | 'questions' | 'infos' | 'all'
+const SEGMENTS: { value: Segment; label: string }[] = [
+  { value: 'todo', label: 'À faire' },
+  { value: 'questions', label: 'Questions' },
+  { value: 'infos', label: 'Infos' },
+  { value: 'all', label: 'Tout' },
+]
+
+function todayIso(): string {
+  return new Date().toISOString().slice(0, 10)
 }
 
 export default function WallPage() {
@@ -19,6 +31,10 @@ export default function WallPage() {
   const { user, household, householdLoaded } = useAuth()
   const [posts, setPosts] = useState<WallPost[]>([])
   const [error, setError] = useState<string | null>(null)
+  const [segment, setSegment] = useState<Segment>('todo')
+  const [query, setQuery] = useState('')
+  const [showComposer, setShowComposer] = useState(false)
+  const [showDone, setShowDone] = useState(false)
 
   useEffect(() => {
     if (householdLoaded && (!household || !household.custody_rule)) navigate('/onboarding')
@@ -31,68 +47,182 @@ export default function WallPage() {
 
   useEffect(load, [load])
 
+  const childName = useCallback(
+    (id: number | null) =>
+      id === null ? null : household?.children.find((c) => c.id === id)?.first_name ?? null,
+    [household],
+  )
+
+  const q = query.trim().toLowerCase()
+  const matches = useCallback(
+    (p: WallPost) => {
+      if (!q) return true
+      const child = childName(p.child_id)?.toLowerCase() ?? ''
+      return p.body.toLowerCase().includes(q) || child.includes(q)
+    },
+    [q, childName],
+  )
+
+  const openCounts = useMemo(() => {
+    const todo = posts.filter((p) => p.kind === 'task' && !p.completed_at).length
+    const questions = posts.filter((p) => p.kind === 'question' && !p.completed_at).length
+    return { todo, questions }
+  }, [posts])
+
   if (!household || !user) return <Spinner />
 
   const name = (id: number | null) =>
     id === null ? null : household.members.find((m) => m.id === id)?.display_name ?? '?'
-  const childName = (id: number | null) =>
-    id === null ? null : household.children.find((c) => c.id === id)?.first_name ?? null
+
+  // Sélection du segment courant
+  const inSegment = (p: WallPost) => {
+    if (segment === 'all') return true
+    if (segment === 'todo') return p.kind === 'task'
+    if (segment === 'questions') return p.kind === 'question'
+    return p.kind === 'message'
+  }
+  const pool = posts.filter(inSegment).filter(matches)
+
+  const closable = segment === 'todo' || segment === 'questions'
+  const open = closable ? pool.filter((p) => !p.completed_at) : pool
+  const done = closable ? pool.filter((p) => p.completed_at) : []
+
+  // Tri : tâches par échéance (datées d'abord), sinon plus récent en premier
+  const sortOpen = (a: WallPost, b: WallPost) => {
+    if (segment === 'todo') {
+      if (a.due_date && b.due_date) return a.due_date.localeCompare(b.due_date)
+      if (a.due_date) return -1
+      if (b.due_date) return 1
+    }
+    return b.created_at.localeCompare(a.created_at)
+  }
+  const openSorted = [...open].sort(sortOpen)
+  const allSorted = segment === 'all' ? [...pool].sort((a, b) => b.created_at.localeCompare(a.created_at)) : openSorted
+
+  const today = todayIso()
+
+  function renderItem(p: WallPost) {
+    const meta = KIND_META[p.kind]
+    const isDone = p.completed_at !== null
+    const actionable = p.kind === 'task' || p.kind === 'question'
+    const overdue = p.kind === 'task' && !isDone && p.due_date !== null && p.due_date < today
+    return (
+      <div key={p.id} className={`card wall-item${isDone ? ' done' : ''}`} style={{ padding: 14 }}>
+        <div className="wall-head">
+          {actionable && (
+            <button
+              className={`wall-check${isDone ? ' checked' : ''}`}
+              title={isDone ? 'Rouvrir' : p.kind === 'task' ? 'Marquer fait' : 'Marquer résolu'}
+              onClick={() =>
+                (isDone ? api.reopenPost(household!.id, p.id) : api.completePost(household!.id, p.id)).then(load)
+              }
+            >
+              <Icon name="check" size={14} />
+            </button>
+          )}
+          <span className={`tag ${meta.tag}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+            <Icon name={meta.icon} size={12} /> {meta.label}
+          </span>
+          {overdue && <span className="tag tag-overdue">En retard</span>}
+          {childName(p.child_id) && <span className="hint">{childName(p.child_id)}</span>}
+          {p.due_date && (
+            <span className="hint" style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+              <Icon name="calendar" size={12} /> {p.due_date}
+            </span>
+          )}
+          {p.assigned_to && <span className="hint">pour {name(p.assigned_to)}</span>}
+          <span className="hint" style={{ marginLeft: 'auto' }}>{name(p.author_id)} · {p.created_at.slice(0, 10)}</span>
+        </div>
+        <p className="wall-body">{p.body}</p>
+        <Replies post={p} householdId={household!.id} myId={user!.id} names={name} onChanged={load} />
+        {p.author_id === user!.id && (
+          <button
+            className="danger-link"
+            style={{ marginTop: 8 }}
+            onClick={() => api.deletePost(household!.id, p.id).then(load)}
+          >
+            Supprimer
+          </button>
+        )}
+      </div>
+    )
+  }
+
+  const emptyLabel =
+    q !== ''
+      ? 'Aucun résultat pour cette recherche.'
+      : segment === 'todo'
+        ? 'Rien à faire — tout est à jour. 🎉'
+        : segment === 'questions'
+          ? 'Aucune question en attente.'
+          : 'Rien ici pour l’instant.'
 
   return (
     <>
       <TopBar householdName={household.name} />
       <div className="layout" style={{ maxWidth: 720 }}>
-        <h1>Mur de communication</h1>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <h1 style={{ marginRight: 'auto' }}>Mur</h1>
+          <button className="wall-fab" onClick={() => setShowComposer((v) => !v)}>
+            <Icon name={showComposer ? 'x' : 'plus'} size={16} /> {showComposer ? 'Fermer' : 'Nouveau'}
+          </button>
+        </div>
         {error && <div className="error">{error}</div>}
 
-        <Composer household={household} onDone={load} />
+        {showComposer && (
+          <Composer
+            household={household}
+            onDone={() => {
+              setShowComposer(false)
+              load()
+            }}
+          />
+        )}
 
-        {posts.length === 0 && <p className="hint">Rien sur le mur pour l'instant.</p>}
-        {posts.map((p) => {
-          const meta = KIND_META[p.kind]
-          const done = p.completed_at !== null
-          return (
-            <div key={p.id} className="card" style={{ padding: 14 }}>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
-                <span className="tag tag-accepted" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                  <Icon name={meta.icon} size={13} /> {meta.label}
-                </span>
-                <span className="hint">{name(p.author_id)}</span>
-                {childName(p.child_id) && <span className="hint">· {childName(p.child_id)}</span>}
-                {p.due_date && (
-                  <span className="hint" style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
-                    · <Icon name="calendar" size={12} /> {p.due_date}
-                  </span>
-                )}
-                {p.assigned_to && <span className="hint">· pour {name(p.assigned_to)}</span>}
-                <span className="hint" style={{ marginLeft: 'auto' }}>{p.created_at.slice(0, 10)}</span>
-              </div>
-              <p style={{ margin: '8px 0 0', textDecoration: done ? 'line-through' : 'none', opacity: done ? 0.6 : 1 }}>
-                {p.body}
-              </p>
+        <div className="wall-toolbar">
+          <div className="segbar">
+            {SEGMENTS.map((s) => {
+              const count = s.value === 'todo' ? openCounts.todo : s.value === 'questions' ? openCounts.questions : 0
+              return (
+                <button
+                  key={s.value}
+                  className={`seg${segment === s.value ? ' active' : ''}`}
+                  onClick={() => {
+                    setSegment(s.value)
+                    setShowDone(false)
+                  }}
+                >
+                  {s.label}
+                  {count > 0 && <span className="count">{count}</span>}
+                </button>
+              )
+            })}
+          </div>
+          <div className="wall-search">
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Rechercher dans le mur…"
+              aria-label="Rechercher"
+            />
+          </div>
+        </div>
 
-              <div className="row" style={{ gap: 8, marginTop: 10, alignItems: 'center' }}>
-                {(p.kind === 'task' || p.kind === 'question') &&
-                  (done ? (
-                    <button className="secondary" onClick={() => api.reopenPost(household.id, p.id).then(load)}>
-                      Rouvrir
-                    </button>
-                  ) : (
-                    <button onClick={() => api.completePost(household.id, p.id).then(load)}>
-                      {p.kind === 'task' ? 'Marquer fait' : 'Marquer résolu'}
-                    </button>
-                  ))}
-                {p.author_id === user.id && (
-                  <button className="danger-link" onClick={() => api.deletePost(household.id, p.id).then(load)}>
-                    Supprimer
-                  </button>
-                )}
-              </div>
+        {allSorted.length === 0 && done.length === 0 && <p className="hint">{emptyLabel}</p>}
+        {allSorted.map(renderItem)}
 
-              <Replies post={p} householdId={household.id} myId={user.id} names={name} onChanged={load} />
-            </div>
-          )
-        })}
+        {closable && done.length > 0 && (
+          <>
+            <button
+              className="expense-group-title"
+              style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'block' }}
+              onClick={() => setShowDone((v) => !v)}
+            >
+              {showDone ? '▾' : '▸'} {done.length} {segment === 'todo' ? 'terminée' : 'résolue'}{done.length > 1 ? 's' : ''}
+            </button>
+            {showDone && done.map(renderItem)}
+          </>
+        )}
       </div>
     </>
   )
@@ -122,10 +252,6 @@ function Composer({ household, onDone }: { household: Household; onDone: () => v
         due_date: kind === 'task' && dueDate ? dueDate : null,
         assigned_to: kind === 'task' && assignedTo !== '' ? Number(assignedTo) : null,
       })
-      setBody('')
-      setDueDate('')
-      setAssignedTo('')
-      setChildId('')
       onDone()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur')
@@ -151,6 +277,7 @@ function Composer({ household, onDone }: { household: Household; onDone: () => v
       </div>
       <textarea
         value={body}
+        autoFocus
         onChange={(e) => setBody(e.target.value)}
         placeholder={kind === 'question' ? 'Ta question à l’autre parent…' : kind === 'task' ? 'Ce qu’il y a à faire…' : 'Une info à partager…'}
         rows={2}
@@ -206,6 +333,7 @@ function Replies({
   onChanged: () => void
 }) {
   const [text, setText] = useState('')
+  const [open, setOpen] = useState(false)
   const [busy, setBusy] = useState(false)
 
   async function send() {
@@ -220,6 +348,15 @@ function Replies({
     }
   }
 
+  const count = post.replies.length
+  if (!open && count === 0) {
+    return (
+      <button className="danger-link" style={{ marginTop: 8, color: 'var(--ink-soft)' }} onClick={() => setOpen(true)}>
+        Répondre
+      </button>
+    )
+  }
+
   return (
     <div style={{ marginTop: 10, borderTop: '1px solid var(--line)', paddingTop: 8 }}>
       {post.replies.map((r) => (
@@ -228,7 +365,7 @@ function Replies({
           <span style={{ marginRight: 'auto' }}>{r.body}</span>
           {r.author_id === myId && (
             <button className="danger-link" style={{ padding: '0 6px' }} onClick={() => api.deleteReply(householdId, r.id).then(onChanged)}>
-              ✕
+              <Icon name="x" size={12} />
             </button>
           )}
         </div>
@@ -236,6 +373,7 @@ function Replies({
       <div className="row" style={{ marginTop: 6 }}>
         <input
           value={text}
+          autoFocus={open && count === 0}
           onChange={(e) => setText(e.target.value)}
           placeholder="Répondre…"
           onKeyDown={(e) => {
@@ -246,7 +384,7 @@ function Replies({
           }}
         />
         <button className="secondary" onClick={send} disabled={busy || !text.trim()} style={{ flex: '0 0 auto' }}>
-          Répondre
+          Envoyer
         </button>
       </div>
     </div>
