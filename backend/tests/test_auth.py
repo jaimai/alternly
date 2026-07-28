@@ -50,6 +50,16 @@ class TestAuth:
         assert resp.status_code == 201
         assert resp.json()["user"]["locale"] == "en"
 
+    def test_explicit_locale_beats_accept_language(self, client):
+        # langue choisie sur la landing EN, mais navigateur en français
+        resp = client.post(
+            "/api/auth/register",
+            json={"email": "mix@example.com", "password": "motdepasse1", "display_name": "Sam", "locale": "en"},
+            headers={"Accept-Language": "fr-FR,fr;q=0.9"},
+        )
+        assert resp.status_code == 201
+        assert resp.json()["user"]["locale"] == "en"
+
     def test_update_locale(self, client, auth_headers):
         headers, _ = auth_headers()
         resp = client.patch("/api/auth/me", json={"locale": "en"}, headers=headers)

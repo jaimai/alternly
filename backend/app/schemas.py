@@ -33,6 +33,8 @@ class UserCreate(BaseModel):
     password: str = Field(min_length=8, max_length=72)
     display_name: str = Field(min_length=1, max_length=50)
     color: str = Field(default="#4f7cac", pattern=COLOR_PATTERN)
+    # Langue choisie côté client (landing) ; prioritaire sur Accept-Language.
+    locale: Literal["fr", "en"] | None = None
 
 
 class UserLogin(BaseModel):

@@ -41,7 +41,8 @@ def register(
         display_name=data.display_name,
         color=data.color,
         subscription_status="free",
-        locale=_detect_locale(accept_language),
+        # Langue explicite du client (landing) prioritaire, sinon Accept-Language.
+        locale=data.locale or _detect_locale(accept_language),
     )
     db.add(user)
     db.commit()

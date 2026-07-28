@@ -78,7 +78,7 @@ interface TokenResponse {
 }
 
 export const api = {
-  register: (data: { email: string; password: string; display_name: string; color: string }) =>
+  register: (data: { email: string; password: string; display_name: string; color: string; locale?: Locale }) =>
     request<TokenResponse>('/auth/register', { method: 'POST', body: JSON.stringify(data) }),
   login: (data: { email: string; password: string }) =>
     request<TokenResponse>('/auth/login', { method: 'POST', body: JSON.stringify(data) }),

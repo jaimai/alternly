@@ -14,14 +14,16 @@ export default function RegisterPage() {
   const [busy, setBusy] = useState(false)
   const { setUser } = useAuth()
   const navigate = useNavigate()
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
 
   async function submit(e: FormEvent) {
     e.preventDefault()
     setBusy(true)
     setError(null)
     try {
-      const resp = await api.register({ email, password, display_name: displayName, color })
+      // La langue affichée (venue de la landing) devient celle du compte.
+      const locale = i18n.language.startsWith('en') ? 'en' : 'fr'
+      const resp = await api.register({ email, password, display_name: displayName, color, locale })
       setToken(resp.access_token)
       setUser(resp.user)
       const pending = localStorage.getItem('pending_invite')
