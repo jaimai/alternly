@@ -1,0 +1,14 @@
+{% extends "base_en.html" %}
+{% block title %}{{ page_title }} — Alternly{% endblock %}
+{% block description %}{{ page_title }} for Alternly, the shared-custody calendar built for co-parents.{% endblock %}
+{% block head %}<meta name="robots" content="index,follow" />{% endblock %}
+{% block content %}
+<section class="legal">
+  <div class="wrap narrow">
+    <p class="eyebrow">{{ eyebrow }}</p>
+    <h1>{{ page_title }}</h1>
+    <p class="legal-updated">Last updated: {{ updated }}</p>
+    {{ body|safe }}
+  </div>
+</section>
+{% endblock %}

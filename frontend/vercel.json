@@ -7,6 +7,7 @@
     { "src": "/terms", "dest": "https://web-production-d1aa3.up.railway.app/terms" },
     { "src": "/privacy", "dest": "https://web-production-d1aa3.up.railway.app/privacy" },
     { "src": "/refund", "dest": "https://web-production-d1aa3.up.railway.app/refund" },
+    { "src": "/en/(terms|privacy|refund)", "dest": "https://web-production-d1aa3.up.railway.app/en/$1" },
     { "src": "/robots.txt", "dest": "https://web-production-d1aa3.up.railway.app/robots.txt" },
     { "src": "/sitemap.xml", "dest": "https://web-production-d1aa3.up.railway.app/sitemap.xml" },
     { "src": "/llms.txt", "dest": "https://web-production-d1aa3.up.railway.app/llms.txt" },
