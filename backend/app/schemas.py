@@ -74,6 +74,10 @@ class MemberOut(ORMModel):
     is_placeholder: bool = False
 
 
+class ChangePlanIn(BaseModel):
+    plan: Literal["annual", "monthly"]
+
+
 class PartnerUpdate(BaseModel):
     display_name: str = Field(min_length=1, max_length=50)
     color: str | None = Field(default=None, pattern=COLOR_PATTERN)

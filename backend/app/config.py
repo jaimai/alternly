@@ -22,7 +22,18 @@ class Settings(BaseSettings):
     # Paiement Paddle (Merchant of Record). Durée de l'essai gratuit en jours.
     trial_days: int = 14
     paddle_webhook_secret: str = ""  # vérifie la signature des webhooks Paddle
-    paddle_api_key: str = ""  # appels API serveur (optionnel)
+    paddle_api_key: str = ""  # appels API serveur (gestion d'abonnement)
+    paddle_env: str = "sandbox"  # sandbox | production → base de l'API Paddle
+    paddle_price_annual: str = ""   # price_id de l'offre annuelle
+    paddle_price_monthly: str = ""  # price_id de l'offre mensuelle
+
+    @property
+    def paddle_api_base(self) -> str:
+        return (
+            "https://api.paddle.com"
+            if self.paddle_env == "production"
+            else "https://sandbox-api.paddle.com"
+        )
 
     @property
     def cors_origin_list(self) -> list[str]:

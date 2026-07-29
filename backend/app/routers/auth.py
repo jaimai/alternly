@@ -9,6 +9,7 @@ from ..config import settings
 from ..db import get_db
 from ..models import User, utcnow
 from ..schemas import Token, UserCreate, UserLogin, UserOut, UserUpdate
+from ..services import account, paddle_api
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -61,6 +62,19 @@ def login(data: UserLogin, db: Session = Depends(get_db)):
 @router.get("/me", response_model=UserOut)
 def me(user: User = Depends(get_current_user)):
     return user
+
+
+@router.delete("/me", status_code=204)
+def delete_me(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Supprime le compte et les données personnelles (droit à l'effacement)."""
+    # Résilie au mieux l'abonnement Paddle pour ne plus facturer un compte supprimé.
+    if user.paddle_subscription_id:
+        try:
+            paddle_api.cancel_subscription(user.paddle_subscription_id)
+        except paddle_api.PaddleUnavailable:
+            pass
+    account.delete_account(db, user)
+    db.commit()
 
 
 @router.patch("/me", response_model=UserOut)
