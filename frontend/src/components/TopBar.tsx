@@ -34,7 +34,9 @@ export default function TopBar({ householdName }: { householdName?: string }) {
           className="trial-chip"
           onClick={() => openCheckout(user, refreshBilling)}
           title={t('common.upgradeTitle')}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}
         >
+          <Icon name="star" size={13} />
           {t('common.freemiumChip')}
         </button>
       )}
