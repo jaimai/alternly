@@ -3,7 +3,7 @@ import type { ReactNode } from 'react'
 import { Navigate } from 'react-router-dom'
 import { api, ApiError, getToken, setToken } from './api'
 import Spinner from './components/Spinner'
-import i18n from './i18n'
+import i18n, { langExplicitlyChosen } from './i18n'
 import type { BillingStatus, Household, User } from './types'
 
 interface AuthState {
@@ -69,8 +69,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .finally(() => setLoading(false))
   }, [refreshBilling, refreshHousehold])
 
-  // La langue de l'UI suit la préférence du compte.
+  // La langue de l'UI suit la préférence du compte — sauf si l'utilisateur vient
+  // d'arriver avec un choix explicite (?lang= depuis la landing), qui prime.
   useEffect(() => {
+    if (langExplicitlyChosen) return
     if (user?.locale && i18n.language !== user.locale) i18n.changeLanguage(user.locale)
   }, [user?.locale])
 

@@ -11,6 +11,12 @@ function normalize(v: string | null | undefined): Locale | null {
   return v === 'en' || v === 'fr' ? v : null
 }
 
+/** Vrai si l'utilisateur arrive avec un ?lang= explicite (depuis la landing).
+ *  Ce choix doit primer sur la locale d'un compte déjà connecté. */
+export const langExplicitlyChosen: boolean =
+  typeof window !== 'undefined' &&
+  normalize(new URLSearchParams(window.location.search).get('lang')) !== null
+
 /** Priorité : ?lang= (venu de la landing) > préférence mémorisée > navigateur > fr.
  *  Ainsi la langue choisie sur la landing suit l'utilisateur jusque dans l'app. */
 function detectInitial(): Locale {
