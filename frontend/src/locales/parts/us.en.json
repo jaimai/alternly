@@ -15,5 +15,6 @@
   "settings.breakStartLabel": "Start",
   "settings.breakEndLabel": "End",
   "settings.addBreak": "Add break",
-  "settings.delete": "Delete"
+  "settings.delete": "Delete",
+  "settings.icalQrHint": "Scan this QR code with your phone to subscribe (Apple Calendar), or paste the link into Google Calendar."
 }

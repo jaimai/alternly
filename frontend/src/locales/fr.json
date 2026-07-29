@@ -277,6 +277,7 @@
   "settings.holidays": "Jours de fête",
   "settings.holidaysHint": "Ces jours passent outre le rythme habituel et le partage des vacances.",
   "settings.icalHint": "Abonnez-vous à ce lien privé depuis votre application de calendrier. Régénérer le lien invalide l'ancien.",
+  "settings.icalQrHint": "Scannez ce QR code avec votre téléphone pour vous abonner au calendrier (Apple Calendar), ou copiez le lien dans Google Agenda.",
   "settings.independenceDay": "Independence Day (4 juillet)",
   "settings.inviteOtherParent": "Invitez l'autre parent : il verra le même calendrier, sans pouvoir modifier votre profil.",
   "settings.languageLabel": "Langue de l’application",

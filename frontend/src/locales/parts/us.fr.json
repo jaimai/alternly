@@ -15,5 +15,6 @@
   "settings.breakStartLabel": "Début",
   "settings.breakEndLabel": "Fin",
   "settings.addBreak": "Ajouter le congé",
-  "settings.delete": "Supprimer"
+  "settings.delete": "Supprimer",
+  "settings.icalQrHint": "Scannez ce QR code avec votre téléphone pour vous abonner au calendrier (Apple Calendar), ou copiez le lien dans Google Agenda."
 }

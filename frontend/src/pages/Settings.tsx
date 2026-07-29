@@ -320,9 +320,17 @@ export default function SettingsPage() {
               <Icon name="lock" size={15} /> {t('settings.unlockWithPremium')}
             </button>
           ) : icalUrl ? (
-            <div className="row">
-              <input readOnly value={icalUrl} onFocus={(e) => e.target.select()} />
-              <button onClick={() => copy(icalUrl)}>{t('settings.copy')}</button>
+            <div className="invite-share">
+              <div className="invite-qr">
+                <QRCodeSVG value={icalUrl.replace(/^https?:\/\//, 'webcal://')} size={148} bgColor="#ffffff" fgColor="#1f4d3f" marginSize={2} />
+              </div>
+              <div className="invite-share-body">
+                <p className="hint" style={{ marginTop: 0 }}>{t('settings.icalQrHint')}</p>
+                <div className="row">
+                  <input readOnly value={icalUrl} onFocus={(e) => e.target.select()} />
+                  <button onClick={() => copy(icalUrl)}>{t('settings.copy')}</button>
+                </div>
+              </div>
             </div>
           ) : (
             <button onClick={getIcalUrl}>{t('settings.generateIcal')}</button>
