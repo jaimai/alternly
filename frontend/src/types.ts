@@ -18,6 +18,15 @@ export interface BillingStatus {
   subscription_ends_at: string | null
 }
 
+export interface SubscriptionInfo {
+  manageable: boolean
+  is_payer?: boolean
+  status?: string
+  plan?: 'annual' | 'monthly' | null
+  next_billed_at?: string | null
+  scheduled_change?: { action: string; effective_at: string } | null
+}
+
 export interface Member {
   id: number
   display_name: string

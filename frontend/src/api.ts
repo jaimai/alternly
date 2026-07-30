@@ -11,6 +11,7 @@ import type {
   Member,
   Notification,
   SchoolVacation,
+  SubscriptionInfo,
   ScheduleException,
   Settlement,
   SpecialDayRule,
@@ -85,6 +86,7 @@ export const api = {
   me: () => request<User>('/auth/me'),
   updateMe: (data: { display_name?: string; color?: string; email_opt_in?: boolean; onboarding_seen?: boolean; locale?: Locale }) =>
     request<User>('/auth/me', { method: 'PATCH', body: JSON.stringify(data) }),
+  deleteAccount: () => request<void>('/auth/me', { method: 'DELETE' }),
 
   createHousehold: (data: { name: string; school_zone?: string; country?: Country }) =>
     request<Household>('/households', { method: 'POST', body: JSON.stringify(data) }),
@@ -194,6 +196,10 @@ export const api = {
     request<void>(`/households/${householdId}/replies/${replyId}`, { method: 'DELETE' }),
 
   billingStatus: () => request<BillingStatus>('/billing/status'),
+  subscription: () => request<SubscriptionInfo>('/billing/subscription'),
+  cancelSubscription: () => request<{ ok: boolean }>('/billing/cancel', { method: 'POST' }),
+  changePlan: (plan: 'annual' | 'monthly') =>
+    request<{ ok: boolean }>('/billing/change-plan', { method: 'POST', body: JSON.stringify({ plan }) }),
 
   notifications: () => request<Notification[]>('/notifications'),
   markRead: (ids: number[]) => request<{ updated: number }>('/notifications/read', { method: 'POST', body: JSON.stringify({ ids }) }),

@@ -12,7 +12,7 @@ import type { RuleFormValue } from '../components/RuleForm'
 import TopBar from '../components/TopBar'
 import { useFormat } from '../format'
 import { isSolo } from '../members'
-import type { Household, SpecialDayRule } from '../types'
+import type { Household, SpecialDayRule, SubscriptionInfo } from '../types'
 
 const SPECIAL_LABEL_KEYS: Record<SpecialDayRule['kind'], string> = {
   mothers_day: 'settings.mothersDay',
@@ -337,6 +337,8 @@ export default function SettingsPage() {
           )}
         </div>
 
+        {premium && <SubscriptionCard onChanged={refreshBilling} />}
+
         <div className="card">
           <h2>{t('settings.myProfile')}</h2>
           <label htmlFor="mylocale">{t('settings.languageLabel')}</label>
@@ -375,8 +377,108 @@ export default function SettingsPage() {
             {!premium && <span className="premium-tag">{t('settings.premium')}</span>}
           </label>
         </div>
+
+        <DangerZone />
       </div>
     </>
+  )
+}
+
+function SubscriptionCard({ onChanged }: { onChanged: () => void }) {
+  const { t } = useTranslation()
+  const { date } = useFormat()
+  const [sub, setSub] = useState<SubscriptionInfo | null>(null)
+  const [busy, setBusy] = useState(false)
+  const [msg, setMsg] = useState<string | null>(null)
+
+  const load = () => api.subscription().then(setSub).catch(() => setSub({ manageable: false }))
+  useEffect(() => { load() }, [])
+
+  async function run(fn: () => Promise<unknown>, done: string) {
+    setBusy(true)
+    setMsg(null)
+    try {
+      await fn()
+      setMsg(done)
+      await load()
+      onChanged()
+    } catch {
+      setMsg(t('settings.subActionError'))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const planLabel = (p?: string | null) =>
+    p === 'annual' ? t('settings.planAnnual') : p === 'monthly' ? t('settings.planMonthly') : t('settings.planUnknown')
+
+  return (
+    <div className="card">
+      <h2>{t('settings.subscriptionTitle')}</h2>
+      {sub === null ? (
+        <p className="hint">…</p>
+      ) : !sub.manageable ? (
+        <p className="hint">{t('settings.subGrandfathered')}</p>
+      ) : (
+        <>
+          <p style={{ margin: '0 0 6px' }}>
+            {t('settings.subCurrentPlan')} : <strong>{planLabel(sub.plan)}</strong>
+            {sub.status === 'canceled' && <span className="tag tag-pending" style={{ marginLeft: 8 }}>{t('settings.subCanceled')}</span>}
+          </p>
+          {sub.next_billed_at && sub.status !== 'canceled' && (
+            <p className="hint" style={{ marginTop: 0 }}>{t('settings.subNextBilling', { date: date(sub.next_billed_at.slice(0, 10)) })}</p>
+          )}
+          {msg && <div className="info-banner">{msg}</div>}
+          {sub.status !== 'canceled' && (
+            <div className="row" style={{ gap: 8, marginTop: 10 }}>
+              {sub.plan !== 'annual' && (
+                <button className="secondary" disabled={busy} onClick={() => run(() => api.changePlan('annual'), t('settings.subSwitched'))}>
+                  {t('settings.subSwitchAnnual')}
+                </button>
+              )}
+              {sub.plan !== 'monthly' && (
+                <button className="secondary" disabled={busy} onClick={() => run(() => api.changePlan('monthly'), t('settings.subSwitched'))}>
+                  {t('settings.subSwitchMonthly')}
+                </button>
+              )}
+              <button
+                className="danger-link"
+                disabled={busy}
+                onClick={() => { if (confirm(t('settings.subCancelConfirm'))) run(() => api.cancelSubscription(), t('settings.subCanceledDone')) }}
+              >
+                {t('settings.subCancel')}
+              </button>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  )
+}
+
+function DangerZone() {
+  const { t } = useTranslation()
+  const { logout } = useAuth()
+  const [busy, setBusy] = useState(false)
+
+  async function remove() {
+    if (!confirm(t('settings.deleteConfirm'))) return
+    setBusy(true)
+    try {
+      await api.deleteAccount()
+      logout()
+    } catch {
+      setBusy(false)
+      alert(t('settings.deleteError'))
+    }
+  }
+
+  return (
+    <div className="card danger-card">
+      <h2>{t('settings.dangerTitle')}</h2>
+      <p className="hint">{t('settings.deleteHint')}</p>
+      <button className="danger" disabled={busy} onClick={remove}>{t('settings.deleteAccount')}</button>
+    </div>
   )
 }
 
