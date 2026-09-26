@@ -5,7 +5,11 @@ from sqlalchemy import delete, inspect, select
 from sqlalchemy.orm import Session
 
 from ..deps import household_members, notify
+from . import audit
+from .change_requests import withdraw_pending_for_leaving
 from ..models import (
+    AuditLog,
+    ChangeRequest,
     Child,
     CustodyRule,
     Expense,
@@ -86,12 +90,16 @@ def export_user_data(db: Session, user: User) -> dict:
         "expenses": _rows(db, Expense, hid),
         "settlements": _rows(db, Settlement, hid),
         "wall_posts": posts,
+        "change_requests": _rows(db, ChangeRequest, hid),
+        "history": _rows(db, AuditLog, hid),
     }
     return data
 
 
 def _delete_household(db: Session, household_id: int) -> None:
     """Supprime un foyer et toutes ses données (ordre compatible clés étrangères)."""
+    db.execute(delete(AuditLog).where(AuditLog.household_id == household_id))
+    db.execute(delete(ChangeRequest).where(ChangeRequest.household_id == household_id))
     post_ids = select(WallPost.id).where(WallPost.household_id == household_id)
     db.execute(delete(WallReply).where(WallReply.post_id.in_(post_ids)))
     db.execute(delete(WallPost).where(WallPost.household_id == household_id))
@@ -137,6 +145,11 @@ def delete_account(db: Session, user: User) -> None:
         user.email_opt_in = False
         user.token_version = (user.token_version or 0) + 1
         _delete_user_rows(db, user.id)
+        withdraw_pending_for_leaving(db, member.household_id)
+        audit.record(
+            db, member.household_id, user.id, "member.leave", "member", user.id,
+            "a quitté le foyer (compte supprimé)",
+        )
         for other in active_others:
             notify(db, other.id, "parent_left", {"display_name": old_name})
         return

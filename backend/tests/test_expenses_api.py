@@ -81,8 +81,31 @@ class TestDispute:
         headers1, user1, headers2, user2, h = setup_family(client, auth_headers)
         eid = add_expense(client, headers1, h["id"]).json()["id"]
         client.post(f"/api/households/{h['id']}/expenses/{eid}/dispute", json={}, headers=headers2)
-        r = client.post(f"/api/households/{h['id']}/expenses/{eid}/resolve", json={}, headers=headers1)
+        # le payeur ne peut pas lever la contestation dont il fait l'objet
+        forbidden = client.post(f"/api/households/{h['id']}/expenses/{eid}/resolve", json={}, headers=headers1)
+        assert forbidden.status_code == 403
+        assert forbidden.json()["detail"] == "Seul le parent qui a contesté peut lever la contestation"
+        r = client.post(f"/api/households/{h['id']}/expenses/{eid}/resolve", json={}, headers=headers2)
         assert r.status_code == 200 and r.json()["status"] == "active"
+
+    def test_resolve_requires_dispute(self, client, auth_headers):
+        headers1, user1, headers2, user2, h = setup_family(client, auth_headers)
+        eid = add_expense(client, headers1, h["id"]).json()["id"]
+        r = client.post(f"/api/households/{h['id']}/expenses/{eid}/resolve", json={}, headers=headers2)
+        assert r.status_code == 409
+
+    def test_edit_keeps_dispute_and_notifies(self, client, auth_headers, db_session):
+        headers1, user1, headers2, user2, h = setup_family(client, auth_headers)
+        eid = add_expense(client, headers1, h["id"], label="Lunettes", amount=12900).json()["id"]
+        client.post(f"/api/households/{h['id']}/expenses/{eid}/dispute", json={"dispute_note": "trop cher"}, headers=headers2)
+        patch = client.patch(f"/api/households/{h['id']}/expenses/{eid}", json={"amount_cents": 9900}, headers=headers1)
+        assert patch.status_code == 200
+        assert patch.json()["status"] == "disputed"
+        assert patch.json()["dispute_note"] == "trop cher"
+        notif = db_session.scalars(
+            select(Notification).where(Notification.user_id == user2["id"], Notification.type == "expense_updated")
+        ).one()
+        assert notif.payload["label"] == "Lunettes" and notif.payload["amount_cents"] == 9900
 
 
 class TestSettlements:

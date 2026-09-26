@@ -16,7 +16,7 @@ from app.migrations import run_migrations
 from app.models import Expense, WallPost
 from app.services import public_holidays, school_holidays
 from tests.test_household import create_household
-from tests.test_rules import setup_family
+from tests.test_rules import accept_pending, setup_family
 
 BACKEND_DIR = Path(__file__).resolve().parent.parent
 
@@ -80,7 +80,7 @@ class TestDeleteChild:
     def test_referenced_child_detached_not_500(self, client, auth_headers, db_session):
         # Clés étrangères appliquées comme en Postgres.
         db_session.execute(text("PRAGMA foreign_keys=ON"))
-        headers1, _, _, _, h = setup_family(client, auth_headers)
+        headers1, _, headers2, _, h = setup_family(client, auth_headers)
         child_id = client.post(
             f"/api/households/{h['id']}/children", json={"first_name": "Léo"}, headers=headers1
         ).json()["id"]
@@ -99,7 +99,8 @@ class TestDeleteChild:
         assert post.status_code == 201, post.text
 
         resp = client.delete(f"/api/households/{h['id']}/children/{child_id}", headers=headers1)
-        assert resp.status_code == 204
+        # deux parents : retrait soumis à l'accord de l'autre, appliqué à l'acceptation
+        accept_pending(client, headers2, h["id"], resp)
         assert db_session.get(Expense, exp.json()["id"]).child_id is None
         assert db_session.get(WallPost, post.json()["id"]).child_id is None
 

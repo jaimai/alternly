@@ -44,16 +44,26 @@
 
       <h2>5. Essai gratuit et abonnement</h2>
       <ul>
-        <li><strong>Essai</strong> : 14 jours gratuits, sans carte bancaire, avec accès à toutes les
-        fonctionnalités.</li>
+        <li><strong>Essai</strong> : 14 jours gratuits à la création du compte, sans carte bancaire,
+        avec accès à toutes les fonctionnalités. Sans abonnement à la fin de l'essai, aucun
+        prélèvement n'a lieu : votre compte passe simplement en lecture seule (vous consultez le
+        calendrier, l'historique et les dépenses, vous exportez ou supprimez vos données, mais vous
+        ne pouvez plus rien modifier). La synchronisation d'agenda (iCal) reste active.</li>
         <li><strong>Prix</strong> : 39 € TTC par an et par parent, tout inclus. Chaque parent souscrit
-        son propre abonnement. <span class="todo">[TVA : mention « TVA non applicable, art. 293 B du CGI »
-        si franchise en base — à confirmer]</span></li>
-        <li><strong>Paiement</strong> : par carte bancaire via notre prestataire Stripe, à la
-        souscription puis à chaque date anniversaire. Nous n'avons jamais accès à vos numéros de carte.</li>
-        <li><strong>Renouvellement</strong> : l'abonnement est reconduit tacitement pour un an. Vous
-        êtes informé par e-mail avant chaque échéance, conformément à l'article L. 215-1 du Code de la
-        consommation.</li>
+        son propre abonnement ; l'abonnement d'un parent ne couvre pas l'autre. <span class="todo">[TVA :
+        mention « TVA non applicable, art. 293 B du CGI » si franchise en base — à confirmer]</span></li>
+        <li><strong>Paiement</strong> : par carte bancaire via notre prestataire de paiement
+        <strong>Stripe</strong> (Stripe Payments Europe, Ltd., Irlande), à la souscription puis à
+        chaque date anniversaire. Les données de carte sont saisies et conservées exclusivement par
+        Stripe : nous n'y avons jamais accès. Si vous souscrivez pendant l'essai, les jours d'essai
+        restants sont conservés et le premier prélèvement a lieu à la fin de l'essai.</li>
+        <li><strong>Renouvellement</strong> : l'abonnement est reconduit tacitement pour un an, au
+        prix en vigueur. Vous êtes informé par e-mail avant chaque échéance, conformément à l'article
+        L. 215-1 du Code de la consommation, et pouvez désactiver le renouvellement à tout moment.</li>
+        <li><strong>Échec de paiement</strong> : en cas d'échec du prélèvement, Stripe effectue
+        plusieurs nouvelles tentatives ; l'accès est maintenu pendant cette période et vous êtes
+        invité à mettre à jour votre moyen de paiement. À défaut de régularisation, l'abonnement
+        prend fin et le compte passe en lecture seule.</li>
         <li><strong>Évolution des prix</strong> : toute modification vous est notifiée au moins 30 jours
         avant la prochaine échéance et ne s'applique qu'au renouvellement suivant.</li>
       </ul>
@@ -62,19 +72,35 @@
       <p>Conformément à l'article L. 221-18 du Code de la consommation, vous disposez d'un délai de
       <strong>14 jours</strong> à compter de la souscription de l'abonnement payant pour vous rétracter,
       sans avoir à motiver votre décision, en écrivant à
-      <a href="mailto:{{ contact_email }}">{{ contact_email }}</a>. Vous êtes remboursé dans les
-      14 jours suivant votre demande, par le même moyen de paiement. Si vous avez demandé à utiliser le
-      service pendant ce délai, le remboursement peut être réduit au prorata de la période déjà écoulée
-      (article L. 221-25).</p>
+      <a href="mailto:{{ contact_email }}">{{ contact_email }}</a> (vous pouvez utiliser le modèle de
+      formulaire de rétractation figurant en annexe de l'article R. 221-1, sans y être obligé). Vous
+      êtes remboursé dans les 14 jours suivant votre demande, par le même moyen de paiement.</p>
+      <p>Le service est accessible dès la souscription. En validant le paiement, vous demandez
+      expressément que son exécution commence pendant le délai de rétractation. Dans ce cas :</p>
+      <ul>
+        <li>si vous vous rétractez, vous restez redevable d'un montant proportionnel au service
+        fourni jusqu'à votre demande (article L. 221-25 du Code de la consommation) ;</li>
+        <li>vous reconnaissez que vous perdez votre droit de rétractation une fois le service
+        pleinement exécuté avant la fin de ce délai, et y renoncez expressément dans ce cas
+        (article L. 221-28, 1° du Code de la consommation).</li>
+      </ul>
+      <p>Cette demande et ce renoncement exprès vous sont présentés sur la page de paiement, avant
+      validation. Si vous souscrivez pendant l'essai gratuit, aucun montant n'est prélevé avant la fin
+      de l'essai : une résiliation avant cette date ne vous coûte rien.
+      <span class="todo">[À faire relire par un juriste avant ouverture des paiements]</span></p>
 
       <h2>7. Résiliation</h2>
       <ul>
-        <li>Vous pouvez résilier à tout moment depuis vos réglages ou par e-mail : l'abonnement n'est
-        alors pas renouvelé et reste actif jusqu'à la fin de la période payée.</li>
+        <li>Vous pouvez résilier à tout moment, sans frais, depuis la page <em>Abonnement</em> de
+        l'application (bouton « Gérer mon abonnement », qui ouvre l'espace client sécurisé de Stripe,
+        où vous pouvez aussi changer de carte et télécharger vos factures) ou par e-mail.
+        L'abonnement n'est alors pas renouvelé et reste actif jusqu'à la fin de la période payée ;
+        la période en cours n'est pas remboursée au prorata, sauf exercice du droit de rétractation.</li>
         <li>Vous pouvez supprimer votre compte à tout moment depuis les réglages. Les conséquences sur
         les données (suppression ou anonymisation si l'autre parent utilise encore le foyer) sont
         détaillées dans la <a href="/confidentialite">politique de confidentialité</a>. Pensez à
-        exporter vos données avant.</li>
+        exporter vos données avant. La suppression du compte résilie immédiatement votre abonnement
+        éventuel (plus aucun prélèvement).</li>
         <li>En cas de manquement grave aux présentes conditions, nous pouvons résilier le compte après
         mise en demeure restée sans effet pendant 15 jours.</li>
       </ul>

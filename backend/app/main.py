@@ -18,7 +18,7 @@ from .migrations import run_migrations
 # Segments d'URL portant un secret (flux iCal, invitation).
 _SECRET_PATH = re.compile(r"(/api/(?:ical|invitations)/)[^/?#]+")
 # En-têtes jamais transmis à Sentry (jetons, cookies, clé cron).
-_SENSITIVE_HEADERS = {"authorization", "cookie", "set-cookie", "x-cron-key"}
+_SENSITIVE_HEADERS = {"authorization", "cookie", "set-cookie", "x-cron-key", "stripe-signature"}
 
 
 def _scrub_event(event, hint):
@@ -62,6 +62,8 @@ async def lifespan(app: FastAPI):
 
 
 from .routers import auth as auth_router
+from .routers import billing as billing_router
+from .routers import change_requests as change_requests_router
 from .routers import children as children_router
 from .routers import cron as cron_router
 from .routers import expenses as expenses_router
@@ -115,6 +117,8 @@ app.include_router(notifications_router.router)
 app.include_router(cron_router.router)
 app.include_router(expenses_router.router)
 app.include_router(wall_router.router)
+app.include_router(billing_router.router)
+app.include_router(change_requests_router.router)
 
 
 @app.get("/api/health")

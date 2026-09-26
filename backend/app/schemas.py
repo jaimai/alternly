@@ -377,3 +377,38 @@ class NotificationOut(ORMModel):
 
 class ReadNotificationsIn(BaseModel):
     ids: list[int] = Field(max_length=200)
+
+
+class BillingStatusOut(BaseModel):
+    enabled: bool
+    status: str  # trialing | active | past_due | canceled | expired
+    has_access: bool
+    read_only: bool
+    trial_ends_at: datetime | None
+    current_period_end: datetime | None
+    cancel_at_period_end: bool
+    days_left: int | None
+    price_label: str
+
+
+class BillingUrlOut(BaseModel):
+    url: str
+
+
+class ChangeRequestOut(ORMModel):
+    id: int
+    kind: str
+    summary: str
+    status: str
+    requested_by: int
+    created_at: datetime
+    resolved_by: int | None
+    resolved_at: datetime | None
+
+
+class HistoryEntryOut(ORMModel):
+    id: int
+    actor_id: int | None
+    action: str
+    summary: str
+    created_at: datetime

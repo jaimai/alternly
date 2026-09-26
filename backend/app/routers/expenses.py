@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from ..db import get_db
 from ..deps import get_membership, household_members, notify, other_parent_id
-from ..models import Child, Expense, HouseholdMember, Settlement
+from ..models import Child, Expense, HouseholdMember, Settlement, User
 from ..ratelimit import DAY, rate_limit
 from ..schemas import (
     EXPENSE_CATEGORIES,
@@ -18,6 +18,8 @@ from ..schemas import (
     SettlementIn,
     SettlementOut,
 )
+from ..services import audit
+from ..services.audit import euros, fr_date
 from ..services.expenses_service import compute_balance
 
 router = APIRouter(prefix="/api/households/{household_id}", tags=["expenses"])
@@ -49,6 +51,22 @@ def _get_expense(db: Session, member: HouseholdMember, expense_id: int) -> Expen
 
 def _exp_payload(exp: Expense) -> dict:
     return {"id": exp.id, "label": exp.label, "amount_cents": exp.amount_cents, "date": exp.date.isoformat()}
+
+
+_EXP_FIELDS = ("label", "amount_cents", "date", "category", "child_id", "paid_by", "payer_percent", "status")
+
+
+def _exp_snapshot(exp: Expense) -> dict:
+    return {f: getattr(exp, f) for f in _EXP_FIELDS}
+
+
+def _exp_label(exp: Expense) -> str:
+    return f"« {audit.excerpt(exp.label)} » ({euros(exp.amount_cents)})"
+
+
+def _name(db: Session, user_id: int) -> str:
+    user = db.get(User, user_id)
+    return user.display_name if user is not None else "un parent"
 
 
 # ---------- dépenses ----------
@@ -97,6 +115,10 @@ def create_expense(
     )
     db.add(exp)
     db.flush()
+    audit.record(
+        db, member.household_id, member.user_id, "expense.create", "expense", exp.id,
+        f"a ajouté la dépense {_exp_label(exp)}", {"after": _exp_snapshot(exp)},
+    )
     notify(db, other_parent_id(db, member.household_id, member.user_id), "expense_added", _exp_payload(exp))
     db.commit()
     db.refresh(exp)
@@ -115,6 +137,7 @@ def update_expense(
         raise HTTPException(status_code=403, detail="Seul l'auteur peut modifier cette dépense")
     if data.category is not None and data.category not in EXPENSE_CATEGORIES:
         raise HTTPException(status_code=422, detail="Catégorie inconnue")
+    before = _exp_snapshot(exp)
     if data.paid_by is not None:
         _check_member(db, member, data.paid_by)
         exp.paid_by = data.paid_by
@@ -125,9 +148,19 @@ def update_expense(
         val = getattr(data, field)
         if val is not None:
             setattr(exp, field, val)
-    # une modification lève une éventuelle contestation
-    exp.status = "active"
-    exp.dispute_note = ""
+    # Une modification ne lève PAS une contestation : seul le parent qui a
+    # contesté peut la lever. L'autre parent est prévenu de la modification.
+    after = _exp_snapshot(exp)
+    if after != before:
+        if before["amount_cents"] != after["amount_cents"]:
+            what = f"« {audit.excerpt(exp.label)} » ({euros(before['amount_cents'])} → {euros(after['amount_cents'])})"
+        else:
+            what = _exp_label(exp)
+        audit.record(
+            db, member.household_id, member.user_id, "expense.update", "expense", exp.id,
+            f"a modifié la dépense {what}", {"before": before, "after": after},
+        )
+        notify(db, other_parent_id(db, member.household_id, member.user_id), "expense_updated", _exp_payload(exp))
     db.commit()
     db.refresh(exp)
     return exp
@@ -142,6 +175,10 @@ def delete_expense(
     exp = _get_expense(db, member, expense_id)
     if exp.created_by != member.user_id:
         raise HTTPException(status_code=403, detail="Seul l'auteur peut supprimer cette dépense")
+    audit.record(
+        db, member.household_id, member.user_id, "expense.delete", "expense", exp.id,
+        f"a supprimé la dépense {_exp_label(exp)}", {"before": _exp_snapshot(exp)},
+    )
     db.delete(exp)
     db.commit()
 
@@ -158,6 +195,10 @@ def dispute_expense(
         raise HTTPException(status_code=403, detail="Le payeur ne peut pas contester sa propre dépense")
     exp.status = "disputed"
     exp.dispute_note = data.dispute_note
+    audit.record(
+        db, member.household_id, member.user_id, "expense.dispute", "expense", exp.id,
+        f"a contesté la dépense {_exp_label(exp)}", {"dispute_note": data.dispute_note},
+    )
     notify(db, exp.paid_by, "expense_disputed", _exp_payload(exp))
     db.commit()
     db.refresh(exp)
@@ -171,8 +212,16 @@ def resolve_expense(
     db: Session = Depends(get_db),
 ):
     exp = _get_expense(db, member, expense_id)
+    if member.user_id == exp.paid_by:
+        raise HTTPException(status_code=403, detail="Seul le parent qui a contesté peut lever la contestation")
+    if exp.status != "disputed":
+        raise HTTPException(status_code=409, detail="Cette dépense n'est pas contestée")
     exp.status = "active"
     exp.dispute_note = ""
+    audit.record(
+        db, member.household_id, member.user_id, "expense.resolve", "expense", exp.id,
+        f"a levé la contestation sur la dépense {_exp_label(exp)}",
+    )
     notify(db, other_parent_id(db, member.household_id, member.user_id), "expense_resolved", _exp_payload(exp))
     db.commit()
     db.refresh(exp)
@@ -210,6 +259,13 @@ def create_settlement(
         created_by=member.user_id,
     )
     db.add(s)
+    db.flush()
+    audit.record(
+        db, member.household_id, member.user_id, "settlement.create", "settlement", s.id,
+        f"a enregistré un remboursement de {euros(s.amount_cents)} de {_name(db, s.from_user)} "
+        f"à {_name(db, s.to_user)} ({fr_date(s.date)})",
+        {"after": {"from_user": s.from_user, "to_user": s.to_user, "amount_cents": s.amount_cents, "date": s.date}},
+    )
     notify(
         db,
         other_parent_id(db, member.household_id, member.user_id),
@@ -232,6 +288,11 @@ def delete_settlement(
         raise HTTPException(status_code=404, detail="Remboursement introuvable")
     if s.created_by != member.user_id:
         raise HTTPException(status_code=403, detail="Seul l'auteur peut supprimer ce remboursement")
+    audit.record(
+        db, member.household_id, member.user_id, "settlement.delete", "settlement", s.id,
+        f"a supprimé le remboursement de {euros(s.amount_cents)} du {fr_date(s.date)}",
+        {"before": {"from_user": s.from_user, "to_user": s.to_user, "amount_cents": s.amount_cents, "date": s.date}},
+    )
     db.delete(s)
     db.commit()
 

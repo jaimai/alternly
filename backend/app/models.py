@@ -1,9 +1,10 @@
 import uuid
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 
 from sqlalchemy import JSON, Boolean, Date, DateTime, ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from .config import settings
 from .db import Base
 
 
@@ -14,6 +15,10 @@ def utcnow() -> datetime:
 
 def new_token() -> str:
     return uuid.uuid4().hex
+
+
+def trial_end_default() -> datetime:
+    return utcnow() + timedelta(days=settings.trial_days)
 
 
 class User(Base):
@@ -32,6 +37,14 @@ class User(Base):
     token_version: Mapped[int] = mapped_column(Integer, default=0)
     # Compte supprimé mais anonymisé (co-parent restant) : plus de connexion possible.
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    # Abonnement individuel (Stripe) : chaque parent a le sien.
+    trial_ends_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True, default=trial_end_default)
+    stripe_customer_id: Mapped[str | None] = mapped_column(String, nullable=True, index=True)
+    stripe_subscription_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    # Statut Stripe brut : trialing | active | past_due | canceled | incomplete | unpaid…
+    subscription_status: Mapped[str | None] = mapped_column(String, nullable=True)
+    current_period_end: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    cancel_at_period_end: Mapped[bool] = mapped_column(Boolean, default=False)
 
 
 class Household(Base):
@@ -233,3 +246,46 @@ class PublicHolidayCache(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     date: Mapped[date] = mapped_column(Date, unique=True)
     label: Mapped[str] = mapped_column(String)
+
+
+class StripeEvent(Base):
+    """Événements webhook Stripe déjà traités (idempotence : Stripe peut renvoyer)."""
+    __tablename__ = "stripe_events"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True)  # evt_…
+    type: Mapped[str] = mapped_column(String, default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+
+class AuditLog(Base):
+    """Journal des modifications du foyer, en ajout seul (aucune route de
+    modification ni de suppression ; seule la suppression du foyer l'efface)."""
+    __tablename__ = "audit_log"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    household_id: Mapped[int] = mapped_column(ForeignKey("households.id"), index=True)
+    actor_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    action: Mapped[str] = mapped_column(String)  # ex. custody_rule.update, expense.create
+    entity: Mapped[str] = mapped_column(String)  # ex. custody_rule, expense
+    entity_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    # Fragment de phrase au passé, sans le nom de l'auteur (« a ajouté la dépense … »).
+    summary: Mapped[str] = mapped_column(String)
+    data: Mapped[dict | None] = mapped_column(JSON, nullable=True)  # avant/après
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+
+class ChangeRequest(Base):
+    """Changement sensible soumis à l'accord de l'autre parent."""
+    __tablename__ = "change_requests"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    household_id: Mapped[int] = mapped_column(ForeignKey("households.id"), index=True)
+    requested_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    # custody_rule | vacation_rule | special_day_rules | delete_child | cancel_exchange
+    kind: Mapped[str] = mapped_column(String)
+    payload: Mapped[dict] = mapped_column(JSON, default=dict)
+    summary: Mapped[str] = mapped_column(String)
+    status: Mapped[str] = mapped_column(String, default="pending")  # pending | accepted | refused | withdrawn
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    resolved_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)

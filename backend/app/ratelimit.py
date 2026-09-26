@@ -73,6 +73,13 @@ def _check(key: str, limit: int, window: int) -> None:
         raise HTTPException(status_code=429, detail=TOO_MANY, headers={"Retry-After": str(retry_after)})
 
 
+def check_household_limit(scope: str, household_id: int, limit: int, window: int) -> None:
+    """Contrôle manuel par foyer, pour une limite qui ne vaut que sur une partie
+    du traitement (ex. création d'une demande de changement, pas l'application directe)."""
+    if settings.rate_limit_enabled:
+        _check(f"{scope}:hh:{household_id}", limit, window)
+
+
 def _client_ip(request: Request) -> str:
     return request.client.host if request.client else "inconnu"
 

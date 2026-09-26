@@ -1,19 +1,21 @@
 from datetime import date
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import JSONResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ..db import get_db
-from ..deps import get_membership, household_members, notify, other_parent_id
-from ..models import CustodyRule, HouseholdMember, ScheduleException, SpecialDayRule, User, VacationRule, utcnow
+from ..deps import get_membership, notify, other_parent_id
+from ..models import ChangeRequest, HouseholdMember, ScheduleException, User, utcnow
+from ..services import audit
+from ..services.audit import fr_range
+from ..services import change_requests as cr_service
 from ..services import email as email_service
 from ..ratelimit import DAY, rate_limit
 from ..schemas import (
-    PARENT_MODES,
-    PATTERNS,
-    SPECIAL_KINDS,
-    VACATION_MODES,
+    ChangeRequestOut,
     CustodyRuleIn,
     CustodyRuleOut,
     ExceptionIn,
@@ -28,10 +30,12 @@ from ..schemas import (
 router = APIRouter(prefix="/api/households/{household_id}", tags=["rules"])
 
 
-def _check_parent(db: Session, member: HouseholdMember, parent_id: int) -> None:
-    ids = {m.user_id for m in household_members(db, member.household_id)}
-    if parent_id not in ids:
-        raise HTTPException(status_code=422, detail="Ce parent n'appartient pas au foyer")
+def _pending_response(cr: ChangeRequest) -> JSONResponse:
+    """202 : la modification attend l'accord de l'autre parent."""
+    return JSONResponse(
+        status_code=202,
+        content=jsonable_encoder({"change_request": ChangeRequestOut.model_validate(cr)}),
+    )
 
 
 @router.put("/custody-rule", response_model=CustodyRuleOut)
@@ -40,26 +44,19 @@ def upsert_custody_rule(
     member: HouseholdMember = Depends(get_membership),
     db: Session = Depends(get_db),
 ):
-    if data.pattern not in PATTERNS:
-        raise HTTPException(status_code=422, detail="Schéma de garde inconnu")
-    _check_parent(db, member, data.reference_parent_id)
-    if data.pattern == "custom":
-        if not data.custom_weeks or len(data.custom_weeks) != 14 or any(
-            v not in {"ref", "other"} for v in data.custom_weeks
-        ):
-            raise HTTPException(status_code=422, detail="custom_weeks doit contenir 14 valeurs ref/other")
-
-    rule = db.scalar(select(CustodyRule).where(CustodyRule.household_id == member.household_id))
-    if rule is None:
-        rule = CustodyRule(household_id=member.household_id)
-        db.add(rule)
-    rule.pattern = data.pattern
-    rule.start_date = data.start_date
-    rule.reference_parent_id = data.reference_parent_id
-    rule.handover_day = data.handover_day
-    rule.handover_time = data.handover_time
-    rule.custom_weeks = data.custom_weeks if data.pattern == "custom" else None
-    notify(db, other_parent_id(db, member.household_id, member.user_id), "rule_changed", {"what": "custody"})
+    hid = member.household_id
+    new = cr_service.validate_custody(db, hid, data)
+    rule = cr_service.get_custody(db, hid)
+    old = cr_service.custody_snapshot(rule)
+    if old == new:
+        return rule  # aucune modification
+    if rule is not None and cr_service.needs_consent(db, member):
+        summary = f"Rythme de garde : {cr_service.custody_detail(db, old, new)}"
+        cr = cr_service.create_request(db, member, "custody_rule", new, summary)
+        db.commit()
+        return _pending_response(cr)
+    rule = cr_service.apply_custody(db, hid, new, member.user_id)
+    notify(db, other_parent_id(db, hid, member.user_id), "rule_changed", {"what": "custody"})
     db.commit()
     db.refresh(rule)
     return rule
@@ -71,18 +68,19 @@ def upsert_vacation_rule(
     member: HouseholdMember = Depends(get_membership),
     db: Session = Depends(get_db),
 ):
-    if data.mode not in VACATION_MODES:
-        raise HTTPException(status_code=422, detail="Mode de partage inconnu")
-    if data.even_year_first_half_parent_id is not None:
-        _check_parent(db, member, data.even_year_first_half_parent_id)
-
-    rule = db.scalar(select(VacationRule).where(VacationRule.household_id == member.household_id))
-    if rule is None:
-        rule = VacationRule(household_id=member.household_id)
-        db.add(rule)
-    rule.mode = data.mode
-    rule.even_year_first_half_parent_id = data.even_year_first_half_parent_id
-    notify(db, other_parent_id(db, member.household_id, member.user_id), "rule_changed", {"what": "vacation"})
+    hid = member.household_id
+    new = cr_service.validate_vacation(db, hid, data)
+    rule = cr_service.get_vacation(db, hid)
+    old = cr_service.vacation_snapshot(rule)
+    if old == new:
+        return rule
+    if rule is not None and cr_service.needs_consent(db, member):
+        summary = f"Vacances : {cr_service.vacation_detail(db, old, new)}"
+        cr = cr_service.create_request(db, member, "vacation_rule", new, summary)
+        db.commit()
+        return _pending_response(cr)
+    rule = cr_service.apply_vacation(db, hid, new, member.user_id)
+    notify(db, other_parent_id(db, hid, member.user_id), "rule_changed", {"what": "vacation"})
     db.commit()
     db.refresh(rule)
     return rule
@@ -94,34 +92,21 @@ def upsert_special_day_rules(
     member: HouseholdMember = Depends(get_membership),
     db: Session = Depends(get_db),
 ):
-    for item in data:
-        if item.kind not in SPECIAL_KINDS:
-            raise HTTPException(status_code=422, detail=f"Fête inconnue : {item.kind}")
-        if item.parent_mode not in PARENT_MODES:
-            raise HTTPException(status_code=422, detail=f"Mode inconnu : {item.parent_mode}")
-        # fixed et alternate exigent un parent_id membre du foyer.
-        if item.parent_mode in {"fixed", "alternate"}:
-            if item.parent_id is None:
-                raise HTTPException(status_code=422, detail="parent_id requis pour ce mode")
-            _check_parent(db, member, item.parent_id)
-        rule = db.scalar(
-            select(SpecialDayRule).where(
-                SpecialDayRule.household_id == member.household_id,
-                SpecialDayRule.kind == item.kind,
-            )
-        )
-        if rule is None:
-            rule = SpecialDayRule(household_id=member.household_id, kind=item.kind)
-            db.add(rule)
-        rule.parent_mode = item.parent_mode
-        # parent_id conservé pour fixed (parent fixe) et alternate (parent des années paires).
-        rule.parent_id = item.parent_id if item.parent_mode in {"fixed", "alternate"} else None
-        rule.enabled = item.enabled
-    notify(db, other_parent_id(db, member.household_id, member.user_id), "rule_changed", {"what": "special_days"})
+    hid = member.household_id
+    items = cr_service.validate_special(db, hid, data)
+    rules = cr_service.get_special(db, hid)
+    current = cr_service.special_snapshot(rules)
+    if not cr_service.special_changed(current, items):
+        return rules
+    if rules and cr_service.needs_consent(db, member):
+        summary = f"Jours de fête : {cr_service.special_detail(db, current, items)}"
+        cr = cr_service.create_request(db, member, "special_day_rules", {"items": items}, summary)
+        db.commit()
+        return _pending_response(cr)
+    cr_service.apply_special(db, hid, items, member.user_id)
+    notify(db, other_parent_id(db, hid, member.user_id), "rule_changed", {"what": "special_days"})
     db.commit()
-    return db.scalars(
-        select(SpecialDayRule).where(SpecialDayRule.household_id == member.household_id)
-    ).all()
+    return cr_service.get_special(db, hid)
 
 
 def _is_expired(exc: ScheduleException) -> bool:
@@ -178,7 +163,7 @@ def create_exception(
 ):
     if data.date_end < data.date_start:
         raise HTTPException(status_code=422, detail="La date de fin précède la date de début")
-    _check_parent(db, member, data.parent_id)
+    cr_service.check_parent(db, member.household_id, data.parent_id)
     if data.replaces_id is not None:
         _get_exchange(db, member, data.replaces_id)  # doit exister dans le foyer
 
@@ -199,6 +184,11 @@ def create_exception(
     )
     db.add(exc)
     db.flush()  # pour disposer de exc.id dans la notification
+    verb = "a ajouté un échange" if solo else "a proposé un échange"
+    audit.record(
+        db, member.household_id, member.user_id, "exchange.propose", "exception", exc.id,
+        f"{verb} : {cr_service.exchange_label(db, exc)}", {"after": cr_service.exchange_snapshot(exc)},
+    )
     if not solo:
         payload = _exchange_payload(exc)
         notify(db, recipient_id, "exchange_proposed", payload)
@@ -235,6 +225,10 @@ def accept_exchange(
     if exc.status != "pending" or _is_expired(exc):
         raise HTTPException(status_code=409, detail="Cette proposition n'est plus en attente")
     _resolve(db, member, exc, "accepted", data.response_note)
+    audit.record(
+        db, member.household_id, member.user_id, "exchange.accept", "exception", exc.id,
+        f"a accepté l'échange : {cr_service.exchange_label(db, exc)}",
+    )
     notify(db, exc.created_by, "exchange_accepted", _exchange_payload(exc))
     db.commit()
     db.refresh(exc)
@@ -254,6 +248,10 @@ def refuse_exchange(
     if exc.status != "pending" or _is_expired(exc):
         raise HTTPException(status_code=409, detail="Cette proposition n'est plus en attente")
     _resolve(db, member, exc, "refused", data.response_note)
+    audit.record(
+        db, member.household_id, member.user_id, "exchange.refuse", "exception", exc.id,
+        f"a refusé l'échange : {cr_service.exchange_label(db, exc)}",
+    )
     notify(db, exc.created_by, "exchange_refused", _exchange_payload(exc))
     db.commit()
     db.refresh(exc)
@@ -273,6 +271,10 @@ def withdraw_exchange(
         raise HTTPException(status_code=409, detail="Cette proposition n'est plus en attente")
     exc.status = "withdrawn"
     exc.resolved_at = utcnow()
+    audit.record(
+        db, member.household_id, member.user_id, "exchange.withdraw", "exception", exc.id,
+        f"a retiré sa proposition d'échange : {cr_service.exchange_label(db, exc)}",
+    )
     notify(db, other_parent_id(db, member.household_id, member.user_id), "exchange_withdrawn", _exchange_payload(exc))
     db.commit()
     db.refresh(exc)
@@ -286,11 +288,25 @@ def delete_exception(
     db: Session = Depends(get_db),
 ):
     exc = _get_exchange(db, member, exception_id)
+    if exc.status == "pending" and member.user_id != exc.created_by:
+        # Une proposition en attente se refuse, elle ne se supprime pas.
+        raise HTTPException(status_code=403, detail="Seul le proposeur peut supprimer sa proposition")
+    if exc.status == "accepted" and cr_service.needs_consent(db, member):
+        # Annuler un échange convenu engage les deux parents.
+        summary = f"Annuler l'échange du {fr_range(exc.date_start, exc.date_end)} (chez {_parent_name(db, exc)})"
+        cr = cr_service.create_request(db, member, "cancel_exchange", {"exception_id": exc.id}, summary)
+        db.commit()
+        return _pending_response(cr)
     notify(
         db,
         other_parent_id(db, member.household_id, member.user_id),
         "exception_deleted",
         {"date_start": exc.date_start.isoformat(), "date_end": exc.date_end.isoformat()},
     )
-    db.delete(exc)
+    cr_service.delete_exchange(db, exc, member.user_id)
     db.commit()
+
+
+def _parent_name(db: Session, exc: ScheduleException) -> str:
+    user = db.get(User, exc.parent_id)
+    return user.display_name if user is not None else "un parent"

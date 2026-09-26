@@ -29,6 +29,18 @@ class Settings(BaseSettings):
     sentry_dsn: str = ""
     sentry_environment: str = "production"
     sentry_traces_sample_rate: float = 0.0
+    # Abonnement (Stripe). Clé secrète ou prix vides → facturation désactivée :
+    # accès complet pour tous (bêta gratuite).
+    stripe_secret_key: str = ""
+    stripe_webhook_secret: str = ""
+    stripe_price_id: str = ""
+    # Stripe Tax (calcul automatique de la TVA) : à n'activer qu'une fois configuré côté Stripe.
+    stripe_automatic_tax: bool = False
+    # Fin d'essai sans abonnement : "read_only" (lecture seule), "block" (402
+    # partout sur le foyer) ou "off" (aucun paywall, facturation désactivée).
+    paywall_mode: str = "read_only"
+    trial_days: int = 14
+    billing_price_label: str = "39 € / an"
 
     @property
     def is_sqlite(self) -> bool:
@@ -39,6 +51,10 @@ class Settings(BaseSettings):
     def _default_secret(cls, v: str) -> str:
         # `SECRET_KEY=` vide (copie brute de .env.example) → clé de dev ; refusée hors SQLite.
         return v or "dev-secret-change-me"
+
+    @property
+    def billing_enabled(self) -> bool:
+        return bool(self.stripe_secret_key and self.stripe_price_id) and self.paywall_mode != "off"
 
     @property
     def cors_origin_list(self) -> list[str]:

@@ -95,6 +95,13 @@ et le build du frontend à chaque push / pull request.
   hébergement UE visé, lien iCal révocable, export JSON (`GET /api/auth/me/export`),
   suppression de compte (`DELETE /api/auth/me` : effacement si seul dans le foyer,
   anonymisation si un coparent reste), polices auto-hébergées, pas de cookie de traçage.
+- Abonnement : Stripe (39 € / an / parent, essai 14 jours sans carte, un abonnement par
+  parent), `/api/billing/*` ; paywall en lecture seule à la fin de l'essai. Désactivé tant
+  que les clés Stripe sont absentes. Voir `docs/ops.md`.
+- Garde-fous entre parents : les changements sensibles (rythme de garde, vacances, jours de
+  fête, retrait d'un enfant, annulation d'un échange accepté) deviennent des demandes que
+  l'autre parent accepte ou refuse (`/api/households/{id}/change-requests`) ; journal des
+  modifications du foyer en ajout seul (`/api/households/{id}/history`).
 - Sessions : JWT portant une version (`tv`) ; changement/réinitialisation de mot de passe
   et « déconnecter tous les appareils » l'incrémentent et révoquent les anciens jetons.
 
@@ -103,4 +110,4 @@ et le build du frontend à chaque push / pull request.
 Inclus : calendrier + moteur FR complet, partage 2 parents, exceptions, iCal,
 notifications in-app.
 V1 prévue (voir dossier de cadrage) : dépenses partagées, messagerie horodatée,
-export PDF, paiement Stripe, PWA/app mobile.
+export PDF, PWA/app mobile.

@@ -35,6 +35,13 @@ Toutes lues par `backend/app/config.py` (insensibles à la casse).
 | `SENTRY_DSN` | vide | Active Sentry si renseigné. |
 | `SENTRY_ENVIRONMENT` | `production` | `staging`, `production`… |
 | `SENTRY_TRACES_SAMPLE_RATE` | `0.0` | Échantillonnage des traces de performance (0 → désactivé). |
+| `STRIPE_SECRET_KEY` | vide | Clé secrète Stripe (`sk_test_…` puis `sk_live_…`). Vide → facturation désactivée. |
+| `STRIPE_WEBHOOK_SECRET` | vide | Secret de signature du webhook (`whsec_…`). Vide → webhook 503. |
+| `STRIPE_PRICE_ID` | vide | Prix annuel 39 € TTC (`price_…`). Vide → facturation désactivée. |
+| `STRIPE_AUTOMATIC_TAX` | `false` | `true` active Stripe Tax dans Checkout (une fois Stripe Tax configuré). |
+| `PAYWALL_MODE` | `read_only` | Fin d'essai sans abonnement : `read_only` (lecture seule), `block` (402 partout sur le foyer), `off` (facturation désactivée). |
+| `TRIAL_DAYS` | `14` | Durée de l'essai gratuit (sans carte) à l'inscription. |
+| `BILLING_PRICE_LABEL` | `39 € / an` | Libellé du prix affiché dans l'app. |
 | `PORT` | fourni par Railway | Port d'écoute uvicorn. |
 
 Côté Vercel (frontend, préfixe `VITE_`, lues au build) : `VITE_API_URL` (URL de l'API
@@ -128,6 +135,71 @@ Après quelques semaines de rapports DMARC propres, passer à `p=quarantine`.
 Vérifier : « Mot de passe oublié » sur un compte de test → e-mail reçu, non classé
 spam, lien `APP_URL/reset-password?token=…` fonctionnel.
 
+## Stripe — abonnement
+
+Modèle : **39 € TTC / an / parent**, essai de 14 jours sans carte bancaire à
+l'inscription, chaque parent a son propre abonnement. Tant que `STRIPE_SECRET_KEY` ou
+`STRIPE_PRICE_ID` est vide (ou `PAYWALL_MODE=off`), la facturation est désactivée et tout
+le monde a accès à tout (bêta gratuite).
+
+**Toujours commencer en mode test** (bascule « Test mode » du dashboard, clés `sk_test_…`),
+valider le parcours complet, puis refaire la configuration en mode live.
+
+1. **Produit et prix** — *Product catalog → Add product* : « Alternly », prix
+   **récurrent annuel de 39,00 EUR**, taxes incluses (*Include tax in price* = oui : le
+   prix affiché est TTC). Copier l'identifiant `price_…` → `STRIPE_PRICE_ID`.
+2. **Portail client** — *Settings → Billing → Customer portal* : activer
+   *Cancel subscriptions* (à la fin de la période), *Update payment methods* et
+   *Invoice history* ; renseigner les liens CGU (`SITE_URL/cgu`) et confidentialité
+   (`SITE_URL/confidentialite`). Pas de changement de formule (un seul prix).
+3. **Webhook** — *Developers → Webhooks → Add endpoint* :
+   URL `https://<api railway>/api/billing/webhook`, événements :
+   - `checkout.session.completed`
+   - `customer.subscription.created`
+   - `customer.subscription.updated`
+   - `customer.subscription.deleted`
+   - `invoice.payment_failed`
+
+   Copier le *Signing secret* `whsec_…` → `STRIPE_WEBHOOK_SECRET`. Le webhook est
+   authentifié par la signature (corps brut), exclu de la limitation de débit, et
+   idempotent (identifiants d'événements stockés dans la table `stripe_events`).
+4. **Variables Railway** : `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_ID`,
+   éventuellement `PAYWALL_MODE`, `TRIAL_DAYS`, `BILLING_PRICE_LABEL`.
+5. **Stripe Tax (optionnel)** — si l'éditeur est assujetti à la TVA : configurer
+   *Settings → Tax* (adresse d'origine, enregistrement FR), puis `STRIPE_AUTOMATIC_TAX=true`.
+   En franchise en base de TVA, laisser `false` et garder la mention « TVA non applicable,
+   art. 293 B du CGI » dans les CGV.
+6. **E-mails Stripe** — *Settings → Customer emails* : activer les reçus, les e-mails
+   d'échec de paiement et **le rappel avant renouvellement** (obligation d'information
+   avant reconduction tacite, art. L. 215-1 du Code de la consommation).
+
+Tests en mode test : carte `4242 4242 4242 4242` (succès), `4000 0000 0000 0341` (échec
+au renouvellement → `past_due`). En local : `stripe listen --forward-to
+localhost:8000/api/billing/webhook` fournit un `whsec_…` temporaire.
+
+Comportement :
+
+- **Statut** (`GET /api/billing/status`) : `trialing` (essai en cours), `active`
+  (abonnement Stripe `active`/`trialing`), `past_due` (paiement échoué : accès conservé
+  pendant les relances Stripe), `canceled` (a eu un abonnement), `expired` (essai fini
+  sans abonnement).
+- **S'abonner pendant l'essai** : Checkout reçoit `trial_end` = fin de l'essai (si > 48 h,
+  règle Stripe) → aucun jour d'essai perdu, premier prélèvement à la fin de l'essai.
+- **Paywall** (`PAYWALL_MODE=read_only`) : sur les routes `/api/households/{id}/…`, les
+  lectures restent possibles et les écritures renvoient 402. Accepter/refuser un échange
+  ou une demande de changement est une écriture : un parent sans abonnement ne peut plus
+  y répondre (l'autre parent en est informé par l'interface). Jamais soumis au paywall :
+  `/api/auth/*` (dont export et suppression du compte), `/api/billing/*`, acceptation
+  d'invitation (un nouveau parent doit pouvoir rejoindre), `/api/health`, cron, site
+  marketing, et le **flux iCal** : l'agenda des enfants ne doit jamais disparaître du
+  téléphone d'un parent pour une question de paiement (intérêt de l'enfant).
+- **Suppression de compte** : l'abonnement Stripe en cours est résilié immédiatement
+  (`stripe.Subscription.cancel`) ; en cas d'erreur Stripe, la suppression a lieu quand même
+  et l'erreur est journalisée (Sentry) → résilier à la main dans le dashboard.
+- **Déploiement** : les comptes existants avant l'ajout de la facturation reçoivent un
+  essai complet à partir du premier démarrage (`trial_ends_at = maintenant + TRIAL_DAYS`),
+  pour ne bloquer personne le jour de l'activation.
+
 ## Checklist de déploiement
 
 Avant la mise en production / une release importante :
@@ -141,6 +213,9 @@ Avant la mise en production / une release importante :
 - [ ] Pages légales : placeholders `[…]` remplacés (éditeur, SIRET, directeur de
       publication, régions, médiateur, TVA) — `grep -rn "class=\"todo\"" backend/app/templates`.
 - [ ] Domaine Resend vérifié (SPF, DKIM, DMARC).
+- [ ] Stripe : parcours validé en mode test (essai → Checkout → webhook → portail →
+      résiliation), puis produit, prix, portail et webhook recréés en live ;
+      `STRIPE_*` posés sur Railway.
 - [ ] Secrets GitHub `CRON_URL` / `CRON_SECRET` posés, un *Run workflow* manuel réussi.
 - [ ] Les migrations (`backend/app/migrations.py`) s'exécutent au démarrage : vérifier
       les logs du premier boot, puis `/api/health` = `{"status": "ok"}`.

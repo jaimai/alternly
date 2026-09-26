@@ -7,6 +7,7 @@ from ..db import get_db
 from ..deps import get_membership, household_members, notify, other_parent_id
 from ..models import Child, HouseholdMember, WallPost, WallReply, utcnow
 from ..ratelimit import DAY, rate_limit
+from ..services import audit
 from ..schemas import (
     WALL_KINDS,
     WallPostIn,
@@ -43,6 +44,20 @@ def _get_post(db: Session, member: HouseholdMember, post_id: int) -> WallPost:
     if p is None or p.household_id != member.household_id:
         raise HTTPException(status_code=404, detail="Post introuvable")
     return p
+
+
+_KIND_NOUN = {"message": "le message", "task": "la tâche", "question": "la question"}
+
+
+def _post_label(post: WallPost) -> str:
+    return f"{_KIND_NOUN.get(post.kind, 'le message')} « {audit.excerpt(post.body)} »"
+
+
+def _post_snapshot(post: WallPost) -> dict:
+    return {
+        "kind": post.kind, "body": post.body, "child_id": post.child_id,
+        "due_date": post.due_date, "assigned_to": post.assigned_to,
+    }
 
 
 def _serialize(db: Session, post: WallPost) -> WallPostOut:
@@ -99,6 +114,11 @@ def create_post(
     )
     db.add(post)
     db.flush()
+    verb = {"task": "a ajouté", "question": "a posé"}.get(post.kind, "a publié")
+    audit.record(
+        db, member.household_id, member.user_id, "wall_post.create", "wall_post", post.id,
+        f"{verb} {_post_label(post)}", {"after": _post_snapshot(post)},
+    )
     recipient = other_parent_id(db, member.household_id, member.user_id)
     notify(db, recipient, "wall_post_added", {"id": post.id, "kind": post.kind, "body": post.body[:120]})
     if data.assigned_to is not None and data.assigned_to != member.user_id:
@@ -118,6 +138,7 @@ def update_post(
     post = _get_post(db, member, post_id)
     if post.author_id != member.user_id:
         raise HTTPException(status_code=403, detail="Seul l'auteur peut modifier ce post")
+    before = _post_snapshot(post)
     if data.body is not None:
         post.body = data.body
     if "child_id" in data.model_fields_set:
@@ -129,6 +150,10 @@ def update_post(
         _check_member(db, member, data.assigned_to)
         post.assigned_to = data.assigned_to
     post.edited_at = utcnow()
+    audit.record(
+        db, member.household_id, member.user_id, "wall_post.update", "wall_post", post.id,
+        f"a modifié {_post_label(post)}", {"before": before, "after": _post_snapshot(post)},
+    )
     db.commit()
     db.refresh(post)
     return _serialize(db, post)
@@ -143,6 +168,10 @@ def delete_post(
     post = _get_post(db, member, post_id)
     if post.author_id != member.user_id:
         raise HTTPException(status_code=403, detail="Seul l'auteur peut supprimer ce post")
+    audit.record(
+        db, member.household_id, member.user_id, "wall_post.delete", "wall_post", post.id,
+        f"a supprimé {_post_label(post)}", {"before": _post_snapshot(post)},
+    )
     for r in db.scalars(select(WallReply).where(WallReply.post_id == post.id)):
         db.delete(r)
     db.delete(post)
@@ -158,6 +187,10 @@ def complete_post(
     post = _get_post(db, member, post_id)
     post.completed_at = utcnow()
     post.completed_by = member.user_id
+    audit.record(
+        db, member.household_id, member.user_id, "wall_post.complete", "wall_post", post.id,
+        f"a marqué comme fait {_post_label(post)}",
+    )
     db.commit()
     db.refresh(post)
     return _serialize(db, post)
@@ -172,6 +205,10 @@ def reopen_post(
     post = _get_post(db, member, post_id)
     post.completed_at = None
     post.completed_by = None
+    audit.record(
+        db, member.household_id, member.user_id, "wall_post.reopen", "wall_post", post.id,
+        f"a rouvert {_post_label(post)}",
+    )
     db.commit()
     db.refresh(post)
     return _serialize(db, post)
@@ -187,6 +224,11 @@ def add_reply(
     post = _get_post(db, member, post_id)
     reply = WallReply(post_id=post.id, author_id=member.user_id, body=data.body)
     db.add(reply)
+    db.flush()
+    audit.record(
+        db, member.household_id, member.user_id, "wall_reply.create", "wall_reply", reply.id,
+        f"a répondu « {audit.excerpt(data.body)} » sur {_post_label(post)}", {"after": {"body": data.body}},
+    )
     notify(
         db,
         other_parent_id(db, member.household_id, member.user_id),
@@ -212,5 +254,10 @@ def delete_reply(
         raise HTTPException(status_code=404, detail="Réponse introuvable")
     if reply.author_id != member.user_id:
         raise HTTPException(status_code=403, detail="Seul l'auteur peut supprimer cette réponse")
+    audit.record(
+        db, member.household_id, member.user_id, "wall_reply.delete", "wall_reply", reply.id,
+        f"a supprimé la réponse « {audit.excerpt(reply.body)} » sur {_post_label(post)}",
+        {"before": {"body": reply.body}},
+    )
     db.delete(reply)
     db.commit()

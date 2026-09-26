@@ -5,8 +5,13 @@ Pas d'Alembic au MVP : on ajoute les colonnes manquantes via ALTER TABLE
 index manquants via CREATE INDEX IF NOT EXISTS (create_all n'en ajoute pas aux
 tables existantes).
 """
+from datetime import timedelta
+
 from sqlalchemy import inspect, text
 from sqlalchemy.engine import Engine
+
+from .config import settings
+from .models import utcnow
 
 # table -> {colonne: clause DDL de type}
 _ADD_COLUMNS: dict[str, dict[str, str]] = {
@@ -23,6 +28,12 @@ _ADD_COLUMNS: dict[str, dict[str, str]] = {
         "onboarding_seen": "BOOLEAN",
         "token_version": "INTEGER",
         "deleted_at": "DATETIME",
+        "trial_ends_at": "DATETIME",
+        "stripe_customer_id": "VARCHAR",
+        "stripe_subscription_id": "VARCHAR",
+        "subscription_status": "VARCHAR",
+        "current_period_end": "DATETIME",
+        "cancel_at_period_end": "BOOLEAN",
     },
 }
 
@@ -39,6 +50,9 @@ _INDEXES: list[tuple[str, str]] = [
     ("notifications", "user_id"),
     ("wall_replies", "post_id"),
     ("password_reset_tokens", "user_id"),
+    ("users", "stripe_customer_id"),
+    ("audit_log", "household_id"),
+    ("change_requests", "household_id"),
 ]
 
 
@@ -72,6 +86,15 @@ def run_migrations(engine: Engine) -> None:
             # Comptes existants : déjà onboardés, on ne leur montre pas le tour.
             conn.execute(text("UPDATE users SET onboarding_seen = TRUE WHERE onboarding_seen IS NULL"))
             conn.execute(text("UPDATE users SET token_version = 0 WHERE token_version IS NULL"))
+            conn.execute(text("UPDATE users SET cancel_at_period_end = FALSE WHERE cancel_at_period_end IS NULL"))
+            # Comptes antérieurs à la facturation : essai complet à partir du
+            # déploiement, soit max(created_at + essai, maintenant + essai) —
+            # created_at ≤ maintenant, donc maintenant + essai. Les nouveaux
+            # comptes reçoivent trial_ends_at à l'inscription (jamais NULL).
+            conn.execute(
+                text("UPDATE users SET trial_ends_at = :t WHERE trial_ends_at IS NULL"),
+                {"t": utcnow() + timedelta(days=settings.trial_days)},
+            )
         for table, column in _INDEXES:
             if table in existing_tables:
                 conn.execute(text(f"CREATE INDEX IF NOT EXISTS ix_{table}_{column} ON {table} ({column})"))

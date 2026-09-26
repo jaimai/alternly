@@ -24,6 +24,7 @@ from ..schemas import (
     UserUpdate,
 )
 from ..services import account as account_service
+from ..services import billing as billing_service
 from ..services import email as email_service
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
@@ -190,6 +191,7 @@ def export_me(user: User = Depends(get_current_user), db: Session = Depends(get_
 def delete_me(data: DeleteAccountIn, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     if not verify_password(data.password, user.password_hash):
         raise HTTPException(status_code=400, detail="Mot de passe incorrect")
+    billing_service.cancel_for_deleted_account(user)
     account_service.delete_account(db, user)
     db.commit()
     return Response(status_code=204)
