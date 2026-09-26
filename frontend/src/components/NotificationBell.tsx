@@ -12,7 +12,8 @@ function range(p: Record<string, string>): string {
 function target(type: string): string {
   if (type.startsWith('expense_') || type.startsWith('settlement_')) return '/expenses'
   if (type.startsWith('wall_')) return '/wall'
-  if (type === 'parent_joined') return '/settings'
+  if (type === 'parent_joined' || type.startsWith('change_')) return '/settings'
+  if (type === 'payment_failed') return '/billing'
   return '/'
 }
 
@@ -25,6 +26,11 @@ const LABELS: Record<string, (p: Record<string, string>) => string> = {
   rule_changed: () => 'Les règles de garde ont été modifiées',
   parent_joined: (p) => `${p.display_name} a rejoint le foyer 🎉`,
   parent_left: (p) => `${p.display_name} a supprimé son compte`,
+  change_requested: (p) => `Demande de changement à valider : ${p.summary}`,
+  change_accepted: (p) => `Votre demande a été acceptée ✅ : ${p.summary}`,
+  change_refused: (p) => `Votre demande a été refusée : ${p.summary}`,
+  expense_updated: (p) => `La dépense « ${p.label} » a été modifiée (${euros(p.amount_cents)})`,
+  payment_failed: () => "Le paiement de votre abonnement a échoué : mettez à jour votre moyen de paiement",
   expense_added: (p) => `Nouvelle dépense « ${p.label} » (${euros(p.amount_cents)})`,
   expense_disputed: (p) => `Votre dépense « ${p.label} » a été contestée`,
   expense_resolved: (p) => `La contestation sur « ${p.label} » a été levée`,
