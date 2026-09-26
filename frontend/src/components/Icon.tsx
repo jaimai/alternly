@@ -113,6 +113,60 @@ const PATHS: Record<string, ReactElement> = {
     </>
   ),
   check: <polyline points="20 6 9 17 4 12" />,
+  health: (
+    <>
+      <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1.1L12 21l7.8-7.5 1-1.1a5.5 5.5 0 0 0 0-7.8z" />
+      <path d="M12 9v6M9 12h6" />
+    </>
+  ),
+  school: (
+    <>
+      <path d="M2 7l10-4 10 4-10 4z" />
+      <path d="M6 9v5c0 1.7 2.7 3 6 3s6-1.3 6-3V9" />
+      <line x1="22" y1="7" x2="22" y2="13" />
+    </>
+  ),
+  activity: (
+    <>
+      <circle cx="12" cy="12" r="10" />
+      <path d="M12 7l4 3-1.5 4.5h-5L8 10z" />
+    </>
+  ),
+  shirt: <path d="M20.4 6.6L16 3c-.9 1.2-2.3 2-4 2s-3.1-.8-4-2L3.6 6.6 5.5 10 7 9.2V21h10V9.2l1.5.8z" />,
+  utensils: (
+    <>
+      <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2" />
+      <path d="M7 2v20" />
+      <path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7" />
+    </>
+  ),
+  receipt: (
+    <>
+      <path d="M4 2v20l3-2 3 2 2-2 2 2 3-2 3 2V2l-3 2-3-2-2 2-2-2-3 2z" />
+      <path d="M8 9h8M8 13h6" />
+    </>
+  ),
+  undo: (
+    <>
+      <polyline points="9 14 4 9 9 4" />
+      <path d="M20 20v-7a4 4 0 0 0-4-4H4" />
+    </>
+  ),
+  history: (
+    <>
+      <path d="M3 12a9 9 0 1 0 3-6.7L3 8" />
+      <polyline points="3 3 3 8 8 8" />
+      <polyline points="12 7 12 12 15 14" />
+    </>
+  ),
+  download: (
+    <>
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+      <polyline points="7 10 12 15 17 10" />
+      <line x1="12" y1="15" x2="12" y2="3" />
+    </>
+  ),
+  chevron: <polyline points="9 18 15 12 9 6" />,
   users: (
     <>
       <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />

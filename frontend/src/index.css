@@ -1187,6 +1187,92 @@ button.link {
   margin: 0 auto 16px;
 }
 
+/* ---------- Dépenses : liste groupée par mois ---------- */
+.list-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.list-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.list-row:last-child { border-bottom: none; }
+
+.cat-icon {
+  flex: 0 0 auto;
+  display: inline-grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background: var(--paper-deep);
+  font-size: 1.1rem;
+}
+
+.list-main { flex: 1; min-width: 0; }
+
+.list-title {
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.list-main .hint { font-size: 0.83rem; margin-top: 2px; }
+
+.list-amount {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  font-size: 1.02rem;
+}
+
+.payer-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  margin-right: 4px;
+  vertical-align: 1px;
+}
+
+.row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin-top: 6px;
+}
+
+.row-actions button { white-space: nowrap; }
+
+.dispute-note {
+  margin: 6px 0 0;
+  font-size: 0.85rem;
+  color: #8c4a2c;
+  font-style: italic;
+}
+
+button.with-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.list-group { margin-top: 4px; }
+
+.cat-icon { color: var(--pine); }
+
+@media (max-width: 640px) {
+  .list-row { padding: 12px; gap: 10px; }
+}
+
 /* ---------- Barre d'onglets mobile + mises en page étroites ---------- */
 .tabbar {
   display: none;
