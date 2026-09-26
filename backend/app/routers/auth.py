@@ -15,6 +15,7 @@ from ..ratelimit import HOUR, MINUTE, rate_limit
 from ..schemas import (
     ChangePasswordIn,
     ForgotPasswordIn,
+    GoogleLoginIn,
     ResetPasswordIn,
     Token,
     UserCreate,
@@ -22,7 +23,7 @@ from ..schemas import (
     UserOut,
     UserUpdate,
 )
-from ..services import account, paddle_api
+from ..services import account, google_auth, paddle_api
 from ..services import email as email_service
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
@@ -109,6 +110,55 @@ def login(data: UserLogin, db: Session = Depends(get_db)):
     return _token_response(user)
 
 
+# Couleur par défaut d'un compte créé via Google (première couleur de la palette de l'app).
+GOOGLE_DEFAULT_COLOR = "#2f6b57"
+
+
+@router.post(
+    "/google",
+    response_model=Token,
+    dependencies=[Depends(rate_limit("google", 20, MINUTE))],
+)
+def google_login(
+    data: GoogleLoginIn,
+    db: Session = Depends(get_db),
+    accept_language: str | None = Header(default=None),
+):
+    """« Continuer avec Google » : connecte, relie ou crée le compte à partir du jeton d'identité."""
+    try:
+        identity = google_auth.verify_credential(data.credential)
+    except google_auth.GoogleAuthError as exc:
+        status = 503 if "configurée" in str(exc) else 401
+        raise HTTPException(status_code=status, detail=str(exc))
+    if not identity.email_verified:
+        # Sans e-mail vérifié par Google, relier un compte existant permettrait de l'usurper.
+        raise HTTPException(status_code=401, detail="Adresse e-mail Google non vérifiée")
+
+    user = db.scalar(select(User).where(User.google_sub == identity.sub))
+    if user is None:
+        user = db.scalar(select(User).where(User.email == identity.email))
+        if user is not None and not user.is_placeholder:
+            # Compte existant avec le même e-mail (vérifié par Google) : on le relie.
+            user.google_sub = identity.sub
+        else:
+            google_locale = "en" if (identity.locale or "").lower().startswith("en") else None
+            user = User(
+                email=identity.email,
+                password_hash="",  # pas de mot de passe : défini plus tard si besoin
+                display_name=(identity.given_name or identity.name or identity.email.split("@")[0])[:50],
+                color=GOOGLE_DEFAULT_COLOR,
+                subscription_status="free",
+                locale=data.locale or google_locale or _detect_locale(accept_language),
+                google_sub=identity.sub,
+            )
+            db.add(user)
+    elif user.is_placeholder:
+        raise HTTPException(status_code=401, detail="Compte indisponible")
+    db.commit()
+    db.refresh(user)
+    return _token_response(user)
+
+
 @router.post(
     "/password/forgot",
     status_code=202,
@@ -161,7 +211,8 @@ def reset_password(data: ResetPasswordIn, db: Session = Depends(get_db)):
     dependencies=[Depends(rate_limit("password_change", 10, HOUR))],
 )
 def change_password(data: ChangePasswordIn, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    if not verify_password(data.current_password, user.password_hash):
+    # Compte Google sans mot de passe : première définition, sans mot de passe actuel.
+    if user.has_password and not verify_password(data.current_password, user.password_hash):
         raise HTTPException(status_code=400, detail="Mot de passe actuel incorrect")
     user.password_hash = hash_password(data.new_password)
     _revoke_sessions(user)  # déconnecte les autres appareils ; nouveau jeton renvoyé

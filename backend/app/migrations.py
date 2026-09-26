@@ -29,6 +29,7 @@ _ADD_COLUMNS: dict[str, dict[str, str]] = {
         "is_placeholder": "BOOLEAN",
         "locale": "VARCHAR",
         "token_version": "INTEGER",
+        "google_sub": "VARCHAR",
     },
     "expenses": {
         "settled_at": "TIMESTAMP",
@@ -102,3 +103,6 @@ def run_migrations(engine: Engine) -> None:
         for table, column in _INDEXES:
             if table in existing_tables:
                 conn.execute(text(f"CREATE INDEX IF NOT EXISTS ix_{table}_{column} ON {table} ({column})"))
+        if "users" in existing_tables:
+            # Un compte Google ne peut être relié qu'à un seul compte Alternly.
+            conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS ix_users_google_sub ON users (google_sub)"))

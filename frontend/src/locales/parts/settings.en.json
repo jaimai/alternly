@@ -59,5 +59,8 @@
   "settings.logoutAllHint": "Useful after using a shared phone or computer.",
   "settings.logoutAllTitle": "Sign out everywhere?",
   "settings.logoutAllBody": "All your sessions will be closed, including this one. You'll need to sign in again.",
-  "settings.logoutAllConfirm": "Sign out everywhere"
+  "settings.logoutAllConfirm": "Sign out everywhere",
+  "settings.setPassword": "Set a password",
+  "settings.setPasswordHint": "You sign in with Google — add a password if you'd like.",
+  "settings.setPasswordIntro": "Your account uses Google sign-in. A password also lets you sign in with your email."
 }

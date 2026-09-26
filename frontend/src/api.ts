@@ -87,6 +87,8 @@ export const api = {
   login: (data: { email: string; password: string }) =>
     request<TokenResponse>('/auth/login', { method: 'POST', body: JSON.stringify(data) }),
   me: () => request<User>('/auth/me'),
+  googleLogin: (credential: string, locale: 'fr' | 'en') =>
+    request<TokenResponse>('/auth/google', { method: 'POST', body: JSON.stringify({ credential, locale }) }),
   forgotPassword: (email: string) =>
     request<{ ok: boolean }>('/auth/password/forgot', { method: 'POST', body: JSON.stringify({ email }) }),
   resetPassword: (token: string, password: string) =>

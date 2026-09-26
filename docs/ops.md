@@ -42,6 +42,7 @@ Toutes lues par `backend/app/config.py` (insensibles à la casse).
 | `CRON_SECRET` | vide | Protège `POST /api/cron/exchange-reminders` (en-tête `X-Cron-Key`, comparaison à temps constant). Vide → endpoint désactivé (403). |
 | `RATE_LIMIT_ENABLED` | `true` | Coupe la limitation de débit (à ne faire qu'en cas d'incident). |
 | `SENTRY_DSN` | vide | Active Sentry si renseigné. |
+| `GOOGLE_CLIENT_ID` | vide | Active « Continuer avec Google » (voir la section Google). |
 | `SENTRY_ENVIRONMENT` | `production` | `staging`, `production`… |
 | `SENTRY_TRACES_SAMPLE_RATE` | `0.0` | Échantillonnage des traces de performance (0 → désactivé). |
 | `PADDLE_WEBHOOK_SECRET` | vide | Secret de signature des webhooks (*Notifications → destination*). Vide → webhook refusé (403). |
@@ -53,7 +54,7 @@ Toutes lues par `backend/app/config.py` (insensibles à la casse).
 
 Côté Vercel (préfixe `VITE_`, lues au build) : `VITE_API_URL` (URL de l'API Railway,
 suffixe `/api`), `VITE_PADDLE_ENV`, `VITE_PADDLE_CLIENT_TOKEN`, `VITE_PADDLE_PRICE_ID`,
-`VITE_PADDLE_PRICE_ID_MONTHLY` (voir `backend/.env.example` et le code de `frontend/`).
+`VITE_PADDLE_PRICE_ID_MONTHLY`, `VITE_GOOGLE_CLIENT_ID` (voir `backend/.env.example` et le code de `frontend/`).
 
 ## Railway (API)
 
@@ -137,6 +138,28 @@ est gratuit ; Premium (dépenses, mur, e-mails, synchronisation iCal) au niveau 
    en cas d'échec de l'API, la suppression a lieu quand même → résilier à la main.
 5. Les changements d'abonnement (statut, offre, résiliation) apparaissent dans
    l'historique du foyer.
+
+## Connexion avec Google
+
+Bouton « Continuer avec Google » sur la connexion, l'inscription et l'invitation
+(Google Identity Services). Le navigateur reçoit un jeton d'identité signé que
+l'API vérifie (`POST /api/auth/google`) : signature (clés publiques Google en
+cache), audience = notre ID client, émetteur, expiration, e-mail vérifié.
+Pas de secret client. Un compte existant avec le même e-mail (vérifié par Google)
+est relié automatiquement ; sinon un compte est créé, sans mot de passe (il peut
+en définir un dans Réglages → Compte).
+
+Mise en place (Google Cloud Console → APIs & Services) :
+1. **Écran de consentement OAuth** : type Externe, nom « Alternly », logo, e-mail
+   d'assistance, domaine `alternly.com`, liens CGU (`/terms`) et confidentialité
+   (`/privacy`). Portées : `openid`, `email`, `profile` uniquement (pas de
+   vérification Google longue). Passer l'app « En production ».
+2. **Identifiants → ID client OAuth → Application Web** : origines JavaScript
+   autorisées `https://alternly.com` (+ `http://localhost:5173` en dev, et
+   l'URL de prévisualisation Vercel si besoin). Pas d'URI de redirection (mode popup).
+3. Renseigner l'ID client dans `GOOGLE_CLIENT_ID` (Railway) **et**
+   `VITE_GOOGLE_CLIENT_ID` (Vercel, puis redéployer). Le bouton n'apparaît que
+   si la variable Vercel est définie.
 
 ## Cron (GitHub Actions)
 

@@ -57,5 +57,8 @@
   "auth.consentAnd": "et la",
   "auth.consentPrivacy": "politique de confidentialité",
   "auth.consentTail": ".",
-  "auth.consentRequired": "Merci d'accepter les conditions d'utilisation pour créer votre compte."
+  "auth.consentRequired": "Merci d'accepter les conditions d'utilisation pour créer votre compte.",
+  "auth.or": "ou",
+  "auth.googleError": "Connexion avec Google impossible. Réessayez.",
+  "auth.googleConsentLead": "En continuant avec Google, vous acceptez les"
 }
