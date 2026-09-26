@@ -9,6 +9,7 @@ import httpx
 
 from app.config import settings
 from app.services import public_holidays, school_holidays
+from tests.test_household import create_household
 
 BACKEND_DIR = Path(__file__).resolve().parent.parent
 
@@ -102,3 +103,27 @@ class TestHttpHardening:
         assert client.post("/api/cron/exchange-reminders", headers={"X-Cron-Key": "mauvais"}).status_code == 401
         assert client.post("/api/cron/exchange-reminders").status_code == 401
         assert client.post("/api/cron/exchange-reminders", headers={"X-Cron-Key": "bon-secret"}).status_code == 200
+
+
+class TestLinks:
+    def test_invite_url_points_to_spa(self, client, auth_headers):
+        headers, _ = auth_headers()
+        h = create_household(client, headers)
+        inv = client.post(f"/api/households/{h['id']}/invitations", headers=headers).json()
+        assert inv["invite_url"] == f"{settings.app_url.rstrip('/')}/join/{inv['token']}"
+
+    def test_public_site_url_used_for_canonical_urls(self, client, monkeypatch):
+        monkeypatch.setattr(settings, "public_site_url", "https://alternly.example")
+        assert "<loc>https://alternly.example/blog</loc>" in client.get("/sitemap.xml").text
+        assert "Sitemap: https://alternly.example/sitemap.xml" in client.get("/robots.txt").text
+        llms = client.get("/llms.txt").text
+        assert f"{settings.app_url.rstrip('/')}/register" in llms and "/app/register" not in llms
+        assert "https://alternly.example/blog/" in llms
+
+    def test_fallback_to_request_origin(self, client, monkeypatch):
+        monkeypatch.setattr(settings, "public_site_url", "")
+        assert "Sitemap: http://testserver/sitemap.xml" in client.get("/robots.txt").text
+
+    def test_schema_org_claims_web_only(self, client):
+        for path in ("/", "/en", "/blog"):
+            assert '"operatingSystem": "Web"' in client.get(path).text
