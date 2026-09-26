@@ -2,7 +2,7 @@ import hashlib
 import secrets
 from datetime import timedelta
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Response
+from fastapi import APIRouter, BackgroundTasks, Depends, Header, HTTPException, Response
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from sqlalchemy import select, update
@@ -14,7 +14,6 @@ from ..models import PasswordResetToken, User, utcnow
 from ..ratelimit import HOUR, MINUTE, rate_limit
 from ..schemas import (
     ChangePasswordIn,
-    DeleteAccountIn,
     ForgotPasswordIn,
     ResetPasswordIn,
     Token,
@@ -23,8 +22,7 @@ from ..schemas import (
     UserOut,
     UserUpdate,
 )
-from ..services import account as account_service
-from ..services import billing as billing_service
+from ..services import account, paddle_api
 from ..services import email as email_service
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
@@ -54,23 +52,41 @@ def _invalidate_reset_tokens(db: Session, user_id: int) -> None:
     )
 
 
+def _detect_locale(accept_language: str | None) -> str:
+    """Langue de l'UI depuis l'en-tête Accept-Language. FR par défaut ; EN si la
+    première langue préférée est l'anglais."""
+    if not accept_language:
+        return "fr"
+    first = accept_language.split(",")[0].strip().lower()
+    return "en" if first.startswith("en") else "fr"
+
+
 @router.post(
     "/register",
     response_model=Token,
     status_code=201,
     dependencies=[Depends(rate_limit("register", 10, HOUR))],
 )
-def register(data: UserCreate, db: Session = Depends(get_db)):
+def register(
+    data: UserCreate,
+    db: Session = Depends(get_db),
+    accept_language: str | None = Header(default=None),
+):
     email = data.email.lower()
     if db.scalar(select(User).where(User.email == email)):
         # Énumération d'e-mails possible ici : compromis UX assumé au MVP
         # (login et mot de passe oublié restent uniformes ; inscription limitée en débit).
         raise HTTPException(status_code=409, detail="Un compte existe déjà avec cet e-mail")
+    # Modèle freemium : le calendrier est gratuit ; les fonctions premium
+    # (dépenses, mur, e-mails, sync) nécessitent un abonnement.
     user = User(
         email=email,
         password_hash=hash_password(data.password),
         display_name=data.display_name,
         color=data.color,
+        subscription_status="free",
+        # Langue explicite du client (landing) prioritaire, sinon Accept-Language.
+        locale=data.locale or _detect_locale(accept_language),
     )
     db.add(user)
     db.commit()
@@ -88,7 +104,7 @@ def register(data: UserCreate, db: Session = Depends(get_db)):
 )
 def login(data: UserLogin, db: Session = Depends(get_db)):
     user = db.scalar(select(User).where(User.email == data.email.lower()))
-    if user is None or user.deleted_at is not None or not verify_password(data.password, user.password_hash):
+    if user is None or user.is_placeholder or not verify_password(data.password, user.password_hash):
         raise HTTPException(status_code=401, detail="E-mail ou mot de passe incorrect")
     return _token_response(user)
 
@@ -104,13 +120,13 @@ def login(data: UserLogin, db: Session = Depends(get_db)):
 def forgot_password(data: ForgotPasswordIn, background: BackgroundTasks, db: Session = Depends(get_db)):
     """Toujours 202 : ne révèle pas si un compte existe pour cet e-mail."""
     user = db.scalar(select(User).where(User.email == data.email.lower()))
-    if user is not None and user.deleted_at is None:
+    if user is not None and not user.is_placeholder:
         raw = secrets.token_urlsafe(32)
         db.add(PasswordResetToken(
             user_id=user.id, token_hash=_hash_reset_token(raw), expires_at=utcnow() + RESET_TOKEN_TTL,
         ))
         db.commit()
-        subject, html = email_service.password_reset_email(raw)
+        subject, html = email_service.password_reset_email(raw, user.locale)
         # Après la réponse : ni latence Resend, ni différence de temps de réponse exploitable.
         background.add_task(email_service.send_email, user.email, subject, html)
     return {"ok": True}
@@ -128,7 +144,7 @@ def reset_password(data: ResetPasswordIn, db: Session = Depends(get_db)):
     if reset is None or reset.used_at is not None or reset.expires_at < utcnow():
         raise HTTPException(status_code=400, detail=INVALID_RESET)
     user = db.get(User, reset.user_id)
-    if user is None or user.deleted_at is not None:
+    if user is None or user.is_placeholder:
         raise HTTPException(status_code=400, detail=INVALID_RESET)
     user.password_hash = hash_password(data.password)
     _revoke_sessions(user)
@@ -138,7 +154,12 @@ def reset_password(data: ResetPasswordIn, db: Session = Depends(get_db)):
     return _token_response(user)
 
 
-@router.post("/password/change", response_model=Token)
+@router.post(
+    "/password/change",
+    response_model=Token,
+    # vérifie le mot de passe actuel : borne le brute-force avec un jeton volé
+    dependencies=[Depends(rate_limit("password_change", 10, HOUR))],
+)
 def change_password(data: ChangePasswordIn, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     if not verify_password(data.current_password, user.password_hash):
         raise HTTPException(status_code=400, detail="Mot de passe actuel incorrect")
@@ -162,6 +183,28 @@ def me(user: User = Depends(get_current_user)):
     return user
 
 
+@router.get("/me/export")
+def export_me(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Export RGPD (droit d'accès / portabilité) : fichier JSON téléchargeable."""
+    return JSONResponse(
+        content=jsonable_encoder(account.export_user_data(db, user)),
+        headers={"Content-Disposition": 'attachment; filename="alternly-export.json"'},
+    )
+
+
+@router.delete("/me", status_code=204)
+def delete_me(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Supprime le compte et les données personnelles (droit à l'effacement)."""
+    # Résilie au mieux l'abonnement Paddle pour ne plus facturer un compte supprimé.
+    if user.paddle_subscription_id:
+        try:
+            paddle_api.cancel_subscription(user.paddle_subscription_id)
+        except paddle_api.PaddleUnavailable:
+            pass
+    account.delete_account(db, user)
+    db.commit()
+
+
 @router.patch("/me", response_model=UserOut)
 def update_me(data: UserUpdate, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     if data.display_name is not None:
@@ -172,26 +215,9 @@ def update_me(data: UserUpdate, user: User = Depends(get_current_user), db: Sess
         user.email_opt_in = data.email_opt_in
     if data.onboarding_seen is not None:
         user.onboarding_seen = data.onboarding_seen
+    if data.locale is not None:
+        user.locale = data.locale
     db.add(user)
     db.commit()
     db.refresh(user)
     return user
-
-
-@router.get("/me/export")
-def export_me(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    """Export RGPD (droit d'accès / portabilité) : fichier JSON téléchargeable."""
-    return JSONResponse(
-        content=jsonable_encoder(account_service.export_user_data(db, user)),
-        headers={"Content-Disposition": 'attachment; filename="alternly-export.json"'},
-    )
-
-
-@router.delete("/me", status_code=204)
-def delete_me(data: DeleteAccountIn, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    if not verify_password(data.password, user.password_hash):
-        raise HTTPException(status_code=400, detail="Mot de passe incorrect")
-    billing_service.cancel_for_deleted_account(user)
-    account_service.delete_account(db, user)
-    db.commit()
-    return Response(status_code=204)

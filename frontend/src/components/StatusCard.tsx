@@ -1,6 +1,10 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { api } from '../api'
-import { addDays, daysBetween, fmtDay, fmtDayLong, fmtRange, relativeDays, todayIso } from '../dates'
+import { addDays, daysBetween, todayIso } from '../dates'
+import { useFormat } from '../format'
+import Icon from './Icon'
+import type { IconName } from './Icon'
 import type { CalendarResponse, Household, ScheduleException } from '../types'
 
 // Horizon de la carte : assez loin pour trouver le prochain passage même en
@@ -15,9 +19,12 @@ interface Props {
   onOpenDay: (date: string) => void
 }
 
-type Upcoming = { key: string; icon: string; text: string; when: string; date?: string; urgent?: boolean }
+type Upcoming = { key: string; icon: IconName; text: string; when: string; date?: string; urgent?: boolean }
 
+/** « Aujourd'hui, Léo est chez Dominique » + prochain passage + à venir. */
 export default function StatusCard({ household, myId, exceptions, refreshKey, onOpenDay }: Props) {
+  const { t, i18n } = useTranslation()
+  const { day, dayLong, range, relativeDays } = useFormat()
   const [data, setData] = useState<CalendarResponse | null>(null)
 
   useEffect(() => {
@@ -37,21 +44,27 @@ export default function StatusCard({ household, myId, exceptions, refreshKey, on
   const member = (id: number) => data.members.find((m) => m.id === id)
   const holder = member(current.parent_id)
   const nextHolder = next ? member(next.parent_id) : undefined
+  const who = (id: number | undefined, fallback = '?') =>
+    id === myId ? t('calendar.statusYou') : (id !== undefined && member(id)?.display_name) || fallback
 
   const kids = household.children.map((c) => c.first_name)
   const kidsLabel =
-    kids.length === 0 ? 'Les enfants' : kids.length === 1 ? kids[0] : `${kids.slice(0, -1).join(', ')} et ${kids.at(-1)}`
-  const verb = kids.length === 1 ? 'est' : 'sont'
-  const holderName = holder ? (holder.id === myId ? 'vous' : holder.display_name) : '?'
+    kids.length === 0
+      ? t('calendar.statusKidsNone')
+      : new Intl.ListFormat(i18n.language, { style: 'long', type: 'conjunction' }).format(kids)
+  const titleLead = t(kids.length === 1 ? 'calendar.statusTitleOne' : 'calendar.statusTitleMany', { kids: kidsLabel })
 
   const upcoming: Upcoming[] = []
   for (const e of exceptions) {
     if (e.status === 'pending' && e.created_by !== myId && e.date_start >= today) {
       upcoming.push({
         key: `x-${e.id}`,
-        icon: '⏳',
-        text: `Échange proposé : ${fmtRange(e.date_start, e.date_end)} chez ${member(e.parent_id)?.display_name ?? '?'}`,
-        when: 'À traiter',
+        icon: 'clock',
+        text: t('calendar.statusExchangeProposed', {
+          range: range(e.date_start, e.date_end),
+          name: member(e.parent_id)?.display_name ?? '?',
+        }),
+        when: t('calendar.statusToHandle'),
         date: e.date_start,
         urgent: true,
       })
@@ -62,35 +75,47 @@ export default function StatusCard({ household, myId, exceptions, refreshKey, on
     const inProgress = vacation.start <= today
     upcoming.push({
       key: 'vac',
-      icon: '🏖️',
-      text: inProgress ? `${vacation.label} jusqu'au ${fmtDay(vacation.end)}` : vacation.label,
-      when: inProgress ? 'En cours' : relativeDays(daysBetween(today, vacation.start)),
+      icon: 'sun',
+      text: inProgress ? t('calendar.statusVacationUntil', { label: vacation.label, day: day(vacation.end) }) : vacation.label,
+      when: inProgress ? t('calendar.statusInProgress') : relativeDays(daysBetween(today, vacation.start)),
       date: inProgress ? undefined : vacation.start,
     })
   }
-  for (const t of data.tasks.slice(0, 2)) {
-    upcoming.push({ key: `t-${t.id}`, icon: '✓', text: t.body, when: relativeDays(daysBetween(today, t.due_date)), date: t.due_date })
+  for (const task of data.tasks.filter((x) => x.due_date >= today).slice(0, 2)) {
+    upcoming.push({
+      key: `t-${task.id}`,
+      icon: 'task',
+      text: task.body,
+      when: relativeDays(daysBetween(today, task.due_date)),
+      date: task.due_date,
+    })
   }
   const holiday = data.public_holidays.find((h) => h.date >= today)
   if (holiday && upcoming.length < 4) {
-    upcoming.push({ key: 'ph', icon: '📌', text: holiday.label, when: relativeDays(daysBetween(today, holiday.date)), date: holiday.date })
+    upcoming.push({
+      key: 'ph',
+      icon: 'flag',
+      text: holiday.label,
+      when: relativeDays(daysBetween(today, holiday.date)),
+      date: holiday.date,
+    })
   }
 
   return (
     <section className="status-card" style={{ ['--holder' as string]: holder?.color ?? 'var(--pine)' }}>
       <div className="status-main">
-        <p className="eyebrow">Aujourd'hui · {fmtDayLong(today)}</p>
+        <p className="eyebrow">{t('calendar.statusToday', { day: dayLong(today) })}</p>
         <h1 className="status-title">
-          {kidsLabel} {verb} chez <span className="holder">{holderName}</span>
+          {titleLead} <span className="holder">{who(holder?.id)}</span>
         </h1>
         {next && nextHolder ? (
           <p className="status-sub">
-            Prochain passage chez <strong>{nextHolder.id === myId ? 'vous' : nextHolder.display_name}</strong>{' '}
-            {fmtDayLong(next.date)} vers {data.handover_time.slice(0, 5)}{' '}
+            {t('calendar.statusNextLead')} <strong>{who(nextHolder.id)}</strong>{' '}
+            {t('calendar.statusNextTail', { day: dayLong(next.date), time: data.handover_time.slice(0, 5) })}{' '}
             <span className="pill">{relativeDays(daysBetween(today, next.date))}</span>
           </p>
         ) : (
-          <p className="status-sub">Pas de changement de foyer prévu dans les prochaines semaines.</p>
+          <p className="status-sub">{t('calendar.statusNoHandover')}</p>
         )}
       </div>
       {upcoming.length > 0 && (
@@ -103,7 +128,9 @@ export default function StatusCard({ household, myId, exceptions, refreshKey, on
                 onClick={() => u.date && onOpenDay(u.date)}
                 disabled={!u.date}
               >
-                <span className="upcoming-icon" aria-hidden="true">{u.icon}</span>
+                <span className="upcoming-icon" aria-hidden="true">
+                  <Icon name={u.icon} size={15} />
+                </span>
                 <span className="upcoming-text">{u.text}</span>
                 <span className="upcoming-when">{u.when}</span>
               </button>

@@ -17,8 +17,8 @@ from .migrations import run_migrations
 
 # Segments d'URL portant un secret (flux iCal, invitation).
 _SECRET_PATH = re.compile(r"(/api/(?:ical|invitations)/)[^/?#]+")
-# En-têtes jamais transmis à Sentry (jetons, cookies, clé cron).
-_SENSITIVE_HEADERS = {"authorization", "cookie", "set-cookie", "x-cron-key", "stripe-signature"}
+# En-têtes jamais transmis à Sentry (jetons, cookies, clé cron, signature Paddle).
+_SENSITIVE_HEADERS = {"authorization", "cookie", "set-cookie", "x-cron-key", "paddle-signature"}
 
 
 def _scrub_event(event, hint):
@@ -67,6 +67,7 @@ from .routers import change_requests as change_requests_router
 from .routers import children as children_router
 from .routers import cron as cron_router
 from .routers import expenses as expenses_router
+from .routers import history as history_router
 from .routers import household as household_router
 from .routers import calendar as calendar_router
 from .routers import ical as ical_router
@@ -80,11 +81,13 @@ from .routers import wall as wall_router
 _docs = {} if settings.is_sqlite else {"docs_url": None, "redoc_url": None, "openapi_url": None}
 app = FastAPI(title="Alternly", lifespan=lifespan, **_docs)
 
+# En-têtes de sécurité sur toutes les réponses (API et site marketing).
+# Permissions-Policy : pas de payment=() — le checkout Paddle peut en avoir besoin.
 _SECURITY_HEADERS = {
     "X-Content-Type-Options": "nosniff",
     "Referrer-Policy": "strict-origin-when-cross-origin",
     "X-Frame-Options": "DENY",
-    "Permissions-Policy": "camera=(), microphone=(), geolocation=(), payment=()",
+    "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
 }
 if not settings.is_sqlite:
     _SECURITY_HEADERS["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
@@ -96,7 +99,6 @@ async def security_headers(request: Request, call_next):
     for name, value in _SECURITY_HEADERS.items():
         response.headers.setdefault(name, value)
     return response
-
 
 # La SPA (Vercel) appelle l'API depuis une autre origine → CORS.
 # Auth par jeton Bearer (pas de cookies) : allow_credentials inutile.
@@ -118,6 +120,7 @@ app.include_router(cron_router.router)
 app.include_router(expenses_router.router)
 app.include_router(wall_router.router)
 app.include_router(billing_router.router)
+app.include_router(history_router.router)
 app.include_router(change_requests_router.router)
 
 

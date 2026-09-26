@@ -10,37 +10,29 @@ class Settings(BaseSettings):
     # Notifications e-mail (Resend). Vide → envoi désactivé (no-op).
     resend_api_key: str = ""
     email_from: str = "Alternly <no-reply@alternly.com>"
-    # URL publique de la SPA (hébergée sur Vercel) : liens de la landing, CTAs
-    # e-mail, liens d'invitation. En dev : le serveur Vite.
+    # URL publique du site (Vercel sert la landing en / et l'app). Utilisée pour
+    # les liens absolus des e-mails et le canonical/OG (la landing est proxifiée,
+    # donc request.url refléterait l'URL interne Railway).
     app_url: str = "http://localhost:5173"
+    public_site_url: str = "http://localhost:8000"
     # Origines autorisées à appeler l'API (CORS), séparées par des virgules.
     cors_origins: str = "http://localhost:5173"
     # Secret protégeant l'endpoint cron des rappels. Vide → endpoint désactivé.
     cron_secret: str = ""
-    # URL publique canonique du site marketing (ex. https://alternly.com), sans
-    # slash final. Vide → déduite de la requête (dev). Sert au sitemap, robots,
-    # llms.txt et balises canonical/og.
-    site_url: str = ""
-    # Adresse de contact affichée sur le site (pied de page, pages légales).
-    contact_email: str = "contact@alternly.com"
     # Limitation de débit anti-abus (mémoire du processus, voir ratelimit.py).
     rate_limit_enabled: bool = True
     # Suivi d'erreurs Sentry. DSN vide → désactivé.
     sentry_dsn: str = ""
     sentry_environment: str = "production"
     sentry_traces_sample_rate: float = 0.0
-    # Abonnement (Stripe). Clé secrète ou prix vides → facturation désactivée :
-    # accès complet pour tous (bêta gratuite).
-    stripe_secret_key: str = ""
-    stripe_webhook_secret: str = ""
-    stripe_price_id: str = ""
-    # Stripe Tax (calcul automatique de la TVA) : à n'activer qu'une fois configuré côté Stripe.
-    stripe_automatic_tax: bool = False
-    # Fin d'essai sans abonnement : "read_only" (lecture seule), "block" (402
-    # partout sur le foyer) ou "off" (aucun paywall, facturation désactivée).
-    paywall_mode: str = "read_only"
+
+    # Paiement Paddle (Merchant of Record). Durée de l'essai gratuit en jours.
     trial_days: int = 14
-    billing_price_label: str = "39 € / an"
+    paddle_webhook_secret: str = ""  # vérifie la signature des webhooks Paddle
+    paddle_api_key: str = ""  # appels API serveur (gestion d'abonnement)
+    paddle_env: str = "sandbox"  # sandbox | production → base de l'API Paddle
+    paddle_price_annual: str = ""   # price_id de l'offre annuelle
+    paddle_price_monthly: str = ""  # price_id de l'offre mensuelle
 
     @property
     def is_sqlite(self) -> bool:
@@ -53,8 +45,12 @@ class Settings(BaseSettings):
         return v or "dev-secret-change-me"
 
     @property
-    def billing_enabled(self) -> bool:
-        return bool(self.stripe_secret_key and self.stripe_price_id) and self.paywall_mode != "off"
+    def paddle_api_base(self) -> str:
+        return (
+            "https://api.paddle.com"
+            if self.paddle_env == "production"
+            else "https://sandbox-api.paddle.com"
+        )
 
     @property
     def cors_origin_list(self) -> list[str]:

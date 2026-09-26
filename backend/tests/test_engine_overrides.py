@@ -13,7 +13,10 @@ from app.services.custody_engine import (
     Period,
     fathers_day,
     mothers_day,
+    mothers_day_us,
     resolve_calendar,
+    special_day_date,
+    thanksgiving,
 )
 
 MON = date(2026, 1, 5)
@@ -127,6 +130,29 @@ class TestPriorities:
         assert res[date(2026, 5, 31)].parent == "B"   # fête des mères 2026
         assert res[date(2026, 5, 31)].source == "special"
         assert res[date(2026, 6, 21)].parent == "A"   # fête des pères 2026
+
+
+class TestUsHolidayDates:
+    def test_mothers_day_us_is_second_sunday_of_may(self):
+        assert mothers_day_us(2024) == date(2024, 5, 12)
+        assert mothers_day_us(2025) == date(2025, 5, 11)
+        assert mothers_day_us(2026) == date(2026, 5, 10)
+
+    def test_fathers_day_same_in_us(self):
+        # 3e dimanche de juin : identique FR/US
+        assert fathers_day(2026) == date(2026, 6, 21)
+
+    def test_thanksgiving_is_fourth_thursday_of_november(self):
+        assert thanksgiving(2024) == date(2024, 11, 28)
+        assert thanksgiving(2025) == date(2025, 11, 27)
+        assert thanksgiving(2026) == date(2026, 11, 26)
+
+    def test_special_day_date_country_aware(self):
+        # Mother's Day dépend du pays ; Thanksgiving n'existe qu'aux US.
+        assert special_day_date("mothers_day", 2026, "FR") == date(2026, 5, 31)
+        assert special_day_date("mothers_day", 2026, "US") == date(2026, 5, 10)
+        assert special_day_date("thanksgiving", 2026, "US") == date(2026, 11, 26)
+        assert special_day_date("christmas_day", 2026, "US") == date(2026, 12, 25)
 
 
 class TestFeteDates:

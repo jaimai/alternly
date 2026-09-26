@@ -1,39 +1,44 @@
 import { useCallback, useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
-import { api, ApiError } from '../api'
+import { api } from '../api'
 import { useAuth } from '../auth'
-import Modal, { useConfirm } from '../components/Modal'
+import Icon from '../components/Icon'
+import type { IconName } from '../components/Icon'
+import Modal from '../components/Modal'
+import Spinner from '../components/Spinner'
 import TopBar from '../components/TopBar'
-import { fmtDate, fmtDay, parseIso, todayIso } from '../dates'
+import { useConfirm } from '../components/useConfirm'
+import { todayIso } from '../dates'
+import { useFormat } from '../format'
 import type { Balance, Expense, ExpenseCategory, Household, Settlement } from '../types'
 
-const CATEGORIES: { value: ExpenseCategory; label: string; icon: string }[] = [
-  { value: 'sante', label: 'Santé', icon: '🩺' },
-  { value: 'ecole', label: 'École', icon: '🎒' },
-  { value: 'activites', label: 'Activités', icon: '⚽' },
-  { value: 'vetements', label: 'Vêtements', icon: '👕' },
-  { value: 'cantine', label: 'Cantine', icon: '🍽️' },
-  { value: 'autre', label: 'Autre', icon: '🧾' },
+const CATEGORIES: { value: ExpenseCategory; labelKey: string; icon: IconName }[] = [
+  { value: 'sante', labelKey: 'expenses.categorySante', icon: 'health' },
+  { value: 'ecole', labelKey: 'expenses.categoryEcole', icon: 'school' },
+  { value: 'activites', labelKey: 'expenses.categoryActivites', icon: 'activity' },
+  { value: 'vetements', labelKey: 'expenses.categoryVetements', icon: 'shirt' },
+  { value: 'cantine', labelKey: 'expenses.categoryCantine', icon: 'utensils' },
+  { value: 'autre', labelKey: 'expenses.categoryAutre', icon: 'receipt' },
 ]
 const CAT = Object.fromEntries(CATEGORIES.map((c) => [c.value, c]))
 
-const SHARE_PRESETS = [
-  { value: 50, label: '50 / 50' },
-  { value: 100, label: 'À ma charge' },
-  { value: 0, label: "À la charge de l'autre" },
-]
 
-function euros(cents: number): string {
-  return (cents / 100).toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })
+/** « 24,50 » / « 24.50 » / « 1 200 » → centimes. */
+function parseAmount(input: string): number {
+  return Math.round(parseFloat(input.replace(/[\s  ]/g, '').replace(',', '.')) * 100)
 }
 
-function parseEuros(input: string): number {
-  return Math.round(parseFloat(input.replace(/\s/g, '').replace(',', '.')) * 100)
+function amountInput(cents: number, lang: string): string {
+  const s = (cents / 100).toFixed(2)
+  return lang.startsWith('fr') ? s.replace('.', ',') : s
 }
 
-function monthLabel(iso: string): string {
-  const s = parseIso(iso).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
-  return s.charAt(0).toUpperCase() + s.slice(1)
+function currencySymbol(currency: string, lang: string): string {
+  return (
+    new Intl.NumberFormat(lang, { style: 'currency', currency }).formatToParts(0).find((p) => p.type === 'currency')
+      ?.value ?? currency
+  )
 }
 
 type Dialog =
@@ -42,43 +47,38 @@ type Dialog =
   | { kind: 'dispute'; expense: Expense }
 
 export default function ExpensesPage() {
+  const { t } = useTranslation()
+  const { money: fmtMoney, date, day, monthYear } = useFormat()
   const navigate = useNavigate()
-  const { user } = useAuth()
-  const [household, setHousehold] = useState<Household | null>(null)
+  const { user, household, householdLoaded, refreshHousehold } = useAuth()
   const [expenses, setExpenses] = useState<Expense[]>([])
   const [settlements, setSettlements] = useState<Settlement[]>([])
   const [balance, setBalance] = useState<Balance | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [dialog, setDialog] = useState<Dialog | null>(null)
+  const [renaming, setRenaming] = useState(false)
   const [confirm, confirmNode] = useConfirm()
 
   useEffect(() => {
-    api
-      .myHousehold()
-      .then((h) => {
-        if (!h.custody_rule) navigate('/onboarding')
-        else setHousehold(h)
-      })
-      .catch((err) => {
-        if (err instanceof ApiError && err.status === 404) navigate('/onboarding')
-        else setError(err instanceof Error ? err.message : 'Erreur')
-      })
-  }, [navigate])
+    if (householdLoaded && (!household || !household.custody_rule)) navigate('/onboarding')
+  }, [householdLoaded, household, navigate])
 
   const load = useCallback(() => {
     if (!household) return
-    const onErr = (err: unknown) => setError(err instanceof Error ? err.message : 'Chargement impossible')
-    api.listExpenses(household.id).then(setExpenses).catch(onErr)
-    api.listSettlements(household.id).then(setSettlements).catch(onErr)
-    api.balance(household.id).then(setBalance).catch(onErr)
-  }, [household])
+    api.listExpenses(household.id).then(setExpenses).catch(() => {})
+    api.listSettlements(household.id).then(setSettlements).catch(() => {})
+    api.balance(household.id).then(setBalance).catch(() => setError(t('expenses.balanceLoadError')))
+  }, [household, t])
 
   useEffect(load, [load])
 
-  if (!household || !user) return <div className="page-loading">Chargement…</div>
+  if (!household || !user) return <Spinner />
+
+  // Montants dans la devise du foyer (EUR en France, USD aux US).
+  const money = (cents: number) => fmtMoney(cents, household.currency)
 
   const name = (id: number | null) =>
-    id === null ? 'Tous' : id === user.id ? 'vous' : household.members.find((m) => m.id === id)?.display_name ?? '?'
+    id === null ? t('expenses.everyone') : household.members.find((m) => m.id === id)?.display_name ?? '?'
   const color = (id: number) => household.members.find((m) => m.id === id)?.color ?? 'var(--line)'
   const childName = (id: number | null) =>
     id === null ? null : household.children.find((c) => c.id === id)?.first_name ?? null
@@ -86,21 +86,109 @@ export default function ExpensesPage() {
   const run = (fn: () => Promise<unknown>) =>
     fn()
       .then(load)
-      .catch((err) => setError(err instanceof Error ? err.message : 'Erreur'))
+      .catch((err) => setError(err instanceof Error ? err.message : t('expenses.errorGeneric')))
 
-  const settled = !balance || balance.amount_cents === 0
-  let balanceTitle = 'Les comptes sont à jour'
-  if (!settled && balance) {
-    if (balance.debtor_id === user.id) balanceTitle = `Vous devez ${euros(balance.amount_cents)} à ${name(balance.creditor_id)}`
-    else if (balance.creditor_id === user.id) balanceTitle = `${name(balance.debtor_id)} vous doit ${euros(balance.amount_cents)}`
-    else balanceTitle = `${name(balance.debtor_id)} doit ${euros(balance.amount_cents)} à ${name(balance.creditor_id)}`
+  function balanceLabel(): string {
+    if (!balance || balance.amount_cents === 0) return t('expenses.balanceSettled')
+    const debtor = name(balance.debtor_id)
+    const creditor = name(balance.creditor_id)
+    if (balance.debtor_id === user!.id) return t('expenses.youOweTo', { amount: money(balance.amount_cents), name: creditor })
+    if (balance.creditor_id === user!.id) return t('expenses.owesYou', { name: debtor, amount: money(balance.amount_cents) })
+    return t('expenses.owesTo', { debtor, amount: money(balance.amount_cents), creditor })
   }
 
-  // Dépenses groupées par mois, les plus récentes d'abord.
-  const groups = new Map<string, Expense[]>()
-  for (const e of [...expenses].sort((a, b) => b.date.localeCompare(a.date))) {
+  const otherMember = household.members.find((m) => m.id !== user.id)
+  const partnerIsPlaceholder = otherMember?.is_placeholder ?? false
+  const owedToMe = balance?.owed_to_me_cents ?? 0
+  const iOwe = balance?.i_owe_cents ?? 0
+
+  const byDateDesc = (a: Expense, b: Expense) => b.date.localeCompare(a.date) || b.id - a.id
+  const active = expenses.filter((e) => !e.settled_at).sort(byDateDesc)
+  const settled = expenses.filter((e) => e.settled_at).sort(byDateDesc)
+
+  // Dépenses en cours groupées par mois, les plus récentes d'abord.
+  const months = new Map<string, Expense[]>()
+  for (const e of active) {
     const key = e.date.slice(0, 7)
-    groups.set(key, [...(groups.get(key) ?? []), e])
+    months.set(key, [...(months.get(key) ?? []), e])
+  }
+
+  const settlePrefill =
+    balance && balance.amount_cents > 0 && balance.debtor_id && balance.creditor_id
+      ? { from: balance.debtor_id, to: balance.creditor_id, cents: balance.amount_cents }
+      : undefined
+
+  function renderExpense(e: Expense) {
+    const iAmCreator = e.created_by === user!.id
+    const iAmPayer = e.paid_by === user!.id
+    const isSettled = Boolean(e.settled_at)
+    const child = childName(e.child_id)
+    const cat = CAT[e.category] ?? CAT.autre
+    return (
+      <article key={e.id} className={`list-row expense${isSettled ? ' settled' : ''}`}>
+        <span className="cat-icon" aria-hidden="true">
+          <Icon name={cat.icon} size={18} />
+        </span>
+        <div className="list-main">
+          <div className="list-title">
+            {e.label}
+            {e.status === 'disputed' && <span className="tag tag-pending">{t('expenses.tagDisputed')}</span>}
+            {isSettled && <span className="tag tag-settled">{t('expenses.tagReimbursed')}</span>}
+          </div>
+          <div className="hint">
+            {day(e.date)} · {t(cat.labelKey)}
+            {child ? ` · ${child}` : ''} · <span className="payer-dot" style={{ background: color(e.paid_by) }} />
+            {t('expenses.paidBy', { name: name(e.paid_by) })}
+            {e.payer_percent !== 50 ? ` · ${t('expenses.split')} ${e.payer_percent}/${100 - e.payer_percent}` : ''}
+          </div>
+          {e.status === 'disputed' && e.dispute_note && <p className="dispute-note">« {e.dispute_note} »</p>}
+          <div className="row-actions">
+            {!isSettled && e.status === 'active' && (
+              <button className="link" onClick={() => run(() => api.settleExpense(household!.id, e.id))}>
+                {t('expenses.markReimbursed')}
+              </button>
+            )}
+            {isSettled && (
+              <button className="link" onClick={() => run(() => api.unsettleExpense(household!.id, e.id))}>
+                {t('expenses.undoReimbursement')}
+              </button>
+            )}
+            {!isSettled && e.status === 'active' && !iAmPayer && (
+              <button className="link" onClick={() => setDialog({ kind: 'dispute', expense: e })}>
+                {t('expenses.dispute')}
+              </button>
+            )}
+            {e.status === 'disputed' && !iAmPayer && (
+              <button className="link" onClick={() => run(() => api.resolveExpense(household!.id, e.id))}>
+                {t('expenses.liftDispute')}
+              </button>
+            )}
+            {iAmCreator && !isSettled && (
+              <button className="link" onClick={() => setDialog({ kind: 'expense', expense: e })}>
+                {t('expenses.edit')}
+              </button>
+            )}
+            {iAmCreator && (
+              <button
+                className="link danger-text"
+                onClick={async () => {
+                  const ok = await confirm({
+                    title: t('expenses.deleteTitle'),
+                    body: t('expenses.deleteBody', { label: e.label, amount: money(e.amount_cents) }),
+                    confirmLabel: t('expenses.delete'),
+                    danger: true,
+                  })
+                  if (ok) run(() => api.deleteExpense(household!.id, e.id))
+                }}
+              >
+                {t('expenses.delete')}
+              </button>
+            )}
+          </div>
+        </div>
+        <strong className="list-amount">{money(e.amount_cents)}</strong>
+      </article>
+    )
   }
 
   return (
@@ -108,131 +196,100 @@ export default function ExpensesPage() {
       <TopBar householdName={household.name} />
       <div className="layout narrow">
         <div className="page-head">
-          <h1>Dépenses partagées</h1>
-          <button onClick={() => setDialog({ kind: 'expense' })}>+ Ajouter une dépense</button>
+          <h1>{t('expenses.title')}</h1>
+          <button className="with-icon" onClick={() => setDialog({ kind: 'expense' })}>
+            <Icon name="plus" size={16} /> {t('expenses.addExpense')}
+          </button>
         </div>
         {error && <div className="error">{error}</div>}
 
-        <section className={`balance-card${settled ? ' settled' : ''}`}>
-          <div>
-            <p className="eyebrow">Solde</p>
-            <p className="balance-title">{balanceTitle}</p>
-            {settled && <p className="hint">Rien à régler pour l'instant.</p>}
-          </div>
-          <div className="actions">
-            {!settled && balance?.debtor_id && balance.creditor_id && (
-              <button
-                onClick={() =>
-                  setDialog({
-                    kind: 'settle',
-                    prefill: { from: balance.debtor_id!, to: balance.creditor_id!, cents: balance.amount_cents },
-                  })
-                }
-              >
-                Enregistrer le règlement
-              </button>
-            )}
-            <button className="secondary" onClick={() => setDialog({ kind: 'settle' })}>
-              Autre remboursement
+        <div className="card">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+            <strong style={{ fontSize: '1.1rem', marginRight: 'auto' }}>{balanceLabel()}</strong>
+            <button className="secondary" onClick={() => setDialog({ kind: 'settle', prefill: settlePrefill })}>
+              {t('expenses.recordReimbursement')}
             </button>
           </div>
-        </section>
+          <div className="stat-grid">
+            <div className={`stat ${owedToMe > 0 ? 'credit' : 'zero'}`}>
+              <div className="stat-label">{t('expenses.statOwedToMe')}</div>
+              <div className="stat-num">{money(owedToMe)}</div>
+            </div>
+            <div className={`stat ${iOwe > 0 ? 'debit' : 'zero'}`}>
+              <div className="stat-label">{t('expenses.statIOwe')}</div>
+              <div className="stat-num">{money(iOwe)}</div>
+            </div>
+          </div>
+          <p className="hint" style={{ margin: 0 }}>
+            {t('expenses.statsHint')}
+          </p>
+        </div>
 
-        {expenses.length === 0 && (
-          <div className="empty-state">
-            <span className="empty-icon" aria-hidden="true">🧾</span>
-            <h2>Aucune dépense pour l'instant</h2>
-            <p>
-              Cantine, lunettes, licence de foot… Notez ce que vous avancez pour les enfants : Alternly tient le solde
-              à jour pour vous deux.
-            </p>
-            <button onClick={() => setDialog({ kind: 'expense' })}>Ajouter la première dépense</button>
+        {partnerIsPlaceholder && (
+          <div className="partner-banner">
+            {renaming ? (
+              <RenamePartner
+                householdId={household.id}
+                current={otherMember!.display_name}
+                onDone={async () => {
+                  setRenaming(false)
+                  await refreshHousehold()
+                }}
+              />
+            ) : (
+              <>
+                <span>
+                  <strong>{otherMember!.display_name}</strong> {t('expenses.partnerBanner')}
+                </span>
+                <span className="banner-actions">
+                  <button className="secondary" onClick={() => setRenaming(true)}>{t('expenses.nameThem')}</button>
+                  <button className="secondary" onClick={() => navigate('/settings')}>{t('expenses.inviteThem')}</button>
+                </span>
+              </>
+            )}
           </div>
         )}
 
-        {[...groups.entries()].map(([month, items]) => (
+        {expenses.length === 0 && (
+          <div className="empty-state">
+            <span className="empty-icon" aria-hidden="true">
+              <Icon name="receipt" size={24} />
+            </span>
+            <h2>{t('expenses.emptyTitle')}</h2>
+            <p>{t('expenses.emptyBody')}</p>
+            <button onClick={() => setDialog({ kind: 'expense' })}>{t('expenses.addFirst')}</button>
+          </div>
+        )}
+
+        {[...months.entries()].map(([month, items]) => (
           <section key={month} className="list-group">
-            <h2 className="section-label">{monthLabel(month + '-01')}</h2>
-            <div className="list-card">
-              {items.map((e) => {
-                const iAmCreator = e.created_by === user.id
-                const iAmPayer = e.paid_by === user.id
-                const child = childName(e.child_id)
-                return (
-                  <article key={e.id} className="list-row">
-                    <span className="cat-icon" aria-hidden="true">{CAT[e.category]?.icon ?? '🧾'}</span>
-                    <div className="list-main">
-                      <div className="list-title">
-                        {e.label}
-                        {e.status === 'disputed' && <span className="tag tag-pending">Contestée</span>}
-                      </div>
-                      <div className="hint">
-                        {fmtDay(e.date)} · {CAT[e.category]?.label}
-                        {child ? ` · ${child}` : ''} ·{' '}
-                        <span className="payer-dot" style={{ background: color(e.paid_by) }} />
-                        payé par {name(e.paid_by)}
-                        {e.payer_percent !== 50 ? ` · partage ${e.payer_percent}/${100 - e.payer_percent}` : ''}
-                      </div>
-                      {e.status === 'disputed' && e.dispute_note && (
-                        <p className="dispute-note">« {e.dispute_note} »</p>
-                      )}
-                      <div className="row-actions">
-                        {e.status === 'active' && !iAmPayer && (
-                          <button className="link" onClick={() => setDialog({ kind: 'dispute', expense: e })}>
-                            Contester
-                          </button>
-                        )}
-                        {e.status === 'disputed' && !iAmPayer && (
-                          <button className="link" onClick={() => run(() => api.resolveExpense(household.id, e.id))}>
-                            Lever la contestation
-                          </button>
-                        )}
-                        {iAmCreator && (
-                          <button className="link" onClick={() => setDialog({ kind: 'expense', expense: e })}>
-                            Modifier
-                          </button>
-                        )}
-                        {iAmCreator && (
-                          <button
-                            className="link danger-text"
-                            onClick={async () => {
-                              if (
-                                await confirm({
-                                  title: 'Supprimer cette dépense ?',
-                                  body: `« ${e.label} » (${euros(e.amount_cents)}) sera retirée du solde.`,
-                                  confirmLabel: 'Supprimer',
-                                  danger: true,
-                                })
-                              )
-                                run(() => api.deleteExpense(household.id, e.id))
-                            }}
-                          >
-                            Supprimer
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                    <strong className="list-amount">{euros(e.amount_cents)}</strong>
-                  </article>
-                )
-              })}
-            </div>
+            <h2 className="section-label">{monthYear(month + '-01')}</h2>
+            <div className="list-card">{items.map(renderExpense)}</div>
           </section>
         ))}
 
+        {settled.length > 0 && (
+          <section className="list-group">
+            <h2 className="section-label">{t('expenses.reimbursedGroup', { count: settled.length })}</h2>
+            <div className="list-card">{settled.map(renderExpense)}</div>
+          </section>
+        )}
+
         {settlements.length > 0 && (
           <section className="list-group">
-            <h2 className="section-label">Remboursements</h2>
+            <h2 className="section-label">{t('expenses.settlementsTitle')}</h2>
             <div className="list-card">
               {settlements.map((s) => (
                 <article key={s.id} className="list-row">
-                  <span className="cat-icon" aria-hidden="true">↩︎</span>
+                  <span className="cat-icon" aria-hidden="true">
+                    <Icon name="undo" size={18} />
+                  </span>
                   <div className="list-main">
                     <div className="list-title">
                       {name(s.from_user)} → {name(s.to_user)}
                     </div>
                     <div className="hint">
-                      {fmtDate(s.date)}
+                      {date(s.date)}
                       {s.note ? ` · ${s.note}` : ''}
                     </div>
                     {s.created_by === user.id && (
@@ -240,23 +297,21 @@ export default function ExpensesPage() {
                         <button
                           className="link danger-text"
                           onClick={async () => {
-                            if (
-                              await confirm({
-                                title: 'Supprimer ce remboursement ?',
-                                body: 'Le solde sera recalculé sans lui.',
-                                confirmLabel: 'Supprimer',
-                                danger: true,
-                              })
-                            )
-                              run(() => api.deleteSettlement(household.id, s.id))
+                            const ok = await confirm({
+                              title: t('expenses.deleteSettlementTitle'),
+                              body: t('expenses.deleteSettlementBody'),
+                              confirmLabel: t('expenses.delete'),
+                              danger: true,
+                            })
+                            if (ok) run(() => api.deleteSettlement(household.id, s.id))
                           }}
                         >
-                          Supprimer
+                          {t('expenses.delete')}
                         </button>
                       </div>
                     )}
                   </div>
-                  <strong className="list-amount">{euros(s.amount_cents)}</strong>
+                  <strong className="list-amount">{money(s.amount_cents)}</strong>
                 </article>
               ))}
             </div>
@@ -291,6 +346,7 @@ export default function ExpensesPage() {
       {dialog?.kind === 'dispute' && (
         <DisputeForm
           expense={dialog.expense}
+          amount={money(dialog.expense.amount_cents)}
           onClose={() => setDialog(null)}
           onSubmit={(note) => {
             setDialog(null)
@@ -300,6 +356,32 @@ export default function ExpensesPage() {
       )}
       {confirmNode}
     </>
+  )
+}
+
+function RenamePartner({ householdId, current, onDone }: { householdId: number; current: string; onDone: () => void }) {
+  const { t } = useTranslation()
+  const [name, setName] = useState(current === "L'autre parent" ? '' : current)
+  const [busy, setBusy] = useState(false)
+  async function save() {
+    if (!name.trim()) return
+    setBusy(true)
+    try {
+      await api.renamePartner(householdId, { display_name: name.trim() })
+      onDone()
+    } catch {
+      setBusy(false)
+    }
+  }
+  return (
+    <div className="row" style={{ gap: 8, width: '100%', alignItems: 'flex-end' }}>
+      <div style={{ flex: '1 1 200px' }}>
+        <label htmlFor="pn">{t('expenses.secondParentName')}</label>
+        <input id="pn" value={name} autoFocus onChange={(e) => setName(e.target.value)} placeholder={t('expenses.secondParentNamePlaceholder')} />
+      </div>
+      <button style={{ flex: '0 0 auto' }} onClick={save} disabled={busy}>{t('expenses.save')}</button>
+      <button style={{ flex: '0 0 auto' }} className="secondary" onClick={onDone}>{t('expenses.cancel')}</button>
+    </div>
   )
 }
 
@@ -316,22 +398,31 @@ function ExpenseForm({
   onClose: () => void
   onDone: () => void
 }) {
-  const [amount, setAmount] = useState(initial ? (initial.amount_cents / 100).toFixed(2).replace('.', ',') : '')
+  const { t, i18n } = useTranslation()
+  const [amount, setAmount] = useState(initial ? amountInput(initial.amount_cents, i18n.language) : '')
   const [label, setLabel] = useState(initial?.label ?? '')
   const [date, setDate] = useState(initial?.date ?? todayIso())
   const [category, setCategory] = useState<ExpenseCategory>(initial?.category ?? 'autre')
   const [childId, setChildId] = useState<number | ''>(initial?.child_id ?? '')
   const [paidBy, setPaidBy] = useState<number>(initial?.paid_by ?? myId)
   const [payerPercent, setPayerPercent] = useState(initial?.payer_percent ?? 50)
+  // Répartitions prédéfinies, exprimées en part du payeur (%) : « à ma charge »
+  // vaut 100 si je suis le payeur, 0 si c'est l'autre parent qui a payé.
+  const otherParent = household.members.find((m) => m.id !== myId)
+  const payerIsMe = paidBy === myId
+  const presets = [
+    { value: 50, label: t('expenses.share5050') },
+    { value: payerIsMe ? 100 : 0, label: t('expenses.shareMine') },
+    { value: payerIsMe ? 0 : 100, label: t('expenses.shareOther', { name: otherParent?.display_name ?? '' }) },
+  ]
+  const [custom, setCustom] = useState(![0, 50, 100].includes(payerPercent))
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
-  const preset = SHARE_PRESETS.some((p) => p.value === payerPercent)
-  const [custom, setCustom] = useState(!preset)
 
   async function submit() {
-    const cents = parseEuros(amount)
+    const cents = parseAmount(amount)
     if (!cents || cents <= 0 || !label.trim()) {
-      setError('Indiquez un montant et un libellé')
+      setError(t('expenses.errorAmountLabelRequired'))
       return
     }
     setBusy(true)
@@ -350,28 +441,30 @@ function ExpenseForm({
       else await api.createExpense(household.id, payload)
       onDone()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur')
+      setError(err instanceof Error ? err.message : t('expenses.errorGeneric'))
       setBusy(false)
     }
   }
 
+  const memberLabel = (id: number, n: string) => (id === myId ? t('expenses.memberYou', { name: n }) : n)
+
   return (
-    <Modal title={initial ? 'Modifier la dépense' : 'Nouvelle dépense'} onClose={onClose}>
+    <Modal title={initial ? t('expenses.editExpense') : t('expenses.newExpense')} onClose={onClose}>
       <div className="row">
         <div>
-          <label htmlFor="amt">Montant (€)</label>
-          <input id="amt" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="24,50" />
+          <label htmlFor="amt">{t('expenses.amountLabelCur', { symbol: currencySymbol(household.currency, i18n.language) })}</label>
+          <input id="amt" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder={i18n.language.startsWith('fr') ? '24,50' : '24.50'} />
         </div>
         <div>
-          <label htmlFor="edate">Date</label>
+          <label htmlFor="edate">{t('expenses.dateLabel')}</label>
           <input id="edate" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
         </div>
       </div>
-      <label htmlFor="lbl">Libellé</label>
-      <input id="lbl" value={label} onChange={(e) => setLabel(e.target.value)} placeholder="ex. lunettes de Léo" maxLength={120} />
+      <label htmlFor="lbl">{t('expenses.labelLabel')}</label>
+      <input id="lbl" value={label} onChange={(e) => setLabel(e.target.value)} placeholder={t('expenses.labelPlaceholder')} maxLength={120} />
 
-      <label>Catégorie</label>
-      <div className="segmented wrap" role="radiogroup" aria-label="Catégorie">
+      <label id="cat-label">{t('expenses.categoryLabel')}</label>
+      <div className="segmented wrap" role="radiogroup" aria-labelledby="cat-label">
         {CATEGORIES.map((c) => (
           <button
             key={c.value}
@@ -381,36 +474,44 @@ function ExpenseForm({
             className={category === c.value ? 'on' : ''}
             onClick={() => setCategory(c.value)}
           >
-            <span aria-hidden="true">{c.icon}</span> {c.label}
+            <Icon name={c.icon} size={14} /> {t(c.labelKey)}
           </button>
         ))}
       </div>
 
       <div className="row">
         <div>
-          <label htmlFor="ch">Enfant</label>
+          <label htmlFor="ch">{t('expenses.childLabel')}</label>
           <select id="ch" value={childId} onChange={(e) => setChildId(e.target.value === '' ? '' : Number(e.target.value))}>
-            <option value="">Tous</option>
+            <option value="">{t('expenses.everyone')}</option>
             {household.children.map((c) => (
               <option key={c.id} value={c.id}>{c.first_name}</option>
             ))}
           </select>
         </div>
         <div>
-          <label htmlFor="pb">Payé par</label>
-          <select id="pb" value={paidBy} onChange={(e) => setPaidBy(Number(e.target.value))}>
+          <label htmlFor="pb">{t('expenses.paidByLabel')}</label>
+          <select
+            id="pb"
+            value={paidBy}
+            onChange={(e) => {
+              setPaidBy(Number(e.target.value))
+              // « À ma charge » / « à la charge de l'autre » gardent leur sens si le payeur change.
+              if (!custom && payerPercent !== 50) setPayerPercent(100 - payerPercent)
+            }}
+          >
             {household.members.map((m) => (
-              <option key={m.id} value={m.id}>{m.id === myId ? `${m.display_name} (vous)` : m.display_name}</option>
+              <option key={m.id} value={m.id}>{memberLabel(m.id, m.display_name)}</option>
             ))}
           </select>
         </div>
       </div>
 
-      <label>Répartition</label>
-      <div className="segmented" role="radiogroup" aria-label="Répartition">
-        {SHARE_PRESETS.map((p) => (
+      <label id="share-label">{t('expenses.shareLabel')}</label>
+      <div className="segmented wrap" role="radiogroup" aria-labelledby="share-label">
+        {presets.map((p) => (
           <button
-            key={p.value}
+            key={p.label}
             type="button"
             role="radio"
             aria-checked={!custom && payerPercent === p.value}
@@ -424,32 +525,30 @@ function ExpenseForm({
           </button>
         ))}
         <button type="button" role="radio" aria-checked={custom} className={custom ? 'on' : ''} onClick={() => setCustom(true)}>
-          Autre
+          {t('expenses.shareCustom')}
         </button>
       </div>
+      <p className="fine-print" style={{ marginTop: 6 }}>
+        {t('expenses.shareHint', { payer: payerPercent, other: 100 - payerPercent })}
+      </p>
       {custom && (
         <div className="range-row">
           <input
             type="range"
-            aria-label="Part du payeur"
+            aria-label={t('expenses.payerShareLabel', { percent: payerPercent })}
             min={0}
             max={100}
             step={5}
             value={payerPercent}
             onChange={(e) => setPayerPercent(Number(e.target.value))}
           />
-          <span className="hint">
-            Payeur {payerPercent} % · autre {100 - payerPercent} %
-          </span>
         </div>
       )}
-      {initial?.status === 'disputed' && (
-        <p className="fine-print">Enregistrer une modification lève la contestation en cours.</p>
-      )}
+      {initial?.status === 'disputed' && <p className="fine-print">{t('expenses.editLiftsDispute')}</p>}
       {error && <div className="error">{error}</div>}
       <div className="actions" style={{ marginTop: 18 }}>
-        <button onClick={submit} disabled={busy}>{initial ? 'Enregistrer' : 'Ajouter'}</button>
-        <button className="secondary" onClick={onClose}>Annuler</button>
+        <button onClick={submit} disabled={busy}>{initial ? t('expenses.save') : t('expenses.add')}</button>
+        <button className="secondary" onClick={onClose}>{t('expenses.cancel')}</button>
       </div>
     </Modal>
   )
@@ -468,19 +567,20 @@ function SettlementForm({
   onClose: () => void
   onDone: () => void
 }) {
+  const { t, i18n } = useTranslation()
   const other = household.members.find((m) => m.id !== myId)
   const [fromUser, setFromUser] = useState<number>(prefill?.from ?? myId)
   const [toUser, setToUser] = useState<number>(prefill?.to ?? other?.id ?? myId)
-  const [amount, setAmount] = useState(prefill ? (prefill.cents / 100).toFixed(2).replace('.', ',') : '')
+  const [amount, setAmount] = useState(prefill ? amountInput(prefill.cents, i18n.language) : '')
   const [date, setDate] = useState(todayIso())
   const [note, setNote] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
   async function submit() {
-    const cents = parseEuros(amount)
+    const cents = parseAmount(amount)
     if (!cents || cents <= 0 || fromUser === toUser) {
-      setError('Indiquez un montant et deux parents différents')
+      setError(t('expenses.errorSettlementInvalid'))
       return
     }
     setBusy(true)
@@ -489,52 +589,49 @@ function SettlementForm({
       await api.createSettlement(household.id, { from_user: fromUser, to_user: toUser, amount_cents: cents, date, note })
       onDone()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur')
+      setError(err instanceof Error ? err.message : t('expenses.errorGeneric'))
       setBusy(false)
     }
   }
 
-  const label = (id: number) => {
-    const m = household.members.find((x) => x.id === id)
-    return m ? (m.id === myId ? `${m.display_name} (vous)` : m.display_name) : '?'
-  }
+  const memberLabel = (id: number, n: string) => (id === myId ? t('expenses.memberYou', { name: n }) : n)
 
   return (
-    <Modal title="Enregistrer un remboursement" onClose={onClose}>
+    <Modal title={t('expenses.reimbursementTitle')} onClose={onClose}>
       <div className="row">
         <div>
-          <label htmlFor="fu">De</label>
+          <label htmlFor="fu">{t('expenses.fromLabel')}</label>
           <select id="fu" value={fromUser} onChange={(e) => setFromUser(Number(e.target.value))}>
             {household.members.map((m) => (
-              <option key={m.id} value={m.id}>{label(m.id)}</option>
+              <option key={m.id} value={m.id}>{memberLabel(m.id, m.display_name)}</option>
             ))}
           </select>
         </div>
         <div>
-          <label htmlFor="tu">Vers</label>
+          <label htmlFor="tu">{t('expenses.toLabel')}</label>
           <select id="tu" value={toUser} onChange={(e) => setToUser(Number(e.target.value))}>
             {household.members.map((m) => (
-              <option key={m.id} value={m.id}>{label(m.id)}</option>
+              <option key={m.id} value={m.id}>{memberLabel(m.id, m.display_name)}</option>
             ))}
           </select>
         </div>
       </div>
       <div className="row">
         <div>
-          <label htmlFor="samt">Montant (€)</label>
+          <label htmlFor="samt">{t('expenses.amountLabelCur', { symbol: currencySymbol(household.currency, i18n.language) })}</label>
           <input id="samt" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="120" />
         </div>
         <div>
-          <label htmlFor="sdate">Date</label>
+          <label htmlFor="sdate">{t('expenses.dateLabel')}</label>
           <input id="sdate" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
         </div>
       </div>
-      <label htmlFor="snote">Note (facultatif)</label>
-      <input id="snote" value={note} onChange={(e) => setNote(e.target.value)} placeholder="ex. virement" maxLength={200} />
+      <label htmlFor="snote">{t('expenses.noteLabel')}</label>
+      <input id="snote" value={note} onChange={(e) => setNote(e.target.value)} placeholder={t('expenses.notePlaceholder')} maxLength={200} />
       {error && <div className="error">{error}</div>}
       <div className="actions" style={{ marginTop: 18 }}>
-        <button onClick={submit} disabled={busy}>Enregistrer</button>
-        <button className="secondary" onClick={onClose}>Annuler</button>
+        <button onClick={submit} disabled={busy}>{t('expenses.save')}</button>
+        <button className="secondary" onClick={onClose}>{t('expenses.cancel')}</button>
       </div>
     </Modal>
   )
@@ -542,31 +639,32 @@ function SettlementForm({
 
 function DisputeForm({
   expense,
+  amount,
   onClose,
   onSubmit,
 }: {
   expense: Expense
+  amount: string
   onClose: () => void
   onSubmit: (note: string) => void
 }) {
+  const { t } = useTranslation()
   const [note, setNote] = useState('')
   return (
-    <Modal title="Contester la dépense" eyebrow={`${expense.label} · ${euros(expense.amount_cents)}`} onClose={onClose}>
-      <p className="hint">
-        La dépense reste visible mais est signalée comme contestée. L'autre parent est prévenu et peut la corriger.
-      </p>
-      <label htmlFor="dnote">Motif</label>
+    <Modal title={t('expenses.disputeTitle')} eyebrow={`${expense.label} · ${amount}`} onClose={onClose}>
+      <p className="hint">{t('expenses.disputeHint')}</p>
+      <label htmlFor="dnote">{t('expenses.disputeReasonLabel')}</label>
       <textarea
         id="dnote"
         rows={3}
         value={note}
         onChange={(e) => setNote(e.target.value)}
-        placeholder="ex. montant différent du ticket, dépense non convenue…"
+        placeholder={t('expenses.disputeReasonPlaceholder')}
         maxLength={500}
       />
       <div className="actions" style={{ marginTop: 18 }}>
-        <button onClick={() => onSubmit(note.trim())}>Contester</button>
-        <button className="secondary" onClick={onClose}>Annuler</button>
+        <button onClick={() => onSubmit(note.trim())}>{t('expenses.dispute')}</button>
+        <button className="secondary" onClick={onClose}>{t('expenses.cancel')}</button>
       </div>
     </Modal>
   )

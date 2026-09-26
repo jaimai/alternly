@@ -1,41 +1,43 @@
-import { useEffect, useState } from 'react'
-import { api } from './api'
-import type { BillingStatus } from './types'
+import { initializePaddle, type Paddle } from '@paddle/paddle-js'
+import i18n from './i18n'
+import type { User } from './types'
 
-// Statut d'abonnement partagé entre les pages (une requête par minute au plus).
-let cache: { at: number; value: BillingStatus } | null = null
+const TOKEN = import.meta.env.VITE_PADDLE_CLIENT_TOKEN as string | undefined
+const PRICE_ANNUAL = import.meta.env.VITE_PADDLE_PRICE_ID as string | undefined
+const PRICE_MONTHLY = import.meta.env.VITE_PADDLE_PRICE_ID_MONTHLY as string | undefined
+const ENV = (import.meta.env.VITE_PADDLE_ENV as string | undefined) === 'production' ? 'production' : 'sandbox'
 
-export function invalidateBilling() {
-  cache = null
+export type Plan = 'annual' | 'monthly'
+export const paddleConfigured = Boolean(TOKEN && PRICE_ANNUAL)
+
+let paddlePromise: Promise<Paddle | undefined> | null = null
+
+function getPaddle(onComplete: () => void): Promise<Paddle | undefined> {
+  if (!paddlePromise) {
+    paddlePromise = initializePaddle({
+      token: TOKEN as string,
+      environment: ENV,
+      eventCallback: (ev) => {
+        if (ev?.name === 'checkout.completed') onComplete()
+      },
+    })
+  }
+  return paddlePromise
 }
 
-export function useBilling(): BillingStatus | null {
-  const [status, setStatus] = useState<BillingStatus | null>(cache?.value ?? null)
-  useEffect(() => {
-    let alive = true
-    const load = () => {
-      if (cache && Date.now() - cache.at < 60_000) {
-        setStatus(cache.value)
-        return
-      }
-      api
-        .billingStatus()
-        .then((value) => {
-          cache = { at: Date.now(), value }
-          if (alive) setStatus(value)
-        })
-        .catch(() => {})
-    }
-    load()
-    const onPaywall = () => {
-      invalidateBilling()
-      load()
-    }
-    window.addEventListener('alternly:paywall', onPaywall)
-    return () => {
-      alive = false
-      window.removeEventListener('alternly:paywall', onPaywall)
-    }
-  }, [])
-  return status
+/** Ouvre le checkout Paddle. `plan` = 'annual' (défaut) ou 'monthly'. `onComplete`
+ *  est appelé après paiement (l'activation réelle passe par le webhook). */
+export async function openCheckout(user: User, onComplete: () => void, plan: Plan = 'annual') {
+  const priceId = plan === 'monthly' ? PRICE_MONTHLY ?? PRICE_ANNUAL : PRICE_ANNUAL
+  if (!paddleConfigured || !priceId) {
+    alert(i18n.t('paywall.notConfigured'))
+    return
+  }
+  const paddle = await getPaddle(onComplete)
+  paddle?.Checkout.open({
+    items: [{ priceId, quantity: 1 }],
+    customer: { email: user.email },
+    customData: { user_id: String(user.id) },
+    settings: { locale: i18n.language.startsWith('en') ? 'en' : 'fr', displayMode: 'overlay' },
+  })
 }

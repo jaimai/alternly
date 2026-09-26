@@ -1,11 +1,17 @@
-"""Données personnelles d'un compte : export (portabilité RGPD) et suppression."""
-import secrets
+"""Données personnelles d'un compte : export (portabilité RGPD) et
+suppression / anonymisation (droit à l'effacement).
 
+- Dernier parent réel du foyer → suppression complète du foyer et de ses données.
+- Un co-parent réel subsiste → anonymisation en place : les PII du parent partant
+  sont effacées et son e-mail libéré, mais l'historique partagé (dépenses, calendrier)
+  reste cohérent pour le co-parent (le compte devient un « placeholder »).
+"""
 from sqlalchemy import delete, inspect, select
 from sqlalchemy.orm import Session
 
 from ..deps import household_members, notify
 from . import audit
+from .change_requests import summary as change_request_summary
 from .change_requests import withdraw_pending_for_leaving
 from ..models import (
     AuditLog,
@@ -19,6 +25,7 @@ from ..models import (
     Notification,
     PasswordResetToken,
     ScheduleException,
+    SchoolVacationPeriod,
     Settlement,
     SpecialDayRule,
     User,
@@ -30,7 +37,7 @@ from ..models import (
 )
 
 # Colonnes jamais exportées (secrets / internes).
-_USER_PRIVATE = {"password_hash", "ical_token", "token_version", "deleted_at"}
+_USER_PRIVATE = {"password_hash", "ical_token", "token_version"}
 
 
 def _row(obj, exclude: set[str] = frozenset()) -> dict:
@@ -66,7 +73,12 @@ def export_user_data(db: Session, user: User) -> dict:
     members = []
     for m in household_members(db, hid):
         u = db.get(User, m.user_id)
-        members.append({"user_id": m.user_id, "display_name": u.display_name if u else None, "role": m.role})
+        members.append({
+            "user_id": m.user_id,
+            "display_name": u.display_name if u else None,
+            "role": m.role,
+            "is_placeholder": bool(u.is_placeholder) if u else False,
+        })
     posts = []
     for p in db.scalars(select(WallPost).where(WallPost.household_id == hid).order_by(WallPost.id)):
         post = _row(p, {"household_id"})
@@ -78,6 +90,8 @@ def export_user_data(db: Session, user: User) -> dict:
     data["household"] = {
         "id": household.id,
         "name": household.name,
+        "country": household.country,
+        "currency": household.currency,
         "school_zone": household.school_zone,
         "created_at": household.created_at,
         "my_role": member.role,
@@ -86,76 +100,90 @@ def export_user_data(db: Session, user: User) -> dict:
         "custody_rules": _rows(db, CustodyRule, hid),
         "vacation_rules": _rows(db, VacationRule, hid),
         "special_day_rules": _rows(db, SpecialDayRule, hid),
+        "school_vacations": _rows(db, SchoolVacationPeriod, hid),
         "schedule_exceptions": _rows(db, ScheduleException, hid),
         "expenses": _rows(db, Expense, hid),
         "settlements": _rows(db, Settlement, hid),
         "wall_posts": posts,
-        "change_requests": _rows(db, ChangeRequest, hid),
-        "history": _rows(db, AuditLog, hid),
+        "change_requests": [
+            {**_row(cr, {"household_id", "context"}), "summary": change_request_summary(db, cr, user.locale)}
+            for cr in db.scalars(select(ChangeRequest).where(ChangeRequest.household_id == hid).order_by(ChangeRequest.id))
+        ],
+        "history": history_rows(db, hid, user.locale),
     }
     return data
 
 
+def history_rows(db: Session, household_id: int, locale: str | None) -> list[dict]:
+    """Journal du foyer, résumés rendus dans la langue du lecteur."""
+    ctx = audit.make_ctx(db, household_id, locale)
+    return [
+        {"id": e.id, "actor_id": e.actor_id, "action": e.action, "summary": audit.render_summary(ctx, e),
+         "created_at": e.created_at}
+        for e in db.scalars(select(AuditLog).where(AuditLog.household_id == household_id).order_by(AuditLog.id))
+    ]
+
+
+def _delete_user_rows(db: Session, user_ids: list[int]) -> None:
+    """Lignes personnelles rattachées à un compte (hors foyer)."""
+    db.execute(delete(Notification).where(Notification.user_id.in_(user_ids)))
+    db.execute(delete(PasswordResetToken).where(PasswordResetToken.user_id.in_(user_ids)))
+
+
 def _delete_household(db: Session, household_id: int) -> None:
-    """Supprime un foyer et toutes ses données (ordre compatible clés étrangères)."""
+    member_ids = [m.user_id for m in household_members(db, household_id)]
+
     db.execute(delete(AuditLog).where(AuditLog.household_id == household_id))
     db.execute(delete(ChangeRequest).where(ChangeRequest.household_id == household_id))
-    post_ids = select(WallPost.id).where(WallPost.household_id == household_id)
-    db.execute(delete(WallReply).where(WallReply.post_id.in_(post_ids)))
-    db.execute(delete(WallPost).where(WallPost.household_id == household_id))
-    db.execute(delete(Expense).where(Expense.household_id == household_id))  # avant children (child_id)
-    db.execute(delete(Settlement).where(Settlement.household_id == household_id))
-    # Auto-référence replaces_id : une seule instruction (contrôle FK en fin d'instruction).
-    db.execute(delete(ScheduleException).where(ScheduleException.household_id == household_id))
-    db.execute(delete(Child).where(Child.household_id == household_id))
-    db.execute(delete(CustodyRule).where(CustodyRule.household_id == household_id))
-    db.execute(delete(VacationRule).where(VacationRule.household_id == household_id))
-    db.execute(delete(SpecialDayRule).where(SpecialDayRule.household_id == household_id))
-    db.execute(delete(Invitation).where(Invitation.household_id == household_id))
-    db.execute(delete(HouseholdMember).where(HouseholdMember.household_id == household_id))
+    post_ids = [p.id for p in db.scalars(select(WallPost).where(WallPost.household_id == household_id))]
+    if post_ids:
+        db.execute(delete(WallReply).where(WallReply.post_id.in_(post_ids)))
+
+    for model in (
+        WallPost, Expense, Settlement, ScheduleException, SchoolVacationPeriod,
+        SpecialDayRule, VacationRule, CustodyRule, Child, Invitation, HouseholdMember,
+    ):
+        db.execute(delete(model).where(model.household_id == household_id))
+
+    if member_ids:
+        _delete_user_rows(db, member_ids)
+        db.execute(delete(User).where(User.id.in_(member_ids)))
+
     db.execute(delete(Household).where(Household.id == household_id))
 
 
-def _delete_user_rows(db: Session, user_id: int) -> None:
-    db.execute(delete(Notification).where(Notification.user_id == user_id))
-    db.execute(delete(PasswordResetToken).where(PasswordResetToken.user_id == user_id))
+def _anonymize(db: Session, user: User) -> None:
+    _delete_user_rows(db, [user.id])
+    user.email = f"deleted-{user.id}-{new_token()}@alternly.invalid"
+    user.password_hash = ""  # inutilisable : plus aucune connexion possible
+    user.display_name = "Ancien parent"
+    user.is_placeholder = True
+    user.email_opt_in = False
+    user.subscription_status = "none"
+    user.paddle_customer_id = None
+    user.paddle_subscription_id = None
+    user.ical_token = new_token()  # flux iCal de l'ancien parent coupé
+    user.token_version = (user.token_version or 0) + 1  # jetons émis révoqués
 
 
 def delete_account(db: Session, user: User) -> None:
-    """Supprime le compte (sans commit).
-
-    - Seul parent actif du foyer → foyer et toutes ses données supprimés, puis le
-      compte (ainsi que d'éventuels ex-parents déjà anonymisés de ce foyer).
-    - Un coparent reste → anonymisation : l'historique partagé (dépenses, soldes,
-      mur, échanges) reste cohérent pour lui ; la ligne de membre est conservée.
-    """
+    """Supprime le compte et les données personnelles de l'utilisateur. Ne commit pas."""
     member = db.scalar(select(HouseholdMember).where(HouseholdMember.user_id == user.id))
-    others = [] if member is None else [
-        db.get(User, m.user_id) for m in household_members(db, member.household_id) if m.user_id != user.id
-    ]
-    active_others = [u for u in others if u is not None and u.deleted_at is None]
-
-    if active_others:
-        old_name = user.display_name
-        user.deleted_at = utcnow()
-        user.email = f"deleted-{user.id}@deleted.invalid"
-        user.display_name = "Ancien parent"
-        user.password_hash = "!" + secrets.token_hex(32)  # hash bcrypt invalide : aucune connexion possible
-        user.ical_token = new_token()
-        user.email_opt_in = False
-        user.token_version = (user.token_version or 0) + 1
-        _delete_user_rows(db, user.id)
-        withdraw_pending_for_leaving(db, member.household_id)
-        audit.record(
-            db, member.household_id, user.id, "member.leave", "member", user.id,
-            "a quitté le foyer (compte supprimé)",
-        )
-        for other in active_others:
-            notify(db, other.id, "parent_left", {"display_name": old_name})
+    if member is None:
+        _delete_user_rows(db, [user.id])
+        db.execute(delete(User).where(User.id == user.id))
         return
 
-    if member is not None:
+    others_real = [
+        m for m in household_members(db, member.household_id)
+        if m.user_id != user.id and not (db.get(User, m.user_id) or User()).is_placeholder
+    ]
+    if others_real:
+        old_name = user.display_name
+        _anonymize(db, user)
+        withdraw_pending_for_leaving(db, member.household_id)
+        audit.record(db, member.household_id, user.id, "member.leave", "member", user.id)
+        for m in others_real:
+            notify(db, m.user_id, "parent_left", {"display_name": old_name})
+    else:
         _delete_household(db, member.household_id)
-    for u in [user, *(o for o in others if o is not None)]:
-        _delete_user_rows(db, u.id)
-        db.execute(delete(User).where(User.id == u.id))

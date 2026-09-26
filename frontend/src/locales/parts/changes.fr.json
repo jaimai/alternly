@@ -1,0 +1,20 @@
+{
+  "changes.title": "Demandes de changement",
+  "changes.otherParent": "L'autre parent",
+  "changes.mine": "Votre demande · en attente",
+  "changes.theirs": "{{name}} demande votre accord",
+  "changes.withdraw": "Retirer",
+  "changes.accept": "Accepter",
+  "changes.refuse": "Refuser",
+  "changes.error": "Action impossible. Réessayez.",
+  "changes.sent": "Demande envoyée : l'autre parent doit l'accepter avant qu'elle s'applique.",
+  "history.title": "Historique du foyer",
+  "history.subtitle": "Toutes les modifications, horodatées et non modifiables. Visible par les deux parents.",
+  "history.error": "Impossible de charger l'historique",
+  "history.emptyTitle": "Rien pour l'instant",
+  "history.emptyBody": "Les changements de règles, échanges, dépenses et messages apparaîtront ici.",
+  "history.system": "Système",
+  "history.more": "Voir plus",
+  "history.link": "Historique du foyer",
+  "history.linkHint": "Qui a modifié quoi, et quand."
+}

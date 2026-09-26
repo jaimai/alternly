@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{% block title %}Alternly{% endblock %}</title>
+  <meta name="description" content="{% block description %}Alternly: the shared-custody calendar built for co-parents. Custody schedules, school breaks and vacation splits, holidays that alternate by even/odd year, shared expenses and a message board between both households.{% endblock %}" />
+  <link rel="canonical" href="{{ site_url }}/en" />
+
+  <!-- Open Graph / Twitter -->
+  <meta property="og:site_name" content="Alternly" />
+  <meta property="og:locale" content="en_US" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="{% block og_title %}{{ self.title() }}{% endblock %}" />
+  <meta property="og:description" content="{{ self.description() }}" />
+  <meta property="og:url" content="{{ site_url }}/en" />
+  <meta property="og:image" content="{{ site_url }}/static/favicon.svg" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="{{ self.title() }}" />
+  <meta name="twitter:description" content="{{ self.description() }}" />
+  <meta name="theme-color" content="#1f4d3f" />
+
+  <link rel="alternate" hreflang="fr" href="{{ site_url }}/" />
+  <link rel="alternate" hreflang="en" href="{{ site_url }}/en" />
+  <link rel="alternate" hreflang="x-default" href="{{ site_url }}/" />
+
+  {% block head %}{% endblock %}
+
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml" />
+  <!-- Polices auto-hébergées (static/fonts) : aucun appel tiers (RGPD). -->
+  <link rel="preload" href="/static/fonts/instrument-sans-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="/static/fonts/fraunces-latin-opsz-normal.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="stylesheet" href="/static/marketing.css" />
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "{{ site_url }}/#organization",
+        "name": "Alternly",
+        "url": "{{ site_url }}/en",
+        "description": "Shared-custody calendar and co-parenting tools for separated parents in the United States.",
+        "areaServed": "US"
+      },
+      {
+        "@type": "SoftwareApplication",
+        "name": "Alternly",
+        "operatingSystem": "Web",
+        "applicationCategory": "LifestyleApplication",
+        "url": "{{ site_url }}/en",
+        "inLanguage": "en-US",
+        "description": "Shared-custody calendar: custody schedules and parenting time, school breaks and vacation splits, major holidays that alternate by even/odd year, day swaps, shared expenses and a message board.",
+        "offers": {
+          "@type": "Offer",
+          "price": "79.00",
+          "priceCurrency": "USD",
+          "description": "Free custody calendar. Premium (shared expenses, message board, email reminders, calendar sync) is $79/year per household or $8.99/month, one parent pays for the whole household."
+        }
+      }
+    ]
+  }
+  </script>
+</head>
+<body>
+  <header class="site-header">
+    <nav class="wrap">
+      <a class="logo" href="/en">altern<span>ly</span></a>
+      <div class="nav-links">
+        <a href="/en#features">Features</a>
+        <a href="/en#pricing">Pricing</a>
+        <a href="/en/blog">Guides</a>
+        <a href="/">FR</a>
+        <a href="/login?lang=en" class="ghost">Sign in</a>
+        <a href="/register?lang=en" class="cta">Try for free</a>
+      </div>
+    </nav>
+  </header>
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+  <footer class="site-footer">
+    <div class="wrap">
+      <div>
+        <span class="logo small">altern<span>ly</span></span>
+        <p>The shared-custody calendar, built for co-parents.<br/>One plan for the whole household.</p>
+      </div>
+      <div>
+        <strong>Product</strong>
+        <a href="/en#features">Features</a>
+        <a href="/en#pricing">Pricing</a>
+        <a href="/en/blog">Guides &amp; articles</a>
+        <a href="/register?lang=en">Create an account</a>
+      </div>
+      <div>
+        <strong>Legal</strong>
+        <a href="/en/terms">Terms of Service</a>
+        <a href="/en/privacy">Privacy</a>
+        <a href="/en/refund">Refund policy</a>
+        <p class="fine">Alternly organizes day-to-day parenting time; it does not replace a court order or legal advice.</p>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

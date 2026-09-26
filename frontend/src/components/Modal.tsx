@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import type { ReactNode } from 'react'
 
 // Fenêtre modale : centrée sur ordinateur, « bottom sheet » sur mobile.
@@ -14,12 +14,15 @@ export default function Modal({
   children: ReactNode
 }) {
   const box = useRef<HTMLDivElement>(null)
+  // Fermeture à Échap ; focus sur le premier champ à l'ouverture.
+  const closeRef = useRef(onClose)
+  closeRef.current = onClose
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && closeRef.current()
     document.addEventListener('keydown', onKey)
     box.current?.querySelector<HTMLElement>('input, select, textarea, button')?.focus()
     return () => document.removeEventListener('keydown', onKey)
-  }, [onClose])
+  }, [])
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
@@ -37,37 +40,4 @@ export default function Modal({
       </div>
     </div>
   )
-}
-
-type ConfirmOptions = { title: string; body?: string; confirmLabel?: string; danger?: boolean }
-
-/** Confirmation avant une action destructrice : `if (await confirm({...})) …` */
-export function useConfirm(): [(opts: ConfirmOptions) => Promise<boolean>, ReactNode] {
-  const [state, setState] = useState<(ConfirmOptions & { resolve: (ok: boolean) => void }) | null>(null)
-
-  const confirm = useCallback(
-    (opts: ConfirmOptions) => new Promise<boolean>((resolve) => setState({ ...opts, resolve })),
-    [],
-  )
-
-  const close = (ok: boolean) => {
-    state?.resolve(ok)
-    setState(null)
-  }
-
-  const node = state ? (
-    <Modal title={state.title} onClose={() => close(false)}>
-      {state.body && <p className="hint">{state.body}</p>}
-      <div className="actions" style={{ marginTop: 18 }}>
-        <button className={state.danger ? 'danger' : ''} onClick={() => close(true)}>
-          {state.confirmLabel ?? 'Confirmer'}
-        </button>
-        <button className="secondary" onClick={() => close(false)}>
-          Annuler
-        </button>
-      </div>
-    </Modal>
-  ) : null
-
-  return [confirm, node]
 }

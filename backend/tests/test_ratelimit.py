@@ -4,7 +4,7 @@ import pytest
 from app import ratelimit
 from app.config import settings
 from app.ratelimit import TOO_MANY, SlidingWindowLimiter
-from tests.test_rules import setup_family
+from tests.test_rules import premium_family, setup_family
 
 
 @pytest.fixture
@@ -98,15 +98,19 @@ class TestEndpoints:
             assert client.get("/api/invitations/inexistant").status_code == 404
         assert client.get("/api/invitations/inexistant").status_code == 429
 
-    def test_wall_per_household_not_shared_across_households(self, client, auth_headers, limits_on):
-        headers1, _, _, _, h = setup_family(client, auth_headers)
+    def test_wall_per_household_not_shared_across_households(self, client, auth_headers, db_session, limits_on):
+        from app.models import User
+
+        headers1, _, _, _, h = premium_family(client, auth_headers, db_session)
         # quota rempli directement (100 posts réels seraient lents)
         for _ in range(100):
             ratelimit.limiter.hit(f"wall:hh:{h['id']}", 100, ratelimit.DAY)
         resp = client.post(f"/api/households/{h['id']}/wall", json={"kind": "message", "body": "x"}, headers=headers1)
         assert resp.status_code == 429
         # un autre foyer n'est pas affecté
-        other_headers, _ = auth_headers(email="autre@test.fr", name="Autre")
+        other_headers, other_user = auth_headers(email="autre@test.fr", name="Autre")
+        db_session.get(User, other_user["id"]).subscription_status = "active"
+        db_session.commit()
         other = client.post("/api/households", json={"name": "Autre", "school_zone": "A"}, headers=other_headers).json()
         ok = client.post(f"/api/households/{other['id']}/wall", json={"kind": "message", "body": "x"}, headers=other_headers)
         assert ok.status_code == 201
@@ -138,8 +142,8 @@ class TestEndpoints:
         )
         assert resp.status_code == 429
 
-    def test_expenses_per_household(self, client, auth_headers, limits_on):
-        headers1, _, _, _, h = setup_family(client, auth_headers)
+    def test_expenses_per_household(self, client, auth_headers, db_session, limits_on):
+        headers1, _, _, _, h = premium_family(client, auth_headers, db_session)
         for _ in range(100):
             ratelimit.limiter.hit(f"expenses:hh:{h['id']}", 100, ratelimit.DAY)
         resp = client.post(
@@ -148,3 +152,20 @@ class TestEndpoints:
             headers=headers1,
         )
         assert resp.status_code == 429
+
+    def test_billing_calls_per_ip(self, client, auth_headers, limits_on):
+        headers, _ = auth_headers()
+        for _ in range(10):
+            assert client.post("/api/billing/cancel", headers=headers).status_code == 404
+        assert client.post("/api/billing/cancel", headers=headers).status_code == 429
+
+    def test_paddle_webhook_never_limited(self, client, limits_on):
+        for _ in range(40):
+            assert client.post("/api/billing/webhook", content=b"{}").status_code == 403
+
+    def test_password_change_per_ip(self, client, auth_headers, limits_on):
+        headers, _ = auth_headers()
+        body = {"current_password": "mauvais", "new_password": "nouveau-mdp-2"}
+        for _ in range(10):
+            assert client.post("/api/auth/password/change", json=body, headers=headers).status_code == 400
+        assert client.post("/api/auth/password/change", json=body, headers=headers).status_code == 429

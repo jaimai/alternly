@@ -17,7 +17,11 @@ class TestHousehold:
         h = create_household(client, headers)
         assert h["school_zone"] == "B"
         assert h["my_role"] == "parent1"
-        assert len(h["members"]) == 1
+        # le foyer solo dispose d'un second parent « placeholder » (assignation de dépenses)
+        assert len(h["members"]) == 2
+        real = [m for m in h["members"] if not m["is_placeholder"]]
+        ghosts = [m for m in h["members"] if m["is_placeholder"]]
+        assert len(real) == 1 and len(ghosts) == 1
         # règles spéciales par défaut : fêtes actives, Noël désactivé
         rules = {r["kind"]: r["enabled"] for r in h["special_day_rules"]}
         assert rules == {

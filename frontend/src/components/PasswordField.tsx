@@ -1,11 +1,5 @@
 import { useState } from 'react'
-
-/** Mêmes règles que le backend : 8 caractères minimum, 72 octets maximum (bcrypt). */
-export function passwordProblem(pw: string): string | null {
-  if (pw.length < 8) return 'Le mot de passe doit faire au moins 8 caractères'
-  if (new TextEncoder().encode(pw).length > 72) return 'Le mot de passe est trop long (72 octets maximum)'
-  return null
-}
+import { useTranslation } from 'react-i18next'
 
 export default function PasswordField({
   id,
@@ -18,8 +12,9 @@ export default function PasswordField({
   label: string
   value: string
   onChange: (v: string) => void
-  autoComplete?: string
+  autoComplete?: 'current-password' | 'new-password'
 }) {
+  const { t } = useTranslation()
   const [visible, setVisible] = useState(false)
   return (
     <>
@@ -38,9 +33,10 @@ export default function PasswordField({
           type="button"
           className="link"
           onClick={() => setVisible((v) => !v)}
-          aria-label={visible ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+          aria-label={visible ? t('auth.hidePasswordAria') : t('auth.showPasswordAria')}
+          aria-pressed={visible}
         >
-          {visible ? 'Masquer' : 'Afficher'}
+          {visible ? t('auth.hidePassword') : t('auth.showPassword')}
         </button>
       </div>
     </>

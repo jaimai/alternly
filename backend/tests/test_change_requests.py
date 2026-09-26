@@ -1,9 +1,8 @@
-"""Garde-fous entre parents : demandes de changement et journal d'audit."""
+"""Garde-fous entre parents : demandes de changement soumises à l'accord de l'autre."""
 from sqlalchemy import select
 
 from app.config import settings
 from app.models import AuditLog, ChangeRequest, Child, Notification, ScheduleException
-from app.services.audit import euros, fr_date, fr_range
 from tests.test_exchanges import create_solo
 from tests.test_rules import accept_pending, setup_family
 
@@ -26,17 +25,6 @@ def _notifs(db_session, user_id, type_):
     return db_session.scalars(
         select(Notification).where(Notification.user_id == user_id, Notification.type == type_)
     ).all()
-
-
-class TestFormatting:
-    def test_fr_date_and_amounts(self):
-        from datetime import date
-
-        assert fr_date(date(2026, 10, 1)) == "jeu. 1 oct."
-        assert fr_date(date(2026, 10, 5)) == "lun. 5 oct."
-        assert fr_range(date(2026, 10, 1), date(2026, 10, 4)) == "jeu. 1 oct. → dim. 4 oct."
-        assert euros(12900) == "129,00 €"
-        assert euros(123456) == "1 234,56 €"
 
 
 class TestOnboarding:
@@ -278,7 +266,7 @@ class TestOtherKinds:
         _custody(client, headers1, hid, user1["id"])
         pending = _custody(client, headers1, hid, user1["id"], pattern="two_two_three")
         assert pending.status_code == 202
-        client.request("DELETE", "/api/auth/me", json={"password": "motdepasse1"}, headers=headers2)
+        client.delete("/api/auth/me", headers=headers2)
         # demandes en attente closes au départ du parent
         assert db_session.get(ChangeRequest, pending.json()["change_request"]["id"]).status == "withdrawn"
         resp = _custody(client, headers1, hid, user1["id"], pattern="two_two_three")
@@ -297,45 +285,6 @@ class TestOtherKinds:
 
 
 class TestHistory:
-    def test_mutations_are_journaled(self, client, auth_headers, db_session):
-        headers1, user1, headers2, user2, h = setup_family(client, auth_headers)
-        hid = h["id"]
-        client.post(
-            f"/api/households/{hid}/expenses",
-            json={"label": "Lunettes", "amount_cents": 12900, "date": "2026-07-10", "category": "sante"},
-            headers=headers1,
-        )
-        client.post(
-            f"/api/households/{hid}/exceptions",
-            json={"date_start": "2026-10-01", "date_end": "2026-10-01", "parent_id": user1["id"]}, headers=headers1,
-        )
-        post = client.post(f"/api/households/{hid}/wall", json={"kind": "message", "body": "Doudou"}, headers=headers2).json()
-        client.delete(f"/api/households/{hid}/wall/{post['id']}", headers=headers2)
-        client.patch(f"/api/households/{hid}", json={"school_zone": "C"}, headers=headers1)
-
-        entries = _history(client, headers2, hid)
-        summaries = [e["summary"] for e in entries]
-        assert summaries[0] == f"a changé la zone scolaire : {h['school_zone']} → C"
-        assert "a supprimé le message « Doudou »" in summaries
-        assert "a proposé un échange : jeu. 1 oct. chez Camille" in summaries
-        assert "a ajouté la dépense « Lunettes » (129,00 €)" in summaries
-        assert summaries[-1] == "a rejoint le foyer"
-        assert entries[-1]["actor_id"] == user2["id"]
-        assert set(entries[0]) == {"id", "actor_id", "action", "summary", "created_at"}
-        ids = [e["id"] for e in entries]
-        assert ids == sorted(ids, reverse=True)
-
-    def test_pagination_and_limit(self, client, auth_headers):
-        headers, user, h = create_solo(client, auth_headers)
-        hid = h["id"]
-        for i in range(5):
-            client.post(f"/api/households/{hid}/children", json={"first_name": f"E{i}"}, headers=headers)
-        page1 = _history(client, headers, hid, limit=2)
-        assert [e["summary"] for e in page1] == ["a ajouté l'enfant E4", "a ajouté l'enfant E3"]
-        page2 = _history(client, headers, hid, limit=2, before_id=page1[-1]["id"])
-        assert [e["summary"] for e in page2] == ["a ajouté l'enfant E2", "a ajouté l'enfant E1"]
-        assert len(_history(client, headers, hid, limit=1000)) == 5
-
     def test_rule_change_journal_with_snapshot(self, client, auth_headers, db_session):
         headers1, user1, headers2, user2, h = setup_family(client, auth_headers)
         hid = h["id"]
@@ -352,103 +301,73 @@ class TestHistory:
         assert entry.actor_id == user1["id"]
         assert entry.data["before"]["pattern"] == "alternate_weeks" and entry.data["after"]["pattern"] == "two_two_three"
 
-    def test_expense_dispute_journal(self, client, auth_headers):
+
+
+class TestMainSpecifics:
+    def test_placeholder_partner_cannot_consent_applies_directly(self, client, auth_headers):
+        # Foyer solo : le second parent est un placeholder (sans compte) → pas de demande.
+        headers, user, h = create_solo(client, auth_headers)
+        members = client.get("/api/households/mine", headers=headers).json()["members"]
+        ghost = next(m for m in members if m["is_placeholder"])
+        assert _custody(client, headers, h["id"], user["id"]).status_code == 200
+        resp = _custody(client, headers, h["id"], ghost["id"], pattern="two_two_three")
+        assert resp.status_code == 200 and resp.json()["reference_parent_id"] == ghost["id"]
+        cid = client.post(f"/api/households/{h['id']}/children", json={"first_name": "Léo"}, headers=headers).json()["id"]
+        assert client.delete(f"/api/households/{h['id']}/children/{cid}", headers=headers).status_code == 204
+        assert client.get(f"/api/households/{h['id']}/change-requests", headers=headers).json() == []
+
+    def test_works_on_free_tier(self, client, auth_headers):
+        headers1, user1, headers2, user2, h = setup_family(client, auth_headers)
+        assert client.get("/api/billing/status", headers=headers1).json()["access"] is False
+        _custody(client, headers1, h["id"], user1["id"])
+        resp = _custody(client, headers1, h["id"], user1["id"], pattern="two_two_three")
+        accept_pending(client, headers2, h["id"], resp)
+
+    def test_summaries_in_reader_and_recipient_locale(self, client, auth_headers, db_session):
+        headers1, user1, headers2, user2, h = setup_family(client, auth_headers)
+        hid = h["id"]
+        client.patch("/api/auth/me", json={"locale": "en"}, headers=headers2)
+        _custody(client, headers1, hid, user1["id"], start_date="2026-10-05")
+        resp = _custody(client, headers1, hid, user1["id"], pattern="two_two_three", start_date="2026-10-05")
+        fr = "Rythme de garde : semaine/semaine → 2-2-3, départ le lun. 5 oct."
+        en = "Custody schedule: week on/week off → 2-2-3, starting Mon, Oct 5"
+        assert resp.json()["change_request"]["summary"] == fr
+        # notification rédigée dans la langue du destinataire
+        assert _notifs(db_session, user2["id"], "change_requested")[0].payload["summary"] == en
+        assert client.get(f"/api/households/{hid}/change-requests", headers=headers2).json()[0]["summary"] == en
+        done = client.post(
+            f"/api/households/{hid}/change-requests/{resp.json()['change_request']['id']}/accept", headers=headers2
+        )
+        assert done.json()["summary"] == en
+        assert _notifs(db_session, user1["id"], "change_accepted")[0].payload["summary"] == fr
+        history = client.get(f"/api/households/{hid}/history", headers=headers2).json()
+        assert history[0]["summary"] == f"accepted the change: {en}"
+
+    def test_cancel_exchange_with_counter_proposal(self, client, auth_headers, db_session):
+        # Échange accepté remplacé par une contre-proposition : l'annulation ne casse pas la clé étrangère.
+        from sqlalchemy import text
+
+        db_session.execute(text("PRAGMA foreign_keys=ON"))
         headers1, user1, headers2, user2, h = setup_family(client, auth_headers)
         hid = h["id"]
         eid = client.post(
-            f"/api/households/{hid}/expenses",
-            json={"label": "Judo", "amount_cents": 5000, "date": "2026-07-10", "category": "activites"},
-            headers=headers1,
+            f"/api/households/{hid}/exceptions",
+            json={"date_start": "2099-10-01", "date_end": "2099-10-01", "parent_id": user1["id"]}, headers=headers1,
         ).json()["id"]
-        client.post(f"/api/households/{hid}/expenses/{eid}/dispute", json={}, headers=headers2)
-        client.patch(f"/api/households/{hid}/expenses/{eid}", json={"amount_cents": 4000}, headers=headers1)
-        client.post(f"/api/households/{hid}/expenses/{eid}/resolve", json={}, headers=headers2)
+        client.post(f"/api/households/{hid}/exceptions/{eid}/accept", json={}, headers=headers2)
         client.post(
-            f"/api/households/{hid}/settlements",
-            json={"from_user": user2["id"], "to_user": user1["id"], "amount_cents": 2000, "date": "2026-07-12"},
+            f"/api/households/{hid}/exceptions",
+            json={"date_start": "2099-10-02", "date_end": "2099-10-02", "parent_id": user1["id"], "replaces_id": eid},
             headers=headers2,
         )
-        summaries = [e["summary"] for e in _history(client, headers1, hid)]
-        assert "a contesté la dépense « Judo » (50,00 €)" in summaries
-        assert "a modifié la dépense « Judo » (50,00 € → 40,00 €)" in summaries
-        assert "a levé la contestation sur la dépense « Judo » (40,00 €)" in summaries
-        assert "a enregistré un remboursement de 20,00 € de Dominique à Camille (dim. 12 juil.)" in summaries
+        resp = client.delete(f"/api/households/{hid}/exceptions/{eid}", headers=headers2)
+        accept_pending(client, headers1, hid, resp)
+        db_session.expire_all()
+        assert db_session.get(ScheduleException, eid) is None
 
-    def test_member_left_journaled_and_household_deletion_purges(self, client, auth_headers, db_session):
+    def test_change_request_exported(self, client, auth_headers):
         headers1, user1, headers2, user2, h = setup_family(client, auth_headers)
-        hid = h["id"]
-        client.request("DELETE", "/api/auth/me", json={"password": "motdepasse1"}, headers=headers2)
-        entries = _history(client, headers1, hid)
-        assert entries[0]["summary"] == "a quitté le foyer (compte supprimé)"
-        assert entries[0]["actor_id"] == user2["id"]
-        client.request("DELETE", "/api/auth/me", json={"password": "motdepasse1"}, headers=headers1)
-        assert db_session.scalars(select(AuditLog).where(AuditLog.household_id == hid)).all() == []
-
-    def test_no_mutation_endpoints(self, client, auth_headers):
-        headers, user, h = create_solo(client, auth_headers)
-        hid = h["id"]
-        client.post(f"/api/households/{hid}/children", json={"first_name": "Léo"}, headers=headers)
-        eid = _history(client, headers, hid)[0]["id"]
-        assert client.delete(f"/api/households/{hid}/history/{eid}", headers=headers).status_code in (404, 405)
-        assert client.patch(f"/api/households/{hid}/history/{eid}", json={}, headers=headers).status_code in (404, 405)
-
-    def test_history_exported(self, client, auth_headers):
-        headers, user, h = create_solo(client, auth_headers)
-        client.post(f"/api/households/{h['id']}/children", json={"first_name": "Léo"}, headers=headers)
-        data = client.get("/api/auth/me/export", headers=headers).json()
-        assert data["household"]["history"][0]["summary"] == "a ajouté l'enfant Léo"
-
-
-class TestHistoryCoverage:
-    def test_exchanges_wall_children_journaled(self, client, auth_headers):
-        headers1, user1, headers2, user2, h = setup_family(client, auth_headers)
-        hid = h["id"]
-
-        def propose(day):
-            return client.post(
-                f"/api/households/{hid}/exceptions",
-                json={"date_start": day, "date_end": day, "parent_id": user2["id"]}, headers=headers1,
-            ).json()["id"]
-
-        client.post(f"/api/households/{hid}/exceptions/{propose('2099-10-01')}/accept", json={}, headers=headers2)
-        client.post(f"/api/households/{hid}/exceptions/{propose('2099-10-02')}/refuse", json={}, headers=headers2)
-        client.post(f"/api/households/{hid}/exceptions/{propose('2099-10-03')}/withdraw", json={}, headers=headers1)
-        post = client.post(
-            f"/api/households/{hid}/wall", json={"kind": "task", "body": "Acheter des baskets"}, headers=headers1
-        ).json()
-        client.post(f"/api/households/{hid}/wall/{post['id']}/complete", headers=headers2)
-        client.post(f"/api/households/{hid}/wall/{post['id']}/reopen", headers=headers2)
-        reply = client.post(f"/api/households/{hid}/wall/{post['id']}/replies", json={"body": "OK"}, headers=headers2).json()
-        client.delete(f"/api/households/{hid}/replies/{reply['id']}", headers=headers2)
-        client.post(f"/api/households/{hid}/children", json={"first_name": "Léo"}, headers=headers1)
-
-        actions = {e["action"] for e in _history(client, headers1, hid, limit=100)}
-        assert {
-            "exchange.propose", "exchange.accept", "exchange.refuse", "exchange.withdraw",
-            "wall_post.create", "wall_post.complete", "wall_post.reopen",
-            "wall_reply.create", "wall_reply.delete", "child.create", "member.join",
-        } <= actions
-        summaries = [e["summary"] for e in _history(client, headers1, hid, limit=100)]
-        assert "a ajouté la tâche « Acheter des baskets »" in summaries
-        assert any(s.startswith("a accepté l'échange : ") and "chez Dominique" in s for s in summaries)
-
-
-class TestPaywallOnConsent:
-    def test_read_only_parent_cannot_answer_requests(self, client, auth_headers, db_session, monkeypatch):
-        from datetime import timedelta
-
-        from app.models import User, utcnow
-
-        monkeypatch.setattr(settings, "stripe_secret_key", "sk_test")
-        monkeypatch.setattr(settings, "stripe_price_id", "price_1")
-        monkeypatch.setattr(settings, "paywall_mode", "read_only")
-        headers1, user1, headers2, user2, h = setup_family(client, auth_headers)
-        hid = h["id"]
-        _custody(client, headers1, hid, user1["id"])
-        rid = _custody(client, headers1, hid, user1["id"], pattern="two_two_three").json()["change_request"]["id"]
-        u2 = db_session.get(User, user2["id"])
-        u2.trial_ends_at = utcnow() - timedelta(days=1)
-        db_session.commit()
-        # lecture possible, réponse (écriture) refusée : choix documenté
-        assert client.get(f"/api/households/{hid}/change-requests", headers=headers2).status_code == 200
-        assert client.post(f"/api/households/{hid}/change-requests/{rid}/accept", headers=headers2).status_code == 402
+        _custody(client, headers1, h["id"], user1["id"])
+        _custody(client, headers1, h["id"], user1["id"], pattern="two_two_three")
+        crs = client.get("/api/auth/me/export", headers=headers2).json()["household"]["change_requests"]
+        assert crs[0]["kind"] == "custody_rule" and crs[0]["summary"].startswith("Rythme de garde")

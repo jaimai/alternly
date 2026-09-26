@@ -25,11 +25,37 @@ def owed_to_payer(amount_cents: int, payer_percent: int) -> int:
     return quotient
 
 
+def _counts(e) -> bool:
+    """Une dépense pèse dans les soldes si elle est active et non réglée."""
+    return getattr(e, "status", "active") == "active" and getattr(e, "settled_at", None) is None
+
+
+def outstanding_for(expenses, me_id: int, other_id: int) -> tuple[int, int]:
+    """Montants bruts restant dus, du point de vue de `me_id`, sur les dépenses
+    encore ouvertes (actives et non réglées).
+
+    Retourne (owed_to_me, i_owe) :
+    - owed_to_me : ce que l'autre me doit (dépenses que j'ai avancées) ;
+    - i_owe      : ce que je dois à l'autre (dépenses qu'il a avancées).
+    """
+    owed_to_me = 0
+    i_owe = 0
+    for e in expenses:
+        if not _counts(e):
+            continue
+        owed = owed_to_payer(e.amount_cents, e.payer_percent)
+        if e.paid_by == me_id:
+            owed_to_me += owed
+        elif e.paid_by == other_id:
+            i_owe += owed
+    return owed_to_me, i_owe
+
+
 def compute_balance(expenses, settlements, member_ids: list[int]) -> Balance:
     net: dict[int, int] = {uid: 0 for uid in member_ids}
 
     for e in expenses:
-        if getattr(e, "status", "active") != "active":
+        if not _counts(e):
             continue
         payer = e.paid_by
         other = next((uid for uid in member_ids if uid != payer), None)

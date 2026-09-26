@@ -1,5 +1,5 @@
 from datetime import date, datetime
-from typing import Annotated
+from typing import Annotated, Literal
 
 from pydantic import AfterValidator, BaseModel, ConfigDict, EmailStr, Field
 
@@ -9,7 +9,11 @@ DateType = date
 
 PATTERNS = {"alternate_weeks", "two_two_three", "every_other_weekend", "custom"}
 VACATION_MODES = {"split_half", "alternate_full"}
-SPECIAL_KINDS = {"christmas_eve", "christmas_day", "mothers_day", "fathers_day"}
+SPECIAL_KINDS = {
+    "christmas_eve", "christmas_day", "mothers_day", "fathers_day",
+    # États-Unis
+    "thanksgiving", "halloween", "independence_day", "new_years_day",
+}
 PARENT_MODES = {"auto", "fixed", "alternate"}
 EXPENSE_CATEGORIES = {"sante", "ecole", "activites", "vetements", "cantine", "autre"}
 WALL_KINDS = {"message", "task", "question"}
@@ -24,7 +28,7 @@ COLOR_PATTERN = r"^#[0-9a-fA-F]{6}$"
 TIME_PATTERN = r"^([01]\d|2[0-3]):[0-5]\d$"
 # Bornes des saisies libres et montants (anti-abus / cohérence).
 NOTE_MAX = 2000
-MAX_AMOUNT_CENTS = 10_000_000  # 100 000 €
+MAX_AMOUNT_CENTS = 10_000_000  # 100 000 € / $
 
 
 def _password_bytes(v: str) -> str:
@@ -43,27 +47,13 @@ class UserCreate(BaseModel):
     password: NewPassword
     display_name: str = Field(min_length=1, max_length=50)
     color: str = Field(default="#4f7cac", pattern=COLOR_PATTERN)
+    # Langue choisie côté client (landing) ; prioritaire sur Accept-Language.
+    locale: Literal["fr", "en"] | None = None
 
 
 class UserLogin(BaseModel):
     email: EmailStr
     password: str = Field(max_length=200)
-
-
-class UserOut(ORMModel):
-    id: int
-    email: str
-    display_name: str
-    color: str
-    email_opt_in: bool
-    onboarding_seen: bool
-
-
-class UserUpdate(BaseModel):
-    display_name: str | None = Field(default=None, min_length=1, max_length=50)
-    color: str | None = Field(default=None, pattern=COLOR_PATTERN)
-    email_opt_in: bool | None = None
-    onboarding_seen: bool | None = None
 
 
 class ForgotPasswordIn(BaseModel):
@@ -80,8 +70,22 @@ class ChangePasswordIn(BaseModel):
     new_password: NewPassword
 
 
-class DeleteAccountIn(BaseModel):
-    password: str = Field(max_length=200)
+class UserOut(ORMModel):
+    id: int
+    email: str
+    display_name: str
+    color: str
+    email_opt_in: bool
+    onboarding_seen: bool
+    locale: str
+
+
+class UserUpdate(BaseModel):
+    display_name: str | None = Field(default=None, min_length=1, max_length=50)
+    color: str | None = Field(default=None, pattern=COLOR_PATTERN)
+    email_opt_in: bool | None = None
+    onboarding_seen: bool | None = None
+    locale: Literal["fr", "en"] | None = None
 
 
 class Token(BaseModel):
@@ -95,6 +99,16 @@ class MemberOut(ORMModel):
     display_name: str
     color: str
     role: str
+    is_placeholder: bool = False
+
+
+class ChangePlanIn(BaseModel):
+    plan: Literal["annual", "monthly"]
+
+
+class PartnerUpdate(BaseModel):
+    display_name: str = Field(min_length=1, max_length=50)
+    color: str | None = Field(default=None, pattern=COLOR_PATTERN)
 
 
 class ChildIn(BaseModel):
@@ -155,23 +169,41 @@ class SpecialDayRuleOut(ORMModel):
 
 class HouseholdCreate(BaseModel):
     name: str = Field(min_length=1, max_length=80)
-    school_zone: str = "A"
+    country: Literal["FR", "US"] = "FR"
+    school_zone: str = "A"  # FR uniquement
 
 
 class HouseholdUpdate(BaseModel):
     name: str | None = Field(default=None, min_length=1, max_length=80)
     school_zone: str | None = None
+    country: Literal["FR", "US"] | None = None
+
+
+class SchoolVacationIn(BaseModel):
+    label: str = Field(min_length=1, max_length=80)
+    start: date
+    end: date
+
+
+class SchoolVacationOut(ORMModel):
+    id: int
+    label: str
+    start: date
+    end: date
 
 
 class HouseholdOut(ORMModel):
     id: int
     name: str
     school_zone: str
+    country: str
+    currency: str
     members: list[MemberOut] = []
     children: list[ChildOut] = []
     custody_rule: CustodyRuleOut | None = None
     vacation_rule: VacationRuleOut | None = None
     special_day_rules: list[SpecialDayRuleOut] = []
+    school_vacations: list[SchoolVacationOut] = []
     my_role: str | None = None
 
 
@@ -289,6 +321,7 @@ class ExpenseOut(ORMModel):
     payer_percent: int
     status: str
     dispute_note: str
+    settled_at: datetime | None = None
     created_by: int
 
 
@@ -324,6 +357,9 @@ class BalanceOut(BaseModel):
     debtor_id: int | None
     creditor_id: int | None
     amount_cents: int
+    # Visu rapide, du point de vue du parent qui interroge (dépenses ouvertes).
+    owed_to_me_cents: int = 0  # ce qu'on me doit (à me faire rembourser)
+    i_owe_cents: int = 0       # ce que je dois (à payer)
 
 
 class WallPostIn(BaseModel):
@@ -375,27 +411,7 @@ class NotificationOut(ORMModel):
     created_at: datetime
 
 
-class ReadNotificationsIn(BaseModel):
-    ids: list[int] = Field(max_length=200)
-
-
-class BillingStatusOut(BaseModel):
-    enabled: bool
-    status: str  # trialing | active | past_due | canceled | expired
-    has_access: bool
-    read_only: bool
-    trial_ends_at: datetime | None
-    current_period_end: datetime | None
-    cancel_at_period_end: bool
-    days_left: int | None
-    price_label: str
-
-
-class BillingUrlOut(BaseModel):
-    url: str
-
-
-class ChangeRequestOut(ORMModel):
+class ChangeRequestOut(BaseModel):
     id: int
     kind: str
     summary: str
@@ -406,9 +422,13 @@ class ChangeRequestOut(ORMModel):
     resolved_at: datetime | None
 
 
-class HistoryEntryOut(ORMModel):
+class HistoryEntryOut(BaseModel):
     id: int
     actor_id: int | None
     action: str
     summary: str
     created_at: datetime
+
+
+class ReadNotificationsIn(BaseModel):
+    ids: list[int] = Field(max_length=200)

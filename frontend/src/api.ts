@@ -1,15 +1,20 @@
 import type {
   Balance,
   BillingStatus,
-  ChangeRequest,
-  HistoryEntry,
-  PendingChange,
   CalendarResponse,
+  ChangeRequest,
   Child,
   CustodyRule,
   Expense,
+  Country,
+  HistoryEntry,
   Household,
+  Locale,
+  Member,
   Notification,
+  PendingChange,
+  SchoolVacation,
+  SubscriptionInfo,
   ScheduleException,
   Settlement,
   SpecialDayRule,
@@ -22,9 +27,6 @@ import type {
 // Base de l'API : en prod (Vercel), pointe vers le backend Railway via
 // VITE_API_URL (ex. https://xxx.up.railway.app/api). En dev, proxy Vite sur /api.
 export const API_BASE = import.meta.env.VITE_API_URL || '/api'
-
-// Site marketing (pages légales, blog) : servi par le backend sur le domaine principal.
-export const SITE_URL = import.meta.env.VITE_SITE_URL || 'https://alternly.com'
 
 const TOKEN_KEY = 'coparent_token'
 
@@ -55,10 +57,6 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     window.location.href = '/login'
     throw new ApiError(401, 'Session expirée')
   }
-  if (resp.status === 402) {
-    // Essai terminé sans abonnement : l'app passe en lecture seule.
-    window.dispatchEvent(new CustomEvent('alternly:paywall'))
-  }
   if (!resp.ok) {
     let detail = resp.statusText
     try {
@@ -78,13 +76,13 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   return resp.json()
 }
 
-interface TokenResponse {
+export interface TokenResponse {
   access_token: string
   user: User
 }
 
 export const api = {
-  register: (data: { email: string; password: string; display_name: string; color: string }) =>
+  register: (data: { email: string; password: string; display_name: string; color: string; locale?: Locale }) =>
     request<TokenResponse>('/auth/register', { method: 'POST', body: JSON.stringify(data) }),
   login: (data: { email: string; password: string }) =>
     request<TokenResponse>('/auth/login', { method: 'POST', body: JSON.stringify(data) }),
@@ -98,31 +96,25 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ current_password, new_password }),
     }),
+  /** Révoque toutes les sessions (y compris celle-ci). */
   logoutAll: () => request<void>('/auth/logout-all', { method: 'POST' }),
-  listChangeRequests: (householdId: number, status: 'pending' | 'all' = 'pending') =>
-    request<ChangeRequest[]>(`/households/${householdId}/change-requests?status=${status}`),
-  acceptChange: (householdId: number, id: number) =>
-    request<ChangeRequest>(`/households/${householdId}/change-requests/${id}/accept`, { method: 'POST' }),
-  refuseChange: (householdId: number, id: number) =>
-    request<ChangeRequest>(`/households/${householdId}/change-requests/${id}/refuse`, { method: 'POST' }),
-  withdrawChange: (householdId: number, id: number) =>
-    request<ChangeRequest>(`/households/${householdId}/change-requests/${id}/withdraw`, { method: 'POST' }),
-  history: (householdId: number, beforeId?: number) =>
-    request<HistoryEntry[]>(`/households/${householdId}/history?limit=50${beforeId ? `&before_id=${beforeId}` : ''}`),
-  billingStatus: () => request<BillingStatus>('/billing/status'),
-  billingCheckout: () => request<{ url: string }>('/billing/checkout', { method: 'POST' }),
-  billingPortal: () => request<{ url: string }>('/billing/portal', { method: 'POST' }),
+  /** Export RGPD : profil, foyer, calendrier, dépenses, mur (JSON). */
   exportData: () => request<unknown>('/auth/me/export'),
-  deleteAccount: (password: string) =>
-    request<void>('/auth/me', { method: 'DELETE', body: JSON.stringify({ password }) }),
-  updateMe: (data: { display_name?: string; color?: string; email_opt_in?: boolean; onboarding_seen?: boolean }) =>
+  updateMe: (data: { display_name?: string; color?: string; email_opt_in?: boolean; onboarding_seen?: boolean; locale?: Locale }) =>
     request<User>('/auth/me', { method: 'PATCH', body: JSON.stringify(data) }),
+  deleteAccount: () => request<void>('/auth/me', { method: 'DELETE' }),
 
-  createHousehold: (data: { name: string; school_zone: string }) =>
+  createHousehold: (data: { name: string; school_zone?: string; country?: Country }) =>
     request<Household>('/households', { method: 'POST', body: JSON.stringify(data) }),
   myHousehold: () => request<Household>('/households/mine'),
-  updateHousehold: (id: number, data: { name?: string; school_zone?: string }) =>
+  updateHousehold: (id: number, data: { name?: string; school_zone?: string; country?: Country }) =>
     request<Household>(`/households/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+  renamePartner: (householdId: number, data: { display_name: string; color?: string }) =>
+    request<Member>(`/households/${householdId}/partner`, { method: 'PATCH', body: JSON.stringify(data) }),
+  addSchoolVacation: (householdId: number, data: { label: string; start: string; end: string }) =>
+    request<SchoolVacation>(`/households/${householdId}/school-vacations`, { method: 'POST', body: JSON.stringify(data) }),
+  deleteSchoolVacation: (householdId: number, periodId: number) =>
+    request<void>(`/households/${householdId}/school-vacations/${periodId}`, { method: 'DELETE' }),
 
   createInvitation: (householdId: number) =>
     request<{ invite_url: string; token: string; expires_at: string }>(
@@ -136,6 +128,8 @@ export const api = {
 
   addChild: (householdId: number, data: { first_name: string; birthdate?: string | null }) =>
     request<Child>(`/households/${householdId}/children`, { method: 'POST', body: JSON.stringify(data) }),
+  // Avec deux parents réels, les changements sensibles renvoient 202
+  // {"change_request": …} (en attente d'accord) : tester avec isPendingChange().
   deleteChild: (householdId: number, childId: number) =>
     request<PendingChange | undefined>(`/households/${householdId}/children/${childId}`, { method: 'DELETE' }),
 
@@ -145,6 +139,17 @@ export const api = {
     request<VacationRule | PendingChange>(`/households/${householdId}/vacation-rule`, { method: 'PUT', body: JSON.stringify(data) }),
   setSpecialDayRules: (householdId: number, data: SpecialDayRule[]) =>
     request<SpecialDayRule[] | PendingChange>(`/households/${householdId}/special-day-rules`, { method: 'PUT', body: JSON.stringify(data) }),
+
+  listChangeRequests: (householdId: number, status: 'pending' | 'all' = 'pending') =>
+    request<ChangeRequest[]>(`/households/${householdId}/change-requests?status=${status}`),
+  acceptChange: (householdId: number, id: number) =>
+    request<ChangeRequest>(`/households/${householdId}/change-requests/${id}/accept`, { method: 'POST' }),
+  refuseChange: (householdId: number, id: number) =>
+    request<ChangeRequest>(`/households/${householdId}/change-requests/${id}/refuse`, { method: 'POST' }),
+  withdrawChange: (householdId: number, id: number) =>
+    request<ChangeRequest>(`/households/${householdId}/change-requests/${id}/withdraw`, { method: 'POST' }),
+  history: (householdId: number, beforeId?: number) =>
+    request<HistoryEntry[]>(`/households/${householdId}/history?limit=50${beforeId ? `&before_id=${beforeId}` : ''}`),
 
   calendar: (householdId: number, start: string, end: string) =>
     request<CalendarResponse>(`/households/${householdId}/calendar?start=${start}&end=${end}`),
@@ -189,6 +194,10 @@ export const api = {
     request<Expense>(`/households/${householdId}/expenses/${id}/dispute`, { method: 'POST', body: JSON.stringify({ dispute_note }) }),
   resolveExpense: (householdId: number, id: number) =>
     request<Expense>(`/households/${householdId}/expenses/${id}/resolve`, { method: 'POST' }),
+  settleExpense: (householdId: number, id: number) =>
+    request<Expense>(`/households/${householdId}/expenses/${id}/settle`, { method: 'POST' }),
+  unsettleExpense: (householdId: number, id: number) =>
+    request<Expense>(`/households/${householdId}/expenses/${id}/unsettle`, { method: 'POST' }),
   balance: (householdId: number) => request<Balance>(`/households/${householdId}/balance`),
   listSettlements: (householdId: number) =>
     request<Settlement[]>(`/households/${householdId}/settlements`),
@@ -215,11 +224,18 @@ export const api = {
   deleteReply: (householdId: number, replyId: number) =>
     request<void>(`/households/${householdId}/replies/${replyId}`, { method: 'DELETE' }),
 
+  billingStatus: () => request<BillingStatus>('/billing/status'),
+  subscription: () => request<SubscriptionInfo>('/billing/subscription'),
+  cancelSubscription: () => request<{ ok: boolean }>('/billing/cancel', { method: 'POST' }),
+  changePlan: (plan: 'annual' | 'monthly') =>
+    request<{ ok: boolean }>('/billing/change-plan', { method: 'POST', body: JSON.stringify({ plan }) }),
+
   notifications: () => request<Notification[]>('/notifications'),
   markRead: (ids: number[]) => request<{ updated: number }>('/notifications/read', { method: 'POST', body: JSON.stringify({ ids }) }),
   regenerateIcal: () => request<{ ical_token: string }>('/ical/regenerate', { method: 'POST' }),
 }
 
+/** Vrai si la réponse est un changement en attente d'accord (HTTP 202). */
 export function isPendingChange(x: unknown): x is PendingChange {
   return typeof x === 'object' && x !== null && 'change_request' in x
 }

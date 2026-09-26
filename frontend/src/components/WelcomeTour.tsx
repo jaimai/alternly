@@ -1,40 +1,44 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { api } from '../api'
 import { useAuth } from '../auth'
+import Icon from './Icon'
+import type { IconName } from './Icon'
 
 interface Slide {
-  icon: string
+  icon: IconName
   title: string
   body: string
 }
 
-const SLIDES: Slide[] = [
-  {
-    icon: '📅',
-    title: 'Votre calendrier de garde',
-    body: "Votre rythme est posé : chaque jour est coloré selon le parent. Vacances scolaires, fériés et fêtes sont déjà là, des années à l'avance. Cliquez sur un jour pour agir dessus.",
-  },
-  {
-    icon: '↔️',
-    title: 'Proposez un échange',
-    body: "Besoin d'un mercredi ? Cliquez sur le jour et proposez un échange. L'autre parent l'accepte, le refuse ou contre-propose — le calendrier se met à jour tout seul.",
-  },
-  {
-    icon: '💶',
-    title: 'Partagez les dépenses',
-    body: "Onglet Dépenses : notez qui a payé quoi (cantine, santé, activités). Alternly calcule le solde entre vous et gère les remboursements. Fini les calculs de coin de table.",
-  },
-  {
-    icon: '📝',
-    title: 'Le mur de communication',
-    body: "Onglet Mur : partagez une info, une tâche à cocher (avec échéance sur le calendrier) ou une question. Un fil clair, à tête reposée, plutôt que des SMS qui s'égarent.",
-  },
-]
-
 export default function WelcomeTour() {
+  const { t } = useTranslation()
   const { user, setUser } = useAuth()
   const [i, setI] = useState(0)
   const [closing, setClosing] = useState(false)
+
+  const SLIDES: Slide[] = [
+    {
+      icon: 'calendar',
+      title: t('calendar.tour1Title'),
+      body: t('calendar.tour1Body'),
+    },
+    {
+      icon: 'swap',
+      title: t('calendar.tour2Title'),
+      body: t('calendar.tour2Body'),
+    },
+    {
+      icon: 'wallet',
+      title: t('calendar.tour3Title'),
+      body: t('calendar.tour3Body'),
+    },
+    {
+      icon: 'message',
+      title: t('calendar.tour4Title'),
+      body: t('calendar.tour4Body'),
+    },
+  ]
 
   async function finish() {
     setClosing(true)
@@ -54,7 +58,7 @@ export default function WelcomeTour() {
   return (
     <div className="modal-backdrop">
       <div className="modal tour">
-        <div className="tour-icon">{slide.icon}</div>
+        <div className="tour-icon"><Icon name={slide.icon} size={30} /></div>
         <h2>{slide.title}</h2>
         <p>{slide.body}</p>
         <div className="tour-dots">
@@ -64,17 +68,17 @@ export default function WelcomeTour() {
         </div>
         <div className="row" style={{ marginTop: 16, alignItems: 'center' }}>
           <button className="danger-link" onClick={finish} style={{ marginRight: 'auto' }}>
-            Passer
+            {t('calendar.tourSkip')}
           </button>
           {i > 0 && (
             <button className="secondary" onClick={() => setI(i - 1)}>
-              Précédent
+              {t('calendar.tourPrevious')}
             </button>
           )}
           {last ? (
-            <button onClick={finish}>C'est parti !</button>
+            <button onClick={finish}>{t('calendar.tourStart')}</button>
           ) : (
-            <button onClick={() => setI(i + 1)}>Suivant</button>
+            <button onClick={() => setI(i + 1)}>{t('calendar.tourNext')}</button>
           )}
         </div>
       </div>

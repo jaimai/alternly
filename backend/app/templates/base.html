@@ -5,8 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>{% block title %}Alternly{% endblock %}</title>
   <meta name="description" content="{% block description %}Alternly : le calendrier de garde alternée pensé pour la France. Vacances scolaires zones A/B/C, années paires et impaires, dépenses partagées et mur de communication entre les deux parents.{% endblock %}" />
-  {%- set base = site_base(request) %}
-  <link rel="canonical" href="{{ base }}{{ request.url.path }}" />
+  <link rel="canonical" href="{{ site_url }}{{ request.url.path }}" />
 
   <!-- Open Graph / Twitter -->
   <meta property="og:site_name" content="Alternly" />
@@ -14,12 +13,16 @@
   <meta property="og:type" content="website" />
   <meta property="og:title" content="{% block og_title %}{{ self.title() }}{% endblock %}" />
   <meta property="og:description" content="{{ self.description() }}" />
-  <meta property="og:url" content="{{ base }}{{ request.url.path }}" />
-  <meta property="og:image" content="{{ base }}/static/favicon.svg" />
+  <meta property="og:url" content="{{ site_url }}{{ request.url.path }}" />
+  <meta property="og:image" content="{{ site_url }}/static/favicon.svg" />
   <meta name="twitter:card" content="summary" />
   <meta name="twitter:title" content="{{ self.title() }}" />
   <meta name="twitter:description" content="{{ self.description() }}" />
   <meta name="theme-color" content="#1f4d3f" />
+
+  <link rel="alternate" hreflang="fr" href="{{ site_url }}/" />
+  <link rel="alternate" hreflang="en" href="{{ site_url }}/en" />
+  <link rel="alternate" hreflang="x-default" href="{{ site_url }}/" />
 
   {% block head %}{% endblock %}
 
@@ -35,9 +38,9 @@
     "@graph": [
       {
         "@type": "Organization",
-        "@id": "{{ base }}/#organization",
+        "@id": "{{ site_url }}/#organization",
         "name": "Alternly",
-        "url": "{{ base }}/",
+        "url": "{{ site_url }}/",
         "description": "Calendrier de garde alternée et outils de coparentalité pour parents séparés en France.",
         "areaServed": "FR"
       },
@@ -46,14 +49,14 @@
         "name": "Alternly",
         "operatingSystem": "Web",
         "applicationCategory": "LifestyleApplication",
-        "url": "{{ base }}/",
+        "url": "{{ site_url }}/",
         "inLanguage": "fr-FR",
         "description": "Calendrier de garde partagée : rythmes de garde, vacances scolaires A/B/C, alternance années paires/impaires, échanges de jours, dépenses partagées et mur de communication.",
         "offers": {
           "@type": "Offer",
-          "price": "39.00",
+          "price": "69.00",
           "priceCurrency": "EUR",
-          "description": "Abonnement annuel par parent, après 14 jours d'essai gratuit sans carte bancaire."
+          "description": "Calendrier gratuit. Premium (dépenses, mur, e-mails, synchronisation) à 69 € par an et par foyer, ou 8,99 € par mois. Un seul parent paie pour tout le foyer."
         }
       }
     ]
@@ -68,8 +71,9 @@
         <a href="/#fonctionnalites">Fonctionnalités</a>
         <a href="/#tarifs">Tarifs</a>
         <a href="/blog">Guides</a>
-        <a href="{{ app_url }}/login" class="ghost">Se connecter</a>
-        <a href="{{ app_url }}/register" class="cta">Essayer gratuitement</a>
+        <a href="/en">EN</a>
+        <a href="/login?lang=fr" class="ghost">Se connecter</a>
+        <a href="/register?lang=fr" class="cta">Essayer gratuitement</a>
       </div>
     </nav>
   </header>
@@ -80,7 +84,6 @@
     <div class="wrap">
       <div>
         <span class="logo small">altern<span>ly</span></span>
-        {#- TODO(lancement) : vérifier que l'hébergement (Railway, Vercel) est bien en UE avant de conserver cette mention. #}
         <p>Le calendrier de garde partagée, pensé pour la France.<br/>Données hébergées en Union européenne.</p>
       </div>
       <div>
@@ -88,17 +91,13 @@
         <a href="/#fonctionnalites">Fonctionnalités</a>
         <a href="/#tarifs">Tarifs</a>
         <a href="/blog">Guides &amp; articles</a>
-        <a href="{{ app_url }}/register">Créer un compte</a>
+        <a href="/register?lang=fr">Créer un compte</a>
       </div>
       <div>
         <strong>Légal</strong>
-        <a href="/mentions-legales">Mentions légales</a>
-        <a href="/confidentialite">Confidentialité</a>
-        <a href="/cgu">CGU / CGV</a>
-        <a href="mailto:{{ contact_email }}">Contact</a>
-      </div>
-      <div>
-        <strong>Alternly</strong>
+        <a href="/terms">Conditions générales</a>
+        <a href="/privacy">Confidentialité</a>
+        <a href="/refund">Remboursement</a>
         <p class="fine">Alternly organise le quotidien ; il ne remplace ni une décision de justice ni un conseil juridique.</p>
       </div>
     </div>

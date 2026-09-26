@@ -7,6 +7,7 @@ os.environ["SECRET_KEY"] = "test-secret-key-uniquement-pour-les-tests"
 
 import re
 
+import bcrypt
 import httpx
 import pytest
 from fastapi.testclient import TestClient
@@ -89,6 +90,15 @@ def no_rate_limit(monkeypatch):
     limiter.reset()
     yield
     limiter.reset()
+
+
+_gensalt = bcrypt.gensalt
+
+
+@pytest.fixture(autouse=True)
+def fast_bcrypt(monkeypatch):
+    """Coût bcrypt minimal en test (le coût par défaut domine la durée de la suite)."""
+    monkeypatch.setattr(bcrypt, "gensalt", lambda rounds=4, prefix=b"2b": _gensalt(4, prefix))
 
 
 @pytest.fixture

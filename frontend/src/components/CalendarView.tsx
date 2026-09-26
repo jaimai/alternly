@@ -1,9 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import FullCalendar from '@fullcalendar/react'
 import dayGridPlugin from '@fullcalendar/daygrid'
 import interactionPlugin from '@fullcalendar/interaction'
 import frLocale from '@fullcalendar/core/locales/fr'
-import type { EventInput } from '@fullcalendar/core'
+import type { EventContentArg, EventInput } from '@fullcalendar/core'
+import Icon from './Icon'
+import type { IconName } from './Icon'
 import type { CalendarResponse, Member } from '../types'
 import { addDays, isoLocal } from '../dates'
 
@@ -13,16 +16,17 @@ interface Props {
   onRangeChange: (start: string, end: string) => void
 }
 
-const SOURCE_ICONS: Record<string, string> = {
-  exception: '↔',
-  special: '★',
+const SOURCE_ICONS: Record<string, IconName> = {
+  exception: 'swap',
+  special: 'star',
 }
 
+const MOBILE_QUERY = '(max-width: 640px)'
+
 function useIsMobile(): boolean {
-  const query = '(max-width: 640px)'
-  const [mobile, setMobile] = useState(() => window.matchMedia(query).matches)
+  const [mobile, setMobile] = useState(() => window.matchMedia(MOBILE_QUERY).matches)
   useEffect(() => {
-    const mq = window.matchMedia(query)
+    const mq = window.matchMedia(MOBILE_QUERY)
     const onChange = () => setMobile(mq.matches)
     mq.addEventListener('change', onChange)
     return () => mq.removeEventListener('change', onChange)
@@ -30,7 +34,19 @@ function useIsMobile(): boolean {
   return mobile
 }
 
+function renderEvent(arg: EventContentArg) {
+  if (arg.event.display === 'background') return undefined // overlay : rendu par défaut
+  const icon = arg.event.extendedProps.icon as IconName | undefined
+  return (
+    <div className="fc-ic">
+      {icon && <Icon name={icon} size={11} />}
+      <span className="fc-ic-label">{arg.event.title}</span>
+    </div>
+  )
+}
+
 export default function CalendarView({ data, onDayClick, onRangeChange }: Props) {
+  const { t, i18n } = useTranslation()
   const mobile = useIsMobile()
   const memberById = useMemo(() => {
     const map = new Map<number, Member>()
@@ -55,13 +71,14 @@ export default function CalendarView({ data, onDayClick, onRangeChange }: Props)
   // Couleurs des parents injectées en CSS : une tuile teintée par jour, et un
   // dégradé diagonal les jours de passage (ancien parent → nouveau parent).
   const paletteCss = useMemo(() => {
+    const safe = (c: string) => (/^#[0-9a-f]{3,8}$/i.test(c) ? c : '#888888')
     const rules: string[] = []
     for (const m of data.members) {
-      rules.push(`.fc .p-${m.id} .fc-daygrid-day-frame{--tile:${m.color}}`)
+      rules.push(`.fc .p-${m.id} .fc-daygrid-day-frame{--tile:${safe(m.color)}}`)
       for (const o of data.members) {
         if (o.id === m.id) continue
         rules.push(
-          `.fc .p-${m.id}.from-${o.id} .fc-daygrid-day-frame{background:linear-gradient(135deg,color-mix(in srgb,${o.color} 24%,white) 0 50%,color-mix(in srgb,${m.color} 24%,white) 50% 100%)}`,
+          `.fc .p-${m.id}.from-${o.id} .fc-daygrid-day-frame{background:linear-gradient(135deg,color-mix(in srgb,${safe(o.color)} 24%,white) 0 50%,color-mix(in srgb,${safe(m.color)} 24%,white) 50% 100%)}`,
         )
       }
     }
@@ -70,16 +87,25 @@ export default function CalendarView({ data, onDayClick, onRangeChange }: Props)
 
   const events = useMemo<EventInput[]>(() => {
     const evts: EventInput[] = []
-    const label = (title: string, date: string, className: string) =>
-      evts.push({ start: date, allDay: true, title, classNames: ['cal-label', className], extendedProps: { clickDate: date } })
+    const label = (title: string, date: string, className: string, icon?: IconName) =>
+      evts.push({
+        start: date,
+        allDay: true,
+        title,
+        classNames: ['cal-label', className],
+        extendedProps: { clickDate: date, icon },
+      })
 
+    // Échanges / fêtes : pictogramme + parent
     for (const d of data.days) {
       const icon = SOURCE_ICONS[d.source]
-      if (icon) label(`${icon} ${memberById.get(d.parent_id)?.display_name ?? ''}`, d.date, `src-${d.source}`)
+      if (icon) label(memberById.get(d.parent_id)?.display_name ?? '', d.date, `src-${d.source}`, icon)
     }
 
-    for (const h of data.public_holidays) label(h.label, h.date, 'holiday')
+    // Jours fériés
+    for (const h of data.public_holidays) label(h.label, h.date, 'holiday', 'flag')
 
+    // Vacances scolaires (bandeau)
     for (const p of data.school_holidays) {
       evts.push({
         start: p.start,
@@ -87,10 +113,12 @@ export default function CalendarView({ data, onDayClick, onRangeChange }: Props)
         allDay: true,
         title: p.label,
         classNames: ['cal-vacation'],
+        extendedProps: { clickDate: p.start, icon: 'sun' },
       })
     }
 
-    for (const t of data.tasks) label(`✓ ${t.body}`, t.due_date, 'task')
+    // Tâches datées du mur : repère sur le jour d'échéance
+    for (const task of data.tasks) label(task.body, task.due_date, 'task', 'task')
 
     // Propositions d'échange en attente : hachures par-dessus la garde réelle, sans la changer.
     for (const px of data.pending_exchanges) {
@@ -103,11 +131,11 @@ export default function CalendarView({ data, onDayClick, onRangeChange }: Props)
         classNames: ['pending-overlay'],
         color: member?.color ?? '#888888',
       })
-      label(`Proposé · ${member?.display_name ?? ''}`, px.date_start, 'pending')
+      label(t('calendar.proposedLabel', { name: member?.display_name ?? '' }), px.date_start, 'pending', 'clock')
     }
 
     return evts
-  }, [data, memberById])
+  }, [data, memberById, t])
 
   return (
     <div className="calendar-shell">
@@ -115,14 +143,14 @@ export default function CalendarView({ data, onDayClick, onRangeChange }: Props)
       <FullCalendar
         plugins={[dayGridPlugin, interactionPlugin]}
         initialView="dayGridMonth"
-        locale={frLocale}
+        locale={i18n.language.startsWith('fr') ? frLocale : 'en'}
         headerToolbar={
           mobile
             ? { left: 'title', center: '', right: 'today prev,next' }
-            : { left: 'title', center: '', right: 'today prev,next dayGridMonth,dayGridWeek' }
+            : { left: 'title', center: '', right: 'today prevYear,prev,next,nextYear dayGridMonth,dayGridWeek' }
         }
-        buttonText={{ today: "Aujourd'hui", month: 'Mois', week: 'Semaine' }}
         events={events}
+        eventContent={renderEvent}
         dayCellClassNames={(arg) => {
           const c = custody.get(isoLocal(arg.date))
           if (!c) return []

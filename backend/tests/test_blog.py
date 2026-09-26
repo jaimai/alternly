@@ -64,3 +64,33 @@ class TestBlog:
 
     def test_missing_dir_returns_empty(self, tmp_path):
         assert load_articles(tmp_path / "nope") == []
+
+
+def test_blog_en_index_and_post(client):
+    from app.services.blog import CONTENT_DIR_EN, load_articles
+
+    articles = load_articles(CONTENT_DIR_EN)
+    assert articles, "les guides anglais doivent être chargés"
+    r = client.get("/en/blog")
+    assert r.status_code == 200
+    assert f'/en/blog/{articles[0].slug}' in r.text
+    r = client.get(f"/en/blog/{articles[0].slug}")
+    assert r.status_code == 200
+    assert 'lang="en"' in r.text or "en-US" in r.text
+    assert client.get("/en/blog/nope").status_code == 404
+
+
+def test_frontmatter_quotes_stripped():
+    from app.services.blog import load_articles
+
+    for a in load_articles():
+        assert not a.title.startswith('"') and not a.title.endswith('"')
+
+
+def test_sitemap_lists_english_guides(client):
+    from app.services.blog import CONTENT_DIR_EN, load_articles
+
+    xml = client.get("/sitemap.xml").text
+    assert "/en/blog</loc>" in xml
+    for a in load_articles(CONTENT_DIR_EN):
+        assert f"/en/blog/{a.slug}</loc>" in xml

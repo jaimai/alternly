@@ -20,7 +20,7 @@ def hash_password(password: str) -> str:
 def verify_password(password: str, password_hash: str) -> bool:
     try:
         return bcrypt.checkpw(password.encode(), password_hash.encode())
-    except ValueError:  # > 72 octets (bcrypt ≥ 5) ou hash corrompu → simple échec
+    except ValueError:  # > 72 octets (bcrypt ≥ 5) ou hash vide/corrompu → simple échec
         return False
 
 
@@ -47,7 +47,8 @@ def get_current_user(
     except (jwt.PyJWTError, KeyError, ValueError, TypeError):
         raise HTTPException(status_code=401, detail="Jeton invalide ou expiré")
     user = db.get(User, user_id)
-    if user is None or user.deleted_at is not None:
+    # Placeholder (second parent fantôme ou compte supprimé/anonymisé) : jamais connecté.
+    if user is None or user.is_placeholder:
         raise HTTPException(status_code=401, detail="Utilisateur inconnu")
     if token_version != (user.token_version or 0):
         raise HTTPException(status_code=401, detail="Session expirée, reconnectez-vous")

@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { api } from '../api'
-import { fmtTimestamp } from '../dates'
+import { useFormat } from '../format'
 import type { ChangeRequest, Member } from '../types'
 
 // Changements sensibles (règles de garde, enfants, annulation d'échange) en
-// attente de l'accord de l'autre parent.
+// attente de l'accord de l'autre parent. Ne rend rien s'il n'y en a pas (ou si
+// le backend ne connaît pas encore les demandes de changement).
 export default function ChangeRequests({
   householdId,
   myId,
@@ -18,6 +20,8 @@ export default function ChangeRequests({
   refreshKey?: number
   onResolved?: () => void
 }) {
+  const { t } = useTranslation()
+  const { timestamp } = useFormat()
   const [items, setItems] = useState<ChangeRequest[]>([])
   const [busy, setBusy] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -29,7 +33,7 @@ export default function ChangeRequests({
   useEffect(load, [load, refreshKey])
 
   if (items.length === 0) return null
-  const name = (id: number) => members.find((m) => m.id === id)?.display_name ?? "L'autre parent"
+  const name = (id: number) => members.find((m) => m.id === id)?.display_name ?? t('changes.otherParent')
 
   async function act(id: number, fn: (h: number, id: number) => Promise<unknown>) {
     setBusy(id)
@@ -39,37 +43,35 @@ export default function ChangeRequests({
       load()
       onResolved?.()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur')
+      setError(err instanceof Error ? err.message : t('changes.error'))
     } finally {
       setBusy(null)
     }
   }
 
   return (
-    <section className="change-requests">
+    <section className="change-requests" aria-label={t('changes.title')}>
       {items.map((r) => {
         const mine = r.requested_by === myId
         return (
           <article key={r.id} className={`change-request${mine ? '' : ' to-answer'}`}>
             <div className="change-main">
-              <p className="eyebrow">
-                {mine ? 'Votre demande · en attente' : `${name(r.requested_by)} demande votre accord`}
-              </p>
+              <p className="eyebrow">{mine ? t('changes.mine') : t('changes.theirs', { name: name(r.requested_by) })}</p>
               <p className="change-summary">{r.summary}</p>
-              <p className="hint">{fmtTimestamp(r.created_at)}</p>
+              <p className="hint">{timestamp(r.created_at)}</p>
             </div>
             <div className="actions">
               {mine ? (
                 <button className="secondary" disabled={busy === r.id} onClick={() => act(r.id, api.withdrawChange)}>
-                  Retirer
+                  {t('changes.withdraw')}
                 </button>
               ) : (
                 <>
                   <button disabled={busy === r.id} onClick={() => act(r.id, api.acceptChange)}>
-                    Accepter
+                    {t('changes.accept')}
                   </button>
                   <button className="secondary" disabled={busy === r.id} onClick={() => act(r.id, api.refuseChange)}>
-                    Refuser
+                    {t('changes.refuse')}
                   </button>
                 </>
               )}

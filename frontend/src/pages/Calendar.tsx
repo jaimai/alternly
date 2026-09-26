@@ -1,53 +1,61 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { api, ApiError } from '../api'
+import { useTranslation } from 'react-i18next'
+import { api } from '../api'
 import { useAuth } from '../auth'
 import CalendarView from '../components/CalendarView'
 import ChangeRequests from '../components/ChangeRequests'
 import ExceptionDialog from '../components/ExceptionDialog'
+import Icon from '../components/Icon'
+import Spinner from '../components/Spinner'
 import StatusCard from '../components/StatusCard'
 import TopBar from '../components/TopBar'
 import WelcomeTour from '../components/WelcomeTour'
 import { todayIso } from '../dates'
-import type { CalendarResponse, Household, ScheduleException } from '../types'
+import { isSolo } from '../members'
+import type { CalendarResponse, ScheduleException } from '../types'
 
 export default function CalendarPage() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
-  const { user } = useAuth()
-  const [household, setHousehold] = useState<Household | null>(null)
+  const { user, household, householdLoaded } = useAuth()
   const [data, setData] = useState<CalendarResponse | null>(null)
+  const [loading, setLoading] = useState(false)
   const [exceptions, setExceptions] = useState<ScheduleException[]>([])
   const [range, setRange] = useState<{ start: string; end: string } | null>(null)
   const [selectedDay, setSelectedDay] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  // Incrémenté après chaque changement : recharge la carte de statut.
   const [refreshKey, setRefreshKey] = useState(0)
 
   useEffect(() => {
-    api
-      .myHousehold()
-      .then((h) => {
-        if (!h.custody_rule) navigate('/onboarding')
-        else setHousehold(h)
-      })
-      .catch((err) => {
-        if (err instanceof ApiError && err.status === 404) navigate('/onboarding')
-        else setError(err instanceof Error ? err.message : 'Erreur')
-      })
-  }, [navigate])
+    if (householdLoaded && (!household || !household.custody_rule)) navigate('/onboarding')
+  }, [householdLoaded, household, navigate])
 
   const loadCalendar = useCallback(() => {
     if (!household || !range) return
+    setLoading(true)
     api
       .calendar(household.id, range.start, range.end)
-      .then(setData)
-      .catch((err) => setError(err instanceof Error ? err.message : 'Erreur'))
+      .then((d) => {
+        setData(d)
+        setError(null)
+      })
+      .catch((err) => setError(err instanceof Error ? err.message : t('calendar.genericError')))
+      .finally(() => setLoading(false))
     api.listExceptions(household.id).then(setExceptions).catch(() => {})
-  }, [household, range])
+  }, [household, range, t])
 
   useEffect(loadCalendar, [loadCalendar])
 
+  const onChanged = useCallback(() => {
+    loadCalendar()
+    setRefreshKey((k) => k + 1)
+  }, [loadCalendar])
+
   // Propositions en attente qui expirent demain (date de début = demain).
   const expiringTomorrow = exceptions.filter((e) => e.status === 'pending' && e.date_start === todayIso(1))
+  const solo = household ? isSolo(household.members) : false
 
   return (
     <>
@@ -64,57 +72,63 @@ export default function CalendarPage() {
             onOpenDay={setSelectedDay}
           />
         )}
-        {household && user && household.members.length > 1 && (
+        {household && user && !solo && (
           <ChangeRequests
             householdId={household.id}
             myId={user.id}
             members={household.members}
             refreshKey={refreshKey}
-            onResolved={() => {
-              loadCalendar()
-              setRefreshKey((k) => k + 1)
-            }}
+            onResolved={onChanged}
           />
         )}
-        {household?.members.length === 1 && (
+        {solo && (
           <div className="callout">
             <div>
-              <strong>Vous êtes seul·e sur ce calendrier.</strong>
-              <p>Invitez l'autre parent : il verra le même planning et pourra proposer des échanges.</p>
+              <strong>{t('calendar.soloTitle')}</strong>
+              <p>{t('calendar.soloBody')}</p>
             </div>
-            <Link className="button" to="/settings#parents">
-              Inviter l'autre parent
+            <Link className="button" to="/settings">
+              {t('calendar.soloCta')}
             </Link>
           </div>
         )}
         {expiringTomorrow.length > 0 && (
-          <div className="info-banner">
-            {expiringTomorrow.length === 1 ? 'Une proposition expire demain' : `${expiringTomorrow.length} propositions expirent demain`}{' '}
-            si elles ne sont pas traitées.
+          <div className="info-banner banner-ic">
+            <Icon name="alert" size={16} />
+            <span>
+              {expiringTomorrow.length === 1
+                ? t('calendar.expiringTomorrowOne')
+                : t('calendar.expiringTomorrowMany', { count: expiringTomorrow.length })}{' '}
+              {t('calendar.expiringTomorrowTail')}
+            </span>
           </div>
         )}
-        {data && !data.school_holidays_loaded && (
-          <div className="info-banner">
-            Les vacances scolaires n'ont pas pu être chargées : le calendrier affiche pour l'instant le rythme de base.
-          </div>
-        )}
+        {data && !data.school_holidays_loaded && <div className="info-banner">{t('calendar.schoolHolidaysError')}</div>}
         {data && (
           <div className="legend">
             {data.members.map((m) => (
               <span key={m.id} className="legend-item">
                 <span className="dot" style={{ background: m.color }} />
-                {m.id === user?.id ? `${m.display_name} (vous)` : m.display_name}
+                {m.id === user?.id ? t('calendar.legendYou', { name: m.display_name }) : m.display_name}
               </span>
             ))}
             <span className="legend-item">
               <span className="dot handover-dot" />
-              Jour de passage
+              {t('calendar.legendHandover')}
             </span>
             <span className="legend-item">
               <span className="dot pending-dot" />
-              Échange proposé
+              {t('calendar.legendProposedExchange')}
             </span>
-            <span className="legend-hint">Touchez un jour pour proposer un échange</span>
+            <span className="legend-icons">
+              <span><Icon name="sun" size={13} /> {t('calendar.legendHolidays')}</span>
+              <span><Icon name="flag" size={13} /> {t('calendar.legendPublicHoliday')}</span>
+              <span><Icon name="swap" size={13} /> {t('calendar.legendExchange')}</span>
+              <span><Icon name="star" size={13} /> {t('calendar.legendSpecial')}</span>
+            </span>
+            <span className="legend-hint">
+              {loading ? <Spinner inline /> : t('calendar.legendClickHint')}
+            </span>
           </div>
         )}
         {household && (
@@ -147,10 +161,7 @@ export default function CalendarPage() {
           existing={exceptions}
           currentParentId={data?.days.find((d) => d.date === selectedDay)?.parent_id}
           onClose={() => setSelectedDay(null)}
-          onChanged={() => {
-            loadCalendar()
-            setRefreshKey((k) => k + 1)
-          }}
+          onChanged={onChanged}
         />
       )}
     </>

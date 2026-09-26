@@ -1,15 +1,14 @@
 from fastapi import APIRouter, Depends, HTTPException
-from fastapi.encoders import jsonable_encoder
-from fastapi.responses import JSONResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ..db import get_db
 from ..deps import get_membership
 from ..models import Child, HouseholdMember
-from ..schemas import ChangeRequestOut, ChildIn, ChildOut
+from ..schemas import ChildIn, ChildOut
 from ..services import audit
 from ..services import change_requests as cr_service
+from ..services import rules as rules_service
 
 router = APIRouter(prefix="/api/households/{household_id}/children", tags=["children"])
 
@@ -26,7 +25,7 @@ def add_child(data: ChildIn, member: HouseholdMember = Depends(get_membership), 
     db.flush()
     audit.record(
         db, member.household_id, member.user_id, "child.create", "child", child.id,
-        f"a ajouté l'enfant {child.first_name}", {"after": {"first_name": child.first_name, "birthdate": child.birthdate}},
+        {"after": rules_service.child_snapshot(child)},
     )
     db.commit()
     db.refresh(child)
@@ -48,13 +47,12 @@ def update_child(
     db: Session = Depends(get_db),
 ):
     child = _get_child(db, member, child_id)
-    before = {"first_name": child.first_name, "birthdate": child.birthdate}
+    before = rules_service.child_snapshot(child)
     after = {"first_name": data.first_name, "birthdate": data.birthdate}
     if before != after:
-        label = child.first_name if child.first_name == data.first_name else f"{child.first_name} → {data.first_name}"
         audit.record(
             db, member.household_id, member.user_id, "child.update", "child", child.id,
-            f"a modifié l'enfant {label}", {"before": before, "after": after},
+            {"before": before, "after": after},
         )
     child.first_name = data.first_name
     child.birthdate = data.birthdate
@@ -72,11 +70,9 @@ def delete_child(
     child = _get_child(db, member, child_id)
     if cr_service.needs_consent(db, member):
         cr = cr_service.create_request(
-            db, member, "delete_child", {"child_id": child.id}, f"Retirer l'enfant {child.first_name}"
+            db, member, "delete_child", {"child_id": child.id}, {"first_name": child.first_name}
         )
         db.commit()
-        return JSONResponse(
-            status_code=202, content=jsonable_encoder({"change_request": ChangeRequestOut.model_validate(cr)})
-        )
-    cr_service.delete_child(db, child, member.user_id)
+        return cr_service.pending_response(db, member, cr)
+    rules_service.delete_child(db, child, member.user_id)
     db.commit()

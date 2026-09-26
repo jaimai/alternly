@@ -5,7 +5,7 @@ import httpx
 import pytest
 
 from app.services import email as email_service
-from tests.test_rules import setup_family
+from tests.test_rules import premium_family
 
 
 @pytest.fixture
@@ -60,8 +60,8 @@ class TestTemplateEscaping:
 
 
 class TestProposalEmail:
-    def test_proposed_emails_recipient(self, client, auth_headers, sent):
-        headers1, user1, headers2, user2, h = setup_family(client, auth_headers)
+    def test_proposed_emails_recipient(self, client, auth_headers, db_session, sent):
+        headers1, user1, headers2, user2, h = premium_family(client, auth_headers, db_session)
         client.post(
             f"/api/households/{h['id']}/exceptions",
             json={"date_start": "2099-03-04", "date_end": "2099-03-04", "parent_id": user2["id"]},
@@ -70,8 +70,8 @@ class TestProposalEmail:
         assert len(sent) == 1
         assert sent[0]["to"] == "parent2@test.fr"
 
-    def test_no_email_when_opted_out(self, client, auth_headers, sent):
-        headers1, user1, headers2, user2, h = setup_family(client, auth_headers)
+    def test_no_email_when_opted_out(self, client, auth_headers, db_session, sent):
+        headers1, user1, headers2, user2, h = premium_family(client, auth_headers, db_session)
         # parent2 coupe ses e-mails
         r = client.patch("/api/auth/me", json={"email_opt_in": False}, headers=headers2)
         assert r.status_code == 200
@@ -87,8 +87,8 @@ class TestProposalEmail:
         headers, user = auth_headers()
         assert client.get("/api/auth/me", headers=headers).json()["email_opt_in"] is True
 
-    def test_accept_does_not_email(self, client, auth_headers, sent):
-        headers1, user1, headers2, user2, h = setup_family(client, auth_headers)
+    def test_accept_does_not_email(self, client, auth_headers, db_session, sent):
+        headers1, user1, headers2, user2, h = premium_family(client, auth_headers, db_session)
         eid = client.post(
             f"/api/households/{h['id']}/exceptions",
             json={"date_start": "2099-03-04", "date_end": "2099-03-04", "parent_id": user2["id"]},
@@ -108,9 +108,9 @@ class TestCronReminders:
             headers=headers,
         ).json()["id"]
 
-    def test_reminder_sent_once(self, client, auth_headers, sent, monkeypatch):
+    def test_reminder_sent_once(self, client, auth_headers, db_session, sent, monkeypatch):
         monkeypatch.setattr(email_service.settings, "cron_secret", "s3cr3t")
-        headers1, user1, headers2, user2, h = setup_family(client, auth_headers)
+        headers1, user1, headers2, user2, h = premium_family(client, auth_headers, db_session)
         self._propose_tomorrow(client, headers1, h, user2["id"])
         sent.clear()
         r = client.post("/api/cron/exchange-reminders", headers={"X-Cron-Key": "s3cr3t"})
@@ -123,14 +123,14 @@ class TestCronReminders:
         assert r2.json()["sent"] == 0
         assert sent == []
 
-    def test_reminder_wrong_key_401(self, client, auth_headers, monkeypatch):
+    def test_reminder_wrong_key_401(self, client, auth_headers, db_session, monkeypatch):
         monkeypatch.setattr(email_service.settings, "cron_secret", "s3cr3t")
         r = client.post("/api/cron/exchange-reminders", headers={"X-Cron-Key": "mauvais"})
         assert r.status_code == 401
 
-    def test_reminder_skips_opted_out(self, client, auth_headers, sent, monkeypatch):
+    def test_reminder_skips_opted_out(self, client, auth_headers, db_session, sent, monkeypatch):
         monkeypatch.setattr(email_service.settings, "cron_secret", "s3cr3t")
-        headers1, user1, headers2, user2, h = setup_family(client, auth_headers)
+        headers1, user1, headers2, user2, h = premium_family(client, auth_headers, db_session)
         client.patch("/api/auth/me", json={"email_opt_in": False}, headers=headers2)
         self._propose_tomorrow(client, headers1, h, user2["id"])
         sent.clear()
@@ -144,3 +144,45 @@ class TestOnboardingFlag:
         assert client.get("/api/auth/me", headers=headers).json()["onboarding_seen"] is False
         r = client.patch("/api/auth/me", json={"onboarding_seen": True}, headers=headers)
         assert r.status_code == 200 and r.json()["onboarding_seen"] is True
+
+
+class TestEmailHardening:
+    def test_mask_email(self):
+        assert email_service.mask_email("jean.dupont@x.fr") == "j***@x.fr"
+        assert email_service.mask_email("pas-une-adresse") == "***"
+
+    def test_logs_mask_address(self, monkeypatch, caplog):
+        monkeypatch.setattr(email_service.settings, "resend_api_key", "")
+        with caplog.at_level("INFO", logger="coparent.email"):
+            email_service.send_email("jean.dupont@x.fr", "Sujet", "<p/>")
+        assert "jean.dupont" not in caplog.text and "j***@x.fr" in caplog.text
+
+    def test_proposal_email_sent_after_commit(self, client, auth_headers, db_session, monkeypatch):
+        from sqlalchemy import select
+
+        from app.models import ScheduleException
+
+        headers1, user1, headers2, user2, h = premium_family(client, auth_headers, db_session)
+        seen = []
+        monkeypatch.setattr(
+            email_service,
+            "send_email",
+            lambda to, subject, html: seen.append(db_session.scalars(select(ScheduleException)).all()) or True,
+        )
+        client.post(
+            f"/api/households/{h['id']}/exceptions",
+            json={"date_start": "2099-03-04", "date_end": "2099-03-04", "parent_id": user2["id"]},
+            headers=headers1,
+        )
+        assert len(seen) == 1 and len(seen[0]) == 1  # proposition déjà enregistrée à l'envoi
+
+    def test_proposal_email_in_recipient_locale(self, client, auth_headers, db_session, sent):
+        headers1, user1, headers2, user2, h = premium_family(client, auth_headers, db_session)
+        client.patch("/api/auth/me", json={"locale": "en"}, headers=headers2)
+        client.post(
+            f"/api/households/{h['id']}/exceptions",
+            json={"date_start": "2099-03-04", "date_end": "2099-03-05", "parent_id": user2["id"]},
+            headers=headers1,
+        )
+        assert sent[0]["subject"] == "New custody swap proposal"
+        assert "2099-03-04 to 2099-03-05" in sent[0]["html"]

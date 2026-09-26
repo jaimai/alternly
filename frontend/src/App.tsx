@@ -1,24 +1,31 @@
 import { lazy, Suspense } from 'react'
-import { Route, Routes } from 'react-router-dom'
+import { Navigate, Route, Routes } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { Analytics } from '@vercel/analytics/react'
 import { RequireAuth } from './auth'
-const BillingPage = lazy(() => import('./pages/Billing'))
+import PremiumGate from './components/PremiumGate'
+import Spinner from './components/Spinner'
+
+// Routes chargées à la demande : le bundle initial ne contient plus FullCalendar,
+// les pages premium ni les réglages.
 const CalendarPage = lazy(() => import('./pages/Calendar'))
 const ExpensesPage = lazy(() => import('./pages/Expenses'))
 const ForgotPasswordPage = lazy(() => import('./pages/ForgotPassword'))
-const ResetPasswordPage = lazy(() => import('./pages/ResetPassword'))
 const HistoryPage = lazy(() => import('./pages/History'))
 const JoinPage = lazy(() => import('./pages/Join'))
 const LoginPage = lazy(() => import('./pages/Login'))
 const NotFoundPage = lazy(() => import('./pages/NotFound'))
 const OnboardingPage = lazy(() => import('./pages/Onboarding'))
 const RegisterPage = lazy(() => import('./pages/Register'))
+const ResetPasswordPage = lazy(() => import('./pages/ResetPassword'))
 const SettingsPage = lazy(() => import('./pages/Settings'))
 const WallPage = lazy(() => import('./pages/Wall'))
 
 export default function App() {
+  const { t } = useTranslation()
   return (
-    <Suspense fallback={<div className="page-loading">Chargement…</div>}>
+    <>
+    <Suspense fallback={<Spinner />}>
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
@@ -42,38 +49,6 @@ export default function App() {
         }
       />
       <Route
-        path="/expenses"
-        element={
-          <RequireAuth>
-            <ExpensesPage />
-          </RequireAuth>
-        }
-      />
-      <Route
-        path="/wall"
-        element={
-          <RequireAuth>
-            <WallPage />
-          </RequireAuth>
-        }
-      />
-      <Route
-        path="/"
-        element={
-          <RequireAuth>
-            <CalendarPage />
-          </RequireAuth>
-        }
-      />
-      <Route
-        path="/billing"
-        element={
-          <RequireAuth>
-            <BillingPage />
-          </RequireAuth>
-        }
-      />
-      <Route
         path="/history"
         element={
           <RequireAuth>
@@ -81,9 +56,41 @@ export default function App() {
           </RequireAuth>
         }
       />
+      <Route
+        path="/expenses"
+        element={
+          <RequireAuth>
+            <PremiumGate feature={t('paywall.featureExpenses')}>
+              <ExpensesPage />
+            </PremiumGate>
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/wall"
+        element={
+          <RequireAuth>
+            <PremiumGate feature={t('paywall.featureWall')}>
+              <WallPage />
+            </PremiumGate>
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/app"
+        element={
+          <RequireAuth>
+            <CalendarPage />
+          </RequireAuth>
+        }
+      />
+      {/* `/` = landing (servie par le backend, proxifiée par Vercel). En dev ou en
+          navigation directe côté SPA, on renvoie vers l'app. */}
+      <Route path="/" element={<Navigate to="/app" replace />} />
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
-    <Analytics />
     </Suspense>
+    <Analytics />
+    </>
   )
 }

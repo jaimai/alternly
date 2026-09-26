@@ -6,8 +6,16 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ..deps import household_members
-from ..models import CustodyRule, Household, ScheduleException, SpecialDayRule, User, VacationRule
-from . import public_holidays, school_holidays
+from ..models import (
+    CustodyRule,
+    Household,
+    ScheduleException,
+    SchoolVacationPeriod,
+    SpecialDayRule,
+    User,
+    VacationRule,
+)
+from . import holidays_us, public_holidays, school_holidays
 from .custody_engine import (
     DayAssignment,
     EngineException,
@@ -43,6 +51,45 @@ def _auto_special_parent(kind: str, members: list, users: dict[int, User], fallb
     if kind == "fathers_day":
         return by_role.get("parent2", by_role.get("parent1", fallback_id))
     return fallback_id
+
+
+def _public_holidays(db: Session, household: Household, start: date, end: date) -> tuple[dict[date, str], bool]:
+    """Fériés selon le pays. US : calcul hors-ligne (toujours dispo).
+    FR : API gouvernementale (peut échouer → non chargé)."""
+    if household.country == "US":
+        h: dict[date, str] = {}
+        for year in range(start.year, end.year + 1):
+            h.update(holidays_us.federal_holidays(year))
+        return h, True
+    holidays: dict[date, str] = {}
+    try:
+        for year in range(start.year, end.year + 1):
+            holidays.update(public_holidays.get(db, year))
+        return holidays, True
+    except PublicDataUnavailable:
+        return holidays, False
+
+
+def _school_periods(db: Session, household: Household, start: date, end: date) -> tuple[list[Period], bool]:
+    """Vacances scolaires selon le pays. US : saisie manuelle (table dédiée).
+    FR : API par zone A/B/C."""
+    if household.country == "US":
+        rows = db.scalars(
+            select(SchoolVacationPeriod).where(SchoolVacationPeriod.household_id == household.id)
+        ).all()
+        periods = [
+            Period(label=r.label, start=r.start, end=r.end)
+            for r in rows
+            if r.end >= start and r.start <= end
+        ]
+        return sorted(periods, key=lambda p: p.start), True
+    try:
+        periods = school_holidays.get(
+            db, household.school_zone, school_holidays.school_years_for_range(start, end)
+        )
+        return periods, True
+    except PublicDataUnavailable:
+        return [], False
 
 
 def build_calendar(db: Session, household: Household, start: date, end: date) -> CalendarData:
@@ -108,21 +155,9 @@ def build_calendar(db: Session, household: Household, start: date, end: date) ->
         and e.date_start <= end and e.date_end >= start
     ]
 
-    holidays: dict[date, str] = {}
-    periods: list[Period] = []
-    loaded = True
-    try:
-        for year in range(start.year, end.year + 1):
-            holidays.update(public_holidays.get(db, year))
-    except PublicDataUnavailable:
-        loaded = False
-    try:
-        periods = school_holidays.get(
-            db, household.school_zone, school_holidays.school_years_for_range(start, end)
-        )
-    except PublicDataUnavailable:
-        loaded = False
-        periods = []
+    holidays, holidays_ok = _public_holidays(db, household, start, end)
+    periods, periods_ok = _school_periods(db, household, start, end)
+    loaded = holidays_ok and periods_ok
 
     days = resolve_calendar(
         rule=engine_rule,
@@ -132,6 +167,7 @@ def build_calendar(db: Session, household: Household, start: date, end: date) ->
         school_periods=periods,
         start=start,
         end=end,
+        country=household.country,
     )
     return CalendarData(
         days=days,

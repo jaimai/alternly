@@ -1,29 +1,43 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "framework": "vite",
-  "buildCommand": "npm run build",
-  "outputDirectory": "dist",
-  "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
-  ],
-  "headers": [
+  "routes": [
     {
-      "source": "/(.*)",
-      "headers": [
-        {
-          "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src 'self' https:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'"
-        },
-        { "key": "Strict-Transport-Security", "value": "max-age=31536000; includeSubDomains" },
-        { "key": "X-Content-Type-Options", "value": "nosniff" },
-        { "key": "X-Frame-Options", "value": "DENY" },
-        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
-        { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=(), payment=()" }
-      ]
+      "src": "/(.*)",
+      "headers": {
+        "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+        "X-Content-Type-Options": "nosniff",
+        "X-Frame-Options": "DENY",
+        "Referrer-Policy": "strict-origin-when-cross-origin",
+        "Permissions-Policy": "camera=(), microphone=(), geolocation=()"
+      }, "continue": true
     },
     {
-      "source": "/assets/(.*)",
-      "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }]
+      "src": "/assets/(.*)",
+      "headers": {
+        "Cache-Control": "public, max-age=31536000, immutable"
+      }, "continue": true
+    },
+    { "src": "/", "dest": "https://web-production-d1aa3.up.railway.app/" },
+    { "src": "/en", "dest": "https://web-production-d1aa3.up.railway.app/en" },
+    { "src": "/en/blog", "dest": "https://web-production-d1aa3.up.railway.app/en/blog" },
+    { "src": "/en/blog/(.*)", "dest": "https://web-production-d1aa3.up.railway.app/en/blog/$1" },
+    { "src": "/blog", "dest": "https://web-production-d1aa3.up.railway.app/blog" },
+    { "src": "/blog/(.*)", "dest": "https://web-production-d1aa3.up.railway.app/blog/$1" },
+    { "src": "/terms", "dest": "https://web-production-d1aa3.up.railway.app/terms" },
+    { "src": "/privacy", "dest": "https://web-production-d1aa3.up.railway.app/privacy" },
+    { "src": "/refund", "dest": "https://web-production-d1aa3.up.railway.app/refund" },
+    { "src": "/en/(terms|privacy|refund)", "dest": "https://web-production-d1aa3.up.railway.app/en/$1" },
+    { "src": "/robots.txt", "dest": "https://web-production-d1aa3.up.railway.app/robots.txt" },
+    { "src": "/sitemap.xml", "dest": "https://web-production-d1aa3.up.railway.app/sitemap.xml" },
+    { "src": "/llms.txt", "dest": "https://web-production-d1aa3.up.railway.app/llms.txt" },
+    { "src": "/static/(.*)", "dest": "https://web-production-d1aa3.up.railway.app/static/$1" },
+    { "src": "/ical/(.*)", "dest": "https://web-production-d1aa3.up.railway.app/api/ical/$1" },
+    { "handle": "filesystem" },
+    {
+      "src": "/(.*)",
+      "headers": {
+        "Content-Security-Policy": "default-src 'self'; script-src 'self' https://cdn.paddle.com https://*.paddle.com; style-src 'self' 'unsafe-inline' https://cdn.paddle.com; font-src 'self' data:; img-src 'self' data: https://*.paddle.com; connect-src 'self' https:; frame-src https://*.paddle.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'"
+      }, "dest": "/index.html"
     }
   ]
 }

@@ -1,3 +1,5 @@
+export type Locale = 'fr' | 'en'
+
 export interface User {
   id: number
   email: string
@@ -5,6 +7,24 @@ export interface User {
   color: string
   email_opt_in: boolean
   onboarding_seen: boolean
+  locale: Locale
+}
+
+export interface BillingStatus {
+  status: 'trialing' | 'active' | 'past_due' | 'canceled' | 'none'
+  access: boolean
+  trial_days_left: number | null
+  trial_ends_at: string | null
+  subscription_ends_at: string | null
+}
+
+export interface SubscriptionInfo {
+  manageable: boolean
+  is_payer?: boolean
+  status?: string
+  plan?: 'annual' | 'monthly' | null
+  next_billed_at?: string | null
+  scheduled_change?: { action: string; effective_at: string } | null
 }
 
 export interface Member {
@@ -12,6 +32,7 @@ export interface Member {
   display_name: string
   color: string
   role: 'parent1' | 'parent2'
+  is_placeholder: boolean
 }
 
 export interface Child {
@@ -36,22 +57,45 @@ export interface VacationRule {
   even_year_first_half_parent_id: number | null
 }
 
+export type SpecialDayKind =
+  | 'christmas_eve'
+  | 'christmas_day'
+  | 'mothers_day'
+  | 'fathers_day'
+  | 'thanksgiving'
+  | 'halloween'
+  | 'independence_day'
+  | 'new_years_day'
+
 export interface SpecialDayRule {
-  kind: 'christmas_eve' | 'christmas_day' | 'mothers_day' | 'fathers_day'
+  kind: SpecialDayKind
   parent_mode: 'auto' | 'fixed' | 'alternate'
   parent_id: number | null
   enabled: boolean
+}
+
+export type Country = 'FR' | 'US'
+export type Currency = 'EUR' | 'USD'
+
+export interface SchoolVacation {
+  id: number
+  label: string
+  start: string
+  end: string
 }
 
 export interface Household {
   id: number
   name: string
   school_zone: 'A' | 'B' | 'C'
+  country: Country
+  currency: Currency
   members: Member[]
   children: Child[]
   custody_rule: CustodyRule | null
   vacation_rule: VacationRule | null
   special_day_rules: SpecialDayRule[]
+  school_vacations: SchoolVacation[]
   my_role: string | null
 }
 
@@ -151,6 +195,7 @@ export interface Expense {
   payer_percent: number
   status: 'active' | 'disputed'
   dispute_note: string
+  settled_at: string | null
   created_by: number
 }
 
@@ -169,20 +214,8 @@ export interface Balance {
   debtor_id: number | null
   creditor_id: number | null
   amount_cents: number
-}
-
-export interface BillingStatus {
-  /** false : paiement non configuré (bêta gratuite), accès complet pour tous */
-  enabled: boolean
-  status: 'trialing' | 'active' | 'past_due' | 'canceled' | 'expired'
-  has_access: boolean
-  /** true : l'essai est fini sans abonnement, l'app passe en lecture seule */
-  read_only: boolean
-  trial_ends_at: string | null
-  current_period_end: string | null
-  cancel_at_period_end: boolean
-  days_left: number | null
-  price_label: string
+  owed_to_me_cents: number
+  i_owe_cents: number
 }
 
 export type ChangeKind = 'custody_rule' | 'vacation_rule' | 'special_day_rules' | 'delete_child' | 'cancel_exchange'
@@ -205,6 +238,7 @@ export interface PendingChange {
   change_request: ChangeRequest
 }
 
+/** Entrée du journal (immuable) des modifications du foyer. */
 export interface HistoryEntry {
   id: number
   actor_id: number | null

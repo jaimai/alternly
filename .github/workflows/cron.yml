@@ -2,6 +2,7 @@
 # Secrets du dépôt requis :
 #   CRON_URL    = https://<api>/api/cron/exchange-reminders
 #   CRON_SECRET = même valeur que la variable CRON_SECRET côté Railway
+# (en-tête X-Cron-Key attendu par backend/app/routers/cron.py)
 name: Cron
 
 on:

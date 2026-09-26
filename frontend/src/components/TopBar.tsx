@@ -1,78 +1,76 @@
 import { Link, NavLink } from 'react-router-dom'
-import BillingBanner from './BillingBanner'
+import { useTranslation } from 'react-i18next'
+import { useAuth } from '../auth'
+import { openCheckout } from '../billing'
+import Icon from './Icon'
+import type { IconName } from './Icon'
 import NotificationBell from './NotificationBell'
 
 const navClass = ({ isActive }: { isActive: boolean }) => (isActive ? 'active' : undefined)
 
-const ICONS = {
-  calendar: (
-    <>
-      <rect x="3" y="4.5" width="18" height="16.5" rx="3" />
-      <path d="M3 9.5h18M8 2.5v4M16 2.5v4" />
-    </>
-  ),
-  expenses: (
-    <>
-      <rect x="2.5" y="6" width="19" height="13" rx="2.5" />
-      <path d="M2.5 10.5h19M6.5 15h4" />
-    </>
-  ),
-  wall: <path d="M20 15.5a2 2 0 0 1-2 2H8l-4.5 4v-15a2 2 0 0 1 2-2H18a2 2 0 0 1 2 2z" />,
-  settings: (
-    <>
-      <circle cx="12" cy="12" r="3" />
-      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
-    </>
-  ),
-}
-
-export function Icon({ name, size = 20 }: { name: keyof typeof ICONS; size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      {ICONS[name]}
-    </svg>
-  )
-}
-
-const TABS = [
-  { to: '/', label: 'Calendrier', icon: 'calendar', end: true },
-  { to: '/expenses', label: 'Dépenses', icon: 'expenses', end: false },
-  { to: '/wall', label: 'Mur', icon: 'wall', end: false },
-] as const
+const TABS: { to: string; labelKey: string; icon: IconName; end: boolean; premium: boolean }[] = [
+  { to: '/app', labelKey: 'common.navCalendar', icon: 'calendar', end: true, premium: false },
+  { to: '/expenses', labelKey: 'common.navExpenses', icon: 'wallet', end: false, premium: true },
+  { to: '/wall', labelKey: 'common.navWall', icon: 'message', end: false, premium: true },
+]
 
 export default function TopBar({ householdName }: { householdName?: string }) {
+  const { t } = useTranslation()
+  const { user, billing, refreshBilling } = useAuth()
+  const premium = billing?.access === true
+  const locked = billing !== null && !premium
   return (
     <>
       <header className="topbar">
-        <Link to="/" className="wordmark small" style={{ textDecoration: 'none' }} title={householdName}>
+        <Link to="/app" className="wordmark small" style={{ textDecoration: 'none' }} title={householdName}>
           altern<span>ly</span>
         </Link>
-        <nav className="topnav" aria-label="Navigation principale">
-          {TABS.map((t) => (
-            <NavLink key={t.to} to={t.to} end={t.end} className={navClass}>
-              {t.label}
+        <nav className="topnav" aria-label={t('common.mainNav')}>
+          {TABS.map((tab) => (
+            <NavLink key={tab.to} to={tab.to} end={tab.end} className={navClass}>
+              {t(tab.labelKey)}
+              {locked && tab.premium && <Icon name="lock" size={12} style={{ marginLeft: 5, verticalAlign: -1 }} />}
             </NavLink>
           ))}
         </nav>
         <div className="topbar-actions">
+          {locked && user && (
+            <button
+              className="trial-chip"
+              onClick={() => openCheckout(user, refreshBilling)}
+              title={t('common.upgradeTitle')}
+              aria-label={t('common.upgradeTitle')}
+            >
+              <Icon name="star" size={13} />
+              <span className="chip-long">{t('common.freemiumChip')}</span>
+              <span className="chip-short">{t('common.freemiumChipShort')}</span>
+            </button>
+          )}
           <NotificationBell />
-          <NavLink to="/settings" title="Réglages" className={({ isActive }) => `icon-link${isActive ? ' active' : ''}`} aria-label="Réglages">
-            <Icon name="settings" />
+          <NavLink
+            to="/settings"
+            title={t('common.settings')}
+            className={({ isActive }) => `icon-link${isActive ? ' active' : ''}`}
+            aria-label={t('common.settings')}
+          >
+            <Icon name="settings" size={20} />
           </NavLink>
         </div>
       </header>
-      <BillingBanner />
       {/* Mobile : barre d'onglets en bas, à portée de pouce */}
-      <nav className="tabbar" aria-label="Navigation principale">
-        {TABS.map((t) => (
-          <NavLink key={t.to} to={t.to} end={t.end} className={navClass}>
-            <Icon name={t.icon} size={22} />
-            <span>{t.label}</span>
+      <nav className="tabbar" aria-label={t('common.mainNav')}>
+        {TABS.map((tab) => (
+          <NavLink key={tab.to} to={tab.to} end={tab.end} className={navClass}>
+            <Icon name={tab.icon} size={22} />
+            <span>
+              {t(tab.labelKey)}
+              {locked && tab.premium && <Icon name="lock" size={10} style={{ marginLeft: 3, verticalAlign: -1 }} />}
+            </span>
           </NavLink>
         ))}
         <NavLink to="/settings" className={navClass}>
           <Icon name="settings" size={22} />
-          <span>Réglages</span>
+          <span>{t('common.settings')}</span>
         </NavLink>
       </nav>
     </>

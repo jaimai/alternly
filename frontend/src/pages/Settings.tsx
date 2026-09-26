@@ -1,55 +1,54 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { Link } from 'react-router-dom'
-import { api, ApiError, API_BASE, isPendingChange } from '../api'
-import { useAuth } from '../auth'
+import { useTranslation } from 'react-i18next'
+import { Link, useNavigate } from 'react-router-dom'
+import { QRCodeSVG } from 'qrcode.react'
+import { api, isPendingChange } from '../api'
+import { useAuth, usePremium } from '../auth'
+import { openCheckout } from '../billing'
 import AccountCard from '../components/AccountCard'
 import ChangeRequests from '../components/ChangeRequests'
-import ColorPicker, { DEFAULT_PARENT_COLOR } from '../components/ColorPicker'
-import { useConfirm } from '../components/Modal'
+import ColorPicker from '../components/ColorPicker'
+import Icon from '../components/Icon'
 import RuleForm from '../components/RuleForm'
+import Spinner from '../components/Spinner'
 import type { RuleFormValue } from '../components/RuleForm'
 import TopBar from '../components/TopBar'
-import type { Household, SpecialDayRule } from '../types'
+import { useConfirm } from '../components/useConfirm'
+import { useFormat } from '../format'
+import { isSolo } from '../members'
+import type { Household, SpecialDayRule, SubscriptionInfo } from '../types'
 
-const SPECIAL_LABELS: Record<SpecialDayRule['kind'], string> = {
-  mothers_day: 'Fête des mères',
-  fathers_day: 'Fête des pères',
-  christmas_eve: 'Réveillon de Noël (24 déc.)',
-  christmas_day: 'Jour de Noël (25 déc.)',
+const SPECIAL_LABEL_KEYS: Record<SpecialDayRule['kind'], string> = {
+  mothers_day: 'settings.mothersDay',
+  fathers_day: 'settings.fathersDay',
+  christmas_eve: 'settings.christmasEve',
+  christmas_day: 'settings.christmasDay',
+  thanksgiving: 'settings.thanksgiving',
+  halloween: 'settings.halloween',
+  independence_day: 'settings.independenceDay',
+  new_years_day: 'settings.newYearsDay',
 }
 
 export default function SettingsPage() {
-  const { user, setUser } = useAuth()
-  const [confirm, confirmNode] = useConfirm()
+  const { t, i18n } = useTranslation()
+  const { user, setUser, household, householdLoaded, refreshHousehold, refreshBilling } = useAuth()
+  const premium = usePremium()
   const navigate = useNavigate()
-  const [household, setHousehold] = useState<Household | null>(null)
   const [inviteUrl, setInviteUrl] = useState<string | null>(null)
   const [icalUrl, setIcalUrl] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
-  const [color, setColor] = useState(user?.color ?? DEFAULT_PARENT_COLOR)
   const [childName, setChildName] = useState('')
+  const [confirm, confirmNode] = useConfirm()
+  // Recharge le panneau des demandes de changement après une modification.
   const [changesKey, setChangesKey] = useState(0)
 
-  // Avec deux parents, les changements sensibles attendent l'accord de l'autre.
-  function pendingSent() {
-    setChangesKey((k) => k + 1)
-    flash("Demande envoyée : le changement s'appliquera quand l'autre parent l'aura accepté.")
-  }
+  const refresh = refreshHousehold
 
-  function refresh() {
-    api
-      .myHousehold()
-      .then(setHousehold)
-      .catch((err) => {
-        if (err instanceof ApiError && err.status === 404) navigate('/onboarding')
-        else setError(err instanceof Error ? err.message : 'Erreur')
-      })
-  }
-
-  useEffect(refresh, [navigate])
+  useEffect(() => {
+    if (householdLoaded && !household) navigate('/onboarding')
+  }, [householdLoaded, household, navigate])
 
   function flash(msg: string) {
     setMessage(msg)
@@ -58,7 +57,7 @@ export default function SettingsPage() {
   }
 
   function fail(err: unknown) {
-    setError(err instanceof Error ? err.message : 'Erreur')
+    setError(err instanceof Error ? err.message : t('settings.errorGeneric'))
   }
 
   async function createInvite() {
@@ -73,17 +72,18 @@ export default function SettingsPage() {
 
   async function copy(text: string) {
     await navigator.clipboard.writeText(text)
-    flash('Copié dans le presse-papier ✓')
+    flash(t('settings.copied'))
   }
 
   async function saveRules(value: RuleFormValue) {
     if (!household) return
     setBusy(true)
     try {
-      const a = await api.setCustodyRule(household.id, value.custody)
-      const b = await api.setVacationRule(household.id, value.vacation)
-      if (isPendingChange(a) || isPendingChange(b)) pendingSent()
-      else flash('Règles enregistrées ✓')
+      const custody = await api.setCustodyRule(household.id, value.custody)
+      const vacation = await api.setVacationRule(household.id, value.vacation)
+      // Deux parents réels : le changement attend l'accord de l'autre (202).
+      flash(isPendingChange(custody) || isPendingChange(vacation) ? t('changes.sent') : t('settings.rulesSaved'))
+      setChangesKey((k) => k + 1)
       refresh()
     } catch (err) {
       fail(err)
@@ -96,7 +96,7 @@ export default function SettingsPage() {
     if (!household) return
     try {
       await api.updateHousehold(household.id, { school_zone: zone })
-      flash('Zone mise à jour ✓')
+      flash(t('settings.zoneUpdated'))
       refresh()
     } catch (err) {
       fail(err)
@@ -110,7 +110,10 @@ export default function SettingsPage() {
     )
     try {
       const res = await api.setSpecialDayRules(household.id, rules)
-      if (isPendingChange(res)) pendingSent()
+      if (isPendingChange(res)) {
+        flash(t('changes.sent'))
+        setChangesKey((k) => k + 1)
+      }
       refresh()
     } catch (err) {
       fail(err)
@@ -128,22 +131,44 @@ export default function SettingsPage() {
     }
   }
 
-  async function getIcalUrl() {
+  async function removeChild(id: number, name: string) {
+    if (!household) return
+    const ok = await confirm({
+      title: t('settings.removeChildTitle', { name }),
+      body: t('settings.removeChildBody'),
+      confirmLabel: t('common.remove'),
+      danger: true,
+    })
+    if (!ok) return
     try {
-      const { ical_token } = await api.regenerateIcal()
-      // Le flux iCal est servi par le backend : URL absolue vers l'API.
-      const apiOrigin = API_BASE.startsWith('http') ? API_BASE : `${window.location.origin}${API_BASE}`
-      setIcalUrl(`${apiOrigin}/ical/${ical_token}.ics`)
+      const res = await api.deleteChild(household.id, id)
+      if (isPendingChange(res)) {
+        flash(t('changes.sent'))
+        setChangesKey((k) => k + 1)
+      }
+      refresh()
     } catch (err) {
       fail(err)
     }
   }
 
-  async function saveColor() {
+  async function getIcalUrl() {
+    try {
+      const { ical_token } = await api.regenerateIcal()
+      // URL de marque servie sous le domaine de l'app (alternly.com/ical/…),
+      // proxifiée vers le backend par Vercel. Plus lisible et stable qu'un lien
+      // vers le domaine Railway, et insensible à un changement d'hébergeur.
+      setIcalUrl(`${window.location.origin}/ical/${ical_token}.ics`)
+    } catch (err) {
+      fail(err)
+    }
+  }
+
+  async function saveColor(color: string) {
     try {
       const updated = await api.updateMe({ color })
       setUser(updated)
-      flash('Profil mis à jour ✓')
+      flash(t('settings.profileUpdated'))
     } catch (err) {
       fail(err)
     }
@@ -153,22 +178,23 @@ export default function SettingsPage() {
     try {
       const updated = await api.updateMe({ email_opt_in: next })
       setUser(updated)
-      flash(next ? 'E-mails activés ✓' : 'E-mails coupés ✓')
+      flash(next ? t('settings.emailsOn') : t('settings.emailsOff'))
     } catch (err) {
       fail(err)
     }
   }
 
-  if (!household || !user) return <div className="page-loading">Chargement…</div>
+  if (!household || !user) return <Spinner />
 
   return (
     <>
       <TopBar householdName={household.name} />
       <div className="layout" style={{ maxWidth: 700 }}>
-        <h1>Réglages</h1>
+        <h1>{t('settings.title')}</h1>
         {message && <div className="info-banner">{message}</div>}
         {error && <div className="error">{error}</div>}
-        {household.members.length > 1 && (
+
+        {!isSolo(household.members) && (
           <ChangeRequests
             householdId={household.id}
             myId={user.id}
@@ -178,107 +204,89 @@ export default function SettingsPage() {
           />
         )}
 
-        <div className="card" id="parents">
-          <h2>Parents</h2>
+        <div className="card">
+          <h2>{t('settings.parents')}</h2>
           {household.members.map((m) => (
-            <p key={m.id} className="member-line">
-              <span className="avatar small" style={{ background: m.color }} aria-hidden="true">
-                {m.display_name.charAt(0).toUpperCase()}
-              </span>
-              {m.display_name} {m.id === user.id && <span className="hint">(vous)</span>}
+            <p key={m.id}>
+              <span className="dot" style={{ background: m.color, display: 'inline-block', width: 12, height: 12, borderRadius: '50%', marginRight: 8 }} />
+              {m.display_name} {m.id === user.id && t('settings.you')}
+              {m.is_placeholder && <span className="hint"> · {t('settings.awaitingSignup')}</span>}
             </p>
           ))}
-          <p className="fine-print">
-            <Link to="/history">Voir l'historique du foyer</Link> : toutes les modifications, horodatées.
-          </p>
-          {household.members.length < 2 && (
+          {isSolo(household.members) && (
             <>
               <p style={{ color: 'var(--ink-soft)' }}>
-                Invitez l'autre parent : il verra le même calendrier, sans pouvoir modifier votre profil.
+                {t('settings.inviteOtherParent')}
               </p>
               {inviteUrl ? (
-                <div className="row">
-                  <input readOnly value={inviteUrl} onFocus={(e) => e.target.select()} />
-                  <button onClick={() => copy(inviteUrl)}>Copier</button>
+                <div className="invite-share">
+                  <div className="invite-qr">
+                    <QRCodeSVG value={inviteUrl} size={148} bgColor="#ffffff" fgColor="#1f4d3f" marginSize={2} />
+                  </div>
+                  <div className="invite-share-body">
+                    <p className="hint" style={{ marginTop: 0 }}>
+                      {t('settings.scanQr')}
+                    </p>
+                    <div className="row">
+                      <input readOnly value={inviteUrl} onFocus={(e) => e.target.select()} />
+                      <button onClick={() => copy(inviteUrl)}>{t('settings.copyLink')}</button>
+                    </div>
+                  </div>
                 </div>
               ) : (
-                <button onClick={createInvite}>Créer un lien d'invitation</button>
+                <button onClick={createInvite}>{t('settings.createInviteLink')}</button>
               )}
             </>
           )}
         </div>
 
         <div className="card">
-          <h2>Enfants</h2>
+          <h2>{t('settings.children')}</h2>
           <div className="chip-list">
             {household.children.map((c) => (
               <span key={c.id} className="chip">
-                {c.first_name}{' '}
+                {c.first_name}
                 <button
                   type="button"
                   className="chip-remove"
-                  aria-label={`Retirer ${c.first_name}`}
-                  title={`Retirer ${c.first_name}`}
-                  onClick={async () => {
-                    if (
-                      !(await confirm({
-                        title: `Retirer ${c.first_name} ?`,
-                        body:
-                          household.members.length > 1
-                            ? "L'autre parent devra confirmer. Les dépenses et messages liés à l'enfant sont conservés."
-                            : "L'enfant disparaîtra du foyer. Ses dépenses et messages sont conservés.",
-                        confirmLabel: 'Retirer',
-                        danger: true,
-                      }))
-                    )
-                      return
-                    try {
-                      const res = await api.deleteChild(household.id, c.id)
-                      if (isPendingChange(res)) pendingSent()
-                      refresh()
-                    } catch (err) {
-                      fail(err)
-                    }
-                  }}
+                  aria-label={t('settings.removeChildAria', { name: c.first_name })}
+                  onClick={() => removeChild(c.id, c.first_name)}
                 >
-                  ✕
+                  <Icon name="x" size={12} />
                 </button>
               </span>
             ))}
           </div>
           <div className="row">
             <input
-              aria-label="Prénom de l'enfant"
-              placeholder="Prénom"
-              maxLength={50}
+              placeholder={t('settings.firstNamePlaceholder')}
               value={childName}
               onChange={(e) => setChildName(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addChild())}
             />
             <button className="secondary" onClick={addChild}>
-              Ajouter
+              {t('settings.add')}
             </button>
           </div>
         </div>
 
-        <div className="card">
-          <h2>Zone scolaire</h2>
-          <p className="hint">
-            Zone A : Besançon, Bordeaux, Clermont, Dijon, Grenoble, Limoges, Lyon, Poitiers. Zone B : Aix-Marseille,
-            Amiens, Lille, Nancy-Metz, Nantes, Nice, Normandie, Orléans-Tours, Reims, Rennes, Strasbourg. Zone C :
-            Créteil, Montpellier, Paris, Toulouse, Versailles.
-          </p>
-          <select aria-label="Zone scolaire" value={household.school_zone} onChange={(e) => updateZone(e.target.value)}>
-            <option value="A">Zone A</option>
-            <option value="B">Zone B</option>
-            <option value="C">Zone C</option>
-          </select>
-        </div>
+        {household.country === 'FR' ? (
+          <div className="card">
+            <h2>{t('settings.schoolZone')}</h2>
+            <select value={household.school_zone} onChange={(e) => updateZone(e.target.value)}>
+              <option value="A">{t('settings.zoneA')}</option>
+              <option value="B">{t('settings.zoneB')}</option>
+              <option value="C">{t('settings.zoneC')}</option>
+            </select>
+          </div>
+        ) : (
+          <SchoolBreaks household={household} onChanged={refresh} />
+        )}
 
         <div className="card">
-          <h2>Jours de fête</h2>
+          <h2>{t('settings.holidays')}</h2>
           <p style={{ color: 'var(--ink-soft)', fontSize: '0.9rem' }}>
-            Ces jours passent outre le rythme habituel et le partage des vacances.
+            {t('settings.holidaysHint')}
           </p>
           {household.special_day_rules.map((r) => (
             <div key={r.kind} className="row" style={{ alignItems: 'center', margin: '8px 0' }}>
@@ -289,7 +297,7 @@ export default function SettingsPage() {
                   checked={r.enabled}
                   onChange={(e) => toggleSpecial(r.kind, { enabled: e.target.checked })}
                 />
-                {SPECIAL_LABELS[r.kind]}
+                {t(SPECIAL_LABEL_KEYS[r.kind])}
               </label>
               {r.enabled && (
                 <select
@@ -309,16 +317,16 @@ export default function SettingsPage() {
                       toggleSpecial(r.kind, { parent_mode: 'alternate', parent_id: Number(v.slice(4)) })
                   }}
                 >
-                  <option value="auto">Automatique</option>
+                  <option value="auto">{t('settings.automatic')}</option>
                   {household.members.map((m) => (
                     <option key={`fixed-${m.id}`} value={`fixed:${m.id}`}>
-                      Toujours chez {m.display_name}
+                      {t('settings.alwaysWith', { name: m.display_name })}
                     </option>
                   ))}
                   {(r.kind === 'christmas_eve' || r.kind === 'christmas_day') &&
                     household.members.map((m) => (
                       <option key={`alt-${m.id}`} value={`alt:${m.id}`}>
-                        Alterner — années paires chez {m.display_name}
+                        {t('settings.alternateEvenYears', { name: m.display_name })}
                       </option>
                     ))}
                 </select>
@@ -333,60 +341,290 @@ export default function SettingsPage() {
             myId={user.id}
             initialCustody={household.custody_rule}
             initialVacation={household.vacation_rule}
-            submitLabel="Enregistrer les règles"
+            submitLabel={t('settings.saveRules')}
             busy={busy}
             onSubmit={saveRules}
           />
         </div>
 
         <div className="card">
-          <h2>Synchronisation Google / Apple Calendar</h2>
+          <h2>{t('settings.calendarSync')} <span className="premium-tag">{t('settings.premium')}</span></h2>
           <p style={{ color: 'var(--ink-soft)', fontSize: '0.9rem' }}>
-            Abonnez-vous à ce lien privé depuis votre application de calendrier. Régénérer le lien invalide
-            l'ancien.
+            {t('settings.icalHint')}
           </p>
-          {icalUrl ? (
-            <div className="row">
-              <input readOnly value={icalUrl} onFocus={(e) => e.target.select()} />
-              <button onClick={() => copy(icalUrl)}>Copier</button>
+          {!premium ? (
+            <button
+              className="secondary"
+              onClick={() => user && openCheckout(user, refreshBilling)}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+            >
+              <Icon name="lock" size={15} /> {t('settings.unlockWithPremium')}
+            </button>
+          ) : icalUrl ? (
+            <div className="invite-share">
+              <div className="invite-qr">
+                <QRCodeSVG value={icalUrl.replace(/^https?:\/\//, 'webcal://')} size={148} bgColor="#ffffff" fgColor="#1f4d3f" marginSize={2} />
+              </div>
+              <div className="invite-share-body">
+                <p className="hint" style={{ marginTop: 0 }}>{t('settings.icalQrHint')}</p>
+                <div className="row">
+                  <input readOnly value={icalUrl} onFocus={(e) => e.target.select()} />
+                  <button onClick={() => copy(icalUrl)}>{t('settings.copy')}</button>
+                </div>
+              </div>
             </div>
           ) : (
-            <button onClick={getIcalUrl}>Générer mon lien iCal</button>
+            <button onClick={getIcalUrl}>{t('settings.generateIcal')}</button>
           )}
         </div>
 
+        {premium && <SubscriptionCard onChanged={refreshBilling} />}
+
         <div className="card">
-          <h2>Mon profil</h2>
-          <label>Ma couleur sur le calendrier</label>
-          <div className="row" style={{ alignItems: 'center' }}>
-            <ColorPicker
-              value={color}
-              onChange={setColor}
-              taken={household.members.find((m) => m.id !== user.id)?.color}
-            />
-            <button onClick={saveColor} disabled={color === user.color} style={{ flex: '0 0 auto' }}>
-              Enregistrer
-            </button>
-          </div>
-          <label style={{ display: 'flex', gap: 8, alignItems: 'center', color: 'var(--ink)', marginTop: 16 }}>
+          <h2>{t('settings.myProfile')}</h2>
+          <label htmlFor="mylocale">{t('settings.languageLabel')}</label>
+          <select
+            id="mylocale"
+            value={user.locale}
+            onChange={async (e) => {
+              const locale = e.target.value as 'fr' | 'en'
+              i18n.changeLanguage(locale)
+              try {
+                const updated = await api.updateMe({ locale })
+                setUser(updated)
+              } catch (err) {
+                fail(err)
+              }
+            }}
+            style={{ maxWidth: 220, marginBottom: 16 }}
+          >
+            <option value="fr">Français</option>
+            <option value="en">English</option>
+          </select>
+          <label id="mycolor-label">{t('settings.myCalendarColor')}</label>
+          <ColorPicker
+            value={user.color}
+            onChange={saveColor}
+            taken={household.members.find((m) => m.id !== user.id)?.color}
+            labelledBy="mycolor-label"
+          />
+          <label style={{ display: 'flex', gap: 8, alignItems: 'center', color: premium ? 'var(--ink)' : 'var(--ink-soft)', marginTop: 16 }}>
             <input
               type="checkbox"
               style={{ width: 'auto' }}
-              checked={user.email_opt_in}
+              checked={premium && user.email_opt_in}
+              disabled={!premium}
               onChange={(e) => toggleEmails(e.target.checked)}
             />
-            Recevoir un e-mail pour les propositions d'échange et leurs rappels
+            {t('settings.emailOptIn')}
+            {!premium && <span className="premium-tag">{t('settings.premium')}</span>}
           </label>
         </div>
 
-        <AccountCard
-          user={user}
-          hasCoparent={household.members.length > 1}
-          onMessage={flash}
-          onError={fail}
-        />
+        <div className="card">
+          <div className="settings-list" style={{ margin: 0 }}>
+            <Link to="/history" className="settings-row">
+              <span>
+                <strong>{t('history.link')}</strong>
+                <span className="hint">{t('history.linkHint')}</span>
+              </span>
+              <Icon name="history" size={16} />
+            </Link>
+          </div>
+        </div>
+
+        <AccountCard user={user} onMessage={flash} onError={fail} />
+
+        <DangerZone />
       </div>
       {confirmNode}
     </>
+  )
+}
+
+function SubscriptionCard({ onChanged }: { onChanged: () => void }) {
+  const { t } = useTranslation()
+  const { date } = useFormat()
+  const [sub, setSub] = useState<SubscriptionInfo | null>(null)
+  const [busy, setBusy] = useState(false)
+  const [msg, setMsg] = useState<string | null>(null)
+  const [confirm, confirmNode] = useConfirm()
+
+  const load = () => api.subscription().then(setSub).catch(() => setSub({ manageable: false }))
+  useEffect(() => { load() }, [])
+
+  async function run(fn: () => Promise<unknown>, done: string) {
+    setBusy(true)
+    setMsg(null)
+    try {
+      await fn()
+      setMsg(done)
+      await load()
+      onChanged()
+    } catch {
+      setMsg(t('settings.subActionError'))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const planLabel = (p?: string | null) =>
+    p === 'annual' ? t('settings.planAnnual') : p === 'monthly' ? t('settings.planMonthly') : t('settings.planUnknown')
+
+  return (
+    <div className="card">
+      <h2>{t('settings.subscriptionTitle')}</h2>
+      {sub === null ? (
+        <p className="hint">…</p>
+      ) : !sub.manageable ? (
+        <p className="hint">{t('settings.subGrandfathered')}</p>
+      ) : (
+        <>
+          <p style={{ margin: '0 0 6px' }}>
+            {t('settings.subCurrentPlan')} : <strong>{planLabel(sub.plan)}</strong>
+            {sub.status === 'canceled' && <span className="tag tag-pending" style={{ marginLeft: 8 }}>{t('settings.subCanceled')}</span>}
+          </p>
+          {sub.next_billed_at && sub.status !== 'canceled' && (
+            <p className="hint" style={{ marginTop: 0 }}>{t('settings.subNextBilling', { date: date(sub.next_billed_at.slice(0, 10)) })}</p>
+          )}
+          {msg && <div className="info-banner">{msg}</div>}
+          {sub.status !== 'canceled' && (
+            <div className="row" style={{ gap: 8, marginTop: 10 }}>
+              {sub.plan !== 'annual' && (
+                <button className="secondary" disabled={busy} onClick={() => run(() => api.changePlan('annual'), t('settings.subSwitched'))}>
+                  {t('settings.subSwitchAnnual')}
+                </button>
+              )}
+              {sub.plan !== 'monthly' && (
+                <button className="secondary" disabled={busy} onClick={() => run(() => api.changePlan('monthly'), t('settings.subSwitched'))}>
+                  {t('settings.subSwitchMonthly')}
+                </button>
+              )}
+              <button
+                className="danger-link"
+                disabled={busy}
+                onClick={async () => {
+                  const ok = await confirm({ title: t('settings.subCancel'), body: t('settings.subCancelConfirm'), confirmLabel: t('settings.subCancel'), danger: true })
+                  if (ok) run(() => api.cancelSubscription(), t('settings.subCanceledDone'))
+                }}
+              >
+                {t('settings.subCancel')}
+              </button>
+            </div>
+          )}
+        </>
+      )}
+      {confirmNode}
+    </div>
+  )
+}
+
+function DangerZone() {
+  const { t } = useTranslation()
+  const { logout } = useAuth()
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [confirm, confirmNode] = useConfirm()
+
+  async function remove() {
+    const ok = await confirm({ title: t('settings.deleteAccount'), body: t('settings.deleteConfirm'), confirmLabel: t('settings.deleteAccount'), danger: true })
+    if (!ok) return
+    setBusy(true)
+    try {
+      await api.deleteAccount()
+      logout()
+    } catch {
+      setBusy(false)
+      setError(t('settings.deleteError'))
+    }
+  }
+
+  return (
+    <div className="card danger-card">
+      <h2>{t('settings.dangerTitle')}</h2>
+      <p className="hint">{t('settings.deleteHint')}</p>
+      {error && <div className="error">{error}</div>}
+      <button className="danger" disabled={busy} onClick={remove}>{t('settings.deleteAccount')}</button>
+      {confirmNode}
+    </div>
+  )
+}
+
+function SchoolBreaks({ household, onChanged }: { household: Household; onChanged: () => void }) {
+  const { t } = useTranslation()
+  const { date } = useFormat()
+  const [label, setLabel] = useState('')
+  const [start, setStart] = useState('')
+  const [end, setEnd] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
+
+  async function add() {
+    if (!label.trim() || !start || !end) return
+    setBusy(true)
+    setError(null)
+    try {
+      await api.addSchoolVacation(household.id, { label: label.trim(), start, end })
+      setLabel('')
+      setStart('')
+      setEnd('')
+      onChanged()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t('settings.errorGeneric'))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const [confirm, confirmNode] = useConfirm()
+
+  async function remove(id: number, name: string) {
+    const ok = await confirm({ title: t('settings.removeBreakTitle', { name }), confirmLabel: t('common.delete'), danger: true })
+    if (!ok) return
+    try {
+      await api.deleteSchoolVacation(household.id, id)
+      onChanged()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t('settings.errorGeneric'))
+    }
+  }
+
+  return (
+    <div className="card">
+      <h2>{t('settings.schoolBreaksTitle')}</h2>
+      <p style={{ color: 'var(--ink-soft)', fontSize: '0.9rem' }}>{t('settings.schoolBreaksHint')}</p>
+      {household.school_vacations.length === 0 && (
+        <p className="hint">{t('settings.schoolBreaksEmpty')}</p>
+      )}
+      {household.school_vacations.map((v) => (
+        <div key={v.id} className="row" style={{ alignItems: 'center', margin: '6px 0' }}>
+          <span style={{ marginRight: 'auto' }}>
+            <strong>{v.label}</strong> <span className="hint">{date(v.start)} – {date(v.end)}</span>
+          </span>
+          <button className="danger-link" onClick={() => remove(v.id, v.label)}>{t('settings.delete')}</button>
+        </div>
+      ))}
+      <div className="row" style={{ marginTop: 12 }}>
+        <div style={{ flex: 2 }}>
+          <label htmlFor="brk-label">{t('settings.breakNameLabel')}</label>
+          <input id="brk-label" value={label} onChange={(e) => setLabel(e.target.value)} placeholder={t('settings.breakNamePlaceholder')} />
+        </div>
+      </div>
+      <div className="row">
+        <div>
+          <label htmlFor="brk-start">{t('settings.breakStartLabel')}</label>
+          <input id="brk-start" type="date" value={start} onChange={(e) => setStart(e.target.value)} />
+        </div>
+        <div>
+          <label htmlFor="brk-end">{t('settings.breakEndLabel')}</label>
+          <input id="brk-end" type="date" value={end} onChange={(e) => setEnd(e.target.value)} />
+        </div>
+      </div>
+      {error && <div className="error">{error}</div>}
+      <div style={{ marginTop: 12 }}>
+        <button onClick={add} disabled={busy || !label.trim() || !start || !end}>{t('settings.addBreak')}</button>
+      </div>
+      {confirmNode}
+    </div>
   )
 }

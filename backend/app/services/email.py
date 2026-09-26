@@ -48,6 +48,10 @@ def send_email(to: str, subject: str, html: str) -> bool:
         return False
 
 
+def _lang(locale: str | None) -> str:
+    return "en" if locale == "en" else "fr"
+
+
 def _button(label: str, path: str) -> str:
     url = f"{settings.app_url.rstrip('/')}{path}"
     return (
@@ -56,13 +60,19 @@ def _button(label: str, path: str) -> str:
     )
 
 
-_FOOTER_NOTIFS = (
-    "Vous recevez cet e-mail car votre coparent utilise Alternly. "
-    "Vous pouvez couper ces e-mails dans vos réglages."
-)
+_FOOTER_NOTIFS = {
+    "fr": (
+        "Vous recevez cet e-mail car votre coparent utilise Alternly. "
+        "Vous pouvez couper ces e-mails dans vos réglages."
+    ),
+    "en": (
+        "You are receiving this email because your co-parent uses Alternly. "
+        "You can turn these emails off in your settings."
+    ),
+}
 
 
-def _layout(intro: str, cta_label: str, cta_path: str, footer: str = _FOOTER_NOTIFS) -> str:
+def _layout(intro: str, cta_label: str, cta_path: str, footer: str) -> str:
     return (
         '<div style="font-family:-apple-system,Segoe UI,sans-serif;max-width:480px;margin:0 auto;'
         'color:#24312b;line-height:1.6">'
@@ -74,35 +84,71 @@ def _layout(intro: str, cta_label: str, cta_path: str, footer: str = _FOOTER_NOT
     )
 
 
-def _fmt_range(date_start: str, date_end: str) -> str:
-    return date_start if date_start == date_end else f"du {date_start} au {date_end}"
+def _fmt_range(date_start: str, date_end: str, lang: str = "fr") -> str:
+    if date_start == date_end:
+        return date_start
+    return f"{date_start} to {date_end}" if lang == "en" else f"du {date_start} au {date_end}"
 
 
-def exchange_proposed_email(payload: dict) -> tuple[str, str]:
+def exchange_proposed_email(payload: dict, locale: str | None = "fr") -> tuple[str, str]:
     """(sujet, html) pour une nouvelle proposition d'échange reçue."""
-    period = _fmt_range(payload["date_start"], payload["date_end"])
+    lang = _lang(locale)
+    period = _fmt_range(payload["date_start"], payload["date_end"], lang)
     # `note` est saisie librement par un parent → échapper avant interpolation HTML.
     raw_note = payload.get("note")
+    if lang == "en":
+        note = f" Note: “{html.escape(raw_note)}”." if raw_note else ""
+        intro = (
+            f"Your co-parent is proposing a custody swap ({period})." + note +
+            " Open Alternly to accept or decline it."
+        )
+        return "New custody swap proposal", _layout(intro, "View the proposal", "/app", _FOOTER_NOTIFS["en"])
     note = f" Note : « {html.escape(raw_note)} »." if raw_note else ""
     intro = (
         f"Votre coparent vous propose un échange de garde ({period})." + note +
         " Ouvrez Alternly pour l'accepter ou le refuser."
     )
-    return "Nouvelle proposition d'échange de garde", _layout(intro, "Voir la proposition", "/")
+    return "Nouvelle proposition d'échange de garde", _layout(intro, "Voir la proposition", "/app", _FOOTER_NOTIFS["fr"])
 
 
-def exchange_reminder_email(payload: dict) -> tuple[str, str]:
+def exchange_reminder_email(payload: dict, locale: str | None = "fr") -> tuple[str, str]:
     """(sujet, html) pour le rappel la veille de l'expiration."""
-    period = _fmt_range(payload["date_start"], payload["date_end"])
+    lang = _lang(locale)
+    period = _fmt_range(payload["date_start"], payload["date_end"], lang)
+    if lang == "en":
+        intro = (
+            f"A custody swap proposal ({period}) is still waiting for your answer and "
+            "will expire tomorrow if it is not handled."
+        )
+        return (
+            "Reminder: a swap proposal expires tomorrow",
+            _layout(intro, "Answer now", "/app", _FOOTER_NOTIFS["en"]),
+        )
     intro = (
         f"Une proposition d'échange de garde ({period}) attend toujours votre réponse et "
         "expirera demain si elle n'est pas traitée."
     )
-    return "Rappel : une proposition d'échange expire demain", _layout(intro, "Répondre maintenant", "/")
+    return (
+        "Rappel : une proposition d'échange expire demain",
+        _layout(intro, "Répondre maintenant", "/app", _FOOTER_NOTIFS["fr"]),
+    )
 
 
-def password_reset_email(token: str) -> tuple[str, str]:
-    """(sujet, html) pour la réinitialisation du mot de passe (lien valable 1 h, usage unique)."""
+def password_reset_email(token: str, locale: str | None = "fr") -> tuple[str, str]:
+    """(sujet, html) pour la réinitialisation du mot de passe (lien valable 1 h, usage unique).
+    Lien vers la route SPA /reset-password (jeton token_urlsafe : sûr tel quel dans une URL)."""
+    path = f"/reset-password?token={token}"
+    if _lang(locale) == "en":
+        intro = (
+            "Hello,<br/>You asked to reset the password of your Alternly account. "
+            "Click the button below to choose a new one. This link is valid for "
+            "<strong>one hour</strong> and can only be used once."
+        )
+        footer = (
+            "Didn't request this? Just ignore this email: "
+            "your current password stays unchanged."
+        )
+        return "Reset your Alternly password", _layout(intro, "Choose a new password", path, footer)
     intro = (
         "Bonjour,<br/>Vous avez demandé à réinitialiser le mot de passe de votre compte Alternly. "
         "Cliquez sur le bouton ci-dessous pour en choisir un nouveau. Ce lien est valable "
@@ -112,8 +158,7 @@ def password_reset_email(token: str) -> tuple[str, str]:
         "Vous n'êtes pas à l'origine de cette demande ? Ignorez simplement cet e-mail : "
         "votre mot de passe actuel reste inchangé."
     )
-    # token_urlsafe : sûr tel quel dans une URL.
     return (
         "Réinitialisation de votre mot de passe Alternly",
-        _layout(intro, "Choisir un nouveau mot de passe", f"/reset-password?token={token}", footer),
+        _layout(intro, "Choisir un nouveau mot de passe", path, footer),
     )

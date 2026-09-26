@@ -32,3 +32,10 @@ class TestMarketingPages:
         assert sitemap.status_code == 200
         assert "<urlset" in sitemap.text
         assert "/blog" in sitemap.text
+
+    def test_fonts_self_hosted(self, client):
+        for path in ("/", "/en", "/blog"):
+            assert "fonts.googleapis.com" not in client.get(path).text
+        font = client.get("/static/fonts/fraunces-latin-opsz-normal.woff2")
+        assert font.status_code == 200 and len(font.content) > 1000
+        assert "@font-face" in client.get("/static/marketing.css").text

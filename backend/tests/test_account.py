@@ -26,7 +26,7 @@ from app.models import (
 from app.services import email as email_service
 from tests.test_expenses_api import add_expense
 from tests.test_household import create_household
-from tests.test_rules import setup_family
+from tests.test_rules import premium_family
 
 PWD = "motdepasse1"
 
@@ -112,6 +112,20 @@ class TestForgotPassword:
         assert row.token_hash != raw and len(row.token_hash) == 64
         assert raw not in row.token_hash
         assert timedelta(minutes=59) < row.expires_at - utcnow() <= timedelta(hours=1)
+
+    def test_email_in_user_locale(self, client, auth_headers, sent):
+        headers, _ = auth_headers()
+        client.patch("/api/auth/me", json={"locale": "en"}, headers=headers)
+        forgot_and_get_token(client, sent)
+        assert sent[0]["subject"] == "Reset your Alternly password"
+        assert "one hour" in sent[0]["html"]
+
+    def test_placeholder_gets_no_email(self, client, auth_headers, sent, db_session):
+        headers, _ = auth_headers()
+        create_household(client, headers)
+        ghost = db_session.scalar(select(User).where(User.is_placeholder.is_(True)))
+        assert client.post("/api/auth/password/forgot", json={"email": ghost.email}).status_code in (202, 422)
+        assert sent == []
 
     def test_invalid_email_422(self, client):
         assert client.post("/api/auth/password/forgot", json={"email": "pas-un-email"}).status_code == 422
@@ -245,8 +259,8 @@ def _populate(client, headers1, user1, headers2, user2, hid):
 
 
 class TestExport:
-    def test_export_content(self, client, auth_headers):
-        headers1, user1, headers2, user2, h = setup_family(client, auth_headers)
+    def test_export_content(self, client, auth_headers, db_session):
+        headers1, user1, headers2, user2, h = premium_family(client, auth_headers, db_session)
         _populate(client, headers1, user1, headers2, user2, h["id"])
         resp = client.get("/api/auth/me/export", headers=headers1)
         assert resp.status_code == 200
@@ -259,10 +273,12 @@ class TestExport:
         assert "motdepasse1" not in resp.text
         hh = data["household"]
         assert hh["name"] == h["name"] and hh["school_zone"] == h["school_zone"]
+        assert hh["country"] == "FR" and hh["currency"] == "EUR"
         assert {m["display_name"] for m in hh["members"]} == {"Camille", "Dominique"}
         assert {m["role"] for m in hh["members"]} == {"parent1", "parent2"}
         assert [c["first_name"] for c in hh["children"]] == ["Léa"]
         assert hh["custody_rules"][0]["pattern"] == "alternate_weeks"
+        assert "school_vacations" in hh
         assert hh["vacation_rules"][0]["mode"] == "split_half"
         assert len(hh["special_day_rules"]) == 4
         assert len(hh["schedule_exceptions"]) == 2
@@ -296,110 +312,33 @@ def fk_on(db_session):
     yield
 
 
-def delete_me(client, headers, password=PWD):
-    return client.request("DELETE", "/api/auth/me", json={"password": password}, headers=headers)
-
-
-class TestDeleteAccount:
-    def test_wrong_password(self, client, auth_headers):
-        headers, _ = auth_headers()
-        resp = delete_me(client, headers, password="mauvais")
-        assert resp.status_code == 400
-        assert resp.json()["detail"] == "Mot de passe incorrect"
-        assert client.get("/api/auth/me", headers=headers).status_code == 200
-
-    def test_without_household(self, client, auth_headers, db_session):
-        headers, user = auth_headers()
-        assert delete_me(client, headers).status_code == 204
-        assert db_session.get(User, user["id"]) is None
-        assert client.get("/api/auth/me", headers=headers).status_code == 401
-
-    def test_sole_member_deletes_everything(self, client, auth_headers, db_session, sent, fk_on):
+class TestDeleteAccountExtended:
+    def test_sole_member_cleans_reset_tokens(self, client, auth_headers, db_session, sent, fk_on):
         headers, user = auth_headers()
         h = create_household(client, headers)
-        hid = h["id"]
-        _populate(client, headers, user, None, None, hid)
-        client.post(f"/api/households/{hid}/invitations", headers=headers)
         forgot_and_get_token(client, sent)
-        # bruit : un autre foyer qui ne doit pas être touché
-        other_headers, other = auth_headers(email="autre@test.fr", name="Autre")
-        other_h = create_household(client, other_headers)
-        client.post(f"/api/households/{other_h['id']}/children", json={"first_name": "Tom"}, headers=other_headers)
-        db_session.add(Notification(user_id=user["id"], type="x", payload={}))
-        db_session.commit()
-
-        assert delete_me(client, headers).status_code == 204
+        assert client.delete("/api/auth/me", headers=headers).status_code == 204
         db_session.expire_all()
-        assert db_session.get(User, user["id"]) is None
-        assert db_session.get(Household, hid) is None
-        for model in (Child, Expense, Settlement, ScheduleException, WallPost, Invitation, SpecialDayRule, HouseholdMember):
-            assert count(db_session, model, model.household_id == hid) == 0, model
-        assert count(db_session, WallReply) == 0
-        assert count(db_session, Notification, Notification.user_id == user["id"]) == 0
-        assert count(db_session, PasswordResetToken, PasswordResetToken.user_id == user["id"]) == 0
-        # l'autre foyer est intact
-        assert db_session.get(Household, other_h["id"]) is not None
-        assert count(db_session, Child, Child.household_id == other_h["id"]) == 1
-        # l'e-mail est de nouveau libre
-        assert login(client).status_code == 401
-        assert auth_headers()[1]["email"] == "parent1@test.fr"
+        assert db_session.get(Household, h["id"]) is None
+        assert count(db_session, PasswordResetToken) == 0
 
-    def test_with_coparent_anonymizes(self, client, auth_headers, db_session, sent, fk_on):
-        headers1, user1, headers2, user2, h = setup_family(client, auth_headers)
-        hid = h["id"]
-        _populate(client, headers1, user1, headers2, user2, hid)
-        balance_before = client.get(f"/api/households/{hid}/balance", headers=headers2)
+    def test_with_coparent_revokes_and_notifies(self, client, auth_headers, db_session, sent, fk_on):
+        headers1, user1, headers2, user2, h = premium_family(client, auth_headers, db_session)
+        _populate(client, headers1, user1, headers2, user2, h["id"])
         forgot_and_get_token(client, sent)
         old_ical = db_session.get(User, user1["id"]).ical_token
-
-        assert delete_me(client, headers1).status_code == 204
+        assert client.delete("/api/auth/me", headers=headers1).status_code == 204
         db_session.expire_all()
         u = db_session.get(User, user1["id"])
-        assert u is not None and u.deleted_at is not None
-        assert u.email == f"deleted-{user1['id']}@deleted.invalid"
-        assert u.display_name == "Ancien parent"
-        assert u.email_opt_in is False
-        assert u.ical_token != old_ical
-        assert u.token_version == 1
+        assert u.is_placeholder and u.token_version == 1 and u.ical_token != old_ical
         assert count(db_session, PasswordResetToken, PasswordResetToken.user_id == u.id) == 0
-        assert count(db_session, Notification, Notification.user_id == u.id) == 0
-        # ancien jeton refusé, connexion impossible (ancien comme nouvel e-mail)
         assert client.get("/api/auth/me", headers=headers1).status_code == 401
         assert login(client).status_code == 401
-        assert login(client, email=u.email).status_code in (401, 422)  # .invalid : rejeté dès la validation
-        resets_before = sum("reset-password" in m["html"] for m in sent)
-        assert client.post("/api/auth/password/forgot", json={"email": "parent1@test.fr"}).status_code == 202
-        assert sum("reset-password" in m["html"] for m in sent) == resets_before
         assert client.get(f"/api/ical/{old_ical}.ics").status_code == 404
-
-        # le coparent garde un historique cohérent
-        hh = client.get("/api/households/mine", headers=headers2).json()
-        assert {m["display_name"] for m in hh["members"]} == {"Ancien parent", "Dominique"}
-        assert len(hh["children"]) == 1
-        assert client.get(f"/api/households/{hid}/expenses", headers=headers2).json()
-        balance_after = client.get(f"/api/households/{hid}/balance", headers=headers2)
-        assert balance_after.status_code == 200, balance_after.text
-        assert balance_after.json() == balance_before.json()
-        assert client.get(f"/api/households/{hid}/wall", headers=headers2).json()
         notif = db_session.scalar(
             select(Notification).where(Notification.user_id == user2["id"], Notification.type == "parent_left")
         )
         assert notif.payload == {"display_name": "Camille"}
-        # membre conservé
-        assert count(db_session, HouseholdMember, HouseholdMember.household_id == hid) == 2
-
-        # l'ancien e-mail peut se réinscrire
-        new_headers, new_user = auth_headers()
-        assert new_user["id"] != user1["id"]
-        assert client.get("/api/households/mine", headers=new_headers).status_code == 404
-
-    def test_last_active_member_after_anonymized_deletes_all(self, client, auth_headers, db_session, fk_on):
-        headers1, user1, headers2, user2, h = setup_family(client, auth_headers)
-        _populate(client, headers1, user1, headers2, user2, h["id"])
-        assert delete_me(client, headers1).status_code == 204
-        assert delete_me(client, headers2).status_code == 204
-        db_session.expire_all()
-        assert db_session.get(Household, h["id"]) is None
-        assert db_session.get(User, user1["id"]) is None
-        assert db_session.get(User, user2["id"]) is None
-        assert count(db_session, Expense) == 0
+        # l'historique partagé reste lisible par le coparent
+        assert client.get(f"/api/households/{h['id']}/expenses", headers=headers2).json()
+        assert client.get(f"/api/households/{h['id']}/balance", headers=headers2).status_code == 200

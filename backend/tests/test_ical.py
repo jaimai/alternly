@@ -3,7 +3,7 @@ from datetime import date, timedelta
 from app.models import PublicHolidayCache, SchoolHolidayCache
 from app.services.custody_engine import DayAssignment
 from app.services.ical_export import build_ics, merge_blocks
-from tests.test_rules import setup_family
+from tests.test_rules import premium_family, setup_family
 
 
 class TestMergeBlocks:
@@ -58,7 +58,7 @@ class TestIcalEndpoint:
         db_session.commit()
 
     def test_feed_and_regenerate(self, client, auth_headers, db_session):
-        headers1, user1, _, _, h = setup_family(client, auth_headers)
+        headers1, user1, _, _, h = premium_family(client, auth_headers, db_session)
         self.seed(db_session)
         client.put(
             f"/api/households/{h['id']}/custody-rule",

@@ -40,5 +40,10 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
+      # fr.json / en.json sont générés depuis src/locales/parts : doivent être à jour.
+      - name: Traductions fusionnées à jour
+        run: |
+          node scripts/merge-locales.mjs
+          git diff --exit-code -- src/locales/fr.json src/locales/en.json
       - run: npm run lint
       - run: npm run build

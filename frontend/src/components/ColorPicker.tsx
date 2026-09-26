@@ -1,39 +1,33 @@
-// Couleurs de parent tirées de la charte (papier chaleureux) : assez contrastées
-// entre elles pour colorer le calendrier, assez douces pour rester lisibles.
-export const PARENT_COLORS: { value: string; label: string }[] = [
-  { value: '#2f6b57', label: 'Sapin' },
-  { value: '#c96f4a', label: 'Terracotta' },
-  { value: '#4a6fa5', label: 'Ardoise' },
-  { value: '#c9a227', label: 'Moutarde' },
-  { value: '#8a5a9e', label: 'Prune' },
-  { value: '#5b8f8a', label: 'Lagon' },
-]
-
-export const DEFAULT_PARENT_COLOR = PARENT_COLORS[0].value
+import { useTranslation } from 'react-i18next'
+import { PARENT_COLORS } from '../colors'
 
 export default function ColorPicker({
   value,
   onChange,
   taken,
+  labelledBy,
 }: {
   value: string
   onChange: (color: string) => void
   /** Couleur déjà prise par l'autre parent : signalée, pas bloquée. */
   taken?: string
+  labelledBy?: string
 }) {
+  const { t } = useTranslation()
   return (
-    <div className="swatches" role="radiogroup" aria-label="Couleur sur le calendrier">
+    <div className="swatches" role="radiogroup" aria-labelledby={labelledBy}>
       {PARENT_COLORS.map((c) => {
         const selected = c.value.toLowerCase() === value.toLowerCase()
         const isTaken = taken?.toLowerCase() === c.value.toLowerCase() && !selected
+        const label = t(c.labelKey)
         return (
           <button
             key={c.value}
             type="button"
             role="radio"
             aria-checked={selected}
-            aria-label={isTaken ? `${c.label} (couleur de l'autre parent)` : c.label}
-            title={isTaken ? `${c.label} — déjà utilisée par l'autre parent` : c.label}
+            aria-label={isTaken ? t('common.colorTakenAria', { color: label }) : label}
+            title={isTaken ? t('common.colorTakenTitle', { color: label }) : label}
             className={`swatch${selected ? ' selected' : ''}${isTaken ? ' taken' : ''}`}
             style={{ background: c.value }}
             onClick={() => onChange(c.value)}

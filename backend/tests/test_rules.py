@@ -23,6 +23,18 @@ def accept_pending(client, headers, hid, resp):
     return ok.json()
 
 
+def premium_family(client, auth_headers, db_session):
+    """Comme setup_family mais les deux parents sont abonnés (fonctions premium)."""
+    from app.models import User
+
+    result = setup_family(client, auth_headers)
+    _, user1, _, user2, _ = result
+    for uid in (user1["id"], user2["id"]):
+        db_session.get(User, uid).subscription_status = "active"
+    db_session.commit()
+    return result
+
+
 class TestCustodyRule:
     def test_upsert(self, client, auth_headers):
         headers1, user1, headers2, _, h = setup_family(client, auth_headers)
@@ -34,12 +46,12 @@ class TestCustodyRule:
         assert resp.status_code == 200, resp.text
         assert resp.json()["pattern"] == "alternate_weeks"
         # ré-upsert : modifie au lieu de dupliquer
-        # deux parents : la modification attend l'accord de l'autre
         resp2 = client.put(
             f"/api/households/{h['id']}/custody-rule",
             json={"pattern": "two_two_three", "start_date": "2026-01-05", "reference_parent_id": user1["id"]},
             headers=headers1,
         )
+        # deux parents : la modification attend l'accord de l'autre
         accept_pending(client, headers2, h["id"], resp2)
         rule = client.get("/api/households/mine", headers=headers1).json()["custody_rule"]
         assert rule["pattern"] == "two_two_three"

@@ -9,19 +9,21 @@ from ..auth import get_current_user
 from ..config import settings
 from ..db import get_db
 from ..deps import get_membership, household_members, notify
+from ..ratelimit import DAY, HOUR, rate_limit
+from ..services import audit
+from ..services.parents import claim_placeholder, ensure_second_parent
 from ..models import (
     Child,
     CustodyRule,
     Household,
     HouseholdMember,
     Invitation,
+    SchoolVacationPeriod,
     SpecialDayRule,
     User,
     VacationRule,
     utcnow,
 )
-from ..ratelimit import HOUR, rate_limit
-from ..services import audit
 from ..schemas import (
     ZONES,
     HouseholdCreate,
@@ -30,31 +32,56 @@ from ..schemas import (
     InvitationOut,
     InvitationPreview,
     MemberOut,
+    PartnerUpdate,
+    SchoolVacationIn,
+    SchoolVacationOut,
 )
 
 router = APIRouter(prefix="/api", tags=["household"])
 
-DEFAULT_SPECIAL_RULES = [
-    # Fêtes des mères/pères actives par défaut ; Noël désactivé (à configurer explicitement)
-    ("mothers_day", True),
-    ("fathers_day", True),
-    ("christmas_eve", False),
-    ("christmas_day", False),
-]
+# Fêtes par défaut selon le pays (mères/pères actives ; grandes fêtes à configurer).
+DEFAULT_SPECIAL_RULES_BY_COUNTRY = {
+    "FR": [
+        ("mothers_day", True),
+        ("fathers_day", True),
+        ("christmas_eve", False),
+        ("christmas_day", False),
+    ],
+    "US": [
+        ("mothers_day", True),
+        ("fathers_day", True),
+        ("thanksgiving", False),
+        ("christmas_eve", False),
+        ("christmas_day", False),
+    ],
+}
+CURRENCY_BY_COUNTRY = {"FR": "EUR", "US": "USD"}
 
 
 def _member_out(db: Session, m: HouseholdMember) -> MemberOut:
     user = db.get(User, m.user_id)
-    return MemberOut(id=user.id, display_name=user.display_name, color=user.color, role=m.role)
+    return MemberOut(
+        id=user.id,
+        display_name=user.display_name,
+        color=user.color,
+        role=m.role,
+        is_placeholder=user.is_placeholder,
+    )
 
 
 def _household_out(db: Session, household: Household, my_user_id: int) -> HouseholdOut:
+    # Foyers solo (y compris antérieurs) : on garantit un second parent (placeholder).
+    me = db.get(User, my_user_id)
+    if ensure_second_parent(db, household.id, locale=(me.locale if me else "fr")) is not None:
+        db.commit()
     members = household_members(db, household.id)
     my_role = next((m.role for m in members if m.user_id == my_user_id), None)
     return HouseholdOut(
         id=household.id,
         name=household.name,
         school_zone=household.school_zone,
+        country=household.country,
+        currency=household.currency,
         members=[_member_out(db, m) for m in members],
         children=db.scalars(select(Child).where(Child.household_id == household.id)).all(),
         custody_rule=db.scalar(select(CustodyRule).where(CustodyRule.household_id == household.id)),
@@ -62,22 +89,33 @@ def _household_out(db: Session, household: Household, my_user_id: int) -> Househ
         special_day_rules=db.scalars(
             select(SpecialDayRule).where(SpecialDayRule.household_id == household.id)
         ).all(),
+        school_vacations=db.scalars(
+            select(SchoolVacationPeriod)
+            .where(SchoolVacationPeriod.household_id == household.id)
+            .order_by(SchoolVacationPeriod.start)
+        ).all(),
         my_role=my_role,
     )
 
 
 @router.post("/households", response_model=HouseholdOut, status_code=201)
 def create_household(data: HouseholdCreate, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    if data.school_zone not in ZONES:
+    if data.country == "FR" and data.school_zone not in ZONES:
         raise HTTPException(status_code=422, detail="Zone invalide (A, B ou C)")
     existing = db.scalar(select(HouseholdMember).where(HouseholdMember.user_id == user.id))
     if existing:
         raise HTTPException(status_code=409, detail="Vous appartenez déjà à un foyer")
-    household = Household(name=data.name, school_zone=data.school_zone)
+    household = Household(
+        name=data.name,
+        country=data.country,
+        currency=CURRENCY_BY_COUNTRY.get(data.country, "EUR"),
+        # La zone A/B/C n'a de sens qu'en France.
+        school_zone=data.school_zone if data.country == "FR" else "A",
+    )
     db.add(household)
     db.flush()
     db.add(HouseholdMember(household_id=household.id, user_id=user.id, role="parent1"))
-    for kind, enabled in DEFAULT_SPECIAL_RULES:
+    for kind, enabled in DEFAULT_SPECIAL_RULES_BY_COUNTRY.get(data.country, DEFAULT_SPECIAL_RULES_BY_COUNTRY["FR"]):
         db.add(SpecialDayRule(household_id=household.id, kind=kind, parent_mode="auto", enabled=enabled))
     db.commit()
     return _household_out(db, household, user.id)
@@ -100,27 +138,113 @@ def update_household(
     household = db.get(Household, member.household_id)
     if data.school_zone is not None and data.school_zone not in ZONES:
         raise HTTPException(status_code=422, detail="Zone invalide (A, B ou C)")
+
+    def journal(action: str, field: str, new) -> None:
+        audit.record(
+            db, household.id, member.user_id, action, "household", household.id,
+            {"before": {field: getattr(household, field)}, "after": {field: new}},
+        )
+
     if data.name is not None and data.name != household.name:
-        audit.record(
-            db, household.id, member.user_id, "household.rename", "household", household.id,
-            f"a renommé le foyer : {household.name} → {data.name}",
-            {"before": {"name": household.name}, "after": {"name": data.name}},
-        )
+        journal("household.rename", "name", data.name)
         household.name = data.name
+    if data.country is not None and data.country != household.country:
+        journal("household.country", "country", data.country)
+        household.country = data.country
+        household.currency = CURRENCY_BY_COUNTRY.get(data.country, household.currency)
     if data.school_zone is not None and data.school_zone != household.school_zone:
-        audit.record(
-            db, household.id, member.user_id, "household.zone", "household", household.id,
-            f"a changé la zone scolaire : {household.school_zone} → {data.school_zone}",
-            {"before": {"school_zone": household.school_zone}, "after": {"school_zone": data.school_zone}},
-        )
+        journal("household.zone", "school_zone", data.school_zone)
         household.school_zone = data.school_zone
     db.commit()
     return _household_out(db, household, member.user_id)
 
 
+# ---------- congés scolaires (saisie manuelle, ex. US) ----------
+
+@router.post(
+    "/households/{household_id}/school-vacations",
+    response_model=SchoolVacationOut,
+    status_code=201,
+    dependencies=[Depends(rate_limit("school_vacations", 100, DAY, by="household"))],
+)
+def add_school_vacation(
+    data: SchoolVacationIn,
+    member: HouseholdMember = Depends(get_membership),
+    db: Session = Depends(get_db),
+):
+    if data.end < data.start:
+        raise HTTPException(status_code=422, detail="La date de fin précède la date de début")
+    period = SchoolVacationPeriod(
+        household_id=member.household_id, label=data.label, start=data.start, end=data.end
+    )
+    db.add(period)
+    db.flush()
+    audit.record(
+        db, member.household_id, member.user_id, "school_vacation.create", "school_vacation", period.id,
+        {"after": {"label": period.label, "start": period.start, "end": period.end}},
+    )
+    db.commit()
+    db.refresh(period)
+    return period
+
+
+@router.delete("/households/{household_id}/school-vacations/{period_id}", status_code=204)
+def delete_school_vacation(
+    period_id: int,
+    member: HouseholdMember = Depends(get_membership),
+    db: Session = Depends(get_db),
+):
+    period = db.get(SchoolVacationPeriod, period_id)
+    if period is None or period.household_id != member.household_id:
+        raise HTTPException(status_code=404, detail="Congé introuvable")
+    audit.record(
+        db, member.household_id, member.user_id, "school_vacation.delete", "school_vacation", period.id,
+        {"before": {"label": period.label, "start": period.start, "end": period.end}},
+    )
+    db.delete(period)
+    db.commit()
+
+
+def _real_members(db: Session, household_id: int) -> list[HouseholdMember]:
+    """Membres réels (hors placeholder), pour les décomptes d'invitation."""
+    out = []
+    for m in household_members(db, household_id):
+        u = db.get(User, m.user_id)
+        if u is not None and not u.is_placeholder:
+            out.append(m)
+    return out
+
+
+@router.patch("/households/{household_id}/partner", response_model=MemberOut)
+def rename_partner(
+    data: PartnerUpdate,
+    member: HouseholdMember = Depends(get_membership),
+    db: Session = Depends(get_db),
+):
+    """Nomme le second parent placeholder (ex. « Camille ») tant qu'il n'a pas de compte."""
+    ensure_second_parent(db, member.household_id)
+    ghost_member = next(
+        (m for m in household_members(db, member.household_id) if db.get(User, m.user_id).is_placeholder),
+        None,
+    )
+    if ghost_member is None:
+        raise HTTPException(status_code=409, detail="Le second parent a déjà un compte")
+    ghost = db.get(User, ghost_member.user_id)
+    if data.display_name != ghost.display_name:
+        audit.record(
+            db, member.household_id, member.user_id, "partner.rename", "member", ghost.id,
+            {"before": {"display_name": ghost.display_name}, "after": {"display_name": data.display_name}},
+        )
+    ghost.display_name = data.display_name
+    if data.color is not None:
+        ghost.color = data.color
+    db.commit()
+    return _member_out(db, ghost_member)
+
+
 @router.post("/households/{household_id}/invitations", response_model=InvitationOut, status_code=201)
 def create_invitation(member: HouseholdMember = Depends(get_membership), db: Session = Depends(get_db)):
-    if len(household_members(db, member.household_id)) >= 2:
+    if len(_real_members(db, member.household_id)) >= 2:
         raise HTTPException(status_code=409, detail="Le foyer a déjà deux parents")
     invitation = Invitation(
         household_id=member.household_id,
@@ -131,7 +255,7 @@ def create_invitation(member: HouseholdMember = Depends(get_membership), db: Ses
     db.add(invitation)
     db.commit()
     return InvitationOut(
-        # Lien absolu vers la SPA (Vercel) : route /join/:token.
+        # Lien absolu vers la route SPA /join/:token.
         invite_url=f"{settings.app_url.rstrip('/')}/join/{invitation.token}",
         token=invitation.token,
         expires_at=invitation.expires_at,
@@ -169,13 +293,15 @@ def accept_invitation(token: str, user: User = Depends(get_current_user), db: Se
     members = household_members(db, invitation.household_id)
     if any(m.user_id == user.id for m in members):
         raise HTTPException(status_code=409, detail="Vous êtes déjà membre de ce foyer")
-    if len(members) >= 2:
+    if len(_real_members(db, invitation.household_id)) >= 2:
         raise HTTPException(status_code=409, detail="Le foyer a déjà deux parents")
     if db.scalar(select(HouseholdMember).where(HouseholdMember.user_id == user.id)):
         raise HTTPException(status_code=409, detail="Vous appartenez déjà à un autre foyer")
+    # Le vrai parent réclame le placeholder (hérite des dépenses/tâches assignées).
+    claim_placeholder(db, invitation.household_id, user.id)
     db.add(HouseholdMember(household_id=invitation.household_id, user_id=user.id, role="parent2"))
     invitation.used_at = utcnow()
-    audit.record(db, invitation.household_id, user.id, "member.join", "member", user.id, "a rejoint le foyer")
+    audit.record(db, invitation.household_id, user.id, "member.join", "member", user.id)
     notify(db, invitation.invited_by, "parent_joined", {"display_name": user.display_name})
     db.commit()
     return _household_out(db, db.get(Household, invitation.household_id), user.id)

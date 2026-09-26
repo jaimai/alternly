@@ -1,21 +1,18 @@
 from datetime import date
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
-from fastapi.encoders import jsonable_encoder
-from fastapi.responses import JSONResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ..db import get_db
-from ..deps import get_membership, notify, other_parent_id
-from ..models import ChangeRequest, HouseholdMember, ScheduleException, User, utcnow
+from ..deps import get_membership, is_premium, notify, other_parent_id
+from ..models import HouseholdMember, ScheduleException, User, utcnow
+from ..ratelimit import DAY, rate_limit
 from ..services import audit
-from ..services.audit import fr_range
 from ..services import change_requests as cr_service
 from ..services import email as email_service
-from ..ratelimit import DAY, rate_limit
+from ..services import rules as rules_service
 from ..schemas import (
-    ChangeRequestOut,
     CustodyRuleIn,
     CustodyRuleOut,
     ExceptionIn,
@@ -30,14 +27,6 @@ from ..schemas import (
 router = APIRouter(prefix="/api/households/{household_id}", tags=["rules"])
 
 
-def _pending_response(cr: ChangeRequest) -> JSONResponse:
-    """202 : la modification attend l'accord de l'autre parent."""
-    return JSONResponse(
-        status_code=202,
-        content=jsonable_encoder({"change_request": ChangeRequestOut.model_validate(cr)}),
-    )
-
-
 @router.put("/custody-rule", response_model=CustodyRuleOut)
 def upsert_custody_rule(
     data: CustodyRuleIn,
@@ -45,17 +34,16 @@ def upsert_custody_rule(
     db: Session = Depends(get_db),
 ):
     hid = member.household_id
-    new = cr_service.validate_custody(db, hid, data)
-    rule = cr_service.get_custody(db, hid)
-    old = cr_service.custody_snapshot(rule)
+    new = rules_service.validate_custody(db, hid, data)
+    rule = rules_service.get_custody(db, hid)
+    old = rules_service.custody_snapshot(rule)
     if old == new:
         return rule  # aucune modification
     if rule is not None and cr_service.needs_consent(db, member):
-        summary = f"Rythme de garde : {cr_service.custody_detail(db, old, new)}"
-        cr = cr_service.create_request(db, member, "custody_rule", new, summary)
+        cr = cr_service.create_request(db, member, "custody_rule", new, {"before": old, "after": new})
         db.commit()
-        return _pending_response(cr)
-    rule = cr_service.apply_custody(db, hid, new, member.user_id)
+        return cr_service.pending_response(db, member, cr)
+    rule = rules_service.apply_custody(db, hid, new, member.user_id)
     notify(db, other_parent_id(db, hid, member.user_id), "rule_changed", {"what": "custody"})
     db.commit()
     db.refresh(rule)
@@ -69,17 +57,16 @@ def upsert_vacation_rule(
     db: Session = Depends(get_db),
 ):
     hid = member.household_id
-    new = cr_service.validate_vacation(db, hid, data)
-    rule = cr_service.get_vacation(db, hid)
-    old = cr_service.vacation_snapshot(rule)
+    new = rules_service.validate_vacation(db, hid, data)
+    rule = rules_service.get_vacation(db, hid)
+    old = rules_service.vacation_snapshot(rule)
     if old == new:
         return rule
     if rule is not None and cr_service.needs_consent(db, member):
-        summary = f"Vacances : {cr_service.vacation_detail(db, old, new)}"
-        cr = cr_service.create_request(db, member, "vacation_rule", new, summary)
+        cr = cr_service.create_request(db, member, "vacation_rule", new, {"before": old, "after": new})
         db.commit()
-        return _pending_response(cr)
-    rule = cr_service.apply_vacation(db, hid, new, member.user_id)
+        return cr_service.pending_response(db, member, cr)
+    rule = rules_service.apply_vacation(db, hid, new, member.user_id)
     notify(db, other_parent_id(db, hid, member.user_id), "rule_changed", {"what": "vacation"})
     db.commit()
     db.refresh(rule)
@@ -93,20 +80,21 @@ def upsert_special_day_rules(
     db: Session = Depends(get_db),
 ):
     hid = member.household_id
-    items = cr_service.validate_special(db, hid, data)
-    rules = cr_service.get_special(db, hid)
-    current = cr_service.special_snapshot(rules)
-    if not cr_service.special_changed(current, items):
+    items = rules_service.validate_special(db, hid, data)
+    rules = rules_service.get_special(db, hid)
+    current = rules_service.special_snapshot(rules)
+    if not rules_service.special_changed(current, items):
         return rules
     if rules and cr_service.needs_consent(db, member):
-        summary = f"Jours de fête : {cr_service.special_detail(db, current, items)}"
-        cr = cr_service.create_request(db, member, "special_day_rules", {"items": items}, summary)
+        cr = cr_service.create_request(
+            db, member, "special_day_rules", {"items": items}, {"before": current, "after": items}
+        )
         db.commit()
-        return _pending_response(cr)
-    cr_service.apply_special(db, hid, items, member.user_id)
+        return cr_service.pending_response(db, member, cr)
+    rules_service.apply_special(db, hid, items, member.user_id)
     notify(db, other_parent_id(db, hid, member.user_id), "rule_changed", {"what": "special_days"})
     db.commit()
-    return cr_service.get_special(db, hid)
+    return rules_service.get_special(db, hid)
 
 
 def _is_expired(exc: ScheduleException) -> bool:
@@ -163,7 +151,7 @@ def create_exception(
 ):
     if data.date_end < data.date_start:
         raise HTTPException(status_code=422, detail="La date de fin précède la date de début")
-    cr_service.check_parent(db, member.household_id, data.parent_id)
+    rules_service.check_parent(db, member.household_id, data.parent_id)
     if data.replaces_id is not None:
         _get_exchange(db, member, data.replaces_id)  # doit exister dans le foyer
 
@@ -184,17 +172,16 @@ def create_exception(
     )
     db.add(exc)
     db.flush()  # pour disposer de exc.id dans la notification
-    verb = "a ajouté un échange" if solo else "a proposé un échange"
     audit.record(
         db, member.household_id, member.user_id, "exchange.propose", "exception", exc.id,
-        f"{verb} : {cr_service.exchange_label(db, exc)}", {"after": cr_service.exchange_snapshot(exc)},
+        {"after": rules_service.exchange_snapshot(exc), "solo": solo},
     )
     if not solo:
         payload = _exchange_payload(exc)
         notify(db, recipient_id, "exchange_proposed", payload)
         recipient = db.get(User, recipient_id)
-        if recipient is not None and recipient.email_opt_in:
-            subject, html = email_service.exchange_proposed_email(payload)
+        if recipient is not None and recipient.email_opt_in and is_premium(db, recipient):
+            subject, html = email_service.exchange_proposed_email(payload, recipient.locale)
             # Envoyé après la réponse (donc après le commit) : jamais d'e-mail pour
             # une proposition non enregistrée, ni de latence Resend dans la requête.
             background.add_task(email_service.send_email, recipient.email, subject, html)
@@ -227,7 +214,7 @@ def accept_exchange(
     _resolve(db, member, exc, "accepted", data.response_note)
     audit.record(
         db, member.household_id, member.user_id, "exchange.accept", "exception", exc.id,
-        f"a accepté l'échange : {cr_service.exchange_label(db, exc)}",
+        {"after": rules_service.exchange_snapshot(exc)},
     )
     notify(db, exc.created_by, "exchange_accepted", _exchange_payload(exc))
     db.commit()
@@ -250,7 +237,7 @@ def refuse_exchange(
     _resolve(db, member, exc, "refused", data.response_note)
     audit.record(
         db, member.household_id, member.user_id, "exchange.refuse", "exception", exc.id,
-        f"a refusé l'échange : {cr_service.exchange_label(db, exc)}",
+        {"after": rules_service.exchange_snapshot(exc)},
     )
     notify(db, exc.created_by, "exchange_refused", _exchange_payload(exc))
     db.commit()
@@ -273,7 +260,7 @@ def withdraw_exchange(
     exc.resolved_at = utcnow()
     audit.record(
         db, member.household_id, member.user_id, "exchange.withdraw", "exception", exc.id,
-        f"a retiré sa proposition d'échange : {cr_service.exchange_label(db, exc)}",
+        {"after": rules_service.exchange_snapshot(exc)},
     )
     notify(db, other_parent_id(db, member.household_id, member.user_id), "exchange_withdrawn", _exchange_payload(exc))
     db.commit()
@@ -293,20 +280,17 @@ def delete_exception(
         raise HTTPException(status_code=403, detail="Seul le proposeur peut supprimer sa proposition")
     if exc.status == "accepted" and cr_service.needs_consent(db, member):
         # Annuler un échange convenu engage les deux parents.
-        summary = f"Annuler l'échange du {fr_range(exc.date_start, exc.date_end)} (chez {_parent_name(db, exc)})"
-        cr = cr_service.create_request(db, member, "cancel_exchange", {"exception_id": exc.id}, summary)
+        cr = cr_service.create_request(
+            db, member, "cancel_exchange", {"exception_id": exc.id},
+            {"date_start": exc.date_start, "date_end": exc.date_end, "parent_id": exc.parent_id},
+        )
         db.commit()
-        return _pending_response(cr)
+        return cr_service.pending_response(db, member, cr)
     notify(
         db,
         other_parent_id(db, member.household_id, member.user_id),
         "exception_deleted",
         {"date_start": exc.date_start.isoformat(), "date_end": exc.date_end.isoformat()},
     )
-    cr_service.delete_exchange(db, exc, member.user_id)
+    rules_service.delete_exchange(db, exc, member.user_id)
     db.commit()
-
-
-def _parent_name(db: Session, exc: ScheduleException) -> str:
-    user = db.get(User, exc.parent_id)
-    return user.display_name if user is not None else "un parent"

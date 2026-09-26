@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { api, setToken } from '../api'
 import { useAuth } from '../auth'
 import PasswordField from '../components/PasswordField'
@@ -12,6 +13,7 @@ export default function LoginPage() {
   const [busy, setBusy] = useState(false)
   const { setUser } = useAuth()
   const navigate = useNavigate()
+  const { t } = useTranslation()
 
   async function submit(e: FormEvent) {
     e.preventDefault()
@@ -22,9 +24,9 @@ export default function LoginPage() {
       setToken(resp.access_token)
       setUser(resp.user)
       const pending = localStorage.getItem('pending_invite')
-      navigate(pending ? `/join/${pending}` : '/')
+      navigate(pending ? `/join/${pending}` : '/app')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur de connexion')
+      setError(err instanceof Error ? err.message : t('auth.loginError'))
     } finally {
       setBusy(false)
     }
@@ -34,24 +36,24 @@ export default function LoginPage() {
     <div className="auth-page">
       <div className="brand">
         <div className="wordmark">altern<span>ly</span></div>
-        <p>Le calendrier de garde partagée</p>
+        <p>{t('auth.tagline')}</p>
       </div>
       <form className="card" onSubmit={submit}>
-        <h2>Connexion</h2>
-        <label htmlFor="email">E-mail</label>
+        <h2>{t('auth.loginTitle')}</h2>
+        <label htmlFor="email">{t('auth.emailLabel')}</label>
         <input id="email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-        <PasswordField id="password" label="Mot de passe" value={password} onChange={setPassword} />
+        <PasswordField id="password" label={t('auth.passwordLabel')} value={password} onChange={setPassword} />
         <p className="forgot-link">
-          <Link to="/forgot-password">Mot de passe oublié ?</Link>
+          <Link to="/forgot-password">{t('auth.forgotLink')}</Link>
         </p>
         {error && <div className="error">{error}</div>}
         <p style={{ marginTop: 16 }}>
           <button type="submit" disabled={busy} style={{ width: '100%' }}>
-            {busy ? 'Connexion…' : 'Se connecter'}
+            {busy ? t('auth.loginBusy') : t('auth.loginSubmit')}
           </button>
         </p>
         <p style={{ textAlign: 'center', margin: 0 }}>
-          Pas encore de compte ? <Link to="/register">Créer un compte</Link>
+          {t('auth.noAccountPrompt')} <Link to="/register">{t('auth.createAccountLink')}</Link>
         </p>
       </form>
     </div>

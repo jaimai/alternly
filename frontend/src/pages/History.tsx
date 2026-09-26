@@ -1,27 +1,31 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { api, ApiError } from '../api'
+import { useTranslation } from 'react-i18next'
+import { api } from '../api'
+import { useAuth } from '../auth'
+import Icon from '../components/Icon'
+import Spinner from '../components/Spinner'
 import TopBar from '../components/TopBar'
-import { fmtDayLong, fmtTimestamp } from '../dates'
-import type { HistoryEntry, Household } from '../types'
+import { isoLocal, parseTimestamp } from '../dates'
+import { useFormat } from '../format'
+import type { HistoryEntry } from '../types'
+
+const PAGE = 50
 
 // Journal immuable des modifications du foyer : qui a changé quoi, et quand.
 export default function HistoryPage() {
+  const { t } = useTranslation()
+  const { dayLong, timestamp } = useFormat()
   const navigate = useNavigate()
-  const [household, setHousehold] = useState<Household | null>(null)
+  const { household, householdLoaded } = useAuth()
   const [entries, setEntries] = useState<HistoryEntry[]>([])
+  const [loaded, setLoaded] = useState(false)
   const [done, setDone] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    api
-      .myHousehold()
-      .then(setHousehold)
-      .catch((err) => {
-        if (err instanceof ApiError && err.status === 404) navigate('/onboarding')
-        else setError(err instanceof Error ? err.message : 'Erreur')
-      })
-  }, [navigate])
+    if (householdLoaded && !household) navigate('/onboarding')
+  }, [householdLoaded, household, navigate])
 
   const loadMore = useCallback(
     (beforeId?: number) => {
@@ -30,23 +34,23 @@ export default function HistoryPage() {
         .history(household.id, beforeId)
         .then((page) => {
           setEntries((prev) => (beforeId ? [...prev, ...page] : page))
-          if (page.length < 50) setDone(true)
+          if (page.length < PAGE) setDone(true)
         })
-        .catch((err) => setError(err instanceof Error ? err.message : 'Erreur'))
+        .catch((err) => setError(err instanceof Error ? err.message : t('history.error')))
+        .finally(() => setLoaded(true))
     },
-    [household],
+    [household, t],
   )
 
   useEffect(() => loadMore(), [loadMore])
 
-  if (!household) return <div className="page-loading">Chargement…</div>
+  if (!household) return <Spinner />
   const member = (id: number | null) => household.members.find((m) => m.id === id)
 
-  // Regroupement par jour.
+  // Regroupement par jour (heure locale).
   const days = new Map<string, HistoryEntry[]>()
   for (const e of entries) {
-    const d = new Date(e.created_at.endsWith('Z') ? e.created_at : e.created_at + 'Z')
-    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+    const key = isoLocal(parseTimestamp(e.created_at))
     days.set(key, [...(days.get(key) ?? []), e])
   }
 
@@ -54,21 +58,22 @@ export default function HistoryPage() {
     <>
       <TopBar householdName={household.name} />
       <div className="layout narrow">
-        <h1>Historique du foyer</h1>
-        <p className="hint" style={{ marginTop: 0 }}>
-          Toutes les modifications, horodatées et non modifiables. Visible par les deux parents.
-        </p>
+        <h1>{t('history.title')}</h1>
+        <p className="hint" style={{ marginTop: 0 }}>{t('history.subtitle')}</p>
         {error && <div className="error">{error}</div>}
-        {entries.length === 0 && !error && (
+        {!loaded && <Spinner inline />}
+        {loaded && entries.length === 0 && !error && (
           <div className="empty-state">
-            <span className="empty-icon" aria-hidden="true">🕒</span>
-            <h2>Rien pour l'instant</h2>
-            <p>Les changements de règles, échanges, dépenses et messages apparaîtront ici.</p>
+            <span className="empty-icon" aria-hidden="true">
+              <Icon name="history" size={24} />
+            </span>
+            <h2>{t('history.emptyTitle')}</h2>
+            <p>{t('history.emptyBody')}</p>
           </div>
         )}
         {[...days.entries()].map(([day, items]) => (
           <section key={day} className="list-group">
-            <h2 className="section-label">{fmtDayLong(day)}</h2>
+            <h2 className="section-label">{dayLong(day)}</h2>
             <div className="list-card">
               {items.map((e) => {
                 const m = member(e.actor_id)
@@ -79,9 +84,9 @@ export default function HistoryPage() {
                     </span>
                     <div className="list-main">
                       <div>
-                        <strong>{m?.display_name ?? 'Système'}</strong> {e.summary}
+                        <strong>{m?.display_name ?? t('history.system')}</strong> {e.summary}
                       </div>
-                      <div className="hint">{fmtTimestamp(e.created_at)}</div>
+                      <div className="hint">{timestamp(e.created_at)}</div>
                     </div>
                   </article>
                 )
@@ -90,9 +95,9 @@ export default function HistoryPage() {
           </section>
         ))}
         {!done && entries.length > 0 && (
-          <p style={{ textAlign: 'center' }}>
+          <p style={{ textAlign: 'center', marginTop: 16 }}>
             <button className="secondary" onClick={() => loadMore(entries[entries.length - 1].id)}>
-              Voir plus
+              {t('history.more')}
             </button>
           </p>
         )}

@@ -1,0 +1,20 @@
+{
+  "onboarding.errorGeneric": "Something went wrong",
+  "onboarding.defaultHouseholdName": "{{name}}'s household",
+  "onboarding.paywallTitle": "Your calendar is ready",
+  "onboarding.paywallSubtitle": "The calendar is free. Unlock expenses, the wall, and sync whenever you're ready.",
+  "onboarding.welcomeTitle": "Welcome!",
+  "onboarding.welcomeSubtitle": "Let's set up your calendar in three steps.",
+  "onboarding.householdHeading": "Your household",
+  "onboarding.householdNameLabel": "Household name (e.g. “Leo's family”)",
+  "onboarding.householdNamePlaceholder": "Family of…",
+  "onboarding.schoolZoneLabel": "School zone",
+  "onboarding.zoneA": "Zone A (Besançon, Bordeaux, Clermont, Dijon, Grenoble, Limoges, Lyon, Poitiers)",
+  "onboarding.zoneB": "Zone B (Aix-Marseille, Amiens, Lille, Nancy-Metz, Nantes, Nice, Normandie, Orléans-Tours, Reims, Rennes, Strasbourg)",
+  "onboarding.zoneC": "Zone C (Créteil, Montpellier, Paris, Toulouse, Versailles)",
+  "onboarding.continue": "Continue",
+  "onboarding.childrenHeading": "Your children",
+  "onboarding.firstNameLabel": "First name",
+  "onboarding.add": "Add",
+  "onboarding.generateCalendar": "Generate my calendar"
+}

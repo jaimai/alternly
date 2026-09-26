@@ -1,7 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { api } from '../api'
 import { useAuth } from '../auth'
-import { fmtDayLong, fmtRange as fmtDates } from '../dates'
+import { isSolo } from '../members'
+import { useFormat } from '../format'
 import type { Member, ScheduleException } from '../types'
 
 interface Props {
@@ -17,7 +19,9 @@ interface Props {
 
 export default function ExceptionDialog({ householdId, date, members, existing, currentParentId, onClose, onChanged }: Props) {
   const { user } = useAuth()
-  const solo = members.length < 2
+  const { t } = useTranslation()
+  const { range: fmtDates, dayLong } = useFormat()
+  const solo = isSolo(members)
 
   const [dateStart, setDateStart] = useState(date)
   const [dateEnd, setDateEnd] = useState(date)
@@ -43,11 +47,13 @@ export default function ExceptionDialog({ householdId, date, members, existing, 
   }
 
   // Échap ferme la fenêtre.
+  const closeRef = useRef(onClose)
+  closeRef.current = onClose
   useEffect(() => {
-    const onKey = (ev: KeyboardEvent) => ev.key === 'Escape' && onClose()
+    const onKey = (ev: KeyboardEvent) => ev.key === 'Escape' && closeRef.current()
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
-  }, [onClose])
+  }, [])
 
   async function run(fn: () => Promise<unknown>) {
     setBusy(true)
@@ -57,14 +63,14 @@ export default function ExceptionDialog({ householdId, date, members, existing, 
       onChanged()
       onClose()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur')
+      setError(err instanceof Error ? err.message : t('exchange.errorGeneric'))
       setBusy(false)
     }
   }
 
   function create() {
-    if (dateEnd < dateStart) {
-      setError('La date de fin doit être après la date de début')
+    if (!dateStart || !dateEnd || dateEnd < dateStart) {
+      setError(t('exchange.errorDates'))
       return
     }
     return run(async () => {
@@ -75,7 +81,8 @@ export default function ExceptionDialog({ householdId, date, members, existing, 
         note,
         ...(replacesId !== null ? { replaces_id: replacesId } : {}),
       })
-      // Contre-proposition : l'originale n'est refusée qu'une fois la nouvelle envoyée.
+      // Contre-proposition : l'originale n'est refusée qu'une fois la nouvelle envoyée
+      // (fermer la fenêtre entre-temps ne perd plus la proposition initiale).
       if (replacesId !== null) await api.refuseExchange(householdId, replacesId)
     })
   }
@@ -92,17 +99,17 @@ export default function ExceptionDialog({ householdId, date, members, existing, 
 
   const toAnswer = overlapping.some((e) => e.status === 'pending' && e.created_by !== user?.id)
   const title = solo
-    ? 'Échange ponctuel'
+    ? t('exchange.titleSolo')
     : replacesId !== null
-      ? 'Contre-proposition'
+      ? t('exchange.titleCounter')
       : toAnswer
-        ? 'Proposition à traiter'
-        : 'Proposer un échange'
+        ? t('exchange.titleToAnswer')
+        : t('exchange.titlePropose')
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal sheet" role="dialog" aria-modal="true" aria-labelledby="xdlg-title" onClick={(ev) => ev.stopPropagation()}>
-        <p className="eyebrow">{fmtDayLong(date)}</p>
+        <p className="eyebrow">{dayLong(date)}</p>
         <h2 id="xdlg-title">{title}</h2>
 
         {overlapping.map((e) => {
@@ -111,38 +118,39 @@ export default function ExceptionDialog({ householdId, date, members, existing, 
             <div key={e.id} className="card inset">
               <p style={{ margin: '0 0 8px' }}>
                 {e.status === 'pending' ? (
-                  <span className="tag tag-pending">Proposé</span>
+                  <span className="tag tag-pending">{t('exchange.tagProposed')}</span>
                 ) : (
-                  <span className="tag tag-accepted">Confirmé</span>
+                  <span className="tag tag-accepted">{t('exchange.tagConfirmed')}</span>
                 )}{' '}
-                {fmtRange(e)} chez <strong>{parentName(e.parent_id)}</strong>
+                {fmtRange(e)} {t('exchange.at')} <strong>{parentName(e.parent_id)}</strong>
                 {e.note && <em> — {e.note}</em>}
               </p>
 
               {e.status === 'pending' && !iAmProposer && (
                 <div className="actions">
                   <button onClick={() => run(() => api.acceptExchange(householdId, e.id))} disabled={busy}>
-                    Accepter
+                    {t('exchange.accept')}
                   </button>
                   <button className="secondary" onClick={() => run(() => api.refuseExchange(householdId, e.id))} disabled={busy}>
-                    Refuser
+                    {t('exchange.decline')}
                   </button>
                   <button className="secondary" onClick={() => startCounter(e)} disabled={busy}>
-                    Contre-proposer
+                    {t('exchange.counterPropose')}
                   </button>
                 </div>
               )}
               {e.status === 'pending' && iAmProposer && (
                 <p style={{ margin: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span className="hint">En attente de l'autre parent…</span>
+                  <span className="hint">{t('exchange.waitingOtherParent')}</span>
                   <button className="danger-link" onClick={() => run(() => api.withdrawExchange(householdId, e.id))} disabled={busy}>
-                    Retirer
+                    {t('exchange.withdraw')}
                   </button>
                 </p>
               )}
               {e.status === 'accepted' && (
                 <button className="danger-link" onClick={() => run(() => api.deleteException(householdId, e.id))} disabled={busy}>
-                  {solo ? "Annuler l'échange" : "Demander l'annulation"}
+                  {/* Deux parents réels : l'annulation devient une demande à valider par l'autre. */}
+                  {solo ? t('exchange.cancelExchange') : t('exchange.requestCancel')}
                 </button>
               )}
             </div>
@@ -150,23 +158,21 @@ export default function ExceptionDialog({ householdId, date, members, existing, 
         })}
 
         {replacesId !== null && (
-          <div className="info-banner">
-            Ajustez les dates ci-dessous. La proposition initiale sera refusée à l'envoi de la vôtre.
-          </div>
+          <div className="info-banner">{t('exchange.counterBanner')}</div>
         )}
-        {toAnswer && replacesId === null && <p className="section-label">Ou proposer autre chose</p>}
+        {toAnswer && replacesId === null && <p className="section-label">{t('exchange.orProposeOther')}</p>}
 
         <div className="row">
           <div>
-            <label htmlFor="ds">Du</label>
+            <label htmlFor="ds">{t('exchange.fromLabel')}</label>
             <input id="ds" type="date" value={dateStart} onChange={(e) => setDateStart(e.target.value)} />
           </div>
           <div>
-            <label htmlFor="de">Au (inclus)</label>
+            <label htmlFor="de">{t('exchange.toLabel')}</label>
             <input id="de" type="date" value={dateEnd} onChange={(e) => setDateEnd(e.target.value)} />
           </div>
         </div>
-        <label htmlFor="par">L'enfant sera chez</label>
+        <label htmlFor="par">{t('exchange.childWillBeWith')}</label>
         <select id="par" value={parentId} onChange={(e) => setParentId(Number(e.target.value))}>
           {members.map((m) => (
             <option key={m.id} value={m.id}>
@@ -174,21 +180,19 @@ export default function ExceptionDialog({ householdId, date, members, existing, 
             </option>
           ))}
         </select>
-        <label htmlFor="note">Note (facultatif)</label>
-        <input id="note" value={note} onChange={(e) => setNote(e.target.value)} placeholder="ex. anniversaire de mamie" />
+        <label htmlFor="note">{t('exchange.noteLabel')}</label>
+        <input id="note" value={note} onChange={(e) => setNote(e.target.value)} placeholder={t('exchange.notePlaceholder')} />
         {error && <div className="error">{error}</div>}
         <div className="actions" style={{ marginTop: 18 }}>
           <button onClick={create} disabled={busy}>
-            {solo ? 'Enregistrer' : replacesId !== null ? 'Envoyer la contre-proposition' : 'Proposer'}
+            {solo ? t('exchange.save') : replacesId !== null ? t('exchange.sendCounter') : t('exchange.propose')}
           </button>
           <button className="secondary" onClick={onClose}>
-            Fermer
+            {t('exchange.close')}
           </button>
         </div>
         <p className="fine-print">
-          {solo
-            ? "L'échange est appliqué directement."
-            : "L'autre parent recevra la proposition et pourra l'accepter ou la refuser."}
+          {solo ? t('exchange.footerSolo') : t('exchange.footerPropose')}
         </p>
       </div>
     </div>
