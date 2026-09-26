@@ -28,6 +28,7 @@ _ADD_COLUMNS: dict[str, dict[str, str]] = {
         "paddle_subscription_id": "VARCHAR",
         "is_placeholder": "BOOLEAN",
         "locale": "VARCHAR",
+        "token_version": "INTEGER",
     },
     "expenses": {
         "settled_at": "TIMESTAMP",
@@ -53,6 +54,7 @@ _INDEXES: list[tuple[str, str]] = [
     ("household_members", "user_id"),
     ("notifications", "user_id"),
     ("users", "paddle_subscription_id"),
+    ("password_reset_tokens", "user_id"),
 ]
 
 
@@ -90,6 +92,7 @@ def run_migrations(engine: Engine) -> None:
             conn.execute(text("UPDATE users SET is_placeholder = FALSE WHERE is_placeholder IS NULL"))
             # Comptes existants : langue française par défaut.
             conn.execute(text("UPDATE users SET locale = 'fr' WHERE locale IS NULL"))
+            conn.execute(text("UPDATE users SET token_version = 0 WHERE token_version IS NULL"))
         # Foyers existants : France / euro par défaut.
         if "households" in existing_tables:
             conn.execute(text("UPDATE households SET country = 'FR' WHERE country IS NULL"))

@@ -33,6 +33,8 @@ class User(Base):
     # Ne peut pas se connecter ; réclamé (claim) quand le vrai parent rejoint.
     is_placeholder: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    # Incrémenté pour révoquer tous les jetons émis (claim JWT "tv").
+    token_version: Mapped[int] = mapped_column(Integer, default=0)
     # Abonnement Paddle. status : trialing | active | past_due | canceled | none.
     subscription_status: Mapped[str] = mapped_column(String, default="trialing")
     trial_ends_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
@@ -226,6 +228,18 @@ class Notification(Base):
     type: Mapped[str] = mapped_column(String)
     payload: Mapped[dict] = mapped_column(JSON, default=dict)
     read_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+
+class PasswordResetToken(Base):
+    """Jeton de réinitialisation du mot de passe (usage unique, 1 h)."""
+    __tablename__ = "password_reset_tokens"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    token_hash: Mapped[str] = mapped_column(String, unique=True)  # sha256 hex ; jamais le jeton brut
+    expires_at: Mapped[datetime] = mapped_column(DateTime)
+    used_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
 

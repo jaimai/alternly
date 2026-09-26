@@ -253,3 +253,16 @@ class TestDeleteChild:
         assert resp.status_code == 204, resp.text
         assert db_session.get(Expense, exp.json()["id"]).child_id is None
         assert db_session.get(WallPost, post.json()["id"]).child_id is None
+
+    def test_token_version_added_to_legacy_users_table(self):
+        engine = create_engine("sqlite://", poolclass=StaticPool)
+        with engine.begin() as conn:
+            conn.execute(text(
+                "CREATE TABLE users (id INTEGER PRIMARY KEY, email VARCHAR, password_hash VARCHAR, "
+                "display_name VARCHAR, color VARCHAR, ical_token VARCHAR, created_at DATETIME)"
+            ))
+            conn.execute(text("INSERT INTO users (id, email) VALUES (1, 'a@test.fr')"))
+        run_migrations(engine)
+        run_migrations(engine)  # idempotent
+        with engine.connect() as conn:
+            assert conn.execute(text("SELECT token_version FROM users")).scalar() == 0

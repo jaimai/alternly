@@ -56,6 +56,20 @@ class UserLogin(BaseModel):
     password: str = Field(max_length=200)
 
 
+class ForgotPasswordIn(BaseModel):
+    email: EmailStr
+
+
+class ResetPasswordIn(BaseModel):
+    token: str = Field(min_length=1, max_length=200)
+    password: NewPassword
+
+
+class ChangePasswordIn(BaseModel):
+    current_password: str = Field(max_length=200)
+    new_password: NewPassword
+
+
 class UserOut(ORMModel):
     id: int
     email: str

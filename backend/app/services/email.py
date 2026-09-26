@@ -132,3 +132,33 @@ def exchange_reminder_email(payload: dict, locale: str | None = "fr") -> tuple[s
         "Rappel : une proposition d'échange expire demain",
         _layout(intro, "Répondre maintenant", "/app", _FOOTER_NOTIFS["fr"]),
     )
+
+
+def password_reset_email(token: str, locale: str | None = "fr") -> tuple[str, str]:
+    """(sujet, html) pour la réinitialisation du mot de passe (lien valable 1 h, usage unique).
+    Lien vers la route SPA /reset-password (jeton token_urlsafe : sûr tel quel dans une URL)."""
+    path = f"/reset-password?token={token}"
+    if _lang(locale) == "en":
+        intro = (
+            "Hello,<br/>You asked to reset the password of your Alternly account. "
+            "Click the button below to choose a new one. This link is valid for "
+            "<strong>one hour</strong> and can only be used once."
+        )
+        footer = (
+            "Didn't request this? Just ignore this email: "
+            "your current password stays unchanged."
+        )
+        return "Reset your Alternly password", _layout(intro, "Choose a new password", path, footer)
+    intro = (
+        "Bonjour,<br/>Vous avez demandé à réinitialiser le mot de passe de votre compte Alternly. "
+        "Cliquez sur le bouton ci-dessous pour en choisir un nouveau. Ce lien est valable "
+        "<strong>une heure</strong> et ne peut servir qu'une seule fois."
+    )
+    footer = (
+        "Vous n'êtes pas à l'origine de cette demande ? Ignorez simplement cet e-mail : "
+        "votre mot de passe actuel reste inchangé."
+    )
+    return (
+        "Réinitialisation de votre mot de passe Alternly",
+        _layout(intro, "Choisir un nouveau mot de passe", path, footer),
+    )
