@@ -60,14 +60,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     api
       .me()
-      .then((u) => {
-        setUser(u)
-        refreshBilling()
-        refreshHousehold()
-      })
+      .then(setUser)
       .catch(() => setToken(null))
       .finally(() => setLoading(false))
-  }, [refreshBilling, refreshHousehold])
+  }, [])
+
+  // Foyer et abonnement suivent le compte connecté : chargés à chaque changement
+  // de compte (au démarrage, mais aussi après connexion, inscription, Google,
+  // invitation ou réinitialisation, qui appellent setUser sans recharger la page).
+  const userId = user?.id ?? null
+  useEffect(() => {
+    setHousehold(null)
+    setBilling(null)
+    setHouseholdLoaded(false)
+    if (userId === null) return
+    refreshBilling()
+    refreshHousehold()
+  }, [userId, refreshBilling, refreshHousehold])
 
   // La langue de l'UI suit la préférence du compte — sauf si l'utilisateur vient
   // d'arriver avec un choix explicite (?lang= depuis la landing), qui prime.
