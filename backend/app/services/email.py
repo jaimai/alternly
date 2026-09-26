@@ -19,10 +19,16 @@ RESEND_ENDPOINT = "https://api.resend.com/emails"
 _transport: httpx.BaseTransport | None = None
 
 
+def mask_email(address: str) -> str:
+    """Adresse masquée pour les logs (RGPD) : jean.dupont@x.fr → j***@x.fr."""
+    local, sep, domain = address.partition("@")
+    return f"{local[:1]}***{sep}{domain}" if sep else "***"
+
+
 def send_email(to: str, subject: str, html: str) -> bool:
     """Envoie un e-mail. Retourne True si accepté par Resend, False sinon."""
     if not settings.resend_api_key:
-        logger.info("RESEND_API_KEY absente — e-mail « %s » vers %s non envoyé", subject, to)
+        logger.info("RESEND_API_KEY absente — e-mail « %s » vers %s non envoyé", subject, mask_email(to))
         return False
     try:
         with httpx.Client(transport=_transport, timeout=10) as client:
@@ -32,11 +38,13 @@ def send_email(to: str, subject: str, html: str) -> bool:
                 json={"from": settings.email_from, "to": [to], "subject": subject, "html": html},
             )
         if resp.status_code >= 400:
-            logger.warning("Resend a répondu %s pour l'e-mail vers %s : %s", resp.status_code, to, resp.text)
+            logger.warning(
+                "Resend a répondu %s pour l'e-mail vers %s : %s", resp.status_code, mask_email(to), resp.text
+            )
             return False
         return True
     except httpx.HTTPError as exc:  # réseau indisponible, timeout…
-        logger.warning("Échec d'envoi e-mail vers %s : %s", to, exc)
+        logger.warning("Échec d'envoi e-mail vers %s : %s", mask_email(to), exc)
         return False
 
 

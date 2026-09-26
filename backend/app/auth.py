@@ -18,7 +18,10 @@ def hash_password(password: str) -> str:
 
 
 def verify_password(password: str, password_hash: str) -> bool:
-    return bcrypt.checkpw(password.encode(), password_hash.encode())
+    try:
+        return bcrypt.checkpw(password.encode(), password_hash.encode())
+    except ValueError:  # > 72 octets (bcrypt ≥ 5) ou hash corrompu → simple échec
+        return False
 
 
 def create_token(user_id: int) -> str:

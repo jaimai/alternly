@@ -27,21 +27,25 @@ Données publiques intégrées (avec cache en base) :
 ```bash
 cd backend
 python3 -m venv .venv
-.venv/bin/pip install -r requirements.txt
+.venv/bin/pip install -r requirements-dev.txt   # requirements.txt + pytest
 cp .env.example .env        # puis renseigner DATABASE_URL et SECRET_KEY
 .venv/bin/uvicorn app.main:app --port 8000
 ```
 
 Sans `.env`, l'app démarre en mode dev sur SQLite (`backend/coparent.db`).
 
-**PostgreSQL (alwaysdata)** — dans `backend/.env` :
+**PostgreSQL (production : Railway)** — variables d'environnement :
 
 ```
-DATABASE_URL=postgresql+psycopg://user:password@postgresql-xxx.alwaysdata.net/dbname
-SECRET_KEY=<64 caractères aléatoires>
+DATABASE_URL=postgresql://user:password@host:5432/dbname
+SECRET_KEY=<python -c "import secrets;print(secrets.token_urlsafe(48))">
+APP_URL=https://app.votre-domaine.fr
+CORS_ORIGINS=https://app.votre-domaine.fr
+SITE_URL=https://votre-domaine.fr
 ```
 
-Hors SQLite, l'app **refuse de démarrer** avec la SECRET_KEY par défaut.
+Hors SQLite, l'app **refuse de démarrer** si la SECRET_KEY est absente, connue
+ou fait moins de 32 caractères. `/docs`, `/redoc` et `/openapi.json` n'y sont pas exposés.
 
 ### 2. Frontend
 
@@ -62,10 +66,14 @@ cd frontend && npm run dev    # Vite sur :5173, proxy /api → :8000
 ## Tests
 
 ```bash
-cd backend && .venv/bin/python -m pytest tests/ -q
+cd backend && .venv/bin/pip install -r requirements-dev.txt
+.venv/bin/python -m pytest tests/ -q
 ```
 
-66 tests, dont la partie critique : bascules années paires/impaires des vacances,
+Les tests sont hermétiques : SQLite en mémoire, APIs publiques (vacances scolaires,
+jours fériés) simulées dans `tests/conftest.py`.
+
+156 tests, dont la partie critique : bascules années paires/impaires des vacances,
 périodes à cheval sur deux années (Noël), coupe en moitiés paires/impaires,
 fêtes des mères/pères (y compris le décalage Pentecôte), priorités
 exception > fête > vacances > rythme, isolation entre foyers, flux invitation, iCal.

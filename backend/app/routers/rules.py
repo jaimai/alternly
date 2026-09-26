@@ -1,6 +1,6 @@
 from datetime import date
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -18,7 +18,7 @@ from ..schemas import (
     ExceptionIn,
     ExceptionOut,
     ExchangeResponseIn,
-    SpecialDayRuleIn,
+    SpecialDayRulesIn,
     SpecialDayRuleOut,
     VacationRuleIn,
     VacationRuleOut,
@@ -89,7 +89,7 @@ def upsert_vacation_rule(
 
 @router.put("/special-day-rules", response_model=list[SpecialDayRuleOut])
 def upsert_special_day_rules(
-    data: list[SpecialDayRuleIn],
+    data: SpecialDayRulesIn,
     member: HouseholdMember = Depends(get_membership),
     db: Session = Depends(get_db),
 ):
@@ -166,6 +166,7 @@ def list_exceptions(
 @router.post("/exceptions", response_model=ExceptionOut, status_code=201)
 def create_exception(
     data: ExceptionIn,
+    background: BackgroundTasks,
     member: HouseholdMember = Depends(get_membership),
     db: Session = Depends(get_db),
 ):
@@ -198,7 +199,9 @@ def create_exception(
         recipient = db.get(User, recipient_id)
         if recipient is not None and recipient.email_opt_in:
             subject, html = email_service.exchange_proposed_email(payload)
-            email_service.send_email(recipient.email, subject, html)
+            # Envoyé après la réponse (donc après le commit) : jamais d'e-mail pour
+            # une proposition non enregistrée, ni de latence Resend dans la requête.
+            background.add_task(email_service.send_email, recipient.email, subject, html)
     db.commit()
     db.refresh(exc)
     return exc

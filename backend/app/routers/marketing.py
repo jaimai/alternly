@@ -16,6 +16,14 @@ templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 # pointent vers l'app hébergée séparément.
 templates.env.globals["app_url"] = settings.app_url.rstrip("/")
 
+
+def site_base(request: Request) -> str:
+    """Origine publique canonique (SITE_URL), sinon celle de la requête."""
+    return settings.site_url.rstrip("/") or str(request.base_url).rstrip("/")
+
+
+templates.env.globals["site_base"] = site_base
+
 MONTHS_FR = [
     "janvier", "février", "mars", "avril", "mai", "juin",
     "juillet", "août", "septembre", "octobre", "novembre", "décembre",
@@ -58,7 +66,7 @@ _AI_AGENTS = [
 
 @router.get("/robots.txt", response_class=PlainTextResponse, include_in_schema=False)
 def robots(request: Request):
-    base = str(request.base_url).rstrip("/")
+    base = site_base(request)
     lines = ["User-agent: *", "Allow: /", "Disallow: /app", "Disallow: /api", ""]
     for agent in _AI_AGENTS:
         lines += [f"User-agent: {agent}", "Allow: /", ""]
@@ -68,7 +76,7 @@ def robots(request: Request):
 
 @router.get("/sitemap.xml", include_in_schema=False)
 def sitemap(request: Request):
-    base = str(request.base_url).rstrip("/")
+    base = site_base(request)
     entries = [(f"{base}/", None, "1.0"), (f"{base}/blog", None, "0.7")]
     for a in load_articles():
         entries.append((f"{base}/blog/{a.slug}", a.date.isoformat(), "0.6"))
@@ -89,7 +97,7 @@ def sitemap(request: Request):
 @router.get("/llms.txt", response_class=PlainTextResponse, include_in_schema=False)
 def llms_txt(request: Request):
     """Résumé structuré pour les moteurs de réponse IA (convention llms.txt)."""
-    base = str(request.base_url).rstrip("/")
+    base = site_base(request)
     articles = load_articles()
     guides = "\n".join(f"- [{a.title}]({base}/blog/{a.slug}) : {a.description}" for a in articles)
     return f"""# Alternly
@@ -119,5 +127,5 @@ def llms_txt(request: Request):
 - Site : {base}/
 - Fonctionnalités : {base}/#fonctionnalites
 - Tarifs : {base}/#tarifs
-- Créer un compte : {base}/app/register
+- Créer un compte : {settings.app_url.rstrip("/")}/register
 """

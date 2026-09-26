@@ -6,6 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ..auth import get_current_user
+from ..config import settings
 from ..db import get_db
 from ..deps import get_membership, household_members, notify
 from ..models import (
@@ -118,7 +119,8 @@ def create_invitation(member: HouseholdMember = Depends(get_membership), db: Ses
     db.add(invitation)
     db.commit()
     return InvitationOut(
-        invite_url=f"/app/join/{invitation.token}",
+        # Lien absolu vers la SPA (Vercel) : route /join/:token.
+        invite_url=f"{settings.app_url.rstrip('/')}/join/{invitation.token}",
         token=invitation.token,
         expires_at=invitation.expires_at,
     )
