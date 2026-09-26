@@ -6,8 +6,14 @@ from datetime import date
 from pathlib import Path
 
 import httpx
+from sqlalchemy import create_engine, inspect, select, text
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
 
 from app.config import settings
+from app.db import Base
+from app.migrations import run_migrations
+from app.models import Expense
 from app.services import public_holidays, school_holidays
 from tests.test_household import create_household
 from tests.test_rules import premium_family, setup_family
@@ -205,3 +211,17 @@ class TestInputBounds:
         url = f"/api/households/{h['id']}/custody-rule"
         assert client.put(url, json={**body, "handover_time": "25:00"}, headers=headers1).status_code == 422
         assert client.put(url, json={**body, "handover_time": "08:30"}, headers=headers1).status_code == 200
+
+
+class TestMigrations:
+    def test_indexes_added_to_existing_tables(self):
+        engine = create_engine("sqlite://", poolclass=StaticPool)
+        Base.metadata.create_all(engine)
+        with engine.begin() as conn:
+            conn.execute(text("DROP INDEX ix_expenses_household_id"))
+        run_migrations(engine)
+        run_migrations(engine)  # idempotent
+        names = {i["name"] for i in inspect(engine).get_indexes("expenses")}
+        assert "ix_expenses_household_id" in names
+        with sessionmaker(bind=engine)() as s:
+            assert s.scalars(select(Expense)).all() == []

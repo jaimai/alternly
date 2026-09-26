@@ -39,7 +39,7 @@ class User(Base):
     # Accès payé jusqu'à (fin de période) ; permet de garder l'accès après résiliation.
     subscription_ends_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     paddle_customer_id: Mapped[str | None] = mapped_column(String, nullable=True)
-    paddle_subscription_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    paddle_subscription_id: Mapped[str | None] = mapped_column(String, nullable=True, index=True)
 
 
 class Household(Base):
@@ -62,7 +62,7 @@ class SchoolVacationPeriod(Base):
     __tablename__ = "school_vacation_periods"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    household_id: Mapped[int] = mapped_column(ForeignKey("households.id"))
+    household_id: Mapped[int] = mapped_column(ForeignKey("households.id"), index=True)
     label: Mapped[str] = mapped_column(String)
     start: Mapped[date] = mapped_column(Date)
     end: Mapped[date] = mapped_column(Date)  # borne incluse
@@ -74,7 +74,7 @@ class HouseholdMember(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     household_id: Mapped[int] = mapped_column(ForeignKey("households.id"))
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
     role: Mapped[str] = mapped_column(String)  # parent1 | parent2
 
     household: Mapped[Household] = relationship(back_populates="members")
@@ -85,7 +85,7 @@ class Child(Base):
     __tablename__ = "children"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    household_id: Mapped[int] = mapped_column(ForeignKey("households.id"))
+    household_id: Mapped[int] = mapped_column(ForeignKey("households.id"), index=True)
     first_name: Mapped[str] = mapped_column(String)
     birthdate: Mapped[date | None] = mapped_column(Date, nullable=True)
 
@@ -128,7 +128,7 @@ class ScheduleException(Base):
     __tablename__ = "schedule_exceptions"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    household_id: Mapped[int] = mapped_column(ForeignKey("households.id"))
+    household_id: Mapped[int] = mapped_column(ForeignKey("households.id"), index=True)
     date_start: Mapped[date] = mapped_column(Date)
     date_end: Mapped[date] = mapped_column(Date)
     parent_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
@@ -149,7 +149,7 @@ class Expense(Base):
     __tablename__ = "expenses"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    household_id: Mapped[int] = mapped_column(ForeignKey("households.id"))
+    household_id: Mapped[int] = mapped_column(ForeignKey("households.id"), index=True)
     label: Mapped[str] = mapped_column(String)
     amount_cents: Mapped[int] = mapped_column(Integer)  # > 0
     date: Mapped[date] = mapped_column(Date)
@@ -170,7 +170,7 @@ class Settlement(Base):
     __tablename__ = "settlements"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    household_id: Mapped[int] = mapped_column(ForeignKey("households.id"))
+    household_id: Mapped[int] = mapped_column(ForeignKey("households.id"), index=True)
     from_user: Mapped[int] = mapped_column(ForeignKey("users.id"))
     to_user: Mapped[int] = mapped_column(ForeignKey("users.id"))
     amount_cents: Mapped[int] = mapped_column(Integer)  # > 0
@@ -184,7 +184,7 @@ class WallPost(Base):
     __tablename__ = "wall_posts"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    household_id: Mapped[int] = mapped_column(ForeignKey("households.id"))
+    household_id: Mapped[int] = mapped_column(ForeignKey("households.id"), index=True)
     author_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
     kind: Mapped[str] = mapped_column(String)  # message | task | question
     body: Mapped[str] = mapped_column(String)
@@ -201,7 +201,7 @@ class WallReply(Base):
     __tablename__ = "wall_replies"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    post_id: Mapped[int] = mapped_column(ForeignKey("wall_posts.id"))
+    post_id: Mapped[int] = mapped_column(ForeignKey("wall_posts.id"), index=True)
     author_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
     body: Mapped[str] = mapped_column(String)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
@@ -211,7 +211,7 @@ class Invitation(Base):
     __tablename__ = "invitations"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    household_id: Mapped[int] = mapped_column(ForeignKey("households.id"))
+    household_id: Mapped[int] = mapped_column(ForeignKey("households.id"), index=True)
     token: Mapped[str] = mapped_column(String, unique=True)
     invited_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
     expires_at: Mapped[datetime] = mapped_column(DateTime)
@@ -222,7 +222,7 @@ class Notification(Base):
     __tablename__ = "notifications"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
     type: Mapped[str] = mapped_column(String)
     payload: Mapped[dict] = mapped_column(JSON, default=dict)
     read_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
