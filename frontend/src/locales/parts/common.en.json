@@ -35,5 +35,13 @@
   "common.confirm": "Confirm",
   "common.cancel": "Cancel",
   "common.delete": "Delete",
-  "common.remove": "Remove"
+  "common.remove": "Remove",
+  "common.colorPine": "Pine",
+  "common.colorTerracotta": "Terracotta",
+  "common.colorSlate": "Slate",
+  "common.colorMustard": "Mustard",
+  "common.colorPlum": "Plum",
+  "common.colorLagoon": "Lagoon",
+  "common.colorTakenAria": "{{color}} (the other parent's color)",
+  "common.colorTakenTitle": "{{color}} — already used by the other parent"
 }

@@ -4,12 +4,14 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { api, setToken } from '../api'
 import { useAuth } from '../auth'
+import { DEFAULT_PARENT_COLOR } from '../colors'
+import ColorPicker from '../components/ColorPicker'
 
 export default function RegisterPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [displayName, setDisplayName] = useState('')
-  const [color, setColor] = useState('#3b6ea5')
+  const [color, setColor] = useState(DEFAULT_PARENT_COLOR)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const { setUser } = useAuth()
@@ -65,8 +67,8 @@ export default function RegisterPage() {
           minLength={8}
           maxLength={72}
         />
-        <label htmlFor="color">{t('auth.colorLabel')}</label>
-        <input id="color" type="color" value={color} onChange={(e) => setColor(e.target.value)} style={{ height: 42, padding: 4 }} />
+        <label id="color-label">{t('auth.colorLabel')}</label>
+        <ColorPicker value={color} onChange={setColor} labelledBy="color-label" />
         {error && <div className="error">{error}</div>}
         <p style={{ marginTop: 16 }}>
           <button type="submit" disabled={busy} style={{ width: '100%' }}>

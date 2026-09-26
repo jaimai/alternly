@@ -5,6 +5,7 @@ import { QRCodeSVG } from 'qrcode.react'
 import { api } from '../api'
 import { useAuth, usePremium } from '../auth'
 import { openCheckout } from '../billing'
+import ColorPicker from '../components/ColorPicker'
 import Icon from '../components/Icon'
 import RuleForm from '../components/RuleForm'
 import Spinner from '../components/Spinner'
@@ -36,7 +37,6 @@ export default function SettingsPage() {
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
-  const [color, setColor] = useState(user?.color ?? '#3b6ea5')
   const [childName, setChildName] = useState('')
   const [confirm, confirmNode] = useConfirm()
 
@@ -150,7 +150,7 @@ export default function SettingsPage() {
     }
   }
 
-  async function saveColor() {
+  async function saveColor(color: string) {
     try {
       const updated = await api.updateMe({ color })
       setUser(updated)
@@ -377,11 +377,13 @@ export default function SettingsPage() {
             <option value="fr">Français</option>
             <option value="en">English</option>
           </select>
-          <label htmlFor="mycolor">{t('settings.myCalendarColor')}</label>
-          <div className="row">
-            <input id="mycolor" type="color" value={color} onChange={(e) => setColor(e.target.value)} style={{ height: 42, padding: 4 }} />
-            <button onClick={saveColor}>{t('settings.save')}</button>
-          </div>
+          <label id="mycolor-label">{t('settings.myCalendarColor')}</label>
+          <ColorPicker
+            value={user.color}
+            onChange={saveColor}
+            taken={household.members.find((m) => m.id !== user.id)?.color}
+            labelledBy="mycolor-label"
+          />
           <label style={{ display: 'flex', gap: 8, alignItems: 'center', color: premium ? 'var(--ink)' : 'var(--ink-soft)', marginTop: 16 }}>
             <input
               type="checkbox"
