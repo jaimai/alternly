@@ -1,6 +1,6 @@
 ---
-title: "Pension alimentaire et frais partagés en garde alternée : qui paie quoi ?"
-description: Frais ordinaires ou exceptionnels, pension en résidence alternée, table de référence, intermédiation de la CAF : le guide pour répartir les dépenses des enfants.
+title: "Pension alimentaire et frais en garde alternée : qui paie quoi ?"
+description: Frais ordinaires ou exceptionnels, pension en garde alternée, table de référence, intermédiation de la CAF : le guide pour répartir les dépenses des enfants.
 date: 2026-07-22
 ---
 
