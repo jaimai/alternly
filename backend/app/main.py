@@ -1,4 +1,5 @@
 import logging
+import re
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -13,6 +14,40 @@ from . import models  # noqa: F401 — enregistre les tables
 from .config import settings
 from .db import Base, engine, get_db
 from .migrations import run_migrations
+
+# Segments d'URL portant un secret (flux iCal, invitation).
+_SECRET_PATH = re.compile(r"(/api/(?:ical|invitations)/)[^/?#]+")
+# En-têtes jamais transmis à Sentry (jetons, cookies, clé cron, signature Paddle).
+_SENSITIVE_HEADERS = {"authorization", "cookie", "set-cookie", "x-cron-key", "paddle-signature"}
+
+
+def _scrub_event(event, hint):
+    """before_send Sentry : retire corps de requête, cookies et secrets (RGPD)."""
+    request = event.get("request")
+    if isinstance(request, dict):
+        request.pop("data", None)  # mots de passe, notes, messages entre parents…
+        request.pop("cookies", None)
+        request.pop("query_string", None)  # jetons de reset / d'invitation possibles
+        if isinstance(request.get("url"), str):
+            request["url"] = _SECRET_PATH.sub(r"\1[filtré]", request["url"])
+        headers = request.get("headers")
+        if isinstance(headers, dict):
+            for name in list(headers):
+                if name.lower() in _SENSITIVE_HEADERS:
+                    headers[name] = "[filtré]"
+    return event
+
+
+if settings.sentry_dsn:
+    import sentry_sdk
+
+    sentry_sdk.init(
+        dsn=settings.sentry_dsn,
+        environment=settings.sentry_environment,
+        traces_sample_rate=settings.sentry_traces_sample_rate,
+        send_default_pii=False,
+        before_send=_scrub_event,
+    )
 
 
 @asynccontextmanager

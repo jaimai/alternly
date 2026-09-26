@@ -21,6 +21,10 @@ class Settings(BaseSettings):
     cron_secret: str = ""
     # Limitation de débit anti-abus (mémoire du processus, voir ratelimit.py).
     rate_limit_enabled: bool = True
+    # Suivi d'erreurs Sentry. DSN vide → désactivé.
+    sentry_dsn: str = ""
+    sentry_environment: str = "production"
+    sentry_traces_sample_rate: float = 0.0
 
     # Paiement Paddle (Merchant of Record). Durée de l'essai gratuit en jours.
     trial_days: int = 14

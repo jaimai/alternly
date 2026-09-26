@@ -266,3 +266,28 @@ class TestDeleteChild:
         run_migrations(engine)  # idempotent
         with engine.connect() as conn:
             assert conn.execute(text("SELECT token_version FROM users")).scalar() == 0
+
+
+class TestSentryScrubbing:
+    def test_before_send_strips_body_cookies_and_secrets(self):
+        from app.main import _scrub_event
+
+        event = {
+            "request": {
+                "url": "https://api.alternly.com/api/ical/abc123.ics",
+                "data": {"password": "secret"},
+                "cookies": {"s": "1"},
+                "query_string": "token=xyz",
+                "headers": {
+                    "Authorization": "Bearer jwt", "X-Cron-Key": "k", "Paddle-Signature": "ts=1;h1=x",
+                    "User-Agent": "ua",
+                },
+            }
+        }
+        req = _scrub_event(event, None)["request"]
+        assert "data" not in req and "cookies" not in req and "query_string" not in req
+        assert "abc123" not in req["url"] and req["url"].endswith("/api/ical/[filtré]")
+        assert req["headers"]["Authorization"] == "[filtré]"
+        assert req["headers"]["X-Cron-Key"] == "[filtré]"
+        assert req["headers"]["Paddle-Signature"] == "[filtré]"
+        assert req["headers"]["User-Agent"] == "ua"
