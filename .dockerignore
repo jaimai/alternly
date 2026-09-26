@@ -3,10 +3,14 @@
 **/__pycache__
 **/*.pyc
 **/.pytest_cache
-frontend/dist
+frontend
 backend/*.db
+backend/tests
 **/.env
 .git
 .claude
 docs
 *.md
+**/*.md
+# Les articles du blog sont embarqués dans l'image.
+!content/**/*.md

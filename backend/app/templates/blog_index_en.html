@@ -1,0 +1,26 @@
+{% extends "base_en.html" %}
+{% block title %}Custody schedule &amp; co-parenting guides — Alternly{% endblock %}
+{% block description %}Practical guides for co-parents: 2-2-3 and 2-2-5-5 custody schedules, holiday and summer splits, parenting plans and communication with your ex.{% endblock %}
+{% block content %}
+<section class="blog-hero">
+  <div class="wrap narrow">
+    <p class="eyebrow">Guides</p>
+    <h1>Plan shared custody<br/>with less friction</h1>
+    <p class="lede">Clear answers to the questions every co-parent runs into.</p>
+  </div>
+</section>
+<section class="blog-list">
+  <div class="wrap narrow">
+    {% for a in articles %}
+    <a class="blog-item" href="/en/blog/{{ a.slug }}">
+      <time datetime="{{ a.date.isoformat() }}">{{ a.date | date_en }}</time>
+      <h2>{{ a.title }}</h2>
+      <p>{{ a.description }}</p>
+      <span class="readmore">Read the guide →</span>
+    </a>
+    {% else %}
+    <p>Our first guides are coming soon.</p>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

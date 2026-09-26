@@ -27,7 +27,7 @@ Données publiques intégrées (avec cache en base) :
 ```bash
 cd backend
 python3 -m venv .venv
-.venv/bin/pip install -r requirements.txt
+.venv/bin/pip install -r requirements-dev.txt   # prod : requirements.txt
 cp .env.example .env        # puis renseigner DATABASE_URL et SECRET_KEY
 .venv/bin/uvicorn app.main:app --port 8000
 ```
@@ -41,7 +41,9 @@ DATABASE_URL=postgresql+psycopg://user:password@postgresql-xxx.alwaysdata.net/db
 SECRET_KEY=<64 caractères aléatoires>
 ```
 
-Hors SQLite, l'app **refuse de démarrer** avec la SECRET_KEY par défaut.
+Hors SQLite, l'app **refuse de démarrer** si la SECRET_KEY est absente, connue ou
+fait moins de 32 caractères. Exploitation (Railway, alwaysdata, Vercel, Paddle,
+Resend, Sentry, cron, sauvegardes) : voir [`docs/ops.md`](docs/ops.md).
 
 ### 2. Frontend
 
@@ -65,10 +67,12 @@ cd frontend && npm run dev    # Vite sur :5173, proxy /api → :8000
 cd backend && .venv/bin/python -m pytest tests/ -q
 ```
 
-66 tests, dont la partie critique : bascules années paires/impaires des vacances,
+Tests hermétiques (APIs publiques simulées, aucun appel réseau), dont la partie critique : bascules années paires/impaires des vacances,
 périodes à cheval sur deux années (Noël), coupe en moitiés paires/impaires,
 fêtes des mères/pères (y compris le décalage Pentecôte), priorités
-exception > fête > vacances > rythme, isolation entre foyers, flux invitation, iCal.
+exception > fête > vacances > rythme, isolation entre foyers, flux invitation, iCal,
+comptes (reset/changement de mot de passe, révocation, export RGPD), limitation de
+débit, demandes de changement entre parents et journal d'audit.
 
 ## Points de conception
 
@@ -87,4 +91,4 @@ exception > fête > vacances > rythme, isolation entre foyers, flux invitation, 
 Inclus : calendrier + moteur FR complet, partage 2 parents, exceptions, iCal,
 notifications in-app.
 V1 prévue (voir dossier de cadrage) : dépenses partagées, messagerie horodatée,
-export PDF, paiement Stripe, PWA/app mobile.
+export PDF, PWA/app mobile (paiement : Paddle, en place).

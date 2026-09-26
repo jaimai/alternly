@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from ..db import get_db
 from ..deps import get_membership, household_members, notify, other_parent_id, require_premium
 from ..models import Child, Expense, HouseholdMember, Settlement, utcnow
+from ..ratelimit import DAY, rate_limit
 from ..schemas import (
     EXPENSE_CATEGORIES,
     BalanceNet,
@@ -17,6 +18,7 @@ from ..schemas import (
     SettlementIn,
     SettlementOut,
 )
+from ..services import audit
 from ..services.expenses_service import compute_balance, outstanding_for
 
 # Fonctionnalité premium : tout le routeur exige un abonnement.
@@ -53,6 +55,20 @@ def _exp_payload(exp: Expense) -> dict:
     return {"id": exp.id, "label": exp.label, "amount_cents": exp.amount_cents, "date": exp.date.isoformat()}
 
 
+_EXP_FIELDS = ("label", "amount_cents", "date", "category", "child_id", "paid_by", "payer_percent", "status")
+
+
+def _exp_snapshot(exp: Expense) -> dict:
+    return {f: getattr(exp, f) for f in _EXP_FIELDS}
+
+
+def _journal(db: Session, member: HouseholdMember, action: str, exp: Expense, extra: dict | None = None) -> None:
+    audit.record(
+        db, member.household_id, member.user_id, action, "expense", exp.id,
+        {"expense": {"label": exp.label, "amount_cents": exp.amount_cents}, **(extra or {})},
+    )
+
+
 # ---------- dépenses ----------
 
 @router.get("/expenses", response_model=list[ExpenseOut])
@@ -70,7 +86,12 @@ def list_expenses(
     return db.scalars(stmt.order_by(Expense.date.desc(), Expense.id.desc())).all()
 
 
-@router.post("/expenses", response_model=ExpenseOut, status_code=201)
+@router.post(
+    "/expenses",
+    response_model=ExpenseOut,
+    status_code=201,
+    dependencies=[Depends(rate_limit("expenses", 100, DAY, by="household"))],
+)
 def create_expense(
     data: ExpenseIn,
     member: HouseholdMember = Depends(get_membership),
@@ -94,6 +115,7 @@ def create_expense(
     )
     db.add(exp)
     db.flush()
+    _journal(db, member, "expense.create", exp, {"after": _exp_snapshot(exp)})
     notify(db, other_parent_id(db, member.household_id, member.user_id), "expense_added", _exp_payload(exp))
     db.commit()
     db.refresh(exp)
@@ -112,6 +134,7 @@ def update_expense(
         raise HTTPException(status_code=403, detail="Seul l'auteur peut modifier cette dépense")
     if data.category is not None and data.category not in EXPENSE_CATEGORIES:
         raise HTTPException(status_code=422, detail="Catégorie inconnue")
+    before = _exp_snapshot(exp)
     if data.paid_by is not None:
         _check_member(db, member, data.paid_by)
         exp.paid_by = data.paid_by
@@ -122,9 +145,15 @@ def update_expense(
         val = getattr(data, field)
         if val is not None:
             setattr(exp, field, val)
-    # une modification lève une éventuelle contestation
-    exp.status = "active"
-    exp.dispute_note = ""
+    # Une modification ne lève PAS une contestation : seul le parent qui a
+    # contesté peut la lever. L'autre parent est prévenu de la modification.
+    after = _exp_snapshot(exp)
+    if after != before:
+        audit.record(
+            db, member.household_id, member.user_id, "expense.update", "expense", exp.id,
+            {"before": before, "after": after},
+        )
+        notify(db, other_parent_id(db, member.household_id, member.user_id), "expense_updated", _exp_payload(exp))
     db.commit()
     db.refresh(exp)
     return exp
@@ -139,6 +168,7 @@ def delete_expense(
     exp = _get_expense(db, member, expense_id)
     if exp.created_by != member.user_id:
         raise HTTPException(status_code=403, detail="Seul l'auteur peut supprimer cette dépense")
+    _journal(db, member, "expense.delete", exp, {"before": _exp_snapshot(exp)})
     db.delete(exp)
     db.commit()
 
@@ -155,6 +185,7 @@ def dispute_expense(
         raise HTTPException(status_code=403, detail="Le payeur ne peut pas contester sa propre dépense")
     exp.status = "disputed"
     exp.dispute_note = data.dispute_note
+    _journal(db, member, "expense.dispute", exp, {"dispute_note": data.dispute_note})
     notify(db, exp.paid_by, "expense_disputed", _exp_payload(exp))
     db.commit()
     db.refresh(exp)
@@ -168,8 +199,13 @@ def resolve_expense(
     db: Session = Depends(get_db),
 ):
     exp = _get_expense(db, member, expense_id)
+    if member.user_id == exp.paid_by:
+        raise HTTPException(status_code=403, detail="Seul le parent qui a contesté peut lever la contestation")
+    if exp.status != "disputed":
+        raise HTTPException(status_code=409, detail="Cette dépense n'est pas contestée")
     exp.status = "active"
     exp.dispute_note = ""
+    _journal(db, member, "expense.resolve", exp)
     notify(db, other_parent_id(db, member.household_id, member.user_id), "expense_resolved", _exp_payload(exp))
     db.commit()
     db.refresh(exp)
@@ -186,6 +222,7 @@ def settle_expense(
     exp = _get_expense(db, member, expense_id)
     exp.settled_at = utcnow()
     exp.settled_by = member.user_id
+    _journal(db, member, "expense.settle", exp)
     notify(db, other_parent_id(db, member.household_id, member.user_id), "expense_settled", _exp_payload(exp))
     db.commit()
     db.refresh(exp)
@@ -199,6 +236,8 @@ def unsettle_expense(
     db: Session = Depends(get_db),
 ):
     exp = _get_expense(db, member, expense_id)
+    if exp.settled_at is not None:
+        _journal(db, member, "expense.unsettle", exp)
     exp.settled_at = None
     exp.settled_by = None
     db.commit()
@@ -237,6 +276,11 @@ def create_settlement(
         created_by=member.user_id,
     )
     db.add(s)
+    db.flush()
+    audit.record(
+        db, member.household_id, member.user_id, "settlement.create", "settlement", s.id,
+        {"after": {"from_user": s.from_user, "to_user": s.to_user, "amount_cents": s.amount_cents, "date": s.date}},
+    )
     notify(
         db,
         other_parent_id(db, member.household_id, member.user_id),
@@ -259,6 +303,10 @@ def delete_settlement(
         raise HTTPException(status_code=404, detail="Remboursement introuvable")
     if s.created_by != member.user_id:
         raise HTTPException(status_code=403, detail="Seul l'auteur peut supprimer ce remboursement")
+    audit.record(
+        db, member.household_id, member.user_id, "settlement.delete", "settlement", s.id,
+        {"before": {"from_user": s.from_user, "to_user": s.to_user, "amount_cents": s.amount_cents, "date": s.date}},
+    )
     db.delete(s)
     db.commit()
 

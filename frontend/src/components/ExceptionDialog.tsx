@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api } from '../api'
 import { useAuth } from '../auth'
@@ -11,19 +11,23 @@ interface Props {
   date: string
   members: Member[]
   existing: ScheduleException[]
+  /** Parent qui a l'enfant ce jour-là : la proposition part par défaut vers l'autre. */
+  currentParentId?: number
   onClose: () => void
   onChanged: () => void
 }
 
-export default function ExceptionDialog({ householdId, date, members, existing, onClose, onChanged }: Props) {
+export default function ExceptionDialog({ householdId, date, members, existing, currentParentId, onClose, onChanged }: Props) {
   const { user } = useAuth()
   const { t } = useTranslation()
-  const { date: fmtDate } = useFormat()
+  const { range: fmtDates, dayLong } = useFormat()
   const solo = isSolo(members)
 
   const [dateStart, setDateStart] = useState(date)
   const [dateEnd, setDateEnd] = useState(date)
-  const [parentId, setParentId] = useState<number>(members[0]?.id ?? 0)
+  const [parentId, setParentId] = useState<number>(
+    members.find((m) => m.id !== currentParentId)?.id ?? members[0]?.id ?? 0,
+  )
   const [note, setNote] = useState('')
   const [replacesId, setReplacesId] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -39,10 +43,17 @@ export default function ExceptionDialog({ householdId, date, members, existing, 
   }
 
   function fmtRange(e: { date_start: string; date_end: string }) {
-    return e.date_start === e.date_end
-      ? fmtDate(e.date_start)
-      : `${fmtDate(e.date_start)} → ${fmtDate(e.date_end)}`
+    return fmtDates(e.date_start, e.date_end)
   }
+
+  // Échap ferme la fenêtre.
+  const closeRef = useRef(onClose)
+  closeRef.current = onClose
+  useEffect(() => {
+    const onKey = (ev: KeyboardEvent) => ev.key === 'Escape' && closeRef.current()
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [])
 
   async function run(fn: () => Promise<unknown>) {
     setBusy(true)
@@ -58,45 +69,53 @@ export default function ExceptionDialog({ householdId, date, members, existing, 
   }
 
   function create() {
-    return run(() =>
-      api.createException(householdId, {
+    if (!dateStart || !dateEnd || dateEnd < dateStart) {
+      setError(t('exchange.errorDates'))
+      return
+    }
+    return run(async () => {
+      await api.createException(householdId, {
         date_start: dateStart,
         date_end: dateEnd,
         parent_id: parentId,
         note,
         ...(replacesId !== null ? { replaces_id: replacesId } : {}),
-      }),
-    )
+      })
+      // Contre-proposition : l'originale n'est refusée qu'une fois la nouvelle envoyée
+      // (fermer la fenêtre entre-temps ne perd plus la proposition initiale).
+      if (replacesId !== null) await api.refuseExchange(householdId, replacesId)
+    })
   }
 
-  // Prépare une contre-proposition : refuse l'originale puis pré-remplit le formulaire.
-  async function startCounter(e: ScheduleException) {
-    setBusy(true)
+  // Prépare une contre-proposition : pré-remplit le formulaire, sans rien envoyer.
+  function startCounter(e: ScheduleException) {
     setError(null)
-    try {
-      await api.refuseExchange(householdId, e.id)
-      onChanged()
-      setReplacesId(e.id)
-      setDateStart(e.date_start)
-      setDateEnd(e.date_end)
-      setParentId(members.find((m) => m.id !== e.parent_id)?.id ?? e.parent_id)
-      setNote('')
-      setBusy(false)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t('exchange.errorGeneric'))
-      setBusy(false)
-    }
+    setReplacesId(e.id)
+    setDateStart(e.date_start)
+    setDateEnd(e.date_end)
+    setParentId(members.find((m) => m.id !== e.parent_id)?.id ?? e.parent_id)
+    setNote('')
   }
+
+  const toAnswer = overlapping.some((e) => e.status === 'pending' && e.created_by !== user?.id)
+  const title = solo
+    ? t('exchange.titleSolo')
+    : replacesId !== null
+      ? t('exchange.titleCounter')
+      : toAnswer
+        ? t('exchange.titleToAnswer')
+        : t('exchange.titlePropose')
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal" onClick={(ev) => ev.stopPropagation()}>
-        <h2>{solo ? t('exchange.titleSolo') : t('exchange.titlePropose')}</h2>
+      <div className="modal sheet" role="dialog" aria-modal="true" aria-labelledby="xdlg-title" onClick={(ev) => ev.stopPropagation()}>
+        <p className="eyebrow">{dayLong(date)}</p>
+        <h2 id="xdlg-title">{title}</h2>
 
         {overlapping.map((e) => {
           const iAmProposer = user?.id === e.created_by
           return (
-            <div key={e.id} className="card" style={{ padding: 12 }}>
+            <div key={e.id} className="card inset">
               <p style={{ margin: '0 0 8px' }}>
                 {e.status === 'pending' ? (
                   <span className="tag tag-pending">{t('exchange.tagProposed')}</span>
@@ -108,7 +127,7 @@ export default function ExceptionDialog({ householdId, date, members, existing, 
               </p>
 
               {e.status === 'pending' && !iAmProposer && (
-                <div className="row" style={{ gap: 8 }}>
+                <div className="actions">
                   <button onClick={() => run(() => api.acceptExchange(householdId, e.id))} disabled={busy}>
                     {t('exchange.accept')}
                   </button>
@@ -130,7 +149,8 @@ export default function ExceptionDialog({ householdId, date, members, existing, 
               )}
               {e.status === 'accepted' && (
                 <button className="danger-link" onClick={() => run(() => api.deleteException(householdId, e.id))} disabled={busy}>
-                  {t('exchange.cancelExchange')}
+                  {/* Deux parents réels : l'annulation devient une demande à valider par l'autre. */}
+                  {solo ? t('exchange.cancelExchange') : t('exchange.requestCancel')}
                 </button>
               )}
             </div>
@@ -140,6 +160,7 @@ export default function ExceptionDialog({ householdId, date, members, existing, 
         {replacesId !== null && (
           <div className="info-banner">{t('exchange.counterBanner')}</div>
         )}
+        {toAnswer && replacesId === null && <p className="section-label">{t('exchange.orProposeOther')}</p>}
 
         <div className="row">
           <div>
@@ -162,7 +183,7 @@ export default function ExceptionDialog({ householdId, date, members, existing, 
         <label htmlFor="note">{t('exchange.noteLabel')}</label>
         <input id="note" value={note} onChange={(e) => setNote(e.target.value)} placeholder={t('exchange.notePlaceholder')} />
         {error && <div className="error">{error}</div>}
-        <div className="row" style={{ marginTop: 16 }}>
+        <div className="actions" style={{ marginTop: 18 }}>
           <button onClick={create} disabled={busy}>
             {solo ? t('exchange.save') : replacesId !== null ? t('exchange.sendCounter') : t('exchange.propose')}
           </button>
@@ -170,7 +191,7 @@ export default function ExceptionDialog({ householdId, date, members, existing, 
             {t('exchange.close')}
           </button>
         </div>
-        <p style={{ marginTop: 12, fontSize: '0.8rem', color: 'var(--ink-soft)' }}>
+        <p className="fine-print">
           {solo ? t('exchange.footerSolo') : t('exchange.footerPropose')}
         </p>
       </div>

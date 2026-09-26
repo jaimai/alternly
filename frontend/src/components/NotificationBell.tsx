@@ -1,21 +1,30 @@
 import { useEffect, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { api } from '../api'
 import { useFormat } from '../format'
+import Icon from './Icon'
 import type { Notification } from '../types'
 
+/** Où mène un clic sur la notification. */
+function target(type: string): string {
+  if (type.startsWith('expense_') || type.startsWith('settlement_')) return '/expenses'
+  if (type.startsWith('wall_')) return '/wall'
+  if (type === 'parent_joined' || type === 'parent_left' || type === 'payment_failed') return '/settings'
+  return '/app'
+}
+
 export default function NotificationBell() {
-  const { t, i18n } = useTranslation()
-  const { money, date } = useFormat()
+  const { t } = useTranslation()
+  const { money, range: fmtRange, timestamp } = useFormat()
   const [items, setItems] = useState<Notification[]>([])
   const [open, setOpen] = useState(false)
   const timer = useRef<number | undefined>(undefined)
   const wrapRef = useRef<HTMLDivElement | null>(null)
+  const navigate = useNavigate()
 
   function range(p: Record<string, string>): string {
-    return p.date_start === p.date_end
-      ? date(p.date_start)
-      : `${date(p.date_start)} → ${date(p.date_end)}`
+    return p.date_start ? fmtRange(p.date_start, p.date_end) : ''
   }
 
   function message(n: Notification): string {
@@ -43,6 +52,20 @@ export default function NotificationBell() {
         return t('common.notifExpenseDisputed', { label: p.label })
       case 'expense_resolved':
         return t('common.notifExpenseResolved', { label: p.label })
+      case 'expense_updated':
+        return t('common.notifExpenseUpdated', { label: p.label, amount: money(Number(p.amount_cents)) })
+      case 'expense_settled':
+        return t('common.notifExpenseSettled', { label: p.label })
+      case 'parent_left':
+        return t('common.notifParentLeft', { name: p.display_name })
+      case 'change_requested':
+        return t('common.notifChangeRequested', { summary: p.summary })
+      case 'change_accepted':
+        return t('common.notifChangeAccepted', { summary: p.summary })
+      case 'change_refused':
+        return t('common.notifChangeRefused', { summary: p.summary })
+      case 'payment_failed':
+        return t('common.notifPaymentFailed')
       case 'settlement_recorded':
         return t('common.notifSettlementRecorded', { amount: money(Number(p.amount_cents)) })
       case 'wall_post_added':
@@ -100,23 +123,27 @@ export default function NotificationBell() {
 
   return (
     <div className="notif-wrap" ref={wrapRef}>
-      <button className="bell" onClick={toggle} title={t('common.notifications')} aria-label={t('common.notifications')}>
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-          <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-        </svg>
+      <button className="bell" onClick={toggle} title={t('common.notifications')} aria-label={t('common.notifications')} aria-expanded={open}>
+        <Icon name="bell" size={20} />
         {unread.length > 0 && <span className="badge">{unread.length}</span>}
       </button>
       {open && (
-        <div className="notif-panel">
+        <div className="notif-panel" role="dialog" aria-label={t('common.notifications')}>
+          <div className="notif-head">{t('common.notifications')}</div>
           {items.length === 0 && <div className="notif-empty">{t('common.notifEmpty')}</div>}
           {items.map((n) => (
-            <div key={n.id} className={`notif-item ${n.read_at === null ? 'unread' : ''}`}>
+            <button
+              key={n.id}
+              type="button"
+              className={`notif-item ${n.read_at === null ? 'unread' : ''}`}
+              onClick={() => {
+                setOpen(false)
+                navigate(target(n.type))
+              }}
+            >
               {message(n)}
-              <div className="date">
-                {new Date(n.created_at + 'Z').toLocaleString(i18n.language)}
-              </div>
-            </div>
+              <span className="date">{timestamp(n.created_at)}</span>
+            </button>
           ))}
         </div>
       )}

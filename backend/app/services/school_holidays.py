@@ -17,7 +17,7 @@ from sqlalchemy.orm import Session
 
 from ..models import SchoolHolidayCache
 from .custody_engine import Period
-from .public_holidays import PublicDataUnavailable
+from .public_holidays import NegativeCache, PublicDataUnavailable, commit_cache, http_client
 
 API_URL = (
     "https://data.education.gouv.fr/api/explore/v2.1/catalog/datasets/"
@@ -26,6 +26,8 @@ API_URL = (
 PARIS = ZoneInfo("Europe/Paris")
 SUMMER_START_LABEL = "Début des Vacances d'Été"
 RENTREE_LABEL = "Rentrée scolaire des élèves"
+
+_memo = NegativeCache()
 
 
 def school_years_for_range(start: date, end: date) -> list[str]:
@@ -102,33 +104,51 @@ def get(db: Session, zone: str, school_years: list[str], client: httpx.Client | 
         else:
             missing.append(sy)
 
-    if missing:
+    to_fetch: list[str] = []
+    for sy in missing:
+        memo = _memo.get((zone, sy))
+        if memo == "error":
+            raise PublicDataUnavailable(f"vacances scolaires {zone} {sy} indisponibles (échec récent)")
+        if memo != "empty":  # année pas encore publiée : on ne redemande pas tout de suite
+            to_fetch.append(sy)
+
+    if to_fetch:
+        own_client = client is None
+        client = client or http_client()
         try:
-            own_client = client is None
-            client = client or httpx.Client(timeout=10)
-            try:
-                for sy in missing:
+            for sy in to_fetch:
+                try:
                     periods = _fetch_year(zone, sy, client)
-                    for p in periods:
-                        exists = db.scalar(
-                            select(SchoolHolidayCache).where(
-                                SchoolHolidayCache.zone == zone,
-                                SchoolHolidayCache.label == p.label,
-                                SchoolHolidayCache.school_year == sy,
+                except (httpx.HTTPError, ValueError, AttributeError) as e:
+                    _memo.set((zone, sy), "error")
+                    commit_cache(db)  # conserve les années déjà récupérées
+                    raise PublicDataUnavailable(f"vacances scolaires indisponibles : {e}") from e
+                if not periods:
+                    _memo.set((zone, sy), "empty")
+                    continue
+                # unicité (zone, label, année) : un label peut revenir deux fois dans le dataset
+                seen: set[str] = set()
+                for p in periods:
+                    if p.label in seen:
+                        continue
+                    seen.add(p.label)
+                    exists = db.scalar(
+                        select(SchoolHolidayCache).where(
+                            SchoolHolidayCache.zone == zone,
+                            SchoolHolidayCache.label == p.label,
+                            SchoolHolidayCache.school_year == sy,
+                        )
+                    )
+                    if not exists:
+                        db.add(
+                            SchoolHolidayCache(
+                                zone=zone, label=p.label, start=p.start, end=p.end, school_year=sy
                             )
                         )
-                        if not exists:
-                            db.add(
-                                SchoolHolidayCache(
-                                    zone=zone, label=p.label, start=p.start, end=p.end, school_year=sy
-                                )
-                            )
-                    raw.extend(periods)
-                db.commit()
-            finally:
-                if own_client:
-                    client.close()
-        except (httpx.HTTPError, ValueError) as e:
-            raise PublicDataUnavailable(f"vacances scolaires indisponibles : {e}") from e
+                raw.extend(periods)
+            commit_cache(db)
+        finally:
+            if own_client:
+                client.close()
 
     return sorted(_resolve_summer(raw), key=lambda p: p.start)

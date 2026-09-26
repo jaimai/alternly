@@ -6,6 +6,8 @@ from sqlalchemy.orm import Session
 from ..db import get_db
 from ..deps import get_membership, household_members, notify, other_parent_id, require_premium
 from ..models import Child, HouseholdMember, WallPost, WallReply, utcnow
+from ..ratelimit import DAY, rate_limit
+from ..services import audit
 from ..schemas import (
     WALL_KINDS,
     WallPostIn,
@@ -47,6 +49,17 @@ def _get_post(db: Session, member: HouseholdMember, post_id: int) -> WallPost:
     return p
 
 
+def _post_snapshot(post: WallPost) -> dict:
+    return {
+        "kind": post.kind, "body": post.body, "child_id": post.child_id,
+        "due_date": post.due_date, "assigned_to": post.assigned_to,
+    }
+
+
+def _journal(db: Session, member: HouseholdMember, action: str, entity: str, entity_id: int, data: dict) -> None:
+    audit.record(db, member.household_id, member.user_id, action, entity, entity_id, data)
+
+
 def _serialize(db: Session, post: WallPost) -> WallPostOut:
     replies = db.scalars(
         select(WallReply).where(WallReply.post_id == post.id).order_by(WallReply.created_at)
@@ -75,7 +88,12 @@ def list_wall(
     return [_serialize(db, p) for p in posts]
 
 
-@router.post("/wall", response_model=WallPostOut, status_code=201)
+@router.post(
+    "/wall",
+    response_model=WallPostOut,
+    status_code=201,
+    dependencies=[Depends(rate_limit("wall", 100, DAY, by="household"))],
+)
 def create_post(
     data: WallPostIn,
     member: HouseholdMember = Depends(get_membership),
@@ -96,6 +114,7 @@ def create_post(
     )
     db.add(post)
     db.flush()
+    _journal(db, member, "wall_post.create", "wall_post", post.id, {"after": _post_snapshot(post)})
     recipient = other_parent_id(db, member.household_id, member.user_id)
     notify(db, recipient, "wall_post_added", {"id": post.id, "kind": post.kind, "body": post.body[:120]})
     if data.assigned_to is not None and data.assigned_to != member.user_id:
@@ -115,6 +134,7 @@ def update_post(
     post = _get_post(db, member, post_id)
     if post.author_id != member.user_id:
         raise HTTPException(status_code=403, detail="Seul l'auteur peut modifier ce post")
+    before = _post_snapshot(post)
     if data.body is not None:
         post.body = data.body
     if "child_id" in data.model_fields_set:
@@ -125,6 +145,9 @@ def update_post(
     if "assigned_to" in data.model_fields_set:
         _check_member(db, member, data.assigned_to)
         post.assigned_to = data.assigned_to
+    after = _post_snapshot(post)
+    if after != before:
+        _journal(db, member, "wall_post.update", "wall_post", post.id, {"before": before, "after": after, "post": after})
     post.edited_at = utcnow()
     db.commit()
     db.refresh(post)
@@ -140,6 +163,7 @@ def delete_post(
     post = _get_post(db, member, post_id)
     if post.author_id != member.user_id:
         raise HTTPException(status_code=403, detail="Seul l'auteur peut supprimer ce post")
+    _journal(db, member, "wall_post.delete", "wall_post", post.id, {"post": _post_snapshot(post)})
     for r in db.scalars(select(WallReply).where(WallReply.post_id == post.id)):
         db.delete(r)
     db.delete(post)
@@ -155,6 +179,7 @@ def complete_post(
     post = _get_post(db, member, post_id)
     post.completed_at = utcnow()
     post.completed_by = member.user_id
+    _journal(db, member, "wall_post.complete", "wall_post", post.id, {"post": _post_snapshot(post)})
     db.commit()
     db.refresh(post)
     return _serialize(db, post)
@@ -169,6 +194,7 @@ def reopen_post(
     post = _get_post(db, member, post_id)
     post.completed_at = None
     post.completed_by = None
+    _journal(db, member, "wall_post.reopen", "wall_post", post.id, {"post": _post_snapshot(post)})
     db.commit()
     db.refresh(post)
     return _serialize(db, post)
@@ -184,6 +210,10 @@ def add_reply(
     post = _get_post(db, member, post_id)
     reply = WallReply(post_id=post.id, author_id=member.user_id, body=data.body)
     db.add(reply)
+    db.flush()
+    _journal(
+        db, member, "wall_reply.create", "wall_reply", reply.id, {"body": data.body, "post": _post_snapshot(post)}
+    )
     notify(
         db,
         other_parent_id(db, member.household_id, member.user_id),
@@ -209,5 +239,8 @@ def delete_reply(
         raise HTTPException(status_code=404, detail="Réponse introuvable")
     if reply.author_id != member.user_id:
         raise HTTPException(status_code=403, detail="Seul l'auteur peut supprimer cette réponse")
+    _journal(
+        db, member, "wall_reply.delete", "wall_reply", reply.id, {"body": reply.body, "post": _post_snapshot(post)}
+    )
     db.delete(reply)
     db.commit()

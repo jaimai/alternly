@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { api, setToken } from '../api'
 import { useAuth } from '../auth'
+import PasswordField from '../components/PasswordField'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -40,9 +41,11 @@ export default function LoginPage() {
       <form className="card" onSubmit={submit}>
         <h2>{t('auth.loginTitle')}</h2>
         <label htmlFor="email">{t('auth.emailLabel')}</label>
-        <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-        <label htmlFor="password">{t('auth.passwordLabel')}</label>
-        <input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+        <input id="email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+        <PasswordField id="password" label={t('auth.passwordLabel')} value={password} onChange={setPassword} />
+        <p className="forgot-link">
+          <Link to="/forgot-password">{t('auth.forgotLink')}</Link>
+        </p>
         {error && <div className="error">{error}</div>}
         <p style={{ marginTop: 16 }}>
           <button type="submit" disabled={busy} style={{ width: '100%' }}>

@@ -144,3 +144,45 @@ class TestOnboardingFlag:
         assert client.get("/api/auth/me", headers=headers).json()["onboarding_seen"] is False
         r = client.patch("/api/auth/me", json={"onboarding_seen": True}, headers=headers)
         assert r.status_code == 200 and r.json()["onboarding_seen"] is True
+
+
+class TestEmailHardening:
+    def test_mask_email(self):
+        assert email_service.mask_email("jean.dupont@x.fr") == "j***@x.fr"
+        assert email_service.mask_email("pas-une-adresse") == "***"
+
+    def test_logs_mask_address(self, monkeypatch, caplog):
+        monkeypatch.setattr(email_service.settings, "resend_api_key", "")
+        with caplog.at_level("INFO", logger="coparent.email"):
+            email_service.send_email("jean.dupont@x.fr", "Sujet", "<p/>")
+        assert "jean.dupont" not in caplog.text and "j***@x.fr" in caplog.text
+
+    def test_proposal_email_sent_after_commit(self, client, auth_headers, db_session, monkeypatch):
+        from sqlalchemy import select
+
+        from app.models import ScheduleException
+
+        headers1, user1, headers2, user2, h = premium_family(client, auth_headers, db_session)
+        seen = []
+        monkeypatch.setattr(
+            email_service,
+            "send_email",
+            lambda to, subject, html: seen.append(db_session.scalars(select(ScheduleException)).all()) or True,
+        )
+        client.post(
+            f"/api/households/{h['id']}/exceptions",
+            json={"date_start": "2099-03-04", "date_end": "2099-03-04", "parent_id": user2["id"]},
+            headers=headers1,
+        )
+        assert len(seen) == 1 and len(seen[0]) == 1  # proposition déjà enregistrée à l'envoi
+
+    def test_proposal_email_in_recipient_locale(self, client, auth_headers, db_session, sent):
+        headers1, user1, headers2, user2, h = premium_family(client, auth_headers, db_session)
+        client.patch("/api/auth/me", json={"locale": "en"}, headers=headers2)
+        client.post(
+            f"/api/households/{h['id']}/exceptions",
+            json={"date_start": "2099-03-04", "date_end": "2099-03-05", "parent_id": user2["id"]},
+            headers=headers1,
+        )
+        assert sent[0]["subject"] == "New custody swap proposal"
+        assert "2099-03-04 to 2099-03-05" in sent[0]["html"]

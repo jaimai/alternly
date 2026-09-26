@@ -3,6 +3,7 @@
 Protégées par l'en-tête `X-Cron-Key` comparé à `settings.cron_secret`. Si le
 secret n'est pas configuré, l'endpoint est désactivé (403).
 """
+import hmac
 from datetime import date, timedelta
 
 from fastapi import APIRouter, Depends, Header, HTTPException
@@ -21,7 +22,8 @@ router = APIRouter(prefix="/api/cron", tags=["cron"])
 def _authorize(key: str | None) -> None:
     if not settings.cron_secret:
         raise HTTPException(status_code=403, detail="Endpoint cron désactivé")
-    if key != settings.cron_secret:
+    # comparaison à temps constant (pas de fuite du secret par chronométrage)
+    if key is None or not hmac.compare_digest(key.encode(), settings.cron_secret.encode()):
         raise HTTPException(status_code=401, detail="Clé cron invalide")
 
 
@@ -48,7 +50,8 @@ def exchange_reminders(
         if recipient is None or not recipient.email_opt_in or not is_premium(db, recipient):
             continue
         subject, html = email_service.exchange_reminder_email(
-            {"date_start": exc.date_start.isoformat(), "date_end": exc.date_end.isoformat()}
+            {"date_start": exc.date_start.isoformat(), "date_end": exc.date_end.isoformat()},
+            recipient.locale,
         )
         if email_service.send_email(recipient.email, subject, html):
             sent += 1

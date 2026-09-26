@@ -10,7 +10,7 @@ from ..legal import PAGES as LEGAL_PAGES
 from ..legal import PAGES_EN as LEGAL_PAGES_EN
 from ..legal import UPDATED as LEGAL_UPDATED
 from ..legal import UPDATED_EN as LEGAL_UPDATED_EN
-from ..services.blog import load_articles, render_article
+from ..services.blog import CONTENT_DIR_EN, load_articles, render_article
 
 router = APIRouter(tags=["marketing"])
 
@@ -20,6 +20,17 @@ templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 # les liens « se connecter/s'inscrire » sont donc relatifs (/login, /register).
 # `site_url` sert au canonical/OG (la landing est proxifiée par Vercel).
 templates.env.globals["site_url"] = settings.public_site_url.rstrip("/")
+
+
+def site_base(request: Request) -> str:
+    """Origine publique canonique (PUBLIC_SITE_URL), sinon celle de la requête.
+    La landing étant proxifiée par Vercel, request.base_url serait l'URL Railway."""
+    return settings.public_site_url.rstrip("/") or str(request.base_url).rstrip("/")
+
+
+def app_base() -> str:
+    """Origine de la SPA (routes /register, /login, /join/…)."""
+    return settings.app_url.rstrip("/")
 
 MONTHS_FR = [
     "janvier", "février", "mars", "avril", "mai", "juin",
@@ -32,6 +43,13 @@ def date_fr(d: date) -> str:
 
 
 templates.env.filters["date_fr"] = date_fr
+
+
+def date_en(d: date) -> str:
+    return d.strftime("%B ") + f"{d.day}, {d.year}"
+
+
+templates.env.filters["date_en"] = date_en
 
 
 @router.get("/", response_class=HTMLResponse, include_in_schema=False)
@@ -57,6 +75,21 @@ def blog_post(request: Request, slug: str):
         raise HTTPException(status_code=404, detail="Article introuvable")
     return templates.TemplateResponse(
         request, "blog_post.html", {"article": article, "body": render_article(article)}
+    )
+
+
+@router.get("/en/blog", response_class=HTMLResponse, include_in_schema=False)
+def blog_index_en(request: Request):
+    return templates.TemplateResponse(request, "blog_index_en.html", {"articles": load_articles(CONTENT_DIR_EN)})
+
+
+@router.get("/en/blog/{slug}", response_class=HTMLResponse, include_in_schema=False)
+def blog_post_en(request: Request, slug: str):
+    article = next((a for a in load_articles(CONTENT_DIR_EN) if a.slug == slug), None)
+    if article is None:
+        raise HTTPException(status_code=404, detail="Article not found")
+    return templates.TemplateResponse(
+        request, "blog_post_en.html", {"article": article, "body": render_article(article)}
     )
 
 
@@ -105,7 +138,7 @@ def legal_page_en(request: Request):
 
 @router.get("/robots.txt", response_class=PlainTextResponse, include_in_schema=False)
 def robots(request: Request):
-    base = str(request.base_url).rstrip("/")
+    base = site_base(request)
     lines = ["User-agent: *", "Allow: /", "Disallow: /app", "Disallow: /api", ""]
     for agent in _AI_AGENTS:
         lines += [f"User-agent: {agent}", "Allow: /", ""]
@@ -115,10 +148,13 @@ def robots(request: Request):
 
 @router.get("/sitemap.xml", include_in_schema=False)
 def sitemap(request: Request):
-    base = str(request.base_url).rstrip("/")
+    base = site_base(request)
     entries = [(f"{base}/", None, "1.0"), (f"{base}/en", None, "0.9"), (f"{base}/blog", None, "0.7")]
     for a in load_articles():
         entries.append((f"{base}/blog/{a.slug}", a.date.isoformat(), "0.6"))
+    entries.append((f"{base}/en/blog", None, "0.7"))
+    for a in load_articles(CONTENT_DIR_EN):
+        entries.append((f"{base}/en/blog/{a.slug}", a.date.isoformat(), "0.6"))
     for slug in ("terms", "privacy", "refund"):
         entries.append((f"{base}/{slug}", None, "0.3"))
         entries.append((f"{base}/en/{slug}", None, "0.3"))
@@ -139,9 +175,12 @@ def sitemap(request: Request):
 @router.get("/llms.txt", response_class=PlainTextResponse, include_in_schema=False)
 def llms_txt(request: Request):
     """Résumé structuré pour les moteurs de réponse IA (convention llms.txt)."""
-    base = str(request.base_url).rstrip("/")
+    base = site_base(request)
     articles = load_articles()
     guides = "\n".join(f"- [{a.title}]({base}/blog/{a.slug}) : {a.description}" for a in articles)
+    guides_en = "\n".join(
+        f"- [{a.title}]({base}/en/blog/{a.slug}) : {a.description}" for a in load_articles(CONTENT_DIR_EN)
+    )
     return f"""# Alternly
 
 > Alternly est le calendrier de garde alternée pensé pour la France : il transforme un accord ou un jugement de garde en calendrier clair, partagé et à jour entre les deux parents séparés.
@@ -165,9 +204,12 @@ def llms_txt(request: Request):
 ## Guides
 {guides}
 
+## Guides en anglais (parents américains)
+{guides_en}
+
 ## Liens
 - Site : {base}/
 - Fonctionnalités : {base}/#fonctionnalites
 - Tarifs : {base}/#tarifs
-- Créer un compte : {base}/app/register
+- Créer un compte : {app_base()}/register
 """

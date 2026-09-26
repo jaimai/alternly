@@ -1,0 +1,20 @@
+{
+  "changes.title": "Change requests",
+  "changes.otherParent": "The other parent",
+  "changes.mine": "Your request · pending",
+  "changes.theirs": "{{name}} is asking for your approval",
+  "changes.withdraw": "Withdraw",
+  "changes.accept": "Accept",
+  "changes.refuse": "Decline",
+  "changes.error": "That didn't work. Please try again.",
+  "changes.sent": "Request sent: the other parent must approve it before it applies.",
+  "history.title": "Household history",
+  "history.subtitle": "Every change, timestamped and tamper-proof. Visible to both parents.",
+  "history.error": "Couldn't load the history",
+  "history.emptyTitle": "Nothing yet",
+  "history.emptyBody": "Rule changes, swaps, expenses and posts will show up here.",
+  "history.system": "System",
+  "history.more": "Load more",
+  "history.link": "Household history",
+  "history.linkHint": "Who changed what, and when."
+}

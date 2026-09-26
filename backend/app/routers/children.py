@@ -6,6 +6,9 @@ from ..db import get_db
 from ..deps import get_membership
 from ..models import Child, HouseholdMember
 from ..schemas import ChildIn, ChildOut
+from ..services import audit
+from ..services import change_requests as cr_service
+from ..services import rules as rules_service
 
 router = APIRouter(prefix="/api/households/{household_id}/children", tags=["children"])
 
@@ -19,6 +22,11 @@ def list_children(member: HouseholdMember = Depends(get_membership), db: Session
 def add_child(data: ChildIn, member: HouseholdMember = Depends(get_membership), db: Session = Depends(get_db)):
     child = Child(household_id=member.household_id, first_name=data.first_name, birthdate=data.birthdate)
     db.add(child)
+    db.flush()
+    audit.record(
+        db, member.household_id, member.user_id, "child.create", "child", child.id,
+        {"after": rules_service.child_snapshot(child)},
+    )
     db.commit()
     db.refresh(child)
     return child
@@ -39,6 +47,13 @@ def update_child(
     db: Session = Depends(get_db),
 ):
     child = _get_child(db, member, child_id)
+    before = rules_service.child_snapshot(child)
+    after = {"first_name": data.first_name, "birthdate": data.birthdate}
+    if before != after:
+        audit.record(
+            db, member.household_id, member.user_id, "child.update", "child", child.id,
+            {"before": before, "after": after},
+        )
     child.first_name = data.first_name
     child.birthdate = data.birthdate
     db.commit()
@@ -52,5 +67,12 @@ def delete_child(
     member: HouseholdMember = Depends(get_membership),
     db: Session = Depends(get_db),
 ):
-    db.delete(_get_child(db, member, child_id))
+    child = _get_child(db, member, child_id)
+    if cr_service.needs_consent(db, member):
+        cr = cr_service.create_request(
+            db, member, "delete_child", {"child_id": child.id}, {"first_name": child.first_name}
+        )
+        db.commit()
+        return cr_service.pending_response(db, member, cr)
+    rules_service.delete_child(db, child, member.user_id)
     db.commit()

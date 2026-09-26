@@ -1,7 +1,9 @@
 """Micro-migrations idempotentes exécutées au démarrage.
 
 Pas d'Alembic au MVP : on ajoute les colonnes manquantes via ALTER TABLE
-(standard SQLite/Postgres) uniquement quand elles n'existent pas déjà.
+(standard SQLite/Postgres) uniquement quand elles n'existent pas déjà, et les
+index manquants via CREATE INDEX IF NOT EXISTS (create_all n'en ajoute pas aux
+tables existantes).
 """
 from sqlalchemy import inspect, text
 from sqlalchemy.engine import Engine
@@ -26,6 +28,7 @@ _ADD_COLUMNS: dict[str, dict[str, str]] = {
         "paddle_subscription_id": "VARCHAR",
         "is_placeholder": "BOOLEAN",
         "locale": "VARCHAR",
+        "token_version": "INTEGER",
     },
     "expenses": {
         "settled_at": "TIMESTAMP",
@@ -36,6 +39,25 @@ _ADD_COLUMNS: dict[str, dict[str, str]] = {
         "currency": "VARCHAR",
     },
 }
+
+# Index sur les clés étrangères filtrées à chaque requête (noms = convention
+# SQLAlchemy `index=True` : ix_<table>_<colonne>, donc no-op sur base neuve).
+_INDEXES: list[tuple[str, str]] = [
+    ("children", "household_id"),
+    ("school_vacation_periods", "household_id"),
+    ("schedule_exceptions", "household_id"),
+    ("expenses", "household_id"),
+    ("settlements", "household_id"),
+    ("wall_posts", "household_id"),
+    ("wall_replies", "post_id"),
+    ("invitations", "household_id"),
+    ("household_members", "user_id"),
+    ("notifications", "user_id"),
+    ("users", "paddle_subscription_id"),
+    ("password_reset_tokens", "user_id"),
+    ("audit_log", "household_id"),
+    ("change_requests", "household_id"),
+]
 
 
 def run_migrations(engine: Engine) -> None:
@@ -72,7 +94,11 @@ def run_migrations(engine: Engine) -> None:
             conn.execute(text("UPDATE users SET is_placeholder = FALSE WHERE is_placeholder IS NULL"))
             # Comptes existants : langue française par défaut.
             conn.execute(text("UPDATE users SET locale = 'fr' WHERE locale IS NULL"))
+            conn.execute(text("UPDATE users SET token_version = 0 WHERE token_version IS NULL"))
         # Foyers existants : France / euro par défaut.
         if "households" in existing_tables:
             conn.execute(text("UPDATE households SET country = 'FR' WHERE country IS NULL"))
             conn.execute(text("UPDATE households SET currency = 'EUR' WHERE currency IS NULL"))
+        for table, column in _INDEXES:
+            if table in existing_tables:
+                conn.execute(text(f"CREATE INDEX IF NOT EXISTS ix_{table}_{column} ON {table} ({column})"))

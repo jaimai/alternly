@@ -6,8 +6,11 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ..auth import get_current_user
+from ..config import settings
 from ..db import get_db
 from ..deps import get_membership, household_members, notify
+from ..ratelimit import DAY, HOUR, rate_limit
+from ..services import audit
 from ..services.parents import claim_placeholder, ensure_second_parent
 from ..models import (
     Child,
@@ -133,14 +136,24 @@ def update_household(
     db: Session = Depends(get_db),
 ):
     household = db.get(Household, member.household_id)
-    if data.name is not None:
+    if data.school_zone is not None and data.school_zone not in ZONES:
+        raise HTTPException(status_code=422, detail="Zone invalide (A, B ou C)")
+
+    def journal(action: str, field: str, new) -> None:
+        audit.record(
+            db, household.id, member.user_id, action, "household", household.id,
+            {"before": {field: getattr(household, field)}, "after": {field: new}},
+        )
+
+    if data.name is not None and data.name != household.name:
+        journal("household.rename", "name", data.name)
         household.name = data.name
-    if data.country is not None:
+    if data.country is not None and data.country != household.country:
+        journal("household.country", "country", data.country)
         household.country = data.country
         household.currency = CURRENCY_BY_COUNTRY.get(data.country, household.currency)
-    if data.school_zone is not None:
-        if data.school_zone not in ZONES:
-            raise HTTPException(status_code=422, detail="Zone invalide (A, B ou C)")
+    if data.school_zone is not None and data.school_zone != household.school_zone:
+        journal("household.zone", "school_zone", data.school_zone)
         household.school_zone = data.school_zone
     db.commit()
     return _household_out(db, household, member.user_id)
@@ -148,7 +161,12 @@ def update_household(
 
 # ---------- congés scolaires (saisie manuelle, ex. US) ----------
 
-@router.post("/households/{household_id}/school-vacations", response_model=SchoolVacationOut, status_code=201)
+@router.post(
+    "/households/{household_id}/school-vacations",
+    response_model=SchoolVacationOut,
+    status_code=201,
+    dependencies=[Depends(rate_limit("school_vacations", 100, DAY, by="household"))],
+)
 def add_school_vacation(
     data: SchoolVacationIn,
     member: HouseholdMember = Depends(get_membership),
@@ -160,6 +178,11 @@ def add_school_vacation(
         household_id=member.household_id, label=data.label, start=data.start, end=data.end
     )
     db.add(period)
+    db.flush()
+    audit.record(
+        db, member.household_id, member.user_id, "school_vacation.create", "school_vacation", period.id,
+        {"after": {"label": period.label, "start": period.start, "end": period.end}},
+    )
     db.commit()
     db.refresh(period)
     return period
@@ -174,6 +197,10 @@ def delete_school_vacation(
     period = db.get(SchoolVacationPeriod, period_id)
     if period is None or period.household_id != member.household_id:
         raise HTTPException(status_code=404, detail="Congé introuvable")
+    audit.record(
+        db, member.household_id, member.user_id, "school_vacation.delete", "school_vacation", period.id,
+        {"before": {"label": period.label, "start": period.start, "end": period.end}},
+    )
     db.delete(period)
     db.commit()
 
@@ -203,6 +230,11 @@ def rename_partner(
     if ghost_member is None:
         raise HTTPException(status_code=409, detail="Le second parent a déjà un compte")
     ghost = db.get(User, ghost_member.user_id)
+    if data.display_name != ghost.display_name:
+        audit.record(
+            db, member.household_id, member.user_id, "partner.rename", "member", ghost.id,
+            {"before": {"display_name": ghost.display_name}, "after": {"display_name": data.display_name}},
+        )
     ghost.display_name = data.display_name
     if data.color is not None:
         ghost.color = data.color
@@ -223,7 +255,8 @@ def create_invitation(member: HouseholdMember = Depends(get_membership), db: Ses
     db.add(invitation)
     db.commit()
     return InvitationOut(
-        invite_url=f"/app/join/{invitation.token}",
+        # Lien absolu vers la route SPA /join/:token.
+        invite_url=f"{settings.app_url.rstrip('/')}/join/{invitation.token}",
         token=invitation.token,
         expires_at=invitation.expires_at,
     )
@@ -238,7 +271,11 @@ def _valid_invitation(db: Session, token: str) -> Invitation:
     return invitation
 
 
-@router.get("/invitations/{token}", response_model=InvitationPreview)
+@router.get(
+    "/invitations/{token}",
+    response_model=InvitationPreview,
+    dependencies=[Depends(rate_limit("invitation", 30, HOUR))],
+)
 def preview_invitation(token: str, db: Session = Depends(get_db)):
     invitation = _valid_invitation(db, token)
     household = db.get(Household, invitation.household_id)
@@ -246,7 +283,11 @@ def preview_invitation(token: str, db: Session = Depends(get_db)):
     return InvitationPreview(household_name=household.name, invited_by_name=inviter.display_name)
 
 
-@router.post("/invitations/{token}/accept", response_model=HouseholdOut)
+@router.post(
+    "/invitations/{token}/accept",
+    response_model=HouseholdOut,
+    dependencies=[Depends(rate_limit("invitation", 30, HOUR))],
+)
 def accept_invitation(token: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     invitation = _valid_invitation(db, token)
     members = household_members(db, invitation.household_id)
@@ -260,6 +301,7 @@ def accept_invitation(token: str, user: User = Depends(get_current_user), db: Se
     claim_placeholder(db, invitation.household_id, user.id)
     db.add(HouseholdMember(household_id=invitation.household_id, user_id=user.id, role="parent2"))
     invitation.used_at = utcnow()
+    audit.record(db, invitation.household_id, user.id, "member.join", "member", user.id)
     notify(db, invitation.invited_by, "parent_joined", {"display_name": user.display_name})
     db.commit()
     return _household_out(db, db.get(Household, invitation.household_id), user.id)

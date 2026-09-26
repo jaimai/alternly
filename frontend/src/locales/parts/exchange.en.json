@@ -11,7 +11,7 @@
   "exchange.waitingOtherParent": "Waiting for the other parent…",
   "exchange.withdraw": "Withdraw",
   "exchange.cancelExchange": "Cancel swap",
-  "exchange.counterBanner": "Counter-proposal — the previous proposal was declined.",
+  "exchange.counterBanner": "Adjust the dates below. The original request will be declined when you send yours.",
   "exchange.fromLabel": "From",
   "exchange.toLabel": "To (inclusive)",
   "exchange.childWillBeWith": "The child will be with",
@@ -22,5 +22,10 @@
   "exchange.propose": "Propose",
   "exchange.close": "Close",
   "exchange.footerSolo": "The swap is applied directly.",
-  "exchange.footerPropose": "The other parent will receive the proposal and can accept or decline it."
+  "exchange.footerPropose": "The other parent will receive the proposal and can accept or decline it.",
+  "exchange.errorDates": "The end date must be on or after the start date",
+  "exchange.titleCounter": "Counter-proposal",
+  "exchange.titleToAnswer": "Request to answer",
+  "exchange.orProposeOther": "Or propose something else",
+  "exchange.requestCancel": "Request cancellation"
 }

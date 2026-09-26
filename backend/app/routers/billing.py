@@ -1,17 +1,26 @@
 """Abonnement Paddle : statut d'accès + réception des webhooks."""
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
-from sqlalchemy import select
+from sqlalchemy import func, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from ..auth import get_current_user
 from ..config import settings
 from ..db import get_db
 from ..deps import household_members, user_has_premium
-from ..models import HouseholdMember, User, utcnow
+from ..models import HouseholdMember, PaddleEvent, User, utcnow
+from ..ratelimit import HOUR, rate_limit
 from ..schemas import ChangePlanIn
-from ..services import billing, paddle_api
+from ..services import audit, billing, paddle_api
 
 router = APIRouter(prefix="/api/billing", tags=["billing"])
+
+
+def _journal(db: Session, user: User, action: str, data: dict) -> None:
+    """Journalise un changement d'abonnement dans le foyer de l'utilisateur (s'il en a un)."""
+    member = db.scalar(select(HouseholdMember).where(HouseholdMember.user_id == user.id))
+    if member is not None:
+        audit.record(db, member.household_id, user.id, action, "subscription", None, data)
 
 
 def _subscriber(db: Session, user: User) -> User | None:
@@ -65,7 +74,8 @@ def my_subscription(user: User = Depends(get_current_user), db: Session = Depend
     }
 
 
-@router.post("/cancel")
+# Appels à l'API Paddle : bornés par IP (le webhook, lui, n'est jamais limité).
+@router.post("/cancel", dependencies=[Depends(rate_limit("billing", 10, HOUR))])
 def cancel_subscription(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """Résilie l'abonnement du foyer (fin de période payée)."""
     sub = _subscriber(db, user)
@@ -75,10 +85,12 @@ def cancel_subscription(user: User = Depends(get_current_user), db: Session = De
         paddle_api.cancel_subscription(sub.paddle_subscription_id)
     except paddle_api.PaddleUnavailable:
         raise HTTPException(status_code=502, detail="Résiliation indisponible pour le moment")
+    _journal(db, user, "subscription.cancel", {"payer_id": sub.id})
+    db.commit()
     return {"ok": True}
 
 
-@router.post("/change-plan")
+@router.post("/change-plan", dependencies=[Depends(rate_limit("billing", 10, HOUR))])
 def change_plan(
     data: ChangePlanIn, user: User = Depends(get_current_user), db: Session = Depends(get_db)
 ):
@@ -94,6 +106,8 @@ def change_plan(
         paddle_api.change_price(sub.paddle_subscription_id, price_id)
     except paddle_api.PaddleUnavailable:
         raise HTTPException(status_code=502, detail="Changement d'offre indisponible pour le moment")
+    _journal(db, user, "subscription.change_plan", {"plan": data.plan, "payer_id": sub.id})
+    db.commit()
     return {"ok": True}
 
 
@@ -125,20 +139,45 @@ async def paddle_webhook(
     event = await request.json()
     etype = event.get("event_type", "")
     data = event.get("data", {})
+    event_id = event.get("event_id")
+    occurred_at = billing.parse_iso(event.get("occurred_at"))
+    sub_id = data.get("id") if etype.startswith("subscription.") else None
 
-    if etype.startswith("subscription."):
+    # Idempotence : Paddle réessaie tant qu'il n'a pas reçu de 2xx.
+    if event_id and db.get(PaddleEvent, event_id) is not None:
+        return {"ok": True, "duplicate": True}
+
+    # Ordre : un événement antérieur au dernier traité pour cet abonnement est
+    # obsolète (ex. « updated: active » livré après « canceled »).
+    stale = False
+    if sub_id and occurred_at is not None:
+        latest = db.scalar(
+            select(func.max(PaddleEvent.occurred_at)).where(PaddleEvent.subscription_id == sub_id)
+        )
+        stale = latest is not None and occurred_at < latest
+
+    if etype.startswith("subscription.") and not stale:
         user = _find_user(db, data)
         if user is not None:
             user.paddle_subscription_id = data.get("id") or user.paddle_subscription_id
             user.paddle_customer_id = data.get("customer_id") or user.paddle_customer_id
+            previous = user.subscription_status
             if etype == "subscription.canceled":
                 user.subscription_status = "canceled"
             else:
                 user.subscription_status = billing.map_status(data.get("status", ""))
+            if user.subscription_status != previous:
+                _journal(db, user, "subscription.status", {"before": previous, "after": user.subscription_status})
             period = data.get("current_billing_period") or {}
             ends = billing.parse_iso(period.get("ends_at"))
             if ends is not None:
                 user.subscription_ends_at = ends
-            db.commit()
 
-    return {"ok": True}
+    if event_id:
+        db.add(PaddleEvent(id=event_id, event_type=etype, subscription_id=sub_id, occurred_at=occurred_at))
+    try:
+        db.commit()
+    except IntegrityError:  # même événement traité en parallèle : déjà pris en compte
+        db.rollback()
+        return {"ok": True, "duplicate": True}
+    return {"ok": True, "stale": True} if stale else {"ok": True}

@@ -38,5 +38,8 @@
   "wall.reply": "Reply",
   "wall.replyAuthor": "{{name}}:",
   "wall.replyPlaceholder": "Reply…",
-  "wall.send": "Send"
+  "wall.send": "Send",
+  "wall.deleteTitle": "Delete this post?",
+  "wall.deleteBody": "It will disappear from the board for both parents, along with its replies.",
+  "wall.deleteReplyTitle": "Delete this reply?"
 }

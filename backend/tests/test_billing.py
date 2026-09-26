@@ -142,3 +142,52 @@ class TestHouseholdPremium:
         # parent2 (non payeur) a quand même accès aux fonctions premium
         assert client.get(f"/api/households/{h['id']}/expenses", headers=headers2).status_code == 200
         assert client.get("/api/billing/status", headers=headers2).json()["access"] is True
+
+
+class TestWebhookHardening:
+    def _send(self, client, event):
+        sig, raw = _signed(event, "sk_test")
+        return client.post("/api/billing/webhook", content=raw, headers={"Paddle-Signature": sig})
+
+    def _event(self, user, event_id, etype, status, occurred_at, ends="2027-07-24T00:00:00Z"):
+        return {
+            "event_id": event_id,
+            "event_type": etype,
+            "occurred_at": occurred_at,
+            "data": {
+                "id": "sub_9",
+                "customer_id": "ctm_9",
+                "status": status,
+                "current_billing_period": {"ends_at": ends},
+                "custom_data": {"user_id": str(user["id"])},
+            },
+        }
+
+    def test_duplicate_event_processed_once(self, client, auth_headers, db_session, monkeypatch):
+        from app.models import PaddleEvent, User
+
+        monkeypatch.setattr(billing.settings, "paddle_webhook_secret", "sk_test")
+        headers, user = auth_headers()
+        ev = self._event(user, "evt_1", "subscription.activated", "active", "2026-09-01T10:00:00Z")
+        assert self._send(client, ev).json() == {"ok": True}
+        # changement manuel entre-temps : un rejeu ne doit pas l'écraser
+        db_session.get(User, user["id"]).subscription_status = "past_due"
+        db_session.commit()
+        assert self._send(client, ev).json() == {"ok": True, "duplicate": True}
+        assert db_session.get(User, user["id"]).subscription_status == "past_due"
+        assert db_session.get(PaddleEvent, "evt_1").subscription_id == "sub_9"
+
+    def test_out_of_order_event_ignored(self, client, auth_headers, db_session, monkeypatch):
+        monkeypatch.setattr(billing.settings, "paddle_webhook_secret", "sk_test")
+        headers, user = auth_headers()
+        self._send(client, self._event(user, "evt_a", "subscription.activated", "active", "2026-09-01T10:00:00Z"))
+        self._send(client, self._event(user, "evt_c", "subscription.canceled", "canceled", "2026-09-03T10:00:00Z"))
+        # « updated: active » du 2 septembre livré en retard : ignoré
+        late = self._send(
+            client, self._event(user, "evt_b", "subscription.updated", "active", "2026-09-02T10:00:00Z")
+        )
+        assert late.json() == {"ok": True, "stale": True}
+        assert client.get("/api/billing/status", headers=headers).json()["status"] == "canceled"
+        # un événement plus récent est bien appliqué
+        self._send(client, self._event(user, "evt_d", "subscription.updated", "active", "2026-09-04T10:00:00Z"))
+        assert client.get("/api/billing/status", headers=headers).json()["status"] == "active"
