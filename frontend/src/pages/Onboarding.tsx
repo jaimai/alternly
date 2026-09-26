@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { api, ApiError } from '../api'
+import { track } from '../analytics'
+import { EV } from '../analyticsEvents'
 import { useAuth } from '../auth'
 import Paywall from '../components/Paywall'
 import Spinner from '../components/Spinner'
@@ -57,6 +59,7 @@ export default function OnboardingPage() {
         school_zone: zone,
       })
       setHousehold(h)
+      track(EV.onboardingStepCompleted, { step: 'household', country, zone: country === 'FR' ? zone : null })
       setStep(1)
     } catch (err) {
       setError(err instanceof Error ? err.message : t('onboarding.errorGeneric'))
@@ -75,6 +78,7 @@ export default function OnboardingPage() {
       }
       const fresh = await api.myHousehold()
       setHousehold(fresh)
+      track(EV.onboardingStepCompleted, { step: 'children', children_count: childNames.length })
       setStep(2)
     } catch (err) {
       setError(err instanceof Error ? err.message : t('onboarding.errorGeneric'))
@@ -91,6 +95,12 @@ export default function OnboardingPage() {
       await api.setCustodyRule(household.id, value.custody)
       await api.setVacationRule(household.id, value.vacation)
       await refreshHousehold()  // met à jour le cache avant d'entrer dans l'app
+      track(EV.onboardingStepCompleted, { step: 'rules', pattern: value.custody.pattern })
+      track(EV.onboardingCompleted, {
+        country: household.country,
+        children_count: household.children.length,
+        pattern: value.custody.pattern,
+      })
       // Freemium : on propose l'abonnement (skippable) à la fin de l'inscription.
       if (billing && !billing.access) setStep(3)
       else navigate('/app')
@@ -112,6 +122,7 @@ export default function OnboardingPage() {
           navigate('/app')
         }}
         onSkip={() => navigate('/app')}
+        feature="onboarding"
         title={t('onboarding.paywallTitle')}
         subtitle={t('onboarding.paywallSubtitle')}
       />
@@ -201,7 +212,7 @@ export default function OnboardingPage() {
               {t('onboarding.add')}
             </button>
           </div>
-          <div className="chip-list">
+          <div className="chip-list ph-mask ph-sensitive">
             {childNames.map((n, i) => (
               <span key={i} className="chip">
                 {n}{' '}

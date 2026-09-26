@@ -1,5 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { resetIdentity, track } from '../analytics'
+import { EV } from '../analyticsEvents'
 import { openCheckout, paddleConfigured } from '../billing'
 import type { Plan } from '../billing'
 import { API_BASE, setToken } from '../api'
@@ -22,13 +24,19 @@ interface Props {
   onSkip?: () => void
   title?: string
   subtitle?: string
+  /** Fonctionnalité à l'origine du paywall (analytics : expenses, wall, onboarding…). */
+  feature?: string
 }
 
-export default function Paywall({ user, onSubscribed, onSkip, title, subtitle }: Props) {
+export default function Paywall({ user, onSubscribed, onSkip, title, subtitle, feature = 'generic' }: Props) {
   const { t } = useTranslation()
   const [busy, setBusy] = useState(false)
   const [done, setDone] = useState(false)
   const [plan, setPlan] = useState<Plan>('annual')
+
+  useEffect(() => {
+    track(EV.paywallViewed, { feature })
+  }, [feature])
 
   async function subscribe() {
     setBusy(true)
@@ -40,12 +48,14 @@ export default function Paywall({ user, onSubscribed, onSkip, title, subtitle }:
         window.setTimeout(onSubscribed, 4000)
       },
       plan,
+      `paywall_${feature}`,
     )
     setBusy(false)
   }
 
   function logout() {
     setToken(null)
+    resetIdentity()
     window.location.href = '/login'
   }
 

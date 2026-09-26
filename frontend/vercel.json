@@ -32,11 +32,13 @@
     { "src": "/llms.txt", "dest": "https://web-production-d1aa3.up.railway.app/llms.txt" },
     { "src": "/static/(.*)", "dest": "https://web-production-d1aa3.up.railway.app/static/$1" },
     { "src": "/ical/(.*)", "dest": "https://web-production-d1aa3.up.railway.app/api/ical/$1" },
+    { "src": "/ingest/static/(.*)", "dest": "https://eu-assets.i.posthog.com/static/$1" },
+    { "src": "/ingest/(.*)", "dest": "https://eu.i.posthog.com/$1" },
     { "handle": "filesystem" },
     {
       "src": "/(.*)",
       "headers": {
-        "Content-Security-Policy": "default-src 'self'; script-src 'self' https://cdn.paddle.com https://*.paddle.com https://accounts.google.com/gsi/client; style-src 'self' 'unsafe-inline' https://cdn.paddle.com https://accounts.google.com/gsi/style; font-src 'self' data:; img-src 'self' data: https://*.paddle.com https://*.googleusercontent.com; connect-src 'self' https:; frame-src https://*.paddle.com https://accounts.google.com/gsi/; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'"
+        "Content-Security-Policy": "default-src 'self'; script-src 'self' https://cdn.paddle.com https://*.paddle.com https://accounts.google.com/gsi/client; style-src 'self' 'unsafe-inline' https://cdn.paddle.com https://accounts.google.com/gsi/style; font-src 'self' data:; img-src 'self' data: https://*.paddle.com https://*.googleusercontent.com; connect-src 'self' https:; frame-src https://*.paddle.com https://accounts.google.com/gsi/; worker-src 'self' blob:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'"
       }, "dest": "/index.html"
     }
   ]

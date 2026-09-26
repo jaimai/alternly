@@ -1805,3 +1805,53 @@ a.settings-row { text-decoration: none; }
   height: 1px;
   background: var(--line);
 }
+
+/* ---------- Bannière de consentement (mesure d'audience) ----------
+   Non bloquante ; « Refuser » et « Accepter » ont exactement le même poids (CNIL). */
+.consent-banner {
+  position: fixed;
+  z-index: 1000;
+  left: 16px;
+  right: 16px;
+  bottom: 16px;
+  max-width: 720px;
+  margin: 0 auto;
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  padding: 14px 16px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  font-size: 0.88rem;
+  line-height: 1.45;
+  animation: consent-in 240ms var(--ease-out);
+}
+.consent-text { flex: 1; min-width: 0; }
+.consent-text strong { display: block; margin-bottom: 2px; font-size: 0.95rem; }
+.consent-text p { margin: 0; color: var(--ink-soft); }
+.consent-actions { display: flex; gap: 8px; flex-shrink: 0; }
+button.consent-btn {
+  min-width: 104px;
+  background: var(--surface);
+  color: var(--pine);
+  border: 1.5px solid var(--pine);
+  padding: 8px 16px;
+}
+@media (hover: hover) and (pointer: fine) {
+  button.consent-btn:hover { background: var(--pine); color: white; }
+}
+@media (max-width: 640px) {
+  .consent-banner { flex-direction: column; align-items: stretch; left: 12px; right: 12px; bottom: 12px; gap: 12px; }
+  .consent-actions > button { flex: 1; }
+  /* Au-dessus de la barre d'onglets mobile de l'app. */
+  body:has(.tabbar) .consent-banner { bottom: calc(76px + env(safe-area-inset-bottom)); }
+}
+@keyframes consent-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .consent-banner { animation: none; }
+}

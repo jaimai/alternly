@@ -1,4 +1,6 @@
 import { initializePaddle, type Paddle } from '@paddle/paddle-js'
+import { track } from './analytics'
+import { EV } from './analyticsEvents'
 import i18n from './i18n'
 import type { User } from './types'
 
@@ -11,14 +13,19 @@ export type Plan = 'annual' | 'monthly'
 export const paddleConfigured = Boolean(TOKEN && PRICE_ANNUAL)
 
 let paddlePromise: Promise<Paddle | undefined> | null = null
+// Le callback Paddle est fixé à l'initialisation : on garde le dernier contexte d'ouverture.
+let current: { onComplete: () => void; plan: Plan } = { onComplete: () => {}, plan: 'annual' }
 
-function getPaddle(onComplete: () => void): Promise<Paddle | undefined> {
+function getPaddle(): Promise<Paddle | undefined> {
   if (!paddlePromise) {
     paddlePromise = initializePaddle({
       token: TOKEN as string,
       environment: ENV,
       eventCallback: (ev) => {
-        if (ev?.name === 'checkout.completed') onComplete()
+        if (ev?.name === 'checkout.completed') {
+          track(EV.checkoutCompleted, { plan: current.plan })
+          current.onComplete()
+        }
       },
     })
   }
@@ -27,13 +34,20 @@ function getPaddle(onComplete: () => void): Promise<Paddle | undefined> {
 
 /** Ouvre le checkout Paddle. `plan` = 'annual' (défaut) ou 'monthly'. `onComplete`
  *  est appelé après paiement (l'activation réelle passe par le webhook). */
-export async function openCheckout(user: User, onComplete: () => void, plan: Plan = 'annual') {
+export async function openCheckout(
+  user: User,
+  onComplete: () => void,
+  plan: Plan = 'annual',
+  source = 'unknown',
+) {
   const priceId = plan === 'monthly' ? PRICE_MONTHLY ?? PRICE_ANNUAL : PRICE_ANNUAL
   if (!paddleConfigured || !priceId) {
     alert(i18n.t('paywall.notConfigured'))
     return
   }
-  const paddle = await getPaddle(onComplete)
+  current = { onComplete, plan }
+  track(EV.checkoutOpened, { plan, source })
+  const paddle = await getPaddle()
   paddle?.Checkout.open({
     items: [{ priceId, quantity: 1 }],
     customer: { email: user.email },

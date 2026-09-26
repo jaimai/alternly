@@ -109,7 +109,7 @@ export default function StatusCard({ household, myId, exceptions, refreshKey, on
   }
 
   return (
-    <section className="status-card" style={{ ['--holder' as string]: holder?.color ?? 'var(--pine)' }}>
+    <section className="status-card ph-mask ph-sensitive" style={{ ['--holder' as string]: holder?.color ?? 'var(--pine)' }}>
       <div className="status-main">
         <p className="eyebrow">{t('calendar.statusToday', { day: dayLong(today) })}</p>
         <h1 className="status-title">

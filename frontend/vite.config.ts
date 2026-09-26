@@ -16,6 +16,17 @@ export default defineConfig({
         target: apiTarget,
         rewrite: (path) => path.replace(/^\/ical/, '/api/ical'),
       },
+      // PostHog (comme le proxy Vercel en prod) : utile seulement avec VITE_POSTHOG_KEY en dev.
+      '/ingest/static': {
+        target: 'https://eu-assets.i.posthog.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/ingest/, ''),
+      },
+      '/ingest': {
+        target: 'https://eu.i.posthog.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/ingest/, ''),
+      },
     },
   },
 })

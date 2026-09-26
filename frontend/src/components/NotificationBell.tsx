@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { api } from '../api'
+import { track } from '../analytics'
+import { EV } from '../analyticsEvents'
 import { useFormat } from '../format'
 import Icon from './Icon'
 import type { Notification } from '../types'
@@ -128,7 +130,7 @@ export default function NotificationBell() {
         {unread.length > 0 && <span className="badge">{unread.length}</span>}
       </button>
       {open && (
-        <div className="notif-panel" role="dialog" aria-label={t('common.notifications')}>
+        <div className="notif-panel ph-mask ph-sensitive" role="dialog" aria-label={t('common.notifications')}>
           <div className="notif-head">{t('common.notifications')}</div>
           {items.length === 0 && <div className="notif-empty">{t('common.notifEmpty')}</div>}
           {items.map((n) => (
@@ -138,6 +140,7 @@ export default function NotificationBell() {
               className={`notif-item ${n.read_at === null ? 'unread' : ''}`}
               onClick={() => {
                 setOpen(false)
+                track(EV.notificationOpened, { type: n.type, unread: n.read_at === null })
                 navigate(target(n.type))
               }}
             >
