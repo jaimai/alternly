@@ -26,5 +26,8 @@
   "common.notifWallTaskAssigned": "Une tâche vous a été assignée : « {{body}} »",
   "common.relToday": "aujourd'hui",
   "common.relTomorrow": "demain",
-  "common.relInDays": "dans {{count}} jours"
+  "common.relInDays": "dans {{count}} jours",
+  "common.notFoundTitle": "Page introuvable",
+  "common.notFoundBody": "Ce lien ne mène nulle part. Il a peut-être expiré, ou l'adresse contient une faute de frappe.",
+  "common.notFoundBack": "Retour au calendrier"
 }

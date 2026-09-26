@@ -26,5 +26,8 @@
   "common.notifWallTaskAssigned": "A task was assigned to you: “{{body}}”",
   "common.relToday": "today",
   "common.relTomorrow": "tomorrow",
-  "common.relInDays": "in {{count}} days"
+  "common.relInDays": "in {{count}} days",
+  "common.notFoundTitle": "Page not found",
+  "common.notFoundBody": "This link doesn't lead anywhere. It may have expired, or the address has a typo.",
+  "common.notFoundBack": "Back to the calendar"
 }
