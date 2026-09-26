@@ -19,6 +19,8 @@
     },
     { "src": "/", "dest": "https://web-production-d1aa3.up.railway.app/" },
     { "src": "/en", "dest": "https://web-production-d1aa3.up.railway.app/en" },
+    { "src": "/en/blog", "dest": "https://web-production-d1aa3.up.railway.app/en/blog" },
+    { "src": "/en/blog/(.*)", "dest": "https://web-production-d1aa3.up.railway.app/en/blog/$1" },
     { "src": "/blog", "dest": "https://web-production-d1aa3.up.railway.app/blog" },
     { "src": "/blog/(.*)", "dest": "https://web-production-d1aa3.up.railway.app/blog/$1" },
     { "src": "/terms", "dest": "https://web-production-d1aa3.up.railway.app/terms" },

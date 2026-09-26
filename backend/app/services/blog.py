@@ -6,6 +6,8 @@ from pathlib import Path
 import markdown
 
 CONTENT_DIR = Path(__file__).resolve().parent.parent.parent.parent / "content" / "blog"
+# Guides en anglais (parents américains), servis sous /en/blog.
+CONTENT_DIR_EN = CONTENT_DIR.parent / "blog-en"
 
 
 @dataclass
@@ -28,7 +30,11 @@ def _parse_frontmatter(text: str) -> tuple[dict[str, str], str]:
     for line in meta_raw.strip().splitlines():
         key, _, value = line.partition(":")
         if key.strip():
-            meta[key.strip()] = value.strip()
+            value = value.strip()
+            # Valeur entre guillemets (titre contenant « : ») : on retire les guillemets.
+            if len(value) >= 2 and value[0] == value[-1] and value[0] in "\"'":
+                value = value[1:-1]
+            meta[key.strip()] = value
     return meta, body.strip()
 
 
