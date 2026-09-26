@@ -13,7 +13,7 @@ from sqlalchemy.pool import StaticPool
 from app.config import settings
 from app.db import Base
 from app.migrations import run_migrations
-from app.models import Expense
+from app.models import Expense, WallPost
 from app.services import public_holidays, school_holidays
 from tests.test_household import create_household
 from tests.test_rules import premium_family, setup_family
@@ -225,3 +225,31 @@ class TestMigrations:
         assert "ix_expenses_household_id" in names
         with sessionmaker(bind=engine)() as s:
             assert s.scalars(select(Expense)).all() == []
+
+
+class TestDeleteChild:
+    def test_referenced_child_detached_not_500(self, client, auth_headers, db_session):
+        # Clés étrangères appliquées comme en Postgres.
+        db_session.execute(text("PRAGMA foreign_keys=ON"))
+        headers1, _, headers2, _, h = premium_family(client, auth_headers, db_session)
+        child_id = client.post(
+            f"/api/households/{h['id']}/children", json={"first_name": "Léo"}, headers=headers1
+        ).json()["id"]
+        exp = client.post(
+            f"/api/households/{h['id']}/expenses",
+            json={"label": "Judo", "amount_cents": 5000, "date": "2026-07-10", "category": "activites",
+                  "child_id": child_id},
+            headers=headers1,
+        )
+        assert exp.status_code == 201, exp.text
+        post = client.post(
+            f"/api/households/{h['id']}/wall",
+            json={"kind": "message", "body": "Doudou oublié", "child_id": child_id},
+            headers=headers1,
+        )
+        assert post.status_code == 201, post.text
+
+        resp = client.delete(f"/api/households/{h['id']}/children/{child_id}", headers=headers1)
+        assert resp.status_code == 204, resp.text
+        assert db_session.get(Expense, exp.json()["id"]).child_id is None
+        assert db_session.get(WallPost, post.json()["id"]).child_id is None

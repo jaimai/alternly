@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
 from ..db import get_db
 from ..deps import get_membership
-from ..models import Child, HouseholdMember
+from ..models import Child, Expense, HouseholdMember, WallPost
 from ..schemas import ChildIn, ChildOut
 
 router = APIRouter(prefix="/api/households/{household_id}/children", tags=["children"])
@@ -52,5 +52,10 @@ def delete_child(
     member: HouseholdMember = Depends(get_membership),
     db: Session = Depends(get_db),
 ):
-    db.delete(_get_child(db, member, child_id))
+    child = _get_child(db, member, child_id)
+    # Dépenses et messages liés conservés, simplement détachés de l'enfant
+    # (sinon violation de clé étrangère sous Postgres).
+    for model in (Expense, WallPost):
+        db.execute(update(model).where(model.child_id == child.id).values(child_id=None))
+    db.delete(child)
     db.commit()
