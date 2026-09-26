@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api, ApiError, API_BASE } from '../api'
 import { useAuth } from '../auth'
+import ColorPicker, { DEFAULT_PARENT_COLOR } from '../components/ColorPicker'
+import { useConfirm } from '../components/Modal'
 import RuleForm from '../components/RuleForm'
 import type { RuleFormValue } from '../components/RuleForm'
 import TopBar from '../components/TopBar'
@@ -15,7 +17,8 @@ const SPECIAL_LABELS: Record<SpecialDayRule['kind'], string> = {
 }
 
 export default function SettingsPage() {
-  const { user, setUser } = useAuth()
+  const { user, setUser, logout } = useAuth()
+  const [confirm, confirmNode] = useConfirm()
   const navigate = useNavigate()
   const [household, setHousehold] = useState<Household | null>(null)
   const [inviteUrl, setInviteUrl] = useState<string | null>(null)
@@ -23,7 +26,7 @@ export default function SettingsPage() {
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
-  const [color, setColor] = useState(user?.color ?? '#3b6ea5')
+  const [color, setColor] = useState(user?.color ?? DEFAULT_PARENT_COLOR)
   const [childName, setChildName] = useState('')
 
   function refresh() {
@@ -154,12 +157,14 @@ export default function SettingsPage() {
         {message && <div className="info-banner">{message}</div>}
         {error && <div className="error">{error}</div>}
 
-        <div className="card">
+        <div className="card" id="parents">
           <h2>Parents</h2>
           {household.members.map((m) => (
-            <p key={m.id}>
-              <span className="dot" style={{ background: m.color, display: 'inline-block', width: 12, height: 12, borderRadius: '50%', marginRight: 8 }} />
-              {m.display_name} {m.id === user.id && '(vous)'}
+            <p key={m.id} className="member-line">
+              <span className="avatar small" style={{ background: m.color }} aria-hidden="true">
+                {m.display_name.charAt(0).toUpperCase()}
+              </span>
+              {m.display_name} {m.id === user.id && <span className="hint">(vous)</span>}
             </p>
           ))}
           {household.members.length < 2 && (
@@ -185,22 +190,39 @@ export default function SettingsPage() {
             {household.children.map((c) => (
               <span key={c.id} className="chip">
                 {c.first_name}{' '}
-                <a
-                  href="#"
-                  onClick={async (e) => {
-                    e.preventDefault()
-                    await api.deleteChild(household.id, c.id)
-                    refresh()
+                <button
+                  type="button"
+                  className="chip-remove"
+                  aria-label={`Retirer ${c.first_name}`}
+                  title={`Retirer ${c.first_name}`}
+                  onClick={async () => {
+                    if (
+                      !(await confirm({
+                        title: `Retirer ${c.first_name} ?`,
+                        body: "L'enfant disparaîtra du foyer pour les deux parents. Ses dépenses et messages sont conservés.",
+                        confirmLabel: 'Retirer',
+                        danger: true,
+                      }))
+                    )
+                      return
+                    try {
+                      await api.deleteChild(household.id, c.id)
+                      refresh()
+                    } catch (err) {
+                      fail(err)
+                    }
                   }}
                 >
                   ✕
-                </a>
+                </button>
               </span>
             ))}
           </div>
           <div className="row">
             <input
+              aria-label="Prénom de l'enfant"
               placeholder="Prénom"
+              maxLength={50}
               value={childName}
               onChange={(e) => setChildName(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addChild())}
@@ -213,7 +235,12 @@ export default function SettingsPage() {
 
         <div className="card">
           <h2>Zone scolaire</h2>
-          <select value={household.school_zone} onChange={(e) => updateZone(e.target.value)}>
+          <p className="hint">
+            Zone A : Besançon, Bordeaux, Clermont, Dijon, Grenoble, Limoges, Lyon, Poitiers. Zone B : Aix-Marseille,
+            Amiens, Lille, Nancy-Metz, Nantes, Nice, Normandie, Orléans-Tours, Reims, Rennes, Strasbourg. Zone C :
+            Créteil, Montpellier, Paris, Toulouse, Versailles.
+          </p>
+          <select aria-label="Zone scolaire" value={household.school_zone} onChange={(e) => updateZone(e.target.value)}>
             <option value="A">Zone A</option>
             <option value="B">Zone B</option>
             <option value="C">Zone C</option>
@@ -302,10 +329,16 @@ export default function SettingsPage() {
 
         <div className="card">
           <h2>Mon profil</h2>
-          <label htmlFor="mycolor">Ma couleur sur le calendrier</label>
-          <div className="row">
-            <input id="mycolor" type="color" value={color} onChange={(e) => setColor(e.target.value)} style={{ height: 42, padding: 4 }} />
-            <button onClick={saveColor}>Enregistrer</button>
+          <label>Ma couleur sur le calendrier</label>
+          <div className="row" style={{ alignItems: 'center' }}>
+            <ColorPicker
+              value={color}
+              onChange={setColor}
+              taken={household.members.find((m) => m.id !== user.id)?.color}
+            />
+            <button onClick={saveColor} disabled={color === user.color} style={{ flex: '0 0 auto' }}>
+              Enregistrer
+            </button>
           </div>
           <label style={{ display: 'flex', gap: 8, alignItems: 'center', color: 'var(--ink)', marginTop: 16 }}>
             <input
@@ -317,7 +350,16 @@ export default function SettingsPage() {
             Recevoir un e-mail pour les propositions d'échange et leurs rappels
           </label>
         </div>
+
+        <div className="card">
+          <h2>Compte</h2>
+          <p className="hint">Connecté·e en tant que {user.email}</p>
+          <button className="secondary" onClick={logout}>
+            Se déconnecter
+          </button>
+        </div>
       </div>
+      {confirmNode}
     </>
   )
 }

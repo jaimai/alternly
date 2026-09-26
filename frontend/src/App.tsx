@@ -1,18 +1,20 @@
+import { lazy, Suspense } from 'react'
 import { Route, Routes } from 'react-router-dom'
 import { Analytics } from '@vercel/analytics/react'
 import { RequireAuth } from './auth'
-import CalendarPage from './pages/Calendar'
-import ExpensesPage from './pages/Expenses'
-import JoinPage from './pages/Join'
-import LoginPage from './pages/Login'
-import OnboardingPage from './pages/Onboarding'
-import RegisterPage from './pages/Register'
-import SettingsPage from './pages/Settings'
-import WallPage from './pages/Wall'
+const CalendarPage = lazy(() => import('./pages/Calendar'))
+const ExpensesPage = lazy(() => import('./pages/Expenses'))
+const JoinPage = lazy(() => import('./pages/Join'))
+const LoginPage = lazy(() => import('./pages/Login'))
+const NotFoundPage = lazy(() => import('./pages/NotFound'))
+const OnboardingPage = lazy(() => import('./pages/Onboarding'))
+const RegisterPage = lazy(() => import('./pages/Register'))
+const SettingsPage = lazy(() => import('./pages/Settings'))
+const WallPage = lazy(() => import('./pages/Wall'))
 
 export default function App() {
   return (
-    <>
+    <Suspense fallback={<div className="page-loading">Chargement…</div>}>
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
@@ -57,8 +59,9 @@ export default function App() {
           </RequireAuth>
         }
       />
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
     <Analytics />
-    </>
+    </Suspense>
   )
 }

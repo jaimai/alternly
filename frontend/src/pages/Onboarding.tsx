@@ -54,7 +54,9 @@ export default function OnboardingPage() {
     setBusy(true)
     setError(null)
     try {
-      for (const first_name of childNames) {
+      // Un prénom tapé sans cliquer « Ajouter » compte aussi.
+      const pending = childName.trim()
+      for (const first_name of pending ? [...childNames, pending] : childNames) {
         await api.addChild(household.id, { first_name })
       }
       const fresh = await api.myHousehold()
@@ -124,6 +126,8 @@ export default function OnboardingPage() {
           <div className="row">
             <input
               id="child"
+              maxLength={50}
+              placeholder="ex. Léo"
               value={childName}
               onChange={(e) => setChildName(e.target.value)}
               onKeyDown={(e) => {
@@ -139,6 +143,7 @@ export default function OnboardingPage() {
             <button
               type="button"
               className="secondary"
+              style={{ flex: '0 0 auto' }}
               onClick={() => {
                 if (childName.trim()) {
                   setChildNames([...childNames, childName.trim()])
@@ -153,20 +158,19 @@ export default function OnboardingPage() {
             {childNames.map((n, i) => (
               <span key={i} className="chip">
                 {n}{' '}
-                <a
-                  href="#"
-                  onClick={(e) => {
-                    e.preventDefault()
-                    setChildNames(childNames.filter((_, j) => j !== i))
-                  }}
+                <button
+                  type="button"
+                  className="chip-remove"
+                  aria-label={`Retirer ${n}`}
+                  onClick={() => setChildNames(childNames.filter((_, j) => j !== i))}
                 >
                   ✕
-                </a>
+                </button>
               </span>
             ))}
           </div>
           <p style={{ marginTop: 16 }}>
-            <button onClick={saveChildren} disabled={busy || childNames.length === 0} style={{ width: '100%' }}>
+            <button onClick={saveChildren} disabled={busy || (childNames.length === 0 && !childName.trim())} style={{ width: '100%' }}>
               Continuer
             </button>
           </p>

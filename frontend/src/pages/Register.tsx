@@ -3,12 +3,13 @@ import type { FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { api, setToken } from '../api'
 import { useAuth } from '../auth'
+import ColorPicker, { DEFAULT_PARENT_COLOR } from '../components/ColorPicker'
 
 export default function RegisterPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [displayName, setDisplayName] = useState('')
-  const [color, setColor] = useState('#3b6ea5')
+  const [color, setColor] = useState(DEFAULT_PARENT_COLOR)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const { setUser } = useAuth()
@@ -61,8 +62,8 @@ export default function RegisterPage() {
           minLength={8}
           maxLength={72}
         />
-        <label htmlFor="color">Votre couleur sur le calendrier</label>
-        <input id="color" type="color" value={color} onChange={(e) => setColor(e.target.value)} style={{ height: 42, padding: 4 }} />
+        <label>Votre couleur sur le calendrier</label>
+        <ColorPicker value={color} onChange={setColor} />
         {error && <div className="error">{error}</div>}
         <p style={{ marginTop: 16 }}>
           <button type="submit" disabled={busy} style={{ width: '100%' }}>
