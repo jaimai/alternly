@@ -127,3 +127,36 @@ class TestLinks:
     def test_schema_org_claims_web_only(self, client):
         for path in ("/", "/en", "/blog"):
             assert '"operatingSystem": "Web"' in client.get(path).text
+
+
+class TestIcalAvailability:
+    def _feed_token(self, client, auth_headers, db_session, country="FR"):
+        from app.models import User
+
+        headers1, user1 = auth_headers()
+        h = client.post(
+            "/api/households", json={"name": "Foyer", "school_zone": "A", "country": country}, headers=headers1
+        ).json()
+        client.put(
+            f"/api/households/{h['id']}/custody-rule",
+            json={"pattern": "alternate_weeks", "start_date": "2026-01-05", "reference_parent_id": user1["id"]},
+            headers=headers1,
+        )
+        return db_session.get(User, user1["id"]).ical_token
+
+    def test_ok_is_cacheable(self, client, auth_headers, db_session):
+        resp = client.get(f"/api/ical/{self._feed_token(client, auth_headers, db_session)}.ics")
+        assert resp.status_code == 200
+        assert resp.headers["cache-control"] == "private, max-age=3600"
+
+    def test_503_when_school_holidays_unavailable(self, client, auth_headers, db_session, monkeypatch):
+        monkeypatch.setattr(public_holidays, "_transport", httpx.MockTransport(_down))
+        resp = client.get(f"/api/ical/{self._feed_token(client, auth_headers, db_session)}.ics")
+        assert resp.status_code == 503
+        assert resp.headers["retry-after"] == "3600"
+
+    def test_us_household_never_503(self, client, auth_headers, db_session, monkeypatch):
+        # Foyer US : fériés calculés, congés saisis à la main → aucune API publique.
+        monkeypatch.setattr(public_holidays, "_transport", httpx.MockTransport(_down))
+        resp = client.get(f"/api/ical/{self._feed_token(client, auth_headers, db_session, 'US')}.ics")
+        assert resp.status_code == 200

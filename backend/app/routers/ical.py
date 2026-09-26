@@ -30,6 +30,15 @@ def ical_feed(ical_token: str, db: Session = Depends(get_db)):
         data = build_calendar(db, household, start, end)
     except NoCustodyRule:
         raise HTTPException(status_code=409, detail="Aucune règle de garde définie")
+    if not data.school_holidays_loaded:
+        # Données publiques FR (vacances/fériés) injoignables : le calendrier serait
+        # faux. Les clients d'agenda réessaieront plutôt que d'écraser le bon flux.
+        # (Les foyers US utilisent des congés saisis à la main : toujours chargés.)
+        raise HTTPException(
+            status_code=503,
+            detail="Données publiques indisponibles, réessayez plus tard",
+            headers={"Retry-After": "3600"},
+        )
 
     names = {}
     for m in db.scalars(select(HouseholdMember).where(HouseholdMember.household_id == household.id)):
@@ -40,7 +49,10 @@ def ical_feed(ical_token: str, db: Session = Depends(get_db)):
     return Response(
         content=ics,
         media_type="text/calendar; charset=utf-8",
-        headers={"Content-Disposition": 'attachment; filename="alternly.ics"'},
+        headers={
+            "Content-Disposition": 'attachment; filename="alternly.ics"',
+            "Cache-Control": "private, max-age=3600",
+        },
     )
 
 
