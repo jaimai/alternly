@@ -6,6 +6,7 @@ import { api, setToken } from '../api'
 import { useAuth } from '../auth'
 import { DEFAULT_PARENT_COLOR } from '../colors'
 import ColorPicker from '../components/ColorPicker'
+import GoogleButton from '../components/GoogleButton'
 import PasswordField from '../components/PasswordField'
 import { passwordProblem } from '../password'
 
@@ -59,6 +60,7 @@ export default function RegisterPage() {
       </div>
       <form className="card" onSubmit={submit}>
         <h2>{t('auth.registerTitle')}</h2>
+        <GoogleButton text="signup_with" consent />
         <label htmlFor="name">{t('auth.firstNameLabel')}</label>
         <input id="name" value={displayName} onChange={(e) => setDisplayName(e.target.value)} required maxLength={50} />
         <label htmlFor="email">{t('auth.emailLabel')}</label>

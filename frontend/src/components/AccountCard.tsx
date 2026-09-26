@@ -69,8 +69,10 @@ export default function AccountCard({
       <div className="settings-list">
         <button type="button" className="settings-row" onClick={() => setChanging(true)}>
           <span>
-            <strong>{t('settings.changePassword')}</strong>
-            <span className="hint">{t('settings.changePasswordHint')}</span>
+            <strong>{t(user.has_password === false ? 'settings.setPassword' : 'settings.changePassword')}</strong>
+            <span className="hint">
+              {t(user.has_password === false ? 'settings.setPasswordHint' : 'settings.changePasswordHint')}
+            </span>
           </span>
           <Icon name="chevron" size={16} />
         </button>
@@ -98,6 +100,7 @@ export default function AccountCard({
 
       {changing && (
         <ChangePassword
+          hasPassword={user.has_password !== false}
           onClose={() => setChanging(false)}
           onDone={(u) => {
             setUser(u)
@@ -111,7 +114,16 @@ export default function AccountCard({
   )
 }
 
-function ChangePassword({ onClose, onDone }: { onClose: () => void; onDone: (u: User) => void }) {
+function ChangePassword({
+  hasPassword,
+  onClose,
+  onDone,
+}: {
+  /** Faux pour un compte Google : on définit un premier mot de passe, sans l'actuel. */
+  hasPassword: boolean
+  onClose: () => void
+  onDone: (u: User) => void
+}) {
   const { t } = useTranslation()
   const [current, setCurrent] = useState('')
   const [next, setNext] = useState('')
@@ -138,13 +150,17 @@ function ChangePassword({ onClose, onDone }: { onClose: () => void; onDone: (u: 
   }
 
   return (
-    <Modal title={t('settings.changePassword')} onClose={onClose}>
-      <PasswordField id="cur-pw" label={t('settings.currentPassword')} value={current} onChange={setCurrent} />
+    <Modal title={t(hasPassword ? 'settings.changePassword' : 'settings.setPassword')} onClose={onClose}>
+      {hasPassword ? (
+        <PasswordField id="cur-pw" label={t('settings.currentPassword')} value={current} onChange={setCurrent} />
+      ) : (
+        <p className="hint">{t('settings.setPasswordIntro')}</p>
+      )}
       <PasswordField id="new-pw" label={t('auth.newPasswordLabel')} value={next} onChange={setNext} autoComplete="new-password" />
       <p className="fine-print">{t('auth.otherDevicesSignedOut')}</p>
       {error && <div className="error">{error}</div>}
       <div className="actions" style={{ marginTop: 18 }}>
-        <button onClick={submit} disabled={busy || !current || !next}>
+        <button onClick={submit} disabled={busy || (hasPassword && !current) || !next}>
           {t('settings.save')}
         </button>
         <button className="secondary" onClick={onClose}>

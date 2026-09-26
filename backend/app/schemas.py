@@ -65,8 +65,15 @@ class ResetPasswordIn(BaseModel):
     password: NewPassword
 
 
+class GoogleLoginIn(BaseModel):
+    # Jeton d'identité (JWT) renvoyé par Google Identity Services côté navigateur.
+    credential: str = Field(min_length=20, max_length=4096)
+    locale: Literal["fr", "en"] | None = None
+
+
 class ChangePasswordIn(BaseModel):
-    current_password: str = Field(max_length=200)
+    # Vide autorisé seulement pour un compte Google sans mot de passe (définition initiale).
+    current_password: str = Field(default="", max_length=200)
     new_password: NewPassword
 
 
@@ -78,6 +85,7 @@ class UserOut(ORMModel):
     email_opt_in: bool
     onboarding_seen: bool
     locale: str
+    has_password: bool = True
 
 
 class UserUpdate(BaseModel):

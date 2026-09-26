@@ -21,6 +21,7 @@ _SUBPROCESSORS = """
   <li><strong>alwaysdata</strong> — base de données (Union européenne).</li>
   <li><strong>Resend</strong> — envoi des e-mails transactionnels (notifications).</li>
   <li><strong>Paddle</strong> — traitement des paiements et facturation (revendeur / Merchant of Record).</li>
+  <li><strong>Google</strong> — connexion « Continuer avec Google », si vous la choisissez (nom, adresse e-mail et identifiant de compte Google).</li>
 </ul>
 """
 
@@ -177,6 +178,7 @@ _SUBPROCESSORS_EN = """
   <li><strong>alwaysdata</strong> — database (European Union).</li>
   <li><strong>Resend</strong> — transactional emails (notifications).</li>
   <li><strong>Paddle</strong> — payment processing and billing (reseller / Merchant of Record).</li>
+  <li><strong>Google</strong> — "Continue with Google" sign-in, if you choose it (name, email address and Google account identifier).</li>
 </ul>
 """
 

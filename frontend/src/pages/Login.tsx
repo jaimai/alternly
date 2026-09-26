@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { api, setToken } from '../api'
 import { useAuth } from '../auth'
+import GoogleButton from '../components/GoogleButton'
 import PasswordField from '../components/PasswordField'
 
 export default function LoginPage() {
@@ -40,6 +41,7 @@ export default function LoginPage() {
       </div>
       <form className="card" onSubmit={submit}>
         <h2>{t('auth.loginTitle')}</h2>
+        <GoogleButton text="signin_with" />
         <label htmlFor="email">{t('auth.emailLabel')}</label>
         <input id="email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
         <PasswordField id="password" label={t('auth.passwordLabel')} value={password} onChange={setPassword} />
