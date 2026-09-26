@@ -49,6 +49,10 @@ class UserCreate(BaseModel):
     color: str = Field(default="#4f7cac", pattern=COLOR_PATTERN)
     # Langue choisie côté client (landing) ; prioritaire sur Accept-Language.
     locale: Literal["fr", "en"] | None = None
+    # Choix de mesure d'audience déjà fait dans le navigateur (bannière), s'il existe.
+    analytics_consent: bool | None = None
+    # Inscription depuis un lien d'invitation (analytics uniquement).
+    via_invite: bool = False
 
 
 class UserLogin(BaseModel):
@@ -69,6 +73,8 @@ class GoogleLoginIn(BaseModel):
     # Jeton d'identité (JWT) renvoyé par Google Identity Services côté navigateur.
     credential: str = Field(min_length=20, max_length=4096)
     locale: Literal["fr", "en"] | None = None
+    analytics_consent: bool | None = None
+    via_invite: bool = False
 
 
 class ChangePasswordIn(BaseModel):
@@ -86,6 +92,11 @@ class UserOut(ORMModel):
     onboarding_seen: bool
     locale: str
     has_password: bool = True
+    # Mode de connexion principal (analytics, sans donnée d'identification).
+    auth_method: Literal["email", "google"] = "email"
+    # Consentement à la mesure d'audience : None = jamais répondu.
+    analytics_consent: bool | None = None
+    created_at: datetime | None = None
 
 
 class UserUpdate(BaseModel):
@@ -94,6 +105,7 @@ class UserUpdate(BaseModel):
     email_opt_in: bool | None = None
     onboarding_seen: bool | None = None
     locale: Literal["fr", "en"] | None = None
+    analytics_consent: bool | None = None
 
 
 class Token(BaseModel):

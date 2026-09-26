@@ -8,7 +8,7 @@ from ..db import get_db
 from ..deps import get_membership, is_premium, notify, other_parent_id
 from ..models import HouseholdMember, ScheduleException, User, utcnow
 from ..ratelimit import DAY, rate_limit
-from ..services import audit
+from ..services import analytics, audit
 from ..services import change_requests as cr_service
 from ..services import email as email_service
 from ..services import rules as rules_service
@@ -187,6 +187,12 @@ def create_exception(
             background.add_task(email_service.send_email, recipient.email, subject, html)
     db.commit()
     db.refresh(exc)
+    analytics.capture_for_member(db, member, "exchange_proposed", {
+        "solo": solo,
+        "is_counter": data.replaces_id is not None,
+        "days": (data.date_end - data.date_start).days + 1,
+        "lead_days": (data.date_start - date.today()).days,
+    })
     return exc
 
 
@@ -197,6 +203,17 @@ def _resolve(
     exc.resolved_by = member.user_id
     exc.resolved_at = utcnow()
     exc.response_note = note
+
+
+def _track_resolution(db: Session, member: HouseholdMember, exc: ScheduleException) -> None:
+    hours = None
+    if exc.created_at and exc.resolved_at:
+        hours = round((exc.resolved_at - exc.created_at).total_seconds() / 3600, 1)
+    analytics.capture_for_member(db, member, "exchange_resolved", {
+        "status": exc.status,
+        "is_counter": exc.replaces_id is not None,
+        "hours_to_resolve": hours,
+    })
 
 
 @router.post("/exceptions/{exception_id}/accept", response_model=ExceptionOut)
@@ -219,6 +236,7 @@ def accept_exchange(
     notify(db, exc.created_by, "exchange_accepted", _exchange_payload(exc))
     db.commit()
     db.refresh(exc)
+    _track_resolution(db, member, exc)
     return exc
 
 
@@ -242,6 +260,7 @@ def refuse_exchange(
     notify(db, exc.created_by, "exchange_refused", _exchange_payload(exc))
     db.commit()
     db.refresh(exc)
+    _track_resolution(db, member, exc)
     return exc
 
 
@@ -265,6 +284,7 @@ def withdraw_exchange(
     notify(db, other_parent_id(db, member.household_id, member.user_id), "exchange_withdrawn", _exchange_payload(exc))
     db.commit()
     db.refresh(exc)
+    _track_resolution(db, member, exc)
     return exc
 
 

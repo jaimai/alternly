@@ -23,7 +23,7 @@ from ..schemas import (
     UserOut,
     UserUpdate,
 )
-from ..services import account, google_auth, paddle_api
+from ..services import account, analytics, google_auth, paddle_api
 from ..services import email as email_service
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
@@ -88,10 +88,14 @@ def register(
         subscription_status="free",
         # Langue explicite du client (landing) prioritaire, sinon Accept-Language.
         locale=data.locale or _detect_locale(accept_language),
+        analytics_consent=data.analytics_consent,
     )
     db.add(user)
     db.commit()
     db.refresh(user)
+    analytics.capture_for_user(
+        user, "user_signed_up", {"method": "email", "via_invite": data.via_invite, "locale": user.locale}
+    )
     return _token_response(user)
 
 
@@ -135,6 +139,7 @@ def google_login(
         raise HTTPException(status_code=401, detail="Adresse e-mail Google non vérifiée")
 
     user = db.scalar(select(User).where(User.google_sub == identity.sub))
+    created = False
     if user is None:
         user = db.scalar(select(User).where(User.email == identity.email))
         if user is not None and not user.is_placeholder:
@@ -150,12 +155,18 @@ def google_login(
                 subscription_status="free",
                 locale=data.locale or google_locale or _detect_locale(accept_language),
                 google_sub=identity.sub,
+                analytics_consent=data.analytics_consent,
             )
             db.add(user)
+            created = True
     elif user.is_placeholder:
         raise HTTPException(status_code=401, detail="Compte indisponible")
     db.commit()
     db.refresh(user)
+    if created:
+        analytics.capture_for_user(
+            user, "user_signed_up", {"method": "google", "via_invite": data.via_invite, "locale": user.locale}
+        )
     return _token_response(user)
 
 
@@ -201,6 +212,7 @@ def reset_password(data: ResetPasswordIn, db: Session = Depends(get_db)):
     _invalidate_reset_tokens(db, user.id)  # celui-ci compris (usage unique)
     db.commit()
     db.refresh(user)
+    analytics.capture_for_user(user, "password_reset_completed")
     return _token_response(user)
 
 
@@ -252,6 +264,7 @@ def delete_me(user: User = Depends(get_current_user), db: Session = Depends(get_
             paddle_api.cancel_subscription(user.paddle_subscription_id)
         except paddle_api.PaddleUnavailable:
             pass
+    analytics.capture_for_user(user, "account_deleted", {"had_subscription": bool(user.paddle_subscription_id)})
     account.delete_account(db, user)
     db.commit()
 
@@ -268,6 +281,8 @@ def update_me(data: UserUpdate, user: User = Depends(get_current_user), db: Sess
         user.onboarding_seen = data.onboarding_seen
     if data.locale is not None:
         user.locale = data.locale
+    if data.analytics_consent is not None:
+        user.analytics_consent = data.analytics_consent
     db.add(user)
     db.commit()
     db.refresh(user)
