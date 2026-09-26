@@ -1,13 +1,14 @@
 """Abonnement Paddle : statut d'accès + réception des webhooks."""
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
-from sqlalchemy import select
+from sqlalchemy import func, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from ..auth import get_current_user
 from ..config import settings
 from ..db import get_db
 from ..deps import household_members, user_has_premium
-from ..models import HouseholdMember, User, utcnow
+from ..models import HouseholdMember, PaddleEvent, User, utcnow
 from ..ratelimit import HOUR, rate_limit
 from ..schemas import ChangePlanIn
 from ..services import billing, paddle_api
@@ -127,8 +128,24 @@ async def paddle_webhook(
     event = await request.json()
     etype = event.get("event_type", "")
     data = event.get("data", {})
+    event_id = event.get("event_id")
+    occurred_at = billing.parse_iso(event.get("occurred_at"))
+    sub_id = data.get("id") if etype.startswith("subscription.") else None
 
-    if etype.startswith("subscription."):
+    # Idempotence : Paddle réessaie tant qu'il n'a pas reçu de 2xx.
+    if event_id and db.get(PaddleEvent, event_id) is not None:
+        return {"ok": True, "duplicate": True}
+
+    # Ordre : un événement antérieur au dernier traité pour cet abonnement est
+    # obsolète (ex. « updated: active » livré après « canceled »).
+    stale = False
+    if sub_id and occurred_at is not None:
+        latest = db.scalar(
+            select(func.max(PaddleEvent.occurred_at)).where(PaddleEvent.subscription_id == sub_id)
+        )
+        stale = latest is not None and occurred_at < latest
+
+    if etype.startswith("subscription.") and not stale:
         user = _find_user(db, data)
         if user is not None:
             user.paddle_subscription_id = data.get("id") or user.paddle_subscription_id
@@ -141,6 +158,12 @@ async def paddle_webhook(
             ends = billing.parse_iso(period.get("ends_at"))
             if ends is not None:
                 user.subscription_ends_at = ends
-            db.commit()
 
-    return {"ok": True}
+    if event_id:
+        db.add(PaddleEvent(id=event_id, event_type=etype, subscription_id=sub_id, occurred_at=occurred_at))
+    try:
+        db.commit()
+    except IntegrityError:  # même événement traité en parallèle : déjà pris en compte
+        db.rollback()
+        return {"ok": True, "duplicate": True}
+    return {"ok": True, "stale": True} if stale else {"ok": True}

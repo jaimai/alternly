@@ -243,6 +243,19 @@ class PasswordResetToken(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
 
+class PaddleEvent(Base):
+    """Événements webhook Paddle déjà traités : idempotence (Paddle réessaie) et
+    ordre (un événement plus ancien que le dernier traité pour le même
+    abonnement est ignoré — Paddle ne garantit pas l'ordre de livraison)."""
+    __tablename__ = "paddle_events"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True)  # evt_…
+    event_type: Mapped[str] = mapped_column(String, default="")
+    subscription_id: Mapped[str | None] = mapped_column(String, nullable=True, index=True)
+    occurred_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+
 class SchoolHolidayCache(Base):
     __tablename__ = "school_holiday_cache"
     __table_args__ = (UniqueConstraint("zone", "label", "school_year"),)
