@@ -18,7 +18,7 @@ from ..schemas import (
     ExceptionIn,
     ExceptionOut,
     ExchangeResponseIn,
-    SpecialDayRuleIn,
+    SpecialDayRulesIn,
     SpecialDayRuleOut,
     VacationRuleIn,
     VacationRuleOut,
@@ -89,7 +89,7 @@ def upsert_vacation_rule(
 
 @router.put("/special-day-rules", response_model=list[SpecialDayRuleOut])
 def upsert_special_day_rules(
-    data: list[SpecialDayRuleIn],
+    data: SpecialDayRulesIn,
     member: HouseholdMember = Depends(get_membership),
     db: Session = Depends(get_db),
 ):

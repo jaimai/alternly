@@ -10,6 +10,7 @@ import httpx
 from app.config import settings
 from app.services import public_holidays, school_holidays
 from tests.test_household import create_household
+from tests.test_rules import premium_family, setup_family
 
 BACKEND_DIR = Path(__file__).resolve().parent.parent
 
@@ -160,3 +161,47 @@ class TestIcalAvailability:
         monkeypatch.setattr(public_holidays, "_transport", httpx.MockTransport(_down))
         resp = client.get(f"/api/ical/{self._feed_token(client, auth_headers, db_session, 'US')}.ics")
         assert resp.status_code == 200
+
+
+class TestInputBounds:
+    def test_password_over_72_bytes_rejected_at_register(self, client):
+        resp = client.post(
+            "/api/auth/register",
+            # 40 caractères mais 80 octets
+            json={"email": "a@test.fr", "password": "é" * 40, "display_name": "A"},
+        )
+        assert resp.status_code == 422
+        assert "72 octets" in resp.text
+
+    def test_long_password_at_login_is_401_not_500(self, client, auth_headers):
+        auth_headers()
+        resp = client.post("/api/auth/login", json={"email": "parent1@test.fr", "password": "x" * 150})
+        assert resp.status_code == 401
+        resp = client.post("/api/auth/login", json={"email": "parent1@test.fr", "password": "x" * 201})
+        assert resp.status_code == 422
+
+    def test_amount_and_text_bounds(self, client, auth_headers, db_session):
+        headers1, user1, _, _, h = premium_family(client, auth_headers, db_session)
+        base = {"label": "Cantine", "date": "2026-07-10", "category": "cantine"}
+        url = f"/api/households/{h['id']}/expenses"
+        assert client.post(url, json={**base, "amount_cents": 10_000_001}, headers=headers1).status_code == 422
+        assert client.post(url, json={**base, "amount_cents": 10_000_000}, headers=headers1).status_code == 201
+        long_name = client.patch(f"/api/households/{h['id']}", json={"name": "x" * 81}, headers=headers1)
+        assert long_name.status_code == 422
+        child = client.post(f"/api/households/{h['id']}/children", json={"first_name": "x" * 51}, headers=headers1)
+        assert child.status_code == 422
+        note = client.post(
+            f"/api/households/{h['id']}/exceptions",
+            json={"date_start": "2026-03-04", "date_end": "2026-03-05", "parent_id": user1["id"], "note": "x" * 2001},
+            headers=headers1,
+        )
+        assert note.status_code == 422
+        many = client.post("/api/notifications/read", json={"ids": list(range(201))}, headers=headers1)
+        assert many.status_code == 422
+
+    def test_handover_time_format(self, client, auth_headers):
+        headers1, user1, _, _, h = setup_family(client, auth_headers)
+        body = {"pattern": "alternate_weeks", "start_date": "2026-01-05", "reference_parent_id": user1["id"]}
+        url = f"/api/households/{h['id']}/custody-rule"
+        assert client.put(url, json={**body, "handover_time": "25:00"}, headers=headers1).status_code == 422
+        assert client.put(url, json={**body, "handover_time": "08:30"}, headers=headers1).status_code == 200

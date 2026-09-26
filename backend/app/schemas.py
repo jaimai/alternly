@@ -1,7 +1,7 @@
 from datetime import date, datetime
-from typing import Literal
+from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import AfterValidator, BaseModel, ConfigDict, EmailStr, Field
 
 # Alias : un champ nommé « date » masque le type `date` dans son annotation
 # quand il a une valeur par défaut (ex. `date: date | None = None`).
@@ -25,12 +25,26 @@ class ORMModel(BaseModel):
 
 
 COLOR_PATTERN = r"^#[0-9a-fA-F]{6}$"
+TIME_PATTERN = r"^([01]\d|2[0-3]):[0-5]\d$"
+# Bornes des saisies libres et montants (anti-abus / cohérence).
+NOTE_MAX = 2000
+MAX_AMOUNT_CENTS = 10_000_000  # 100 000 € / $
+
+
+def _password_bytes(v: str) -> str:
+    # bcrypt refuse au-delà de 72 octets (et non caractères : accents = 2 octets)
+    if len(v.encode()) > 72:
+        raise ValueError("Mot de passe trop long (72 octets maximum)")
+    return v
+
+
+# Nouveau mot de passe : mêmes règles à l'inscription, au reset et au changement.
+NewPassword = Annotated[str, Field(min_length=8, max_length=72), AfterValidator(_password_bytes)]
 
 
 class UserCreate(BaseModel):
     email: EmailStr
-    # bcrypt tronque à 72 octets : borne haute explicite
-    password: str = Field(min_length=8, max_length=72)
+    password: NewPassword
     display_name: str = Field(min_length=1, max_length=50)
     color: str = Field(default="#4f7cac", pattern=COLOR_PATTERN)
     # Langue choisie côté client (landing) ; prioritaire sur Accept-Language.
@@ -39,7 +53,7 @@ class UserCreate(BaseModel):
 
 class UserLogin(BaseModel):
     email: EmailStr
-    password: str
+    password: str = Field(max_length=200)
 
 
 class UserOut(ORMModel):
@@ -84,7 +98,7 @@ class PartnerUpdate(BaseModel):
 
 
 class ChildIn(BaseModel):
-    first_name: str = Field(min_length=1)
+    first_name: str = Field(min_length=1, max_length=50)
     birthdate: date | None = None
 
 
@@ -99,8 +113,8 @@ class CustodyRuleIn(BaseModel):
     start_date: date
     reference_parent_id: int
     handover_day: int = Field(default=0, ge=0, le=6)
-    handover_time: str = "18:00"
-    custom_weeks: list[str] | None = None
+    handover_time: str = Field(default="18:00", pattern=TIME_PATTERN)
+    custom_weeks: list[str] | None = Field(default=None, max_length=14)
 
 
 class CustodyRuleOut(ORMModel):
@@ -129,6 +143,9 @@ class SpecialDayRuleIn(BaseModel):
     enabled: bool = True
 
 
+SpecialDayRulesIn = Annotated[list[SpecialDayRuleIn], Field(max_length=50)]
+
+
 class SpecialDayRuleOut(ORMModel):
     kind: str
     parent_mode: str
@@ -137,13 +154,13 @@ class SpecialDayRuleOut(ORMModel):
 
 
 class HouseholdCreate(BaseModel):
-    name: str = Field(min_length=1)
+    name: str = Field(min_length=1, max_length=80)
     country: Literal["FR", "US"] = "FR"
     school_zone: str = "A"  # FR uniquement
 
 
 class HouseholdUpdate(BaseModel):
-    name: str | None = None
+    name: str | None = Field(default=None, min_length=1, max_length=80)
     school_zone: str | None = None
     country: Literal["FR", "US"] | None = None
 
@@ -180,12 +197,12 @@ class ExceptionIn(BaseModel):
     date_start: date
     date_end: date
     parent_id: int
-    note: str = ""
+    note: str = Field(default="", max_length=NOTE_MAX)
     replaces_id: int | None = None
 
 
 class ExchangeResponseIn(BaseModel):
-    response_note: str = ""
+    response_note: str = Field(default="", max_length=NOTE_MAX)
 
 
 class ExceptionOut(ORMModel):
@@ -261,7 +278,7 @@ class CalendarResponse(BaseModel):
 
 class ExpenseIn(BaseModel):
     label: str = Field(min_length=1, max_length=120)
-    amount_cents: int = Field(gt=0)
+    amount_cents: int = Field(ge=1, le=MAX_AMOUNT_CENTS)
     date: date
     category: str
     child_id: int | None = None
@@ -271,7 +288,7 @@ class ExpenseIn(BaseModel):
 
 class ExpensePatch(BaseModel):
     label: str | None = Field(default=None, min_length=1, max_length=120)
-    amount_cents: int | None = Field(default=None, gt=0)
+    amount_cents: int | None = Field(default=None, ge=1, le=MAX_AMOUNT_CENTS)
     date: DateType | None = None
     category: str | None = None
     child_id: int | None = None
@@ -295,15 +312,15 @@ class ExpenseOut(ORMModel):
 
 
 class DisputeIn(BaseModel):
-    dispute_note: str = ""
+    dispute_note: str = Field(default="", max_length=NOTE_MAX)
 
 
 class SettlementIn(BaseModel):
     from_user: int
     to_user: int
-    amount_cents: int = Field(gt=0)
+    amount_cents: int = Field(ge=1, le=MAX_AMOUNT_CENTS)
     date: date
-    note: str = ""
+    note: str = Field(default="", max_length=NOTE_MAX)
 
 
 class SettlementOut(ORMModel):
@@ -333,21 +350,21 @@ class BalanceOut(BaseModel):
 
 class WallPostIn(BaseModel):
     kind: str
-    body: str = Field(min_length=1, max_length=2000)
+    body: str = Field(min_length=1, max_length=NOTE_MAX)
     child_id: int | None = None
     due_date: DateType | None = None
     assigned_to: int | None = None
 
 
 class WallPostPatch(BaseModel):
-    body: str | None = Field(default=None, min_length=1, max_length=2000)
+    body: str | None = Field(default=None, min_length=1, max_length=NOTE_MAX)
     child_id: int | None = None
     due_date: DateType | None = None
     assigned_to: int | None = None
 
 
 class WallReplyIn(BaseModel):
-    body: str = Field(min_length=1, max_length=2000)
+    body: str = Field(min_length=1, max_length=NOTE_MAX)
 
 
 class WallReplyOut(ORMModel):
@@ -381,4 +398,4 @@ class NotificationOut(ORMModel):
 
 
 class ReadNotificationsIn(BaseModel):
-    ids: list[int]
+    ids: list[int] = Field(max_length=200)
