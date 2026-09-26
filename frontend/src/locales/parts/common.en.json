@@ -31,5 +31,9 @@
   "common.notFoundBody": "This link doesn't lead anywhere. It may have expired, or the address has a typo.",
   "common.notFoundBack": "Back to the calendar",
   "common.mainNav": "Main navigation",
-  "common.freemiumChipShort": "Premium"
+  "common.freemiumChipShort": "Premium",
+  "common.confirm": "Confirm",
+  "common.cancel": "Cancel",
+  "common.delete": "Delete",
+  "common.remove": "Remove"
 }

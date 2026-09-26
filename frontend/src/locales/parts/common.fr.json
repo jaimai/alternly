@@ -31,5 +31,9 @@
   "common.notFoundBody": "Ce lien ne mène nulle part. Il a peut-être expiré, ou l'adresse contient une faute de frappe.",
   "common.notFoundBack": "Retour au calendrier",
   "common.mainNav": "Navigation principale",
-  "common.freemiumChipShort": "Premium"
+  "common.freemiumChipShort": "Premium",
+  "common.confirm": "Confirmer",
+  "common.cancel": "Annuler",
+  "common.delete": "Supprimer",
+  "common.remove": "Retirer"
 }

@@ -43,5 +43,9 @@
   "settings.emailOptIn": "Receive an email for swap proposals and their reminders",
   "settings.languageLabel": "App language",
   "settings.accountTitle": "Account",
-  "settings.signedInAs": "Signed in as {{email}}"
+  "settings.signedInAs": "Signed in as {{email}}",
+  "settings.removeChildAria": "Remove {{name}}",
+  "settings.removeChildTitle": "Remove {{name}} from the household?",
+  "settings.removeChildBody": "Their name is removed from the household for both parents. You can add them again later.",
+  "settings.removeBreakTitle": "Delete “{{name}}”?"
 }

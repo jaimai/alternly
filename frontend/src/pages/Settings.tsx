@@ -10,6 +10,7 @@ import RuleForm from '../components/RuleForm'
 import Spinner from '../components/Spinner'
 import type { RuleFormValue } from '../components/RuleForm'
 import TopBar from '../components/TopBar'
+import { useConfirm } from '../components/useConfirm'
 import { useFormat } from '../format'
 import { isSolo } from '../members'
 import type { Household, SpecialDayRule, SubscriptionInfo } from '../types'
@@ -37,6 +38,7 @@ export default function SettingsPage() {
   const [busy, setBusy] = useState(false)
   const [color, setColor] = useState(user?.color ?? '#3b6ea5')
   const [childName, setChildName] = useState('')
+  const [confirm, confirmNode] = useConfirm()
 
   const refresh = refreshHousehold
 
@@ -113,6 +115,23 @@ export default function SettingsPage() {
     try {
       await api.addChild(household.id, { first_name: childName.trim() })
       setChildName('')
+      refresh()
+    } catch (err) {
+      fail(err)
+    }
+  }
+
+  async function removeChild(id: number, name: string) {
+    if (!household) return
+    const ok = await confirm({
+      title: t('settings.removeChildTitle', { name }),
+      body: t('settings.removeChildBody'),
+      confirmLabel: t('common.remove'),
+      danger: true,
+    })
+    if (!ok) return
+    try {
+      await api.deleteChild(household.id, id)
       refresh()
     } catch (err) {
       fail(err)
@@ -202,17 +221,15 @@ export default function SettingsPage() {
           <div className="chip-list">
             {household.children.map((c) => (
               <span key={c.id} className="chip">
-                {c.first_name}{' '}
-                <a
-                  href="#"
-                  onClick={async (e) => {
-                    e.preventDefault()
-                    await api.deleteChild(household.id, c.id)
-                    refresh()
-                  }}
+                {c.first_name}
+                <button
+                  type="button"
+                  className="chip-remove"
+                  aria-label={t('settings.removeChildAria', { name: c.first_name })}
+                  onClick={() => removeChild(c.id, c.first_name)}
                 >
-                  ✕
-                </a>
+                  <Icon name="x" size={12} />
+                </button>
               </span>
             ))}
           </div>
@@ -386,6 +403,7 @@ export default function SettingsPage() {
 
         <DangerZone />
       </div>
+      {confirmNode}
     </>
   )
 }
@@ -396,6 +414,7 @@ function SubscriptionCard({ onChanged }: { onChanged: () => void }) {
   const [sub, setSub] = useState<SubscriptionInfo | null>(null)
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState<string | null>(null)
+  const [confirm, confirmNode] = useConfirm()
 
   const load = () => api.subscription().then(setSub).catch(() => setSub({ manageable: false }))
   useEffect(() => { load() }, [])
@@ -450,7 +469,10 @@ function SubscriptionCard({ onChanged }: { onChanged: () => void }) {
               <button
                 className="danger-link"
                 disabled={busy}
-                onClick={() => { if (confirm(t('settings.subCancelConfirm'))) run(() => api.cancelSubscription(), t('settings.subCanceledDone')) }}
+                onClick={async () => {
+                  const ok = await confirm({ title: t('settings.subCancel'), body: t('settings.subCancelConfirm'), confirmLabel: t('settings.subCancel'), danger: true })
+                  if (ok) run(() => api.cancelSubscription(), t('settings.subCanceledDone'))
+                }}
               >
                 {t('settings.subCancel')}
               </button>
@@ -458,6 +480,7 @@ function SubscriptionCard({ onChanged }: { onChanged: () => void }) {
           )}
         </>
       )}
+      {confirmNode}
     </div>
   )
 }
@@ -466,16 +489,19 @@ function DangerZone() {
   const { t } = useTranslation()
   const { logout } = useAuth()
   const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [confirm, confirmNode] = useConfirm()
 
   async function remove() {
-    if (!confirm(t('settings.deleteConfirm'))) return
+    const ok = await confirm({ title: t('settings.deleteAccount'), body: t('settings.deleteConfirm'), confirmLabel: t('settings.deleteAccount'), danger: true })
+    if (!ok) return
     setBusy(true)
     try {
       await api.deleteAccount()
       logout()
     } catch {
       setBusy(false)
-      alert(t('settings.deleteError'))
+      setError(t('settings.deleteError'))
     }
   }
 
@@ -483,7 +509,9 @@ function DangerZone() {
     <div className="card danger-card">
       <h2>{t('settings.dangerTitle')}</h2>
       <p className="hint">{t('settings.deleteHint')}</p>
+      {error && <div className="error">{error}</div>}
       <button className="danger" disabled={busy} onClick={remove}>{t('settings.deleteAccount')}</button>
+      {confirmNode}
     </div>
   )
 }
@@ -508,15 +536,23 @@ function SchoolBreaks({ household, onChanged }: { household: Household; onChange
       setEnd('')
       onChanged()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error')
+      setError(err instanceof Error ? err.message : t('settings.errorGeneric'))
     } finally {
       setBusy(false)
     }
   }
 
-  async function remove(id: number) {
-    await api.deleteSchoolVacation(household.id, id)
-    onChanged()
+  const [confirm, confirmNode] = useConfirm()
+
+  async function remove(id: number, name: string) {
+    const ok = await confirm({ title: t('settings.removeBreakTitle', { name }), confirmLabel: t('common.delete'), danger: true })
+    if (!ok) return
+    try {
+      await api.deleteSchoolVacation(household.id, id)
+      onChanged()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t('settings.errorGeneric'))
+    }
   }
 
   return (
@@ -531,7 +567,7 @@ function SchoolBreaks({ household, onChanged }: { household: Household; onChange
           <span style={{ marginRight: 'auto' }}>
             <strong>{v.label}</strong> <span className="hint">{date(v.start)} – {date(v.end)}</span>
           </span>
-          <button className="danger-link" onClick={() => remove(v.id)}>{t('settings.delete')}</button>
+          <button className="danger-link" onClick={() => remove(v.id, v.label)}>{t('settings.delete')}</button>
         </div>
       ))}
       <div className="row" style={{ marginTop: 12 }}>
@@ -554,6 +590,7 @@ function SchoolBreaks({ household, onChanged }: { household: Household; onChange
       <div style={{ marginTop: 12 }}>
         <button onClick={add} disabled={busy || !label.trim() || !start || !end}>{t('settings.addBreak')}</button>
       </div>
+      {confirmNode}
     </div>
   )
 }

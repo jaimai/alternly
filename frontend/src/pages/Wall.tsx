@@ -7,6 +7,8 @@ import Icon from '../components/Icon'
 import type { IconName } from '../components/Icon'
 import Spinner from '../components/Spinner'
 import TopBar from '../components/TopBar'
+import { useConfirm } from '../components/useConfirm'
+import type { ConfirmOptions } from '../components/useConfirm'
 import { isoLocal, parseTimestamp, todayIso } from '../dates'
 import { useFormat } from '../format'
 import type { Household, WallKind, WallPost } from '../types'
@@ -36,6 +38,7 @@ export default function WallPage() {
   const [query, setQuery] = useState('')
   const [showComposer, setShowComposer] = useState(false)
   const [showDone, setShowDone] = useState(false)
+  const [confirm, confirmNode] = useConfirm()
 
   useEffect(() => {
     if (householdLoaded && (!household || !household.custody_rule)) navigate('/onboarding')
@@ -135,12 +138,15 @@ export default function WallPage() {
           <span className="hint" style={{ marginLeft: 'auto' }}>{name(p.author_id)} · {date(isoLocal(parseTimestamp(p.created_at)))}</span>
         </div>
         <p className="wall-body">{p.body}</p>
-        <Replies post={p} householdId={household!.id} myId={user!.id} names={name} onChanged={load} />
+        <Replies post={p} householdId={household!.id} myId={user!.id} names={name} onChanged={load} confirm={confirm} />
         {p.author_id === user!.id && (
           <button
             className="danger-link"
             style={{ marginTop: 8 }}
-            onClick={() => api.deletePost(household!.id, p.id).then(load)}
+            onClick={async () => {
+              const ok = await confirm({ title: t('wall.deleteTitle'), body: t('wall.deleteBody'), confirmLabel: t('common.delete'), danger: true })
+              if (ok) api.deletePost(household!.id, p.id).then(load).catch(() => setError(t('wall.genericError')))
+            }}
           >
             {t('wall.delete')}
           </button>
@@ -225,6 +231,7 @@ export default function WallPage() {
           </>
         )}
       </div>
+      {confirmNode}
     </>
   )
 }
@@ -327,12 +334,14 @@ function Replies({
   myId,
   names,
   onChanged,
+  confirm,
 }: {
   post: WallPost
   householdId: number
   myId: number
   names: (id: number | null) => string | null
   onChanged: () => void
+  confirm: (opts: ConfirmOptions) => Promise<boolean>
 }) {
   const { t } = useTranslation()
   const [text, setText] = useState('')
@@ -367,7 +376,15 @@ function Replies({
           <strong style={{ color: 'var(--ink)' }}>{t('wall.replyAuthor', { name: names(r.author_id) })}</strong>
           <span style={{ marginRight: 'auto' }}>{r.body}</span>
           {r.author_id === myId && (
-            <button className="danger-link" style={{ padding: '0 6px' }} onClick={() => api.deleteReply(householdId, r.id).then(onChanged)}>
+            <button
+              className="danger-link"
+              style={{ padding: '0 6px' }}
+              aria-label={t('wall.deleteReplyTitle')}
+              onClick={async () => {
+                if (await confirm({ title: t('wall.deleteReplyTitle'), confirmLabel: t('common.delete'), danger: true }))
+                  api.deleteReply(householdId, r.id).then(onChanged)
+              }}
+            >
               <Icon name="x" size={12} />
             </button>
           )}

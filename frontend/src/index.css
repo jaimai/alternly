@@ -505,6 +505,24 @@ label {
 
 .chip a { color: var(--pine-deep); text-decoration: none; }
 
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.chip-remove {
+  display: inline-flex;
+  background: none;
+  color: var(--pine-deep);
+  padding: 2px;
+  border-radius: 999px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .chip-remove:hover { background: color-mix(in srgb, var(--pine) 15%, transparent); }
+}
+
 .custom-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
