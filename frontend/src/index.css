@@ -682,18 +682,27 @@ label {
   padding: 1px 5px;
 }
 
-/* FullCalendar */
-.fc {
+/* FullCalendar — tuiles arrondies teintées à la couleur du parent, comme l'aperçu de la landing */
+.calendar-shell .fc {
   background: var(--surface);
   border-radius: var(--radius);
-  padding: 10px;
+  padding: 14px;
   border: 1px solid var(--line);
+  --fc-border-color: transparent;
+  --fc-today-bg-color: transparent;
+  --fc-neutral-bg-color: transparent;
+  --fc-page-bg-color: var(--surface);
+}
+
+.fc .fc-toolbar.fc-header-toolbar {
+  margin-bottom: 10px;
+  gap: 8px;
 }
 
 .fc .fc-toolbar-title {
   font-family: var(--font-display);
   font-weight: 500;
-  font-size: 1.2rem;
+  font-size: 1.35rem;
   text-transform: capitalize;
 }
 
@@ -701,8 +710,28 @@ label {
   background: var(--pine-soft);
   color: var(--pine);
   border: none;
+  border-radius: 999px !important;
   font-weight: 600;
+  font-size: 0.85rem;
+  padding: 6px 12px;
+  box-shadow: none !important;
+  text-transform: none;
   transition: background 140ms ease;
+}
+
+.fc .fc-button-group {
+  gap: 4px;
+}
+
+.fc .fc-button:hover {
+  background: var(--sage);
+  color: var(--pine);
+}
+
+.fc .fc-button-primary:disabled {
+  background: var(--pine-soft);
+  color: var(--pine);
+  opacity: 0.45;
 }
 
 .fc .fc-button-primary:not(:disabled).fc-button-active,
@@ -711,25 +740,105 @@ label {
   color: white;
 }
 
-.fc-theme-standard td, .fc-theme-standard th,
-.fc-theme-standard .fc-scrollgrid {
-  border-color: var(--line);
+.fc .fc-col-header-cell-cushion {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-soft);
+  text-decoration: none;
+  padding: 4px 0 8px;
 }
 
-.fc .fc-daygrid-day.fc-day-today {
-  background: var(--paper-deep);
+.fc .fc-daygrid-day-frame {
+  margin: 2px;
+  border-radius: 10px;
+  min-height: 74px;
+  background: color-mix(in srgb, var(--tile, transparent) 20%, white);
+  transition: box-shadow 140ms ease;
 }
 
-.day-badges {
-  font-size: 0.7rem;
-  display: flex;
-  gap: 2px;
-  flex-wrap: wrap;
+.fc .fc-daygrid-day:hover .fc-daygrid-day-frame {
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--tile, var(--pine)) 55%, white);
+  cursor: pointer;
 }
+
+.fc .fc-day-other .fc-daygrid-day-frame {
+  opacity: 0.45;
+}
+
+.fc .fc-daygrid-day-top {
+  flex-direction: row;
+  padding: 4px 6px 0;
+}
+
+.fc .fc-daygrid-day-number {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--ink);
+  text-decoration: none;
+  padding: 0;
+  min-width: 24px;
+  height: 24px;
+  line-height: 24px;
+  text-align: center;
+  border-radius: 999px;
+}
+
+/* Aujourd'hui : pastille sur le numéro, la couleur du parent reste visible */
+.fc .fc-day-today .fc-daygrid-day-number {
+  background: var(--ink);
+  color: white;
+}
+
+.fc .fc-daygrid-event {
+  border: none;
+  border-radius: 6px;
+  margin: 1px 4px 0;
+  font-size: 0.72rem;
+  line-height: 1.3;
+}
+
+.fc .fc-event.cal-label {
+  background: color-mix(in srgb, white 70%, transparent);
+  color: var(--ink);
+  padding: 0 4px;
+}
+
+.fc .fc-event.cal-label .fc-event-main {
+  color: inherit;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fc .fc-event.cal-label.holiday { color: var(--ink-soft); }
+.fc .fc-event.cal-label.pending { background: var(--terra-soft); color: #8c4a2c; font-weight: 600; }
+.fc .fc-event.cal-label.task { color: var(--pine-deep); }
+
+.fc .fc-event.cal-vacation {
+  background: #f3e8d2;
+  color: #7a5c1e;
+  font-weight: 600;
+  padding: 0 6px;
+}
+
+.fc .fc-event.cal-vacation .fc-event-main { color: inherit; }
+
+.fc .fc-daygrid-more-link {
+  font-size: 0.72rem;
+  color: var(--ink-soft);
+  margin-left: 4px;
+}
+
+.fc .fc-daygrid-dot-event { display: none; }
+
+/* Vacances : le bandeau laisse passer le clic vers le jour touché */
+.fc .fc-event.cal-vacation { pointer-events: none; }
 
 /* icône + libellé dans une cellule du calendrier */
 .fc-ic {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: 3px;
   overflow: hidden;
@@ -741,15 +850,24 @@ label {
   white-space: nowrap;
 }
 
+.day-badges {
+  font-size: 0.7rem;
+  display: flex;
+  gap: 2px;
+  flex-wrap: wrap;
+}
+
 /* Overlay provisoire d'une proposition en attente : hachures par-dessus la garde réelle */
 .fc-bg-event.pending-overlay {
-  opacity: 0.9 !important;
+  opacity: 0.55 !important;
+  border-radius: 10px;
+  margin: 2px;
   background-image: repeating-linear-gradient(
     45deg,
     transparent,
     transparent 6px,
-    rgba(255, 255, 255, 0.55) 6px,
-    rgba(255, 255, 255, 0.55) 12px
+    rgba(255, 255, 255, 0.6) 6px,
+    rgba(255, 255, 255, 0.6) 12px
   );
 }
 
@@ -1187,6 +1305,123 @@ button.link {
   margin: 0 auto 16px;
 }
 
+/* ---------- Carte statut (accueil) ---------- */
+.status-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+  gap: 20px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 22px 24px;
+  margin-bottom: 16px;
+  position: relative;
+  overflow: hidden;
+}
+
+.status-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 6px;
+  background: var(--holder);
+}
+
+.status-title {
+  font-size: 1.75rem;
+  margin: 0 0 8px;
+}
+
+.status-title .holder {
+  font-style: italic;
+  color: color-mix(in srgb, var(--holder) 75%, var(--ink));
+}
+
+.status-sub {
+  color: var(--ink-soft);
+  margin: 0;
+}
+
+.status-sub strong { color: var(--ink); }
+
+.pill {
+  display: inline-block;
+  background: var(--paper-deep);
+  color: var(--ink);
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 1px 10px;
+  border-radius: 999px;
+  margin-left: 4px;
+}
+
+.upcoming {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 6px;
+  align-content: center;
+}
+
+.upcoming-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  background: var(--paper);
+  color: var(--ink);
+  font-weight: 500;
+  font-size: 0.88rem;
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+}
+
+.upcoming-item:disabled { opacity: 1; cursor: default; }
+.upcoming-item.urgent { background: var(--terra-soft); }
+
+@media (hover: hover) and (pointer: fine) {
+  .upcoming-item:not(:disabled):hover { background: var(--pine-soft); }
+}
+
+.upcoming-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.upcoming-when {
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
+
+.upcoming-item.urgent .upcoming-when { color: #8c4a2c; font-weight: 600; }
+
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+}
+
+.legend-hint { margin-left: auto; }
+
+.dot.handover-dot {
+  background: linear-gradient(135deg, var(--terra) 0 50%, var(--pine) 50% 100%);
+}
+
+.dot.pending-dot {
+  background: repeating-linear-gradient(45deg, var(--terra) 0 3px, var(--terra-soft) 3px 6px);
+}
+
+.upcoming-icon { display: inline-flex; color: var(--ink-soft); }
+.upcoming-item.urgent .upcoming-icon { color: #8c4a2c; }
+
+.calendar-shell { position: relative; }
+
 /* ---------- Dépenses : liste groupée par mois ---------- */
 .list-card {
   background: var(--surface);
@@ -1344,6 +1579,23 @@ button.with-icon {
   .card { padding: 16px; }
 
   .legend { gap: 10px; font-size: 0.8rem; }
+
+  .status-card {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+    padding: 18px 18px 18px 22px;
+  }
+
+  .status-title { font-size: 1.4rem; }
+
+  .legend-hint, .legend-icons { display: none; }
+
+  .calendar-shell .fc { padding: 8px 4px; }
+  .fc .fc-daygrid-day-frame { min-height: 52px; margin: 1px; border-radius: 8px; }
+  .fc .fc-daygrid-day-number { font-size: 0.78rem; min-width: 22px; height: 22px; line-height: 22px; }
+  .fc .fc-daygrid-event { font-size: 0.62rem; margin: 1px 2px 0; }
+  .fc .fc-col-header-cell-cushion { font-size: 0.65rem; }
+  .fc-ic svg { display: none; }
 
   .fc .fc-toolbar { flex-wrap: wrap; gap: 6px; }
   .fc .fc-toolbar-title { font-size: 1.1rem; }

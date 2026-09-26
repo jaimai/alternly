@@ -11,7 +11,7 @@
   "exchange.waitingOtherParent": "En attente de l'autre parent…",
   "exchange.withdraw": "Retirer",
   "exchange.cancelExchange": "Annuler l'échange",
-  "exchange.counterBanner": "Contre-proposition — l'ancienne proposition a été refusée.",
+  "exchange.counterBanner": "Ajustez les dates ci-dessous. La proposition initiale sera refusée à l'envoi de la vôtre.",
   "exchange.fromLabel": "Du",
   "exchange.toLabel": "Au (inclus)",
   "exchange.childWillBeWith": "L'enfant sera chez",
@@ -22,5 +22,9 @@
   "exchange.propose": "Proposer",
   "exchange.close": "Fermer",
   "exchange.footerSolo": "L'échange est appliqué directement.",
-  "exchange.footerPropose": "L'autre parent recevra la proposition et pourra l'accepter ou la refuser."
+  "exchange.footerPropose": "L'autre parent recevra la proposition et pourra l'accepter ou la refuser.",
+  "exchange.errorDates": "La date de fin doit être égale ou postérieure à la date de début",
+  "exchange.titleCounter": "Contre-proposition",
+  "exchange.titleToAnswer": "Proposition à traiter",
+  "exchange.orProposeOther": "Ou proposer autre chose"
 }
