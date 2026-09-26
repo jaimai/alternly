@@ -11,9 +11,16 @@ from ..deps import household_members, user_has_premium
 from ..models import HouseholdMember, PaddleEvent, User, utcnow
 from ..ratelimit import HOUR, rate_limit
 from ..schemas import ChangePlanIn
-from ..services import billing, paddle_api
+from ..services import audit, billing, paddle_api
 
 router = APIRouter(prefix="/api/billing", tags=["billing"])
+
+
+def _journal(db: Session, user: User, action: str, data: dict) -> None:
+    """Journalise un changement d'abonnement dans le foyer de l'utilisateur (s'il en a un)."""
+    member = db.scalar(select(HouseholdMember).where(HouseholdMember.user_id == user.id))
+    if member is not None:
+        audit.record(db, member.household_id, user.id, action, "subscription", None, data)
 
 
 def _subscriber(db: Session, user: User) -> User | None:
@@ -78,6 +85,8 @@ def cancel_subscription(user: User = Depends(get_current_user), db: Session = De
         paddle_api.cancel_subscription(sub.paddle_subscription_id)
     except paddle_api.PaddleUnavailable:
         raise HTTPException(status_code=502, detail="Résiliation indisponible pour le moment")
+    _journal(db, user, "subscription.cancel", {"payer_id": sub.id})
+    db.commit()
     return {"ok": True}
 
 
@@ -97,6 +106,8 @@ def change_plan(
         paddle_api.change_price(sub.paddle_subscription_id, price_id)
     except paddle_api.PaddleUnavailable:
         raise HTTPException(status_code=502, detail="Changement d'offre indisponible pour le moment")
+    _journal(db, user, "subscription.change_plan", {"plan": data.plan, "payer_id": sub.id})
+    db.commit()
     return {"ok": True}
 
 
@@ -150,10 +161,13 @@ async def paddle_webhook(
         if user is not None:
             user.paddle_subscription_id = data.get("id") or user.paddle_subscription_id
             user.paddle_customer_id = data.get("customer_id") or user.paddle_customer_id
+            previous = user.subscription_status
             if etype == "subscription.canceled":
                 user.subscription_status = "canceled"
             else:
                 user.subscription_status = billing.map_status(data.get("status", ""))
+            if user.subscription_status != previous:
+                _journal(db, user, "subscription.status", {"before": previous, "after": user.subscription_status})
             period = data.get("current_billing_period") or {}
             ends = billing.parse_iso(period.get("ends_at"))
             if ends is not None:

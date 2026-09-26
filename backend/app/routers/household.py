@@ -10,6 +10,7 @@ from ..config import settings
 from ..db import get_db
 from ..deps import get_membership, household_members, notify
 from ..ratelimit import DAY, HOUR, rate_limit
+from ..services import audit
 from ..services.parents import claim_placeholder, ensure_second_parent
 from ..models import (
     Child,
@@ -135,14 +136,24 @@ def update_household(
     db: Session = Depends(get_db),
 ):
     household = db.get(Household, member.household_id)
-    if data.name is not None:
+    if data.school_zone is not None and data.school_zone not in ZONES:
+        raise HTTPException(status_code=422, detail="Zone invalide (A, B ou C)")
+
+    def journal(action: str, field: str, new) -> None:
+        audit.record(
+            db, household.id, member.user_id, action, "household", household.id,
+            {"before": {field: getattr(household, field)}, "after": {field: new}},
+        )
+
+    if data.name is not None and data.name != household.name:
+        journal("household.rename", "name", data.name)
         household.name = data.name
-    if data.country is not None:
+    if data.country is not None and data.country != household.country:
+        journal("household.country", "country", data.country)
         household.country = data.country
         household.currency = CURRENCY_BY_COUNTRY.get(data.country, household.currency)
-    if data.school_zone is not None:
-        if data.school_zone not in ZONES:
-            raise HTTPException(status_code=422, detail="Zone invalide (A, B ou C)")
+    if data.school_zone is not None and data.school_zone != household.school_zone:
+        journal("household.zone", "school_zone", data.school_zone)
         household.school_zone = data.school_zone
     db.commit()
     return _household_out(db, household, member.user_id)
@@ -167,6 +178,11 @@ def add_school_vacation(
         household_id=member.household_id, label=data.label, start=data.start, end=data.end
     )
     db.add(period)
+    db.flush()
+    audit.record(
+        db, member.household_id, member.user_id, "school_vacation.create", "school_vacation", period.id,
+        {"after": {"label": period.label, "start": period.start, "end": period.end}},
+    )
     db.commit()
     db.refresh(period)
     return period
@@ -181,6 +197,10 @@ def delete_school_vacation(
     period = db.get(SchoolVacationPeriod, period_id)
     if period is None or period.household_id != member.household_id:
         raise HTTPException(status_code=404, detail="Congé introuvable")
+    audit.record(
+        db, member.household_id, member.user_id, "school_vacation.delete", "school_vacation", period.id,
+        {"before": {"label": period.label, "start": period.start, "end": period.end}},
+    )
     db.delete(period)
     db.commit()
 
@@ -210,6 +230,11 @@ def rename_partner(
     if ghost_member is None:
         raise HTTPException(status_code=409, detail="Le second parent a déjà un compte")
     ghost = db.get(User, ghost_member.user_id)
+    if data.display_name != ghost.display_name:
+        audit.record(
+            db, member.household_id, member.user_id, "partner.rename", "member", ghost.id,
+            {"before": {"display_name": ghost.display_name}, "after": {"display_name": data.display_name}},
+        )
     ghost.display_name = data.display_name
     if data.color is not None:
         ghost.color = data.color
@@ -276,6 +301,7 @@ def accept_invitation(token: str, user: User = Depends(get_current_user), db: Se
     claim_placeholder(db, invitation.household_id, user.id)
     db.add(HouseholdMember(household_id=invitation.household_id, user_id=user.id, role="parent2"))
     invitation.used_at = utcnow()
+    audit.record(db, invitation.household_id, user.id, "member.join", "member", user.id)
     notify(db, invitation.invited_by, "parent_joined", {"display_name": user.display_name})
     db.commit()
     return _household_out(db, db.get(Household, invitation.household_id), user.id)

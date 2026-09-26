@@ -10,7 +10,9 @@ from sqlalchemy import delete, inspect, select
 from sqlalchemy.orm import Session
 
 from ..deps import household_members, notify
+from . import audit
 from ..models import (
+    AuditLog,
     Child,
     CustodyRule,
     Expense,
@@ -100,8 +102,19 @@ def export_user_data(db: Session, user: User) -> dict:
         "expenses": _rows(db, Expense, hid),
         "settlements": _rows(db, Settlement, hid),
         "wall_posts": posts,
+        "history": history_rows(db, hid, user.locale),
     }
     return data
+
+
+def history_rows(db: Session, household_id: int, locale: str | None) -> list[dict]:
+    """Journal du foyer, résumés rendus dans la langue du lecteur."""
+    ctx = audit.make_ctx(db, household_id, locale)
+    return [
+        {"id": e.id, "actor_id": e.actor_id, "action": e.action, "summary": audit.render_summary(ctx, e),
+         "created_at": e.created_at}
+        for e in db.scalars(select(AuditLog).where(AuditLog.household_id == household_id).order_by(AuditLog.id))
+    ]
 
 
 def _delete_user_rows(db: Session, user_ids: list[int]) -> None:
@@ -113,6 +126,7 @@ def _delete_user_rows(db: Session, user_ids: list[int]) -> None:
 def _delete_household(db: Session, household_id: int) -> None:
     member_ids = [m.user_id for m in household_members(db, household_id)]
 
+    db.execute(delete(AuditLog).where(AuditLog.household_id == household_id))
     post_ids = [p.id for p in db.scalars(select(WallPost).where(WallPost.household_id == household_id))]
     if post_ids:
         db.execute(delete(WallReply).where(WallReply.post_id.in_(post_ids)))
@@ -159,6 +173,7 @@ def delete_account(db: Session, user: User) -> None:
     if others_real:
         old_name = user.display_name
         _anonymize(db, user)
+        audit.record(db, member.household_id, user.id, "member.leave", "member", user.id)
         for m in others_real:
             notify(db, m.user_id, "parent_left", {"display_name": old_name})
     else:

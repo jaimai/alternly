@@ -411,5 +411,13 @@ class NotificationOut(ORMModel):
     created_at: datetime
 
 
+class HistoryEntryOut(BaseModel):
+    id: int
+    actor_id: int | None
+    action: str
+    summary: str
+    created_at: datetime
+
+
 class ReadNotificationsIn(BaseModel):
     ids: list[int] = Field(max_length=200)

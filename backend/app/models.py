@@ -256,6 +256,23 @@ class PaddleEvent(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
 
+class AuditLog(Base):
+    """Journal des modifications du foyer, en ajout seul (aucune route de
+    modification ni de suppression ; seule la suppression du foyer l'efface).
+    Le résumé lisible est rendu à la lecture, dans la langue du lecteur
+    (services/audit.render_summary), à partir de `action` + `data`."""
+    __tablename__ = "audit_log"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    household_id: Mapped[int] = mapped_column(ForeignKey("households.id"), index=True)
+    actor_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    action: Mapped[str] = mapped_column(String)  # ex. custody_rule.update, expense.create
+    entity: Mapped[str] = mapped_column(String)  # ex. custody_rule, expense
+    entity_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    data: Mapped[dict | None] = mapped_column(JSON, nullable=True)  # avant/après, libellés
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+
 class SchoolHolidayCache(Base):
     __tablename__ = "school_holiday_cache"
     __table_args__ = (UniqueConstraint("zone", "label", "school_year"),)

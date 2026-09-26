@@ -55,6 +55,7 @@ _INDEXES: list[tuple[str, str]] = [
     ("notifications", "user_id"),
     ("users", "paddle_subscription_id"),
     ("password_reset_tokens", "user_id"),
+    ("audit_log", "household_id"),
 ]
 
 

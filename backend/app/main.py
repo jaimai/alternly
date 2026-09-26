@@ -66,6 +66,7 @@ from .routers import billing as billing_router
 from .routers import children as children_router
 from .routers import cron as cron_router
 from .routers import expenses as expenses_router
+from .routers import history as history_router
 from .routers import household as household_router
 from .routers import calendar as calendar_router
 from .routers import ical as ical_router
@@ -118,6 +119,7 @@ app.include_router(cron_router.router)
 app.include_router(expenses_router.router)
 app.include_router(wall_router.router)
 app.include_router(billing_router.router)
+app.include_router(history_router.router)
 
 
 @app.get("/api/health")
