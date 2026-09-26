@@ -15,6 +15,7 @@ templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 # URL de la SPA (Vercel) : les liens « se connecter / s'inscrire » de la landing
 # pointent vers l'app hébergée séparément.
 templates.env.globals["app_url"] = settings.app_url.rstrip("/")
+templates.env.globals["contact_email"] = settings.contact_email
 
 
 def site_base(request: Request) -> str:
@@ -57,6 +58,28 @@ def blog_post(request: Request, slug: str):
     )
 
 
+# Pages légales : (chemin, gabarit). Dernière mise à jour affichée sur chaque page.
+LEGAL_PAGES = {
+    "/mentions-legales": "legal_mentions.html",
+    "/confidentialite": "legal_privacy.html",
+    "/cgu": "legal_terms.html",
+}
+LEGAL_UPDATED = date(2026, 9, 26)
+
+
+def _legal_route(template: str):
+    def page(request: Request):
+        return templates.TemplateResponse(request, template, {"updated": LEGAL_UPDATED})
+
+    return page
+
+
+for _path, _template in LEGAL_PAGES.items():
+    router.add_api_route(
+        _path, _legal_route(_template), response_class=HTMLResponse, include_in_schema=False, methods=["GET"]
+    )
+
+
 # Crawlers de moteurs de réponse IA : on les autorise explicitement (visibilité AEO).
 _AI_AGENTS = [
     "GPTBot", "OAI-SearchBot", "ChatGPT-User", "PerplexityBot", "Perplexity-User",
@@ -78,6 +101,7 @@ def robots(request: Request):
 def sitemap(request: Request):
     base = site_base(request)
     entries = [(f"{base}/", None, "1.0"), (f"{base}/blog", None, "0.7")]
+    entries += [(f"{base}{path}", LEGAL_UPDATED.isoformat(), "0.2") for path in LEGAL_PAGES]
     for a in load_articles():
         entries.append((f"{base}/blog/{a.slug}", a.date.isoformat(), "0.6"))
     items = "\n".join(

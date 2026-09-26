@@ -21,6 +21,14 @@ class Settings(BaseSettings):
     # slash final. Vide → déduite de la requête (dev). Sert au sitemap, robots,
     # llms.txt et balises canonical/og.
     site_url: str = ""
+    # Adresse de contact affichée sur le site (pied de page, pages légales).
+    contact_email: str = "contact@alternly.com"
+    # Limitation de débit anti-abus (mémoire du processus, voir ratelimit.py).
+    rate_limit_enabled: bool = True
+    # Suivi d'erreurs Sentry. DSN vide → désactivé.
+    sentry_dsn: str = ""
+    sentry_environment: str = "production"
+    sentry_traces_sample_rate: float = 0.0
 
     @property
     def is_sqlite(self) -> bool:

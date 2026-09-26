@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from ..db import get_db
 from ..deps import get_membership, household_members, notify, other_parent_id
 from ..models import Child, Expense, HouseholdMember, Settlement
+from ..ratelimit import DAY, rate_limit
 from ..schemas import (
     EXPENSE_CATEGORIES,
     BalanceNet,
@@ -67,7 +68,12 @@ def list_expenses(
     return db.scalars(stmt.order_by(Expense.date.desc(), Expense.id.desc())).all()
 
 
-@router.post("/expenses", response_model=ExpenseOut, status_code=201)
+@router.post(
+    "/expenses",
+    response_model=ExpenseOut,
+    status_code=201,
+    dependencies=[Depends(rate_limit("expenses", 100, DAY, by="household"))],
+)
 def create_expense(
     data: ExpenseIn,
     member: HouseholdMember = Depends(get_membership),

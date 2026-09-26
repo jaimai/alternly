@@ -56,15 +56,20 @@ def _button(label: str, path: str) -> str:
     )
 
 
-def _layout(intro: str, cta_label: str, cta_path: str) -> str:
+_FOOTER_NOTIFS = (
+    "Vous recevez cet e-mail car votre coparent utilise Alternly. "
+    "Vous pouvez couper ces e-mails dans vos réglages."
+)
+
+
+def _layout(intro: str, cta_label: str, cta_path: str, footer: str = _FOOTER_NOTIFS) -> str:
     return (
         '<div style="font-family:-apple-system,Segoe UI,sans-serif;max-width:480px;margin:0 auto;'
         'color:#24312b;line-height:1.6">'
         '<p style="font-size:1.3rem;font-weight:600">altern<span style="color:#1f4d3f">ly</span></p>'
         f"<p>{intro}</p>"
         f'<p style="margin:24px 0">{_button(cta_label, cta_path)}</p>'
-        '<p style="color:#5d6b63;font-size:0.85rem">Vous recevez cet e-mail car votre coparent utilise '
-        "Alternly. Vous pouvez couper ces e-mails dans vos réglages.</p>"
+        f'<p style="color:#5d6b63;font-size:0.85rem">{footer}</p>'
         "</div>"
     )
 
@@ -94,3 +99,21 @@ def exchange_reminder_email(payload: dict) -> tuple[str, str]:
         "expirera demain si elle n'est pas traitée."
     )
     return "Rappel : une proposition d'échange expire demain", _layout(intro, "Répondre maintenant", "/")
+
+
+def password_reset_email(token: str) -> tuple[str, str]:
+    """(sujet, html) pour la réinitialisation du mot de passe (lien valable 1 h, usage unique)."""
+    intro = (
+        "Bonjour,<br/>Vous avez demandé à réinitialiser le mot de passe de votre compte Alternly. "
+        "Cliquez sur le bouton ci-dessous pour en choisir un nouveau. Ce lien est valable "
+        "<strong>une heure</strong> et ne peut servir qu'une seule fois."
+    )
+    footer = (
+        "Vous n'êtes pas à l'origine de cette demande ? Ignorez simplement cet e-mail : "
+        "votre mot de passe actuel reste inchangé."
+    )
+    # token_urlsafe : sûr tel quel dans une URL.
+    return (
+        "Réinitialisation de votre mot de passe Alternly",
+        _layout(intro, "Choisir un nouveau mot de passe", f"/reset-password?token={token}", footer),
+    )

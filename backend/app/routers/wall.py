@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from ..db import get_db
 from ..deps import get_membership, household_members, notify, other_parent_id
 from ..models import Child, HouseholdMember, WallPost, WallReply, utcnow
+from ..ratelimit import DAY, rate_limit
 from ..schemas import (
     WALL_KINDS,
     WallPostIn,
@@ -72,7 +73,12 @@ def list_wall(
     return [_serialize(db, p) for p in posts]
 
 
-@router.post("/wall", response_model=WallPostOut, status_code=201)
+@router.post(
+    "/wall",
+    response_model=WallPostOut,
+    status_code=201,
+    dependencies=[Depends(rate_limit("wall", 100, DAY, by="household"))],
+)
 def create_post(
     data: WallPostIn,
     member: HouseholdMember = Depends(get_membership),

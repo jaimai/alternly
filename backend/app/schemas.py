@@ -1,7 +1,7 @@
 from datetime import date, datetime
 from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
+from pydantic import AfterValidator, BaseModel, ConfigDict, EmailStr, Field
 
 # Alias : un champ nommé « date » masque le type `date` dans son annotation
 # quand il a une valeur par défaut (ex. `date: date | None = None`).
@@ -27,19 +27,22 @@ NOTE_MAX = 2000
 MAX_AMOUNT_CENTS = 10_000_000  # 100 000 €
 
 
+def _password_bytes(v: str) -> str:
+    # bcrypt refuse au-delà de 72 octets (et non caractères : accents = 2 octets)
+    if len(v.encode()) > 72:
+        raise ValueError("Mot de passe trop long (72 octets maximum)")
+    return v
+
+
+# Nouveau mot de passe : mêmes règles à l'inscription, au reset et au changement.
+NewPassword = Annotated[str, Field(min_length=8, max_length=72), AfterValidator(_password_bytes)]
+
+
 class UserCreate(BaseModel):
     email: EmailStr
-    password: str = Field(min_length=8, max_length=72)
+    password: NewPassword
     display_name: str = Field(min_length=1, max_length=50)
     color: str = Field(default="#4f7cac", pattern=COLOR_PATTERN)
-
-    @field_validator("password")
-    @classmethod
-    def _password_bytes(cls, v: str) -> str:
-        # bcrypt refuse au-delà de 72 octets (et non caractères : accents = 2 octets)
-        if len(v.encode()) > 72:
-            raise ValueError("Mot de passe trop long (72 octets maximum)")
-        return v
 
 
 class UserLogin(BaseModel):
@@ -61,6 +64,24 @@ class UserUpdate(BaseModel):
     color: str | None = Field(default=None, pattern=COLOR_PATTERN)
     email_opt_in: bool | None = None
     onboarding_seen: bool | None = None
+
+
+class ForgotPasswordIn(BaseModel):
+    email: EmailStr
+
+
+class ResetPasswordIn(BaseModel):
+    token: str = Field(min_length=1, max_length=200)
+    password: NewPassword
+
+
+class ChangePasswordIn(BaseModel):
+    current_password: str = Field(max_length=200)
+    new_password: NewPassword
+
+
+class DeleteAccountIn(BaseModel):
+    password: str = Field(max_length=200)
 
 
 class Token(BaseModel):

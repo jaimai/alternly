@@ -28,6 +28,10 @@ class User(Base):
     email_opt_in: Mapped[bool] = mapped_column(Boolean, default=True)
     onboarding_seen: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    # Incrémenté pour révoquer tous les jetons émis (claim JWT "tv").
+    token_version: Mapped[int] = mapped_column(Integer, default=0)
+    # Compte supprimé mais anonymisé (co-parent restant) : plus de connexion possible.
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
 
 class Household(Base):
@@ -197,6 +201,17 @@ class Notification(Base):
     type: Mapped[str] = mapped_column(String)
     payload: Mapped[dict] = mapped_column(JSON, default=dict)
     read_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+
+class PasswordResetToken(Base):
+    __tablename__ = "password_reset_tokens"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    token_hash: Mapped[str] = mapped_column(String, unique=True)  # sha256 hex ; jamais le jeton brut
+    expires_at: Mapped[datetime] = mapped_column(DateTime)
+    used_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
 

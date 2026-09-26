@@ -210,3 +210,39 @@ class TestMigrations:
         assert "ix_expenses_household_id" in names
         with sessionmaker(bind=engine)() as s:
             assert s.scalars(select(Expense)).all() == []
+
+    def test_user_session_columns_added_to_legacy_table(self):
+        engine = create_engine("sqlite://", poolclass=StaticPool)
+        with engine.begin() as conn:
+            conn.execute(text(
+                "CREATE TABLE users (id INTEGER PRIMARY KEY, email VARCHAR, password_hash VARCHAR, "
+                "display_name VARCHAR, color VARCHAR, ical_token VARCHAR, created_at DATETIME)"
+            ))
+            conn.execute(text("INSERT INTO users (id, email) VALUES (1, 'a@test.fr')"))
+        run_migrations(engine)
+        run_migrations(engine)  # idempotent
+        cols = {c["name"] for c in inspect(engine).get_columns("users")}
+        assert {"token_version", "deleted_at"} <= cols
+        with engine.connect() as conn:
+            assert conn.execute(text("SELECT token_version, deleted_at FROM users")).one() == (0, None)
+
+
+class TestSentryScrubbing:
+    def test_before_send_strips_body_cookies_and_secrets(self):
+        from app.main import _scrub_event
+
+        event = {
+            "request": {
+                "url": "https://api.alternly.com/api/ical/abc123.ics",
+                "data": {"password": "secret"},
+                "cookies": {"s": "1"},
+                "query_string": "token=xyz",
+                "headers": {"Authorization": "Bearer jwt", "X-Cron-Key": "k", "User-Agent": "ua"},
+            }
+        }
+        req = _scrub_event(event, None)["request"]
+        assert "data" not in req and "cookies" not in req and "query_string" not in req
+        assert "abc123" not in req["url"]
+        assert req["headers"]["Authorization"] == "[filtré]"
+        assert req["headers"]["X-Cron-Key"] == "[filtré]"
+        assert req["headers"]["User-Agent"] == "ua"

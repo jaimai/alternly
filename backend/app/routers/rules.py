@@ -8,6 +8,7 @@ from ..db import get_db
 from ..deps import get_membership, household_members, notify, other_parent_id
 from ..models import CustodyRule, HouseholdMember, ScheduleException, SpecialDayRule, User, VacationRule, utcnow
 from ..services import email as email_service
+from ..ratelimit import DAY, rate_limit
 from ..schemas import (
     PARENT_MODES,
     PATTERNS,
@@ -163,7 +164,12 @@ def list_exceptions(
     return rows
 
 
-@router.post("/exceptions", response_model=ExceptionOut, status_code=201)
+@router.post(
+    "/exceptions",
+    response_model=ExceptionOut,
+    status_code=201,
+    dependencies=[Depends(rate_limit("exceptions", 30, DAY, by="household"))],
+)
 def create_exception(
     data: ExceptionIn,
     background: BackgroundTasks,

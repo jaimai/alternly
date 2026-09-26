@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}Conditions générales d'utilisation et de vente — Alternly{% endblock %}
+{% block description %}CGU et CGV d'Alternly : service, compte, abonnement annuel de 39 € par parent après 14 jours d'essai gratuit, droit de rétractation, résiliation et responsabilités.{% endblock %}
+{% block content %}
+{#- TODO(lancement) : compléter les éléments entre crochets ; faire relire par un juriste avant ouverture des paiements. #}
+<article class="post legal">
+  <div class="wrap narrow">
+    <p class="eyebrow">Informations légales</p>
+    <h1>Conditions générales d'utilisation et de vente</h1>
+    <p class="updated">Dernière mise à jour : {{ updated | date_fr }}</p>
+    <div class="post-body">
+      <h2>1. Objet</h2>
+      <p>Les présentes conditions régissent l'accès et l'utilisation du service Alternly, édité par
+      <span class="todo">[NOM DE L'ÉDITEUR]</span> (voir les <a href="/mentions-legales">mentions
+      légales</a>), ainsi que la souscription de l'abonnement payant. La création d'un compte vaut
+      acceptation des présentes conditions.</p>
+
+      <h2>2. Description du service</h2>
+      <p>Alternly est une application web permettant à deux parents séparés d'organiser la garde de
+      leurs enfants : calendrier de garde généré à partir d'un rythme, vacances scolaires et jours
+      fériés français, échanges de jours, dépenses partagées, mur de communication, notifications et
+      synchronisation d'agenda (iCal).</p>
+      <p><strong>Alternly est un outil d'organisation.</strong> Il ne remplace ni une décision de
+      justice, ni une convention homologuée, ni un conseil juridique. En cas de divergence, la décision
+      de justice ou l'accord applicable prévaut. Les données publiques (vacances scolaires, jours
+      fériés) proviennent de sources officielles ; nous ne pouvons garantir l'absence d'erreur ou de
+      modification ultérieure de ces sources.</p>
+
+      <h2>3. Compte</h2>
+      <ul>
+        <li>Le service est réservé aux personnes majeures.</li>
+        <li>Vous vous engagez à fournir des informations exactes et à garder votre mot de passe
+        confidentiel. Vous pouvez à tout moment vous déconnecter de tous vos appareils ou changer de
+        mot de passe depuis les réglages.</li>
+        <li>Un foyer réunit au plus deux parents. Les données du foyer (enfants, calendrier, dépenses,
+        messages) sont visibles par les deux membres.</li>
+      </ul>
+
+      <h2>4. Règles d'usage</h2>
+      <p>Vous vous engagez à utiliser Alternly de bonne foi et à ne pas y publier de contenus
+      injurieux, menaçants, diffamatoires ou illicites. Vous êtes seul responsable des contenus que vous
+      saisissez. Nous pouvons suspendre un compte en cas d'usage abusif (par exemple des envois
+      automatisés massifs) après en avoir informé le titulaire, sauf urgence.</p>
+
+      <h2>5. Essai gratuit et abonnement</h2>
+      <ul>
+        <li><strong>Essai</strong> : 14 jours gratuits, sans carte bancaire, avec accès à toutes les
+        fonctionnalités.</li>
+        <li><strong>Prix</strong> : 39 € TTC par an et par parent, tout inclus. Chaque parent souscrit
+        son propre abonnement. <span class="todo">[TVA : mention « TVA non applicable, art. 293 B du CGI »
+        si franchise en base — à confirmer]</span></li>
+        <li><strong>Paiement</strong> : par carte bancaire via notre prestataire Stripe, à la
+        souscription puis à chaque date anniversaire. Nous n'avons jamais accès à vos numéros de carte.</li>
+        <li><strong>Renouvellement</strong> : l'abonnement est reconduit tacitement pour un an. Vous
+        êtes informé par e-mail avant chaque échéance, conformément à l'article L. 215-1 du Code de la
+        consommation.</li>
+        <li><strong>Évolution des prix</strong> : toute modification vous est notifiée au moins 30 jours
+        avant la prochaine échéance et ne s'applique qu'au renouvellement suivant.</li>
+      </ul>
+
+      <h2>6. Droit de rétractation</h2>
+      <p>Conformément à l'article L. 221-18 du Code de la consommation, vous disposez d'un délai de
+      <strong>14 jours</strong> à compter de la souscription de l'abonnement payant pour vous rétracter,
+      sans avoir à motiver votre décision, en écrivant à
+      <a href="mailto:{{ contact_email }}">{{ contact_email }}</a>. Vous êtes remboursé dans les
+      14 jours suivant votre demande, par le même moyen de paiement. Si vous avez demandé à utiliser le
+      service pendant ce délai, le remboursement peut être réduit au prorata de la période déjà écoulée
+      (article L. 221-25).</p>
+
+      <h2>7. Résiliation</h2>
+      <ul>
+        <li>Vous pouvez résilier à tout moment depuis vos réglages ou par e-mail : l'abonnement n'est
+        alors pas renouvelé et reste actif jusqu'à la fin de la période payée.</li>
+        <li>Vous pouvez supprimer votre compte à tout moment depuis les réglages. Les conséquences sur
+        les données (suppression ou anonymisation si l'autre parent utilise encore le foyer) sont
+        détaillées dans la <a href="/confidentialite">politique de confidentialité</a>. Pensez à
+        exporter vos données avant.</li>
+        <li>En cas de manquement grave aux présentes conditions, nous pouvons résilier le compte après
+        mise en demeure restée sans effet pendant 15 jours.</li>
+      </ul>
+
+      <h2>8. Disponibilité et responsabilité</h2>
+      <p>Nous faisons nos meilleurs efforts pour assurer la disponibilité et la sécurité du service,
+      sans pouvoir garantir une disponibilité ininterrompue (maintenance, incidents chez nos
+      hébergeurs). Notre responsabilité ne saurait être engagée pour les conséquences d'une
+      utilisation du calendrier contraire à une décision de justice, ni pour les contenus échangés
+      entre parents. Rien dans les présentes ne limite les droits que vous tenez de la loi en tant
+      que consommateur, notamment la garantie légale de conformité des contenus et services numériques
+      (articles L. 224-25-1 et suivants du Code de la consommation).</p>
+
+      <h2>9. Données personnelles</h2>
+      <p>Le traitement de vos données est décrit dans la <a href="/confidentialite">politique de
+      confidentialité</a>.</p>
+
+      <h2>10. Modification des conditions</h2>
+      <p>Nous pouvons faire évoluer ces conditions ; vous serez informé de toute modification
+      substantielle au moins 30 jours à l'avance. Si vous la refusez, vous pouvez résilier avant son
+      entrée en vigueur.</p>
+
+      <h2>11. Réclamations, médiation et droit applicable</h2>
+      <p>Pour toute réclamation : <a href="mailto:{{ contact_email }}">{{ contact_email }}</a>. À défaut
+      d'accord, vous pouvez recourir gratuitement au médiateur de la consommation
+      <span class="todo">[NOM ET COORDONNÉES DU MÉDIATEUR DE LA CONSOMMATION]</span> (article L. 612-1 du
+      Code de la consommation). Les présentes conditions sont soumises au droit français. En cas de
+      litige, les tribunaux compétents sont ceux désignés par la loi.</p>
+    </div>
+  </div>
+</article>
+{% endblock %}

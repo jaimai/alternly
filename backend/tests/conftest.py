@@ -14,8 +14,10 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
+from app.config import settings
 from app.db import Base, get_db
 from app.main import app
+from app.ratelimit import limiter
 from app.services import public_holidays, school_holidays
 
 
@@ -78,6 +80,15 @@ def fake_public_apis(monkeypatch):
     yield
     public_holidays._memo.clear()
     school_holidays._memo.clear()
+
+
+@pytest.fixture(autouse=True)
+def no_rate_limit(monkeypatch):
+    """Limitation de débit coupée par défaut ; réactivée dans tests/test_ratelimit.py."""
+    monkeypatch.setattr(settings, "rate_limit_enabled", False)
+    limiter.reset()
+    yield
+    limiter.reset()
 
 
 @pytest.fixture

@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Mentions légales — Alternly{% endblock %}
+{% block description %}Mentions légales du site et de l'application Alternly : éditeur, directeur de la publication, hébergeurs et contact.{% endblock %}
+{% block content %}
+{#- TODO(lancement) : remplacer tous les éléments entre crochets (class="todo") par les informations réelles. #}
+<article class="post legal">
+  <div class="wrap narrow">
+    <p class="eyebrow">Informations légales</p>
+    <h1>Mentions légales</h1>
+    <p class="updated">Dernière mise à jour : {{ updated | date_fr }}</p>
+    <div class="post-body">
+      <p>Conformément aux articles 6-III et 19 de la loi n° 2004-575 du 21 juin 2004 pour la confiance
+      dans l'économie numérique (LCEN), voici les informations relatives à l'éditeur et aux hébergeurs
+      du site {{ site_base(request) }} et de l'application Alternly.</p>
+
+      <h2>Éditeur</h2>
+      <p>
+        <span class="todo">[NOM DE L'ÉDITEUR]</span><br/>
+        <span class="todo">[FORME JURIDIQUE ET CAPITAL]</span><br/>
+        Siège : <span class="todo">[ADRESSE]</span><br/>
+        SIRET : <span class="todo">[SIRET]</span><br/>
+        E-mail : <span class="todo">[E-MAIL DE CONTACT]</span> —
+        <a href="mailto:{{ contact_email }}">{{ contact_email }}</a>
+      </p>
+
+      <h2>Directeur de la publication</h2>
+      <p><span class="todo">[DIRECTEUR DE LA PUBLICATION]</span></p>
+
+      <h2>Hébergement</h2>
+      <p><strong>API, site vitrine et base de données</strong> : Railway Corporation, 548 Market St
+      PMB 68956, San Francisco, CA 94104, États-Unis — <a href="https://railway.com">railway.com</a>.
+      Région d'hébergement : <span class="todo">[RÉGION RAILWAY — à vérifier, idéalement UE]</span>.</p>
+      <p><strong>Application web</strong> : Vercel Inc., 440 N Barranca Ave #4133, Covina, CA 91723,
+      États-Unis — <a href="https://vercel.com">vercel.com</a>.
+      Région d'exécution : <span class="todo">[RÉGION VERCEL — à vérifier, idéalement UE]</span>.</p>
+
+      <h2>Propriété intellectuelle</h2>
+      <p>L'ensemble des éléments du site et de l'application (textes, logo, interface, code) est protégé
+      par le droit de la propriété intellectuelle. Toute reproduction ou représentation, totale ou
+      partielle, sans autorisation préalable de l'éditeur est interdite. Les polices de caractères
+      Fraunces et Instrument Sans sont distribuées sous licence SIL Open Font License 1.1.</p>
+
+      <h2>Données personnelles</h2>
+      <p>Le traitement de vos données est décrit dans notre
+      <a href="/confidentialite">politique de confidentialité</a>. Les conditions d'utilisation et de
+      vente figurent dans nos <a href="/cgu">CGU / CGV</a>.</p>
+
+      <h2>Contact</h2>
+      <p>Pour toute question : <a href="mailto:{{ contact_email }}">{{ contact_email }}</a>.</p>
+    </div>
+  </div>
+</article>
+{% endblock %}

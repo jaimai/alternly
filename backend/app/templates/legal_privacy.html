@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% block title %}Politique de confidentialité — Alternly{% endblock %}
+{% block description %}Comment Alternly traite vos données et celles de vos enfants : finalités, bases légales, durées de conservation, sous-traitants et vos droits (RGPD).{% endblock %}
+{% block content %}
+{#- TODO(lancement) : compléter les éléments entre crochets et vérifier les régions d'hébergement. #}
+<article class="post legal">
+  <div class="wrap narrow">
+    <p class="eyebrow">Informations légales</p>
+    <h1>Politique de confidentialité</h1>
+    <p class="updated">Dernière mise à jour : {{ updated | date_fr }}</p>
+    <div class="post-body">
+      <p>Alternly aide deux parents séparés à organiser la garde de leurs enfants. Ces informations
+      touchent à la vie familiale : nous les traitons avec une stricte minimisation, sans publicité
+      ni revente, conformément au Règlement général sur la protection des données (RGPD) et à la loi
+      « Informatique et Libertés ».</p>
+
+      <h2>1. Responsable du traitement</h2>
+      <p><span class="todo">[NOM DE L'ÉDITEUR]</span>, <span class="todo">[ADRESSE]</span>
+      (voir les <a href="/mentions-legales">mentions légales</a>).
+      Contact pour toute question relative à vos données :
+      <a href="mailto:{{ contact_email }}">{{ contact_email }}</a>.</p>
+
+      <h2>2. Données traitées</h2>
+      <ul>
+        <li><strong>Compte</strong> : adresse e-mail, nom affiché, couleur choisie, mot de passe
+        (stocké uniquement sous forme chiffrée irréversible — bcrypt), préférences de notification.</li>
+        <li><strong>Foyer et enfants</strong> : nom du foyer, zone scolaire, prénom des enfants et,
+        facultativement, leur date de naissance. Aucun nom de famille, aucune photo ni donnée de santé
+        n'est demandée.</li>
+        <li><strong>Organisation de la garde</strong> : rythme de garde, règles de vacances et de fêtes,
+        échanges de jours proposés, acceptés ou refusés, et leurs notes.</li>
+        <li><strong>Dépenses partagées</strong> : libellé, montant, date, catégorie, payeur,
+        répartition, contestations et remboursements.</li>
+        <li><strong>Mur de communication</strong> : messages, tâches, questions et réponses échangés
+        entre les deux parents.</li>
+        <li><strong>Notifications</strong> in-app et e-mails transactionnels envoyés.</li>
+        <li><strong>Données techniques</strong> : adresse IP et journaux serveur (sécurité, limitation
+        des abus), rapports d'erreurs expurgés (sans contenu saisi ni identifiants).</li>
+      </ul>
+
+      <h2>3. Données concernant les enfants</h2>
+      <p>Les enfants n'utilisent pas Alternly. Les informations les concernant (prénom, éventuellement
+      date de naissance, planning de garde) sont saisies par leurs parents, titulaires de l'autorité
+      parentale, dans le seul but d'organiser leur quotidien. Nous vous invitons à n'y inscrire que le
+      strict nécessaire, notamment dans les notes et messages libres.</p>
+
+      <h2>4. Finalités et bases légales</h2>
+      <table>
+        <tr><th>Finalité</th><th>Base légale</th></tr>
+        <tr><td>Créer et gérer votre compte, fournir le calendrier partagé, les échanges, les dépenses et le mur</td><td>Exécution du contrat (art. 6.1.b RGPD)</td></tr>
+        <tr><td>Partager les informations du foyer avec l'autre parent que vous avez invité</td><td>Exécution du contrat</td></tr>
+        <tr><td>E-mails transactionnels (réinitialisation de mot de passe, propositions d'échange, rappels)</td><td>Exécution du contrat ; les notifications non essentielles peuvent être désactivées dans vos réglages</td></tr>
+        <tr><td>Paiement de l'abonnement et facturation</td><td>Exécution du contrat et obligation légale (conservation comptable)</td></tr>
+        <tr><td>Sécurité : prévention des abus, limitation des tentatives, suivi des erreurs</td><td>Intérêt légitime à assurer la sécurité du service</td></tr>
+        <tr><td>Mesure d'audience anonyme (sans cookie)</td><td>Intérêt légitime à améliorer le service</td></tr>
+      </table>
+      <p>Aucune donnée n'est utilisée à des fins publicitaires, ni vendue, ni utilisée pour du profilage.</p>
+
+      <h2>5. Destinataires et sous-traitants</h2>
+      <p>Vos données ne sont accessibles qu'à vous, à l'autre parent membre de votre foyer (pour les
+      données partagées du foyer) et, dans la limite de leurs missions, à nos sous-traitants :</p>
+      <table>
+        <tr><th>Prestataire</th><th>Rôle</th><th>Localisation</th></tr>
+        <tr><td>Railway</td><td>Hébergement de l'API et de la base de données</td><td><span class="todo">[RÉGION RAILWAY — à vérifier, idéalement UE]</span></td></tr>
+        <tr><td>Vercel</td><td>Hébergement de l'application web, mesure d'audience sans cookie</td><td><span class="todo">[RÉGION VERCEL — à vérifier]</span></td></tr>
+        <tr><td>Resend</td><td>Envoi des e-mails transactionnels</td><td>États-Unis — clauses contractuelles types de la Commission européenne</td></tr>
+        <tr><td>Stripe</td><td>Paiement de l'abonnement (dès son activation) ; nous ne stockons jamais vos numéros de carte</td><td>UE / États-Unis — clauses contractuelles types</td></tr>
+        <tr><td>Sentry <span class="todo">[si activé]</span></td><td>Rapports d'erreurs techniques expurgés</td><td><span class="todo">[RÉGION SENTRY — à vérifier]</span></td></tr>
+      </table>
+      <p>Lorsque des données sont transférées hors de l'Union européenne, ce transfert est encadré par
+      les clauses contractuelles types adoptées par la Commission européenne et, le cas échéant, par le
+      cadre de protection des données UE–États-Unis.</p>
+
+      <h2>6. Durées de conservation</h2>
+      <ul>
+        <li><strong>Données du compte et du foyer</strong> : tant que votre compte est actif.</li>
+        <li><strong>Suppression du compte</strong> : vos données sont effacées immédiatement de la base
+        active. Si l'autre parent utilise encore le foyer, votre compte est anonymisé (e-mail et nom
+        supprimés, remplacés par « Ancien parent ») afin que l'historique partagé — dépenses, soldes,
+        échanges, messages — reste cohérent pour lui ; si vous étiez seul, le foyer et toutes ses
+        données sont supprimés.</li>
+        <li><strong>Sauvegardes</strong> : les copies de sauvegarde sont écrasées au bout de
+        30 jours maximum.</li>
+        <li><strong>Liens de réinitialisation</strong> : valables 1 heure, à usage unique.</li>
+        <li><strong>Journaux techniques</strong> : quelques semaines au plus.</li>
+        <li><strong>Pièces comptables</strong> (factures) : 10 ans, conformément au Code de commerce.</li>
+      </ul>
+
+      <h2>7. Cookies et stockage local</h2>
+      <p>Alternly n'utilise <strong>aucun cookie publicitaire ni de traçage</strong>. L'application
+      conserve uniquement votre jeton de connexion dans le stockage local de votre navigateur
+      (localStorage) : ce stockage est strictement nécessaire au service que vous demandez et n'exige
+      donc pas de consentement (article 82 de la loi Informatique et Libertés). La mesure d'audience
+      est anonyme et fonctionne sans cookie. Les polices du site sont hébergées par nos soins : aucun
+      appel n'est fait à des services tiers comme Google Fonts.</p>
+
+      <h2>8. Sécurité</h2>
+      <p>Connexions chiffrées (HTTPS), mots de passe hachés, jetons de session révocables (« se
+      déconnecter de tous les appareils »), accès cloisonné par foyer, limitation des tentatives de
+      connexion et sauvegardes régulières.</p>
+
+      <h2>9. Vos droits</h2>
+      <p>Vous disposez d'un droit d'accès, de rectification, d'effacement, de limitation, d'opposition
+      et de portabilité de vos données, ainsi que du droit de définir des directives relatives à leur
+      sort après votre décès. Directement depuis l'application :</p>
+      <ul>
+        <li><strong>Accès et portabilité</strong> : Réglages → « Exporter mes données » (fichier JSON).</li>
+        <li><strong>Rectification</strong> : modifiez votre nom, vos enfants ou vos saisies à tout moment.</li>
+        <li><strong>Effacement</strong> : Réglages → « Supprimer mon compte ».</li>
+      </ul>
+      <p>Pour toute autre demande : <a href="mailto:{{ contact_email }}">{{ contact_email }}</a>.
+      Nous répondons dans un délai d'un mois. Si vous estimez que vos droits ne sont pas respectés,
+      vous pouvez introduire une réclamation auprès de la CNIL
+      (<a href="https://www.cnil.fr/fr/plaintes">www.cnil.fr/fr/plaintes</a>, 3 place de Fontenoy,
+      TSA 80715, 75334 Paris Cedex 07).</p>
+
+      <h2>10. Modifications</h2>
+      <p>Cette politique peut évoluer (par exemple lors de l'ajout d'un prestataire). En cas de
+      changement important, vous en serez informé dans l'application ou par e-mail.</p>
+    </div>
+  </div>
+</article>
+{% endblock %}

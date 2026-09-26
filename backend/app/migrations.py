@@ -21,6 +21,8 @@ _ADD_COLUMNS: dict[str, dict[str, str]] = {
     "users": {
         "email_opt_in": "BOOLEAN",
         "onboarding_seen": "BOOLEAN",
+        "token_version": "INTEGER",
+        "deleted_at": "DATETIME",
     },
 }
 
@@ -36,6 +38,7 @@ _INDEXES: list[tuple[str, str]] = [
     ("household_members", "user_id"),
     ("notifications", "user_id"),
     ("wall_replies", "post_id"),
+    ("password_reset_tokens", "user_id"),
 ]
 
 
@@ -68,6 +71,7 @@ def run_migrations(engine: Engine) -> None:
             conn.execute(text("UPDATE users SET email_opt_in = TRUE WHERE email_opt_in IS NULL"))
             # Comptes existants : déjà onboardés, on ne leur montre pas le tour.
             conn.execute(text("UPDATE users SET onboarding_seen = TRUE WHERE onboarding_seen IS NULL"))
+            conn.execute(text("UPDATE users SET token_version = 0 WHERE token_version IS NULL"))
         for table, column in _INDEXES:
             if table in existing_tables:
                 conn.execute(text(f"CREATE INDEX IF NOT EXISTS ix_{table}_{column} ON {table} ({column})"))

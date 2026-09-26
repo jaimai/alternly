@@ -16,7 +16,7 @@ router = APIRouter(prefix="/api/ical", tags=["ical"])
 @router.get("/{ical_token}.ics")
 def ical_feed(ical_token: str, db: Session = Depends(get_db)):
     user = db.scalar(select(User).where(User.ical_token == ical_token))
-    if user is None:
+    if user is None or user.deleted_at is not None:
         raise HTTPException(status_code=404, detail="Flux introuvable")
     member = db.scalar(select(HouseholdMember).where(HouseholdMember.user_id == user.id))
     if member is None:
