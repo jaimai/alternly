@@ -26,5 +26,6 @@
   "exchange.errorDates": "La date de fin doit être égale ou postérieure à la date de début",
   "exchange.titleCounter": "Contre-proposition",
   "exchange.titleToAnswer": "Proposition à traiter",
-  "exchange.orProposeOther": "Ou proposer autre chose"
+  "exchange.orProposeOther": "Ou proposer autre chose",
+  "exchange.requestCancel": "Demander l'annulation"
 }

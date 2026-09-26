@@ -26,5 +26,6 @@
   "exchange.errorDates": "The end date must be on or after the start date",
   "exchange.titleCounter": "Counter-proposal",
   "exchange.titleToAnswer": "Request to answer",
-  "exchange.orProposeOther": "Or propose something else"
+  "exchange.orProposeOther": "Or propose something else",
+  "exchange.requestCancel": "Request cancellation"
 }

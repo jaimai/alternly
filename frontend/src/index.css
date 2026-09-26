@@ -1602,6 +1602,45 @@ label.consent input {
 
 .settings-row svg { flex: 0 0 auto; color: var(--ink-soft); }
 
+/* ---------- Demandes de changement ---------- */
+.change-requests {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.change-request {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 14px 18px;
+}
+
+.change-request.to-answer {
+  border-color: var(--terra);
+  background: color-mix(in srgb, var(--terra-soft) 45%, var(--surface));
+}
+
+.change-main {
+  flex: 1 1 280px;
+  min-width: 0;
+}
+
+.change-summary {
+  margin: 0;
+  font-weight: 600;
+}
+
+.change-main .hint { margin: 2px 0 0; font-size: 0.8rem; }
+
+.history-row { align-items: center; }
+
+a.settings-row { text-decoration: none; }
+
 /* ---------- Barre d'onglets mobile + mises en page étroites ---------- */
 .tabbar {
   display: none;

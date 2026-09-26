@@ -149,7 +149,8 @@ export default function ExceptionDialog({ householdId, date, members, existing, 
               )}
               {e.status === 'accepted' && (
                 <button className="danger-link" onClick={() => run(() => api.deleteException(householdId, e.id))} disabled={busy}>
-                  {t('exchange.cancelExchange')}
+                  {/* Deux parents réels : l'annulation devient une demande à valider par l'autre. */}
+                  {solo ? t('exchange.cancelExchange') : t('exchange.requestCancel')}
                 </button>
               )}
             </div>

@@ -11,6 +11,7 @@ import Spinner from './components/Spinner'
 const CalendarPage = lazy(() => import('./pages/Calendar'))
 const ExpensesPage = lazy(() => import('./pages/Expenses'))
 const ForgotPasswordPage = lazy(() => import('./pages/ForgotPassword'))
+const HistoryPage = lazy(() => import('./pages/History'))
 const JoinPage = lazy(() => import('./pages/Join'))
 const LoginPage = lazy(() => import('./pages/Login'))
 const NotFoundPage = lazy(() => import('./pages/NotFound'))
@@ -44,6 +45,14 @@ export default function App() {
         element={
           <RequireAuth>
             <SettingsPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/history"
+        element={
+          <RequireAuth>
+            <HistoryPage />
           </RequireAuth>
         }
       />

@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { QRCodeSVG } from 'qrcode.react'
-import { api } from '../api'
+import { api, isPendingChange } from '../api'
 import { useAuth, usePremium } from '../auth'
 import { openCheckout } from '../billing'
 import AccountCard from '../components/AccountCard'
+import ChangeRequests from '../components/ChangeRequests'
 import ColorPicker from '../components/ColorPicker'
 import Icon from '../components/Icon'
 import RuleForm from '../components/RuleForm'
@@ -40,6 +41,8 @@ export default function SettingsPage() {
   const [busy, setBusy] = useState(false)
   const [childName, setChildName] = useState('')
   const [confirm, confirmNode] = useConfirm()
+  // Recharge le panneau des demandes de changement après une modification.
+  const [changesKey, setChangesKey] = useState(0)
 
   const refresh = refreshHousehold
 
@@ -76,9 +79,11 @@ export default function SettingsPage() {
     if (!household) return
     setBusy(true)
     try {
-      await api.setCustodyRule(household.id, value.custody)
-      await api.setVacationRule(household.id, value.vacation)
-      flash(t('settings.rulesSaved'))
+      const custody = await api.setCustodyRule(household.id, value.custody)
+      const vacation = await api.setVacationRule(household.id, value.vacation)
+      // Deux parents réels : le changement attend l'accord de l'autre (202).
+      flash(isPendingChange(custody) || isPendingChange(vacation) ? t('changes.sent') : t('settings.rulesSaved'))
+      setChangesKey((k) => k + 1)
       refresh()
     } catch (err) {
       fail(err)
@@ -104,7 +109,11 @@ export default function SettingsPage() {
       r.kind === kind ? { ...r, ...patch } : r,
     )
     try {
-      await api.setSpecialDayRules(household.id, rules)
+      const res = await api.setSpecialDayRules(household.id, rules)
+      if (isPendingChange(res)) {
+        flash(t('changes.sent'))
+        setChangesKey((k) => k + 1)
+      }
       refresh()
     } catch (err) {
       fail(err)
@@ -132,7 +141,11 @@ export default function SettingsPage() {
     })
     if (!ok) return
     try {
-      await api.deleteChild(household.id, id)
+      const res = await api.deleteChild(household.id, id)
+      if (isPendingChange(res)) {
+        flash(t('changes.sent'))
+        setChangesKey((k) => k + 1)
+      }
       refresh()
     } catch (err) {
       fail(err)
@@ -180,6 +193,16 @@ export default function SettingsPage() {
         <h1>{t('settings.title')}</h1>
         {message && <div className="info-banner">{message}</div>}
         {error && <div className="error">{error}</div>}
+
+        {!isSolo(household.members) && (
+          <ChangeRequests
+            householdId={household.id}
+            myId={user.id}
+            members={household.members}
+            refreshKey={changesKey}
+            onResolved={refresh}
+          />
+        )}
 
         <div className="card">
           <h2>{t('settings.parents')}</h2>
@@ -396,6 +419,18 @@ export default function SettingsPage() {
             {t('settings.emailOptIn')}
             {!premium && <span className="premium-tag">{t('settings.premium')}</span>}
           </label>
+        </div>
+
+        <div className="card">
+          <div className="settings-list" style={{ margin: 0 }}>
+            <Link to="/history" className="settings-row">
+              <span>
+                <strong>{t('history.link')}</strong>
+                <span className="hint">{t('history.linkHint')}</span>
+              </span>
+              <Icon name="history" size={16} />
+            </Link>
+          </div>
         </div>
 
         <AccountCard user={user} onMessage={flash} onError={fail} />

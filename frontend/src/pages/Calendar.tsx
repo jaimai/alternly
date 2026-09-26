@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { api } from '../api'
 import { useAuth } from '../auth'
 import CalendarView from '../components/CalendarView'
+import ChangeRequests from '../components/ChangeRequests'
 import ExceptionDialog from '../components/ExceptionDialog'
 import Icon from '../components/Icon'
 import Spinner from '../components/Spinner'
@@ -69,6 +70,15 @@ export default function CalendarPage() {
             exceptions={exceptions}
             refreshKey={refreshKey}
             onOpenDay={setSelectedDay}
+          />
+        )}
+        {household && user && !solo && (
+          <ChangeRequests
+            householdId={household.id}
+            myId={user.id}
+            members={household.members}
+            refreshKey={refreshKey}
+            onResolved={onChanged}
           />
         )}
         {solo && (
