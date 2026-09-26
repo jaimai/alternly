@@ -1770,3 +1770,38 @@ a.settings-row { text-decoration: none; }
     transition-property: opacity, background-color, border-color, color, box-shadow !important;
   }
 }
+
+/* ---------- Connexion avec Google ---------- */
+.google-signin {
+  margin: 4px 0 8px;
+}
+
+.google-button {
+  display: flex;
+  justify-content: center;
+  min-height: 44px;
+}
+
+.google-consent {
+  text-align: center;
+  margin-top: 8px;
+}
+
+.or-sep {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 14px 0 4px;
+  color: var(--ink-soft);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.or-sep::before,
+.or-sep::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}

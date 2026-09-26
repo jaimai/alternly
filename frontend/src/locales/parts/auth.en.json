@@ -57,5 +57,8 @@
   "auth.consentAnd": "and the",
   "auth.consentPrivacy": "privacy policy",
   "auth.consentTail": ".",
-  "auth.consentRequired": "Please accept the terms of service to create your account."
+  "auth.consentRequired": "Please accept the terms of service to create your account.",
+  "auth.or": "or",
+  "auth.googleError": "Couldn't sign in with Google. Please try again.",
+  "auth.googleConsentLead": "By continuing with Google, you agree to the"
 }

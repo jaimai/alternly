@@ -59,5 +59,8 @@
   "settings.logoutAllHint": "Utile après avoir utilisé un téléphone ou un ordinateur partagé.",
   "settings.logoutAllTitle": "Se déconnecter partout ?",
   "settings.logoutAllBody": "Toutes vos sessions seront fermées, y compris celle-ci. Il faudra vous reconnecter.",
-  "settings.logoutAllConfirm": "Tout déconnecter"
+  "settings.logoutAllConfirm": "Tout déconnecter",
+  "settings.setPassword": "Définir un mot de passe",
+  "settings.setPasswordHint": "Vous vous connectez avec Google : ajoutez un mot de passe si vous le souhaitez.",
+  "settings.setPasswordIntro": "Votre compte utilise la connexion avec Google. Un mot de passe vous permettra aussi de vous connecter avec votre e-mail."
 }

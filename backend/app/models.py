@@ -35,6 +35,8 @@ class User(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
     # Incrémenté pour révoquer tous les jetons émis (claim JWT "tv").
     token_version: Mapped[int] = mapped_column(Integer, default=0)
+    # Identifiant Google (claim « sub ») quand le compte est relié à Google.
+    google_sub: Mapped[str | None] = mapped_column(String, nullable=True, unique=True, index=True)
     # Abonnement Paddle. status : trialing | active | past_due | canceled | none.
     subscription_status: Mapped[str] = mapped_column(String, default="trialing")
     trial_ends_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
@@ -42,6 +44,11 @@ class User(Base):
     subscription_ends_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     paddle_customer_id: Mapped[str | None] = mapped_column(String, nullable=True)
     paddle_subscription_id: Mapped[str | None] = mapped_column(String, nullable=True, index=True)
+
+    @property
+    def has_password(self) -> bool:
+        """Faux pour un compte créé via Google qui n'a jamais défini de mot de passe."""
+        return bool(self.password_hash)
 
 
 class Household(Base):

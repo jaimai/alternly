@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
+import GoogleButton from '../components/GoogleButton'
 import { useTranslation } from 'react-i18next'
 import { api } from '../api'
 import { useAuth } from '../auth'
@@ -37,6 +38,12 @@ export default function JoinPage() {
     }
   }
 
+  // Invitation mémorisée tant qu'on n'est pas connecté : après « Continuer avec
+  // Google » (ou inscription), on revient ici pour rejoindre le foyer.
+  useEffect(() => {
+    if (!user && token) localStorage.setItem('pending_invite', token)
+  }, [user, token])
+
   function saveAndGo(path: string) {
     if (token) localStorage.setItem('pending_invite', token)
     navigate(path)
@@ -65,6 +72,7 @@ export default function JoinPage() {
             ) : (
               <>
                 <p>{t('auth.signInPrompt')}</p>
+                <GoogleButton consent />
                 <div className="row">
                   <button onClick={() => saveAndGo('/register')}>{t('auth.createAccountLink')}</button>
                   <button className="secondary" onClick={() => saveAndGo('/login')}>

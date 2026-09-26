@@ -14,6 +14,9 @@ class Settings(BaseSettings):
     # les liens absolus des e-mails et le canonical/OG (la landing est proxifiée,
     # donc request.url refléterait l'URL interne Railway).
     app_url: str = "http://localhost:5173"
+    # Connexion « Continuer avec Google » : ID client OAuth (type Application Web).
+    # Vide → fonctionnalité désactivée. Pas de secret : on vérifie seulement le jeton d'identité.
+    google_client_id: str = ""
     public_site_url: str = "http://localhost:8000"
     # Origines autorisées à appeler l'API (CORS), séparées par des virgules.
     cors_origins: str = "http://localhost:5173"
