@@ -187,7 +187,7 @@ def create_exception(
             background.add_task(email_service.send_email, recipient.email, subject, html)
     db.commit()
     db.refresh(exc)
-    analytics.capture_for_member(db, member, "exchange_proposed", {
+    analytics.capture_for_member(db, member, "exchange_submitted", {
         "solo": solo,
         "is_counter": data.replaces_id is not None,
         "days": (data.date_end - data.date_start).days + 1,
