@@ -137,6 +137,7 @@ class TestHistory:
         ).json()["id"]
         client.post(f"/api/households/{hid}/expenses/{eid}/dispute", json={}, headers=headers2)
         client.patch(f"/api/households/{hid}/expenses/{eid}", json={"amount_cents": 4000}, headers=headers1)
+        client.post(f"/api/households/{hid}/expenses/{eid}/resolve", json={}, headers=headers2)
         client.post(f"/api/households/{hid}/expenses/{eid}/settle", headers=headers2)
         client.post(f"/api/households/{hid}/expenses/{eid}/unsettle", headers=headers2)
         client.post(
@@ -147,6 +148,7 @@ class TestHistory:
         summaries = _summaries(client, headers1, hid)
         assert "a contesté la dépense « Judo » (50,00 €)" in summaries
         assert "a modifié la dépense « Judo » (50,00 € → 40,00 €)" in summaries
+        assert "a levé la contestation sur la dépense « Judo » (40,00 €)" in summaries
         assert "a marqué comme remboursée la dépense « Judo » (40,00 €)" in summaries
         assert "a annulé le remboursement de la dépense « Judo » (40,00 €)" in summaries
         assert "a enregistré un remboursement de 20,00 € de Dominique à Camille (dim. 12 juil.)" in summaries

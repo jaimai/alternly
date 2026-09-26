@@ -145,15 +145,15 @@ def update_expense(
         val = getattr(data, field)
         if val is not None:
             setattr(exp, field, val)
-    # une modification lève une éventuelle contestation
-    exp.status = "active"
-    exp.dispute_note = ""
+    # Une modification ne lève PAS une contestation : seul le parent qui a
+    # contesté peut la lever. L'autre parent est prévenu de la modification.
     after = _exp_snapshot(exp)
     if after != before:
         audit.record(
             db, member.household_id, member.user_id, "expense.update", "expense", exp.id,
             {"before": before, "after": after},
         )
+        notify(db, other_parent_id(db, member.household_id, member.user_id), "expense_updated", _exp_payload(exp))
     db.commit()
     db.refresh(exp)
     return exp
@@ -199,6 +199,10 @@ def resolve_expense(
     db: Session = Depends(get_db),
 ):
     exp = _get_expense(db, member, expense_id)
+    if member.user_id == exp.paid_by:
+        raise HTTPException(status_code=403, detail="Seul le parent qui a contesté peut lever la contestation")
+    if exp.status != "disputed":
+        raise HTTPException(status_code=409, detail="Cette dépense n'est pas contestée")
     exp.status = "active"
     exp.dispute_note = ""
     _journal(db, member, "expense.resolve", exp)
