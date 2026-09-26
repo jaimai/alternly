@@ -142,7 +142,7 @@ export default function ExceptionDialog({ householdId, date, members, existing, 
               )}
               {e.status === 'accepted' && (
                 <button className="danger-link" onClick={() => run(() => api.deleteException(householdId, e.id))} disabled={busy}>
-                  Annuler l'échange
+                  {solo ? "Annuler l'échange" : "Demander l'annulation"}
                 </button>
               )}
             </div>

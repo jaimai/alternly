@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { api, ApiError, API_BASE } from '../api'
+import { Link } from 'react-router-dom'
+import { api, ApiError, API_BASE, isPendingChange } from '../api'
 import { useAuth } from '../auth'
+import AccountCard from '../components/AccountCard'
+import ChangeRequests from '../components/ChangeRequests'
 import ColorPicker, { DEFAULT_PARENT_COLOR } from '../components/ColorPicker'
 import { useConfirm } from '../components/Modal'
 import RuleForm from '../components/RuleForm'
@@ -17,7 +20,7 @@ const SPECIAL_LABELS: Record<SpecialDayRule['kind'], string> = {
 }
 
 export default function SettingsPage() {
-  const { user, setUser, logout } = useAuth()
+  const { user, setUser } = useAuth()
   const [confirm, confirmNode] = useConfirm()
   const navigate = useNavigate()
   const [household, setHousehold] = useState<Household | null>(null)
@@ -28,6 +31,13 @@ export default function SettingsPage() {
   const [busy, setBusy] = useState(false)
   const [color, setColor] = useState(user?.color ?? DEFAULT_PARENT_COLOR)
   const [childName, setChildName] = useState('')
+  const [changesKey, setChangesKey] = useState(0)
+
+  // Avec deux parents, les changements sensibles attendent l'accord de l'autre.
+  function pendingSent() {
+    setChangesKey((k) => k + 1)
+    flash("Demande envoyée : le changement s'appliquera quand l'autre parent l'aura accepté.")
+  }
 
   function refresh() {
     api
@@ -70,9 +80,10 @@ export default function SettingsPage() {
     if (!household) return
     setBusy(true)
     try {
-      await api.setCustodyRule(household.id, value.custody)
-      await api.setVacationRule(household.id, value.vacation)
-      flash('Règles enregistrées ✓')
+      const a = await api.setCustodyRule(household.id, value.custody)
+      const b = await api.setVacationRule(household.id, value.vacation)
+      if (isPendingChange(a) || isPendingChange(b)) pendingSent()
+      else flash('Règles enregistrées ✓')
       refresh()
     } catch (err) {
       fail(err)
@@ -98,7 +109,8 @@ export default function SettingsPage() {
       r.kind === kind ? { ...r, ...patch } : r,
     )
     try {
-      await api.setSpecialDayRules(household.id, rules)
+      const res = await api.setSpecialDayRules(household.id, rules)
+      if (isPendingChange(res)) pendingSent()
       refresh()
     } catch (err) {
       fail(err)
@@ -156,6 +168,15 @@ export default function SettingsPage() {
         <h1>Réglages</h1>
         {message && <div className="info-banner">{message}</div>}
         {error && <div className="error">{error}</div>}
+        {household.members.length > 1 && (
+          <ChangeRequests
+            householdId={household.id}
+            myId={user.id}
+            members={household.members}
+            refreshKey={changesKey}
+            onResolved={refresh}
+          />
+        )}
 
         <div className="card" id="parents">
           <h2>Parents</h2>
@@ -167,6 +188,9 @@ export default function SettingsPage() {
               {m.display_name} {m.id === user.id && <span className="hint">(vous)</span>}
             </p>
           ))}
+          <p className="fine-print">
+            <Link to="/history">Voir l'historique du foyer</Link> : toutes les modifications, horodatées.
+          </p>
           {household.members.length < 2 && (
             <>
               <p style={{ color: 'var(--ink-soft)' }}>
@@ -199,14 +223,18 @@ export default function SettingsPage() {
                     if (
                       !(await confirm({
                         title: `Retirer ${c.first_name} ?`,
-                        body: "L'enfant disparaîtra du foyer pour les deux parents. Ses dépenses et messages sont conservés.",
+                        body:
+                          household.members.length > 1
+                            ? "L'autre parent devra confirmer. Les dépenses et messages liés à l'enfant sont conservés."
+                            : "L'enfant disparaîtra du foyer. Ses dépenses et messages sont conservés.",
                         confirmLabel: 'Retirer',
                         danger: true,
                       }))
                     )
                       return
                     try {
-                      await api.deleteChild(household.id, c.id)
+                      const res = await api.deleteChild(household.id, c.id)
+                      if (isPendingChange(res)) pendingSent()
                       refresh()
                     } catch (err) {
                       fail(err)
@@ -351,13 +379,12 @@ export default function SettingsPage() {
           </label>
         </div>
 
-        <div className="card">
-          <h2>Compte</h2>
-          <p className="hint">Connecté·e en tant que {user.email}</p>
-          <button className="secondary" onClick={logout}>
-            Se déconnecter
-          </button>
-        </div>
+        <AccountCard
+          user={user}
+          hasCoparent={household.members.length > 1}
+          onMessage={flash}
+          onError={fail}
+        />
       </div>
       {confirmNode}
     </>

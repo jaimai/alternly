@@ -3,6 +3,7 @@ import type { FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { api, setToken } from '../api'
 import { useAuth } from '../auth'
+import PasswordField from '../components/PasswordField'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -38,9 +39,11 @@ export default function LoginPage() {
       <form className="card" onSubmit={submit}>
         <h2>Connexion</h2>
         <label htmlFor="email">E-mail</label>
-        <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-        <label htmlFor="password">Mot de passe</label>
-        <input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+        <input id="email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+        <PasswordField id="password" label="Mot de passe" value={password} onChange={setPassword} />
+        <p className="forgot-link">
+          <Link to="/forgot-password">Mot de passe oublié ?</Link>
+        </p>
         {error && <div className="error">{error}</div>}
         <p style={{ marginTop: 16 }}>
           <button type="submit" disabled={busy} style={{ width: '100%' }}>

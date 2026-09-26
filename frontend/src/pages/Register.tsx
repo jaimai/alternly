@@ -1,15 +1,17 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { api, setToken } from '../api'
+import { api, setToken, SITE_URL } from '../api'
 import { useAuth } from '../auth'
 import ColorPicker, { DEFAULT_PARENT_COLOR } from '../components/ColorPicker'
+import PasswordField, { passwordProblem } from '../components/PasswordField'
 
 export default function RegisterPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [displayName, setDisplayName] = useState('')
   const [color, setColor] = useState(DEFAULT_PARENT_COLOR)
+  const [accepted, setAccepted] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const { setUser } = useAuth()
@@ -17,6 +19,15 @@ export default function RegisterPage() {
 
   async function submit(e: FormEvent) {
     e.preventDefault()
+    const problem = passwordProblem(password)
+    if (problem) {
+      setError(problem)
+      return
+    }
+    if (!accepted) {
+      setError("Merci d'accepter les conditions d'utilisation pour créer votre compte")
+      return
+    }
     setBusy(true)
     setError(null)
     try {
@@ -52,18 +63,29 @@ export default function RegisterPage() {
           pattern="[^@\s]+@[^@\s]+\.[^@\s]+"
           title="Saisissez une adresse e-mail complète, avec un nom de domaine (ex. prenom@exemple.fr)."
         />
-        <label htmlFor="password">Mot de passe (8 caractères minimum)</label>
-        <input
+        <PasswordField
           id="password"
-          type="password"
+          label="Mot de passe (8 caractères minimum)"
           value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          minLength={8}
-          maxLength={72}
+          onChange={setPassword}
+          autoComplete="new-password"
         />
         <label>Votre couleur sur le calendrier</label>
         <ColorPicker value={color} onChange={setColor} />
+        <label className="consent">
+          <input type="checkbox" checked={accepted} onChange={(e) => setAccepted(e.target.checked)} />
+          <span>
+            J'accepte les{' '}
+            <a href={`${SITE_URL}/cgu`} target="_blank" rel="noreferrer">
+              conditions générales
+            </a>{' '}
+            et la{' '}
+            <a href={`${SITE_URL}/confidentialite`} target="_blank" rel="noreferrer">
+              politique de confidentialité
+            </a>
+            .
+          </span>
+        </label>
         {error && <div className="error">{error}</div>}
         <p style={{ marginTop: 16 }}>
           <button type="submit" disabled={busy} style={{ width: '100%' }}>

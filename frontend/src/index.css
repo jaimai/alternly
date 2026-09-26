@@ -20,7 +20,7 @@
   --radius: 14px;
   --radius-sm: 10px;
   --shadow: 0 1px 2px rgba(36, 49, 43, 0.06), 0 12px 32px -12px rgba(36, 49, 43, 0.18);
-  --font-display: 'Fraunces', Georgia, serif;
+  --font-display: 'Fraunces Variable', 'Fraunces', Georgia, serif;
   --font-body: 'Instrument Sans', -apple-system, BlinkMacSystemFont, sans-serif;
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
@@ -1477,3 +1477,171 @@ button.link {
     transition-property: opacity, background-color, border-color, color, box-shadow !important;
   }
 }
+
+/* ---------- Comptes / authentification ---------- */
+.password-field {
+  position: relative;
+}
+
+.password-field input {
+  padding-right: 84px;
+}
+
+.password-field button.link {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.forgot-link {
+  text-align: right;
+  margin: 6px 0 0;
+  font-size: 0.85rem;
+}
+
+label.consent {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  color: var(--ink);
+  font-weight: 400;
+  margin-top: 16px;
+}
+
+label.consent input {
+  width: auto;
+  margin-top: 3px;
+}
+
+.settings-list {
+  display: grid;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  margin: 12px 0 4px;
+}
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+  background: var(--surface);
+  color: var(--ink);
+  font-weight: 400;
+  border-radius: 0;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--line);
+}
+
+.settings-row:last-child { border-bottom: none; }
+.settings-row:active { transform: none; }
+.settings-row > span:first-child { display: grid; gap: 2px; }
+.settings-row .hint { font-size: 0.82rem; }
+.settings-row.danger-row strong { color: var(--danger); }
+
+@media (hover: hover) and (pointer: fine) {
+  .settings-row:hover { background: var(--paper); }
+}
+
+/* ---------- Abonnement ---------- */
+.billing-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 8px 16px;
+  background: var(--terra-soft);
+  color: #8c4a2c;
+  font-size: 0.88rem;
+  text-align: center;
+}
+
+.billing-banner.strong {
+  background: var(--terra);
+  color: white;
+}
+
+a.button.small {
+  padding: 5px 14px;
+  font-size: 0.82rem;
+}
+
+.billing-banner.strong a.button {
+  background: white;
+  color: #8c4a2c;
+}
+
+.plan-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 24px;
+  box-shadow: var(--shadow);
+}
+
+.plan-price {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  margin: 0;
+}
+
+.plan-status {
+  color: var(--ink-soft);
+}
+
+.plan-list {
+  list-style: none;
+  padding: 0;
+  margin: 16px 0 20px;
+  display: grid;
+  gap: 8px;
+}
+
+.plan-list li::before {
+  content: '✓';
+  color: var(--pine);
+  font-weight: 700;
+  margin-right: 10px;
+}
+
+/* ---------- Demandes de changement ---------- */
+.change-requests {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.change-request {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 14px 18px;
+}
+
+.change-request.to-answer {
+  border-color: var(--terra);
+  background: color-mix(in srgb, var(--terra-soft) 45%, var(--surface));
+}
+
+.change-main {
+  flex: 1 1 280px;
+  min-width: 0;
+}
+
+.change-summary {
+  margin: 0;
+  font-weight: 600;
+}
+
+.change-main .hint { margin: 2px 0 0; font-size: 0.8rem; }
+
+.history-row { align-items: center; }

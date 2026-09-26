@@ -24,6 +24,7 @@ const LABELS: Record<string, (p: Record<string, string>) => string> = {
   exception_deleted: (p) => `Échange de garde annulé (${range(p)})`,
   rule_changed: () => 'Les règles de garde ont été modifiées',
   parent_joined: (p) => `${p.display_name} a rejoint le foyer 🎉`,
+  parent_left: (p) => `${p.display_name} a supprimé son compte`,
   expense_added: (p) => `Nouvelle dépense « ${p.label} » (${euros(p.amount_cents)})`,
   expense_disputed: (p) => `Votre dépense « ${p.label} » a été contestée`,
   expense_resolved: (p) => `La contestation sur « ${p.label} » a été levée`,

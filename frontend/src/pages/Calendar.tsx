@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { api, ApiError } from '../api'
 import { useAuth } from '../auth'
 import CalendarView from '../components/CalendarView'
+import ChangeRequests from '../components/ChangeRequests'
 import ExceptionDialog from '../components/ExceptionDialog'
 import StatusCard from '../components/StatusCard'
 import TopBar from '../components/TopBar'
@@ -61,6 +62,18 @@ export default function CalendarPage() {
             exceptions={exceptions}
             refreshKey={refreshKey}
             onOpenDay={setSelectedDay}
+          />
+        )}
+        {household && user && household.members.length > 1 && (
+          <ChangeRequests
+            householdId={household.id}
+            myId={user.id}
+            members={household.members}
+            refreshKey={refreshKey}
+            onResolved={() => {
+              loadCalendar()
+              setRefreshKey((k) => k + 1)
+            }}
           />
         )}
         {household?.members.length === 1 && (

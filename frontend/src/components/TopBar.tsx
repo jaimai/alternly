@@ -1,4 +1,5 @@
 import { Link, NavLink } from 'react-router-dom'
+import BillingBanner from './BillingBanner'
 import NotificationBell from './NotificationBell'
 
 const navClass = ({ isActive }: { isActive: boolean }) => (isActive ? 'active' : undefined)
@@ -60,6 +61,7 @@ export default function TopBar({ householdName }: { householdName?: string }) {
           </NavLink>
         </div>
       </header>
+      <BillingBanner />
       {/* Mobile : barre d'onglets en bas, à portée de pouce */}
       <nav className="tabbar" aria-label="Navigation principale">
         {TABS.map((t) => (

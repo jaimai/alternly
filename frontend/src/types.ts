@@ -170,3 +170,45 @@ export interface Balance {
   creditor_id: number | null
   amount_cents: number
 }
+
+export interface BillingStatus {
+  /** false : paiement non configuré (bêta gratuite), accès complet pour tous */
+  enabled: boolean
+  status: 'trialing' | 'active' | 'past_due' | 'canceled' | 'expired'
+  has_access: boolean
+  /** true : l'essai est fini sans abonnement, l'app passe en lecture seule */
+  read_only: boolean
+  trial_ends_at: string | null
+  current_period_end: string | null
+  cancel_at_period_end: boolean
+  days_left: number | null
+  price_label: string
+}
+
+export type ChangeKind = 'custody_rule' | 'vacation_rule' | 'special_day_rules' | 'delete_child' | 'cancel_exchange'
+
+/** Changement sensible soumis à l'accord de l'autre parent. */
+export interface ChangeRequest {
+  id: number
+  kind: ChangeKind
+  /** Résumé lisible généré par le serveur, ex. « Rythme : semaine/semaine → 2-2-3 » */
+  summary: string
+  status: 'pending' | 'accepted' | 'refused' | 'withdrawn'
+  requested_by: number
+  created_at: string
+  resolved_by: number | null
+  resolved_at: string | null
+}
+
+/** Réponse 202 d'une modification qui attend l'accord de l'autre parent. */
+export interface PendingChange {
+  change_request: ChangeRequest
+}
+
+export interface HistoryEntry {
+  id: number
+  actor_id: number | null
+  action: string
+  summary: string
+  created_at: string
+}
