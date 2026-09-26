@@ -50,7 +50,8 @@ def exchange_reminders(
         if recipient is None or not recipient.email_opt_in or not is_premium(db, recipient):
             continue
         subject, html = email_service.exchange_reminder_email(
-            {"date_start": exc.date_start.isoformat(), "date_end": exc.date_end.isoformat()}
+            {"date_start": exc.date_start.isoformat(), "date_end": exc.date_end.isoformat()},
+            recipient.locale,
         )
         if email_service.send_email(recipient.email, subject, html):
             sent += 1
