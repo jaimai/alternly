@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { api } from '../api'
+import { cachedCalendar, fetchCalendar } from '../calendarCache'
 import { addDays, daysBetween, todayIso } from '../dates'
 import { useFormat } from '../format'
 import Icon from './Icon'
@@ -25,14 +25,21 @@ type Upcoming = { key: string; icon: IconName; text: string; when: string; date?
 export default function StatusCard({ household, myId, exceptions, refreshKey, onOpenDay }: Props) {
   const { t, i18n } = useTranslation()
   const { day, dayLong, range, relativeDays } = useFormat()
-  const [data, setData] = useState<CalendarResponse | null>(null)
+  const [data, setData] = useState<CalendarResponse | null>(() => {
+    const today = todayIso()
+    return cachedCalendar(household.id, today, addDays(today, HORIZON_DAYS)) ?? null
+  })
 
   useEffect(() => {
     const today = todayIso()
-    api
-      .calendar(household.id, today, addDays(today, HORIZON_DAYS))
+    const end = addDays(today, HORIZON_DAYS)
+    const cached = cachedCalendar(household.id, today, end)
+    if (cached) setData(cached)
+    fetchCalendar(household.id, today, end)
       .then(setData)
-      .catch(() => setData(null))
+      .catch(() => {
+        if (!cached) setData(null)
+      })
   }, [household.id, refreshKey])
 
   if (!data || data.days.length === 0) return null
