@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { api } from '../api'
 import { useAuth } from '../auth'
 import CalendarView from '../components/CalendarView'
 import ChangeRequests from '../components/ChangeRequests'
 import ExceptionDialog from '../components/ExceptionDialog'
 import Icon from '../components/Icon'
 import Spinner from '../components/Spinner'
+import { cachedCalendar, cachedExceptions, fetchCalendar, fetchExceptions, invalidateCalendar } from '../calendarCache'
 import StatusCard from '../components/StatusCard'
 import TopBar from '../components/TopBar'
 import WelcomeTour from '../components/WelcomeTour'
@@ -34,24 +34,29 @@ export default function CalendarPage() {
 
   const loadCalendar = useCallback(() => {
     if (!household || !range) return
-    setLoading(true)
-    api
-      .calendar(household.id, range.start, range.end)
+    // Données déjà vues : affichage immédiat, rafraîchies en arrière-plan.
+    const cached = cachedCalendar(household.id, range.start, range.end)
+    if (cached) setData(cached)
+    const cachedEx = cachedExceptions(household.id)
+    if (cachedEx) setExceptions(cachedEx)
+    setLoading(!cached)
+    fetchCalendar(household.id, range.start, range.end)
       .then((d) => {
         setData(d)
         setError(null)
       })
       .catch((err) => setError(err instanceof Error ? err.message : t('calendar.genericError')))
       .finally(() => setLoading(false))
-    api.listExceptions(household.id).then(setExceptions).catch(() => {})
+    fetchExceptions(household.id).then(setExceptions).catch(() => {})
   }, [household, range, t])
 
   useEffect(loadCalendar, [loadCalendar])
 
   const onChanged = useCallback(() => {
+    if (household) invalidateCalendar(household.id)
     loadCalendar()
     setRefreshKey((k) => k + 1)
-  }, [loadCalendar])
+  }, [household, loadCalendar])
 
   // Propositions en attente qui expirent demain (date de début = demain).
   const expiringTomorrow = exceptions.filter((e) => e.status === 'pending' && e.date_start === todayIso(1))
