@@ -19,6 +19,8 @@ class Settings(BaseSettings):
     cors_origins: str = "http://localhost:5173"
     # Secret protégeant l'endpoint cron des rappels. Vide → endpoint désactivé.
     cron_secret: str = ""
+    # Limitation de débit anti-abus (mémoire du processus, voir ratelimit.py).
+    rate_limit_enabled: bool = True
 
     # Paiement Paddle (Merchant of Record). Durée de l'essai gratuit en jours.
     trial_days: int = 14

@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 from ..auth import create_token, get_current_user, hash_password, verify_password
 from ..db import get_db
 from ..models import PasswordResetToken, User, utcnow
+from ..ratelimit import HOUR, MINUTE, rate_limit
 from ..schemas import (
     ChangePasswordIn,
     ForgotPasswordIn,
@@ -60,7 +61,12 @@ def _detect_locale(accept_language: str | None) -> str:
     return "en" if first.startswith("en") else "fr"
 
 
-@router.post("/register", response_model=Token, status_code=201)
+@router.post(
+    "/register",
+    response_model=Token,
+    status_code=201,
+    dependencies=[Depends(rate_limit("register", 10, HOUR))],
+)
 def register(
     data: UserCreate,
     db: Session = Depends(get_db),
@@ -88,7 +94,14 @@ def register(
     return _token_response(user)
 
 
-@router.post("/login", response_model=Token)
+@router.post(
+    "/login",
+    response_model=Token,
+    dependencies=[
+        Depends(rate_limit("login", 10, MINUTE)),
+        Depends(rate_limit("login", 20, HOUR, by="body", field="email")),
+    ],
+)
 def login(data: UserLogin, db: Session = Depends(get_db)):
     user = db.scalar(select(User).where(User.email == data.email.lower()))
     if user is None or user.is_placeholder or not verify_password(data.password, user.password_hash):
@@ -96,7 +109,14 @@ def login(data: UserLogin, db: Session = Depends(get_db)):
     return _token_response(user)
 
 
-@router.post("/password/forgot", status_code=202)
+@router.post(
+    "/password/forgot",
+    status_code=202,
+    dependencies=[
+        Depends(rate_limit("forgot", 5, HOUR)),
+        Depends(rate_limit("forgot", 3, HOUR, by="body", field="email")),
+    ],
+)
 def forgot_password(data: ForgotPasswordIn, background: BackgroundTasks, db: Session = Depends(get_db)):
     """Toujours 202 : ne révèle pas si un compte existe pour cet e-mail."""
     user = db.scalar(select(User).where(User.email == data.email.lower()))
@@ -112,7 +132,11 @@ def forgot_password(data: ForgotPasswordIn, background: BackgroundTasks, db: Ses
     return {"ok": True}
 
 
-@router.post("/password/reset", response_model=Token)
+@router.post(
+    "/password/reset",
+    response_model=Token,
+    dependencies=[Depends(rate_limit("reset", 10, HOUR))],
+)
 def reset_password(data: ResetPasswordIn, db: Session = Depends(get_db)):
     reset = db.scalar(
         select(PasswordResetToken).where(PasswordResetToken.token_hash == _hash_reset_token(data.token))
@@ -130,7 +154,12 @@ def reset_password(data: ResetPasswordIn, db: Session = Depends(get_db)):
     return _token_response(user)
 
 
-@router.post("/password/change", response_model=Token)
+@router.post(
+    "/password/change",
+    response_model=Token,
+    # vérifie le mot de passe actuel : borne le brute-force avec un jeton volé
+    dependencies=[Depends(rate_limit("password_change", 10, HOUR))],
+)
 def change_password(data: ChangePasswordIn, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     if not verify_password(data.current_password, user.password_hash):
         raise HTTPException(status_code=400, detail="Mot de passe actuel incorrect")

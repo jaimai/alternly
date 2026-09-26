@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from ..db import get_db
 from ..deps import get_membership, household_members, is_premium, notify, other_parent_id
 from ..models import CustodyRule, HouseholdMember, ScheduleException, SpecialDayRule, User, VacationRule, utcnow
+from ..ratelimit import DAY, rate_limit
 from ..services import email as email_service
 from ..schemas import (
     PARENT_MODES,
@@ -163,7 +164,12 @@ def list_exceptions(
     return rows
 
 
-@router.post("/exceptions", response_model=ExceptionOut, status_code=201)
+@router.post(
+    "/exceptions",
+    response_model=ExceptionOut,
+    status_code=201,
+    dependencies=[Depends(rate_limit("exceptions", 30, DAY, by="household"))],
+)
 def create_exception(
     data: ExceptionIn,
     background: BackgroundTasks,

@@ -9,6 +9,7 @@ from ..auth import get_current_user
 from ..config import settings
 from ..db import get_db
 from ..deps import get_membership, household_members, notify
+from ..ratelimit import DAY, HOUR, rate_limit
 from ..services.parents import claim_placeholder, ensure_second_parent
 from ..models import (
     Child,
@@ -149,7 +150,12 @@ def update_household(
 
 # ---------- congés scolaires (saisie manuelle, ex. US) ----------
 
-@router.post("/households/{household_id}/school-vacations", response_model=SchoolVacationOut, status_code=201)
+@router.post(
+    "/households/{household_id}/school-vacations",
+    response_model=SchoolVacationOut,
+    status_code=201,
+    dependencies=[Depends(rate_limit("school_vacations", 100, DAY, by="household"))],
+)
 def add_school_vacation(
     data: SchoolVacationIn,
     member: HouseholdMember = Depends(get_membership),
@@ -240,7 +246,11 @@ def _valid_invitation(db: Session, token: str) -> Invitation:
     return invitation
 
 
-@router.get("/invitations/{token}", response_model=InvitationPreview)
+@router.get(
+    "/invitations/{token}",
+    response_model=InvitationPreview,
+    dependencies=[Depends(rate_limit("invitation", 30, HOUR))],
+)
 def preview_invitation(token: str, db: Session = Depends(get_db)):
     invitation = _valid_invitation(db, token)
     household = db.get(Household, invitation.household_id)
@@ -248,7 +258,11 @@ def preview_invitation(token: str, db: Session = Depends(get_db)):
     return InvitationPreview(household_name=household.name, invited_by_name=inviter.display_name)
 
 
-@router.post("/invitations/{token}/accept", response_model=HouseholdOut)
+@router.post(
+    "/invitations/{token}/accept",
+    response_model=HouseholdOut,
+    dependencies=[Depends(rate_limit("invitation", 30, HOUR))],
+)
 def accept_invitation(token: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     invitation = _valid_invitation(db, token)
     members = household_members(db, invitation.household_id)

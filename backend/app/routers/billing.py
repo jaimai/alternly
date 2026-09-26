@@ -8,6 +8,7 @@ from ..config import settings
 from ..db import get_db
 from ..deps import household_members, user_has_premium
 from ..models import HouseholdMember, User, utcnow
+from ..ratelimit import HOUR, rate_limit
 from ..schemas import ChangePlanIn
 from ..services import billing, paddle_api
 
@@ -65,7 +66,8 @@ def my_subscription(user: User = Depends(get_current_user), db: Session = Depend
     }
 
 
-@router.post("/cancel")
+# Appels à l'API Paddle : bornés par IP (le webhook, lui, n'est jamais limité).
+@router.post("/cancel", dependencies=[Depends(rate_limit("billing", 10, HOUR))])
 def cancel_subscription(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """Résilie l'abonnement du foyer (fin de période payée)."""
     sub = _subscriber(db, user)
@@ -78,7 +80,7 @@ def cancel_subscription(user: User = Depends(get_current_user), db: Session = De
     return {"ok": True}
 
 
-@router.post("/change-plan")
+@router.post("/change-plan", dependencies=[Depends(rate_limit("billing", 10, HOUR))])
 def change_plan(
     data: ChangePlanIn, user: User = Depends(get_current_user), db: Session = Depends(get_db)
 ):
