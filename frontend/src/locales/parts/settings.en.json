@@ -41,5 +41,7 @@
   "settings.myCalendarColor": "My color on the calendar",
   "settings.save": "Save",
   "settings.emailOptIn": "Receive an email for swap proposals and their reminders",
-  "settings.languageLabel": "App language"
+  "settings.languageLabel": "App language",
+  "settings.accountTitle": "Account",
+  "settings.signedInAs": "Signed in as {{email}}"
 }

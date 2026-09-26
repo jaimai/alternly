@@ -29,5 +29,7 @@
   "common.relInDays": "in {{count}} days",
   "common.notFoundTitle": "Page not found",
   "common.notFoundBody": "This link doesn't lead anywhere. It may have expired, or the address has a typo.",
-  "common.notFoundBack": "Back to the calendar"
+  "common.notFoundBack": "Back to the calendar",
+  "common.mainNav": "Main navigation",
+  "common.freemiumChipShort": "Premium"
 }

@@ -41,5 +41,7 @@
   "settings.myCalendarColor": "Ma couleur sur le calendrier",
   "settings.save": "Enregistrer",
   "settings.emailOptIn": "Recevoir un e-mail pour les propositions d'échange et leurs rappels",
-  "settings.languageLabel": "Langue de l’application"
+  "settings.languageLabel": "Langue de l’application",
+  "settings.accountTitle": "Compte",
+  "settings.signedInAs": "Connecté·e en tant que {{email}}"
 }

@@ -27,7 +27,7 @@ const SPECIAL_LABEL_KEYS: Record<SpecialDayRule['kind'], string> = {
 
 export default function SettingsPage() {
   const { t, i18n } = useTranslation()
-  const { user, setUser, household, householdLoaded, refreshHousehold, refreshBilling } = useAuth()
+  const { user, setUser, household, householdLoaded, refreshHousehold, refreshBilling, logout } = useAuth()
   const premium = usePremium()
   const navigate = useNavigate()
   const [inviteUrl, setInviteUrl] = useState<string | null>(null)
@@ -376,6 +376,12 @@ export default function SettingsPage() {
             {t('settings.emailOptIn')}
             {!premium && <span className="premium-tag">{t('settings.premium')}</span>}
           </label>
+        </div>
+
+        <div className="card" id="account">
+          <h2>{t('settings.accountTitle')}</h2>
+          <p className="hint">{t('settings.signedInAs', { email: user.email })}</p>
+          <button className="secondary" onClick={logout}>{t('common.logout')}</button>
         </div>
 
         <DangerZone />
