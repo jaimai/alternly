@@ -227,3 +227,23 @@ class TestErrorTracking:
             app.router.routes[:] = [r for r in app.router.routes if getattr(r, "path", "") != "/api/__boom_test"]
         assert captured and isinstance(captured[0][0], RuntimeError)
         assert captured[0][1] == {"method": "GET"}
+
+
+class TestMarketingSnippet:
+    def test_no_snippet_without_token(self, client):
+        html = client.get("/").text
+        assert "/static/analytics.js" not in html
+        assert "data-consent-open" not in html
+
+    @pytest.mark.parametrize("path,lang", [("/", "fr"), ("/en", "en"), ("/privacy", "fr"), ("/en/blog", "en")])
+    def test_snippet_and_cookie_link_with_token(self, client, monkeypatch, path, lang):
+        monkeypatch.setattr(analytics.settings, "posthog_token", "phc_public")
+        html = client.get(path).text
+        assert 'src="/static/analytics.js" data-key="phc_public"' in html
+        assert f'data-lang="{lang}"' in html
+        assert "data-consent-open" in html
+
+    def test_static_script_served(self, client):
+        r = client.get("/static/analytics.js")
+        assert r.status_code == 200
+        assert "alternly_consent" in r.text and "cookieless_mode" in r.text
