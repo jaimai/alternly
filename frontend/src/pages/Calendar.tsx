@@ -1,31 +1,32 @@
 import { useCallback, useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { api } from '../api'
 import { useAuth } from '../auth'
 import CalendarView from '../components/CalendarView'
+import ChangeRequests from '../components/ChangeRequests'
 import ExceptionDialog from '../components/ExceptionDialog'
 import Icon from '../components/Icon'
+import Spinner from '../components/Spinner'
+import StatusCard from '../components/StatusCard'
 import TopBar from '../components/TopBar'
 import WelcomeTour from '../components/WelcomeTour'
+import { todayIso } from '../dates'
 import { isSolo } from '../members'
 import type { CalendarResponse, ScheduleException } from '../types'
-
-function todayIso(offset = 0): string {
-  const d = new Date()
-  d.setDate(d.getDate() + offset)
-  return d.toISOString().slice(0, 10)
-}
 
 export default function CalendarPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { user, household, householdLoaded } = useAuth()
   const [data, setData] = useState<CalendarResponse | null>(null)
+  const [loading, setLoading] = useState(false)
   const [exceptions, setExceptions] = useState<ScheduleException[]>([])
   const [range, setRange] = useState<{ start: string; end: string } | null>(null)
   const [selectedDay, setSelectedDay] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  // Incrémenté après chaque changement : recharge la carte de statut.
+  const [refreshKey, setRefreshKey] = useState(0)
 
   useEffect(() => {
     if (householdLoaded && (!household || !household.custody_rule)) navigate('/onboarding')
@@ -33,27 +34,28 @@ export default function CalendarPage() {
 
   const loadCalendar = useCallback(() => {
     if (!household || !range) return
+    setLoading(true)
     api
       .calendar(household.id, range.start, range.end)
-      .then(setData)
+      .then((d) => {
+        setData(d)
+        setError(null)
+      })
       .catch((err) => setError(err instanceof Error ? err.message : t('calendar.genericError')))
+      .finally(() => setLoading(false))
     api.listExceptions(household.id).then(setExceptions).catch(() => {})
-  }, [household, range])
+  }, [household, range, t])
 
   useEffect(loadCalendar, [loadCalendar])
 
-  const byDate = new Map((data?.days ?? []).map((d) => [d.date, d]))
-  const today = byDate.get(todayIso())
-  const tomorrow = byDate.get(todayIso(1))
-  const handoverTomorrow = today && tomorrow && today.parent_id !== tomorrow.parent_id
-  const tomorrowParent = tomorrow && data?.members.find((m) => m.id === tomorrow.parent_id)
+  const onChanged = useCallback(() => {
+    loadCalendar()
+    setRefreshKey((k) => k + 1)
+  }, [loadCalendar])
 
-  // Propositions en attente non expirées, à traiter par moi (destinataire).
-  const pendingForMe = exceptions.filter(
-    (e) => e.status === 'pending' && e.created_by !== user?.id && e.date_start >= todayIso(),
-  )
   // Propositions en attente qui expirent demain (date de début = demain).
   const expiringTomorrow = exceptions.filter((e) => e.status === 'pending' && e.date_start === todayIso(1))
+  const solo = household ? isSolo(household.members) : false
 
   return (
     <>
@@ -61,15 +63,33 @@ export default function CalendarPage() {
       <TopBar householdName={household?.name} />
       <div className="layout">
         {error && <div className="error">{error}</div>}
-        {pendingForMe.length > 0 && (
-          <div className="info-banner banner-ic">
-            <Icon name="clock" size={16} />
-            <span>
-              {pendingForMe.length === 1
-                ? t('calendar.pendingForMeOne')
-                : t('calendar.pendingForMeMany', { count: pendingForMe.length })}{' '}
-              {t('calendar.pendingForMeTail')}
-            </span>
+        {household && user && (
+          <StatusCard
+            household={household}
+            myId={user.id}
+            exceptions={exceptions}
+            refreshKey={refreshKey}
+            onOpenDay={setSelectedDay}
+          />
+        )}
+        {household && user && !solo && (
+          <ChangeRequests
+            householdId={household.id}
+            myId={user.id}
+            members={household.members}
+            refreshKey={refreshKey}
+            onResolved={onChanged}
+          />
+        )}
+        {solo && (
+          <div className="callout">
+            <div>
+              <strong>{t('calendar.soloTitle')}</strong>
+              <p>{t('calendar.soloBody')}</p>
+            </div>
+            <Link className="button" to="/settings">
+              {t('calendar.soloCta')}
+            </Link>
           </div>
         )}
         {expiringTomorrow.length > 0 && (
@@ -83,40 +103,31 @@ export default function CalendarPage() {
             </span>
           </div>
         )}
-        {handoverTomorrow && tomorrowParent && (
-          <div className="info-banner banner-ic">
-            <Icon name="swap" size={16} />
-            <span>
-              {t('calendar.handoverLead', {
-                children: household?.children.map((c) => c.first_name).join(', ') || t('calendar.theChild'),
-              })}{' '}
-              <strong>{tomorrowParent.display_name}</strong>
-              {data && t('calendar.handoverTime', { time: data.handover_time })}.
-            </span>
-          </div>
-        )}
-        {data && !data.school_holidays_loaded && (
-          <div className="error">
-            {t('calendar.schoolHolidaysError')}
-          </div>
-        )}
+        {data && !data.school_holidays_loaded && <div className="info-banner">{t('calendar.schoolHolidaysError')}</div>}
         {data && (
           <div className="legend">
             {data.members.map((m) => (
-              <span key={m.id}>
+              <span key={m.id} className="legend-item">
                 <span className="dot" style={{ background: m.color }} />
-                {m.display_name}
+                {m.id === user?.id ? t('calendar.legendYou', { name: m.display_name }) : m.display_name}
               </span>
             ))}
+            <span className="legend-item">
+              <span className="dot handover-dot" />
+              {t('calendar.legendHandover')}
+            </span>
+            <span className="legend-item">
+              <span className="dot pending-dot" />
+              {t('calendar.legendProposedExchange')}
+            </span>
             <span className="legend-icons">
               <span><Icon name="sun" size={13} /> {t('calendar.legendHolidays')}</span>
               <span><Icon name="flag" size={13} /> {t('calendar.legendPublicHoliday')}</span>
               <span><Icon name="swap" size={13} /> {t('calendar.legendExchange')}</span>
               <span><Icon name="star" size={13} /> {t('calendar.legendSpecial')}</span>
-              <span><Icon name="clock" size={13} /> {t('calendar.legendProposed')}</span>
             </span>
-            <span style={{ marginLeft: 'auto', color: 'var(--ink-soft)' }}>
-              {t('calendar.legendClickHint')}
+            <span className="legend-hint">
+              {loading ? <Spinner inline /> : t('calendar.legendClickHint')}
             </span>
           </div>
         )}
@@ -141,12 +152,6 @@ export default function CalendarPage() {
             }
           />
         )}
-        {household && isSolo(household.members) && (
-          <div className="info-banner" style={{ marginTop: 12 }}>
-            {t('calendar.soloLead')}{' '}
-            <a href="/settings">{t('calendar.soloSettingsLink')}</a> {t('calendar.soloTail')}
-          </div>
-        )}
       </div>
       {selectedDay && household && (
         <ExceptionDialog
@@ -154,8 +159,9 @@ export default function CalendarPage() {
           date={selectedDay}
           members={household.members}
           existing={exceptions}
+          currentParentId={data?.days.find((d) => d.date === selectedDay)?.parent_id}
           onClose={() => setSelectedDay(null)}
-          onChanged={loadCalendar}
+          onChanged={onChanged}
         />
       )}
     </>

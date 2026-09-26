@@ -19,5 +19,8 @@
   "paywall.securePayment": "Paiement sécurisé par Paddle. Voir nos",
   "paywall.refundTerms": "conditions de remboursement",
   "paywall.gateTitle": "{{feature}} — fonctionnalité premium",
-  "paywall.gateSubtitle": "Le calendrier est gratuit. Cette fonctionnalité est incluse dans l’abonnement Alternly."
+  "paywall.gateSubtitle": "Le calendrier est gratuit. Cette fonctionnalité est incluse dans l’abonnement Alternly.",
+  "paywall.featureExpenses": "Dépenses partagées",
+  "paywall.featureWall": "Mur de communication",
+  "paywall.notConfigured": "Le paiement n'est pas encore configuré. Réessayez plus tard."
 }

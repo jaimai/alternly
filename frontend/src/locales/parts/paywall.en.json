@@ -19,5 +19,8 @@
   "paywall.securePayment": "Secure payment by Paddle. See our",
   "paywall.refundTerms": "refund terms",
   "paywall.gateTitle": "{{feature}} — premium feature",
-  "paywall.gateSubtitle": "The calendar is free. This feature is included in the Alternly subscription."
+  "paywall.gateSubtitle": "The calendar is free. This feature is included in the Alternly subscription.",
+  "paywall.featureExpenses": "Shared expenses",
+  "paywall.featureWall": "Message board",
+  "paywall.notConfigured": "Payments aren't set up yet. Please try again later."
 }

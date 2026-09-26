@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { todayIso } from '../dates'
 import { isSolo } from '../members'
 import type { CustodyRule, Member, Pattern, VacationRule } from '../types'
 
@@ -37,7 +38,7 @@ interface Props {
 export default function RuleForm({ members, myId, initialCustody, initialVacation, submitLabel, busy, onSubmit }: Props) {
   const { t } = useTranslation()
   const [pattern, setPattern] = useState<Pattern>(initialCustody?.pattern ?? 'alternate_weeks')
-  const [startDate, setStartDate] = useState(initialCustody?.start_date ?? new Date().toISOString().slice(0, 10))
+  const [startDate, setStartDate] = useState(initialCustody?.start_date ?? todayIso())
   const [referenceParent, setReferenceParent] = useState<number>(initialCustody?.reference_parent_id ?? myId)
   const [handoverDay, setHandoverDay] = useState<number>(initialCustody?.handover_day ?? 0)
   const [handoverTime, setHandoverTime] = useState(initialCustody?.handover_time ?? '18:00')

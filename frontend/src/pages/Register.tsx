@@ -4,20 +4,36 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { api, setToken } from '../api'
 import { useAuth } from '../auth'
+import { DEFAULT_PARENT_COLOR } from '../colors'
+import ColorPicker from '../components/ColorPicker'
+import PasswordField from '../components/PasswordField'
+import { passwordProblem } from '../password'
 
 export default function RegisterPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [displayName, setDisplayName] = useState('')
-  const [color, setColor] = useState('#3b6ea5')
+  const [color, setColor] = useState(DEFAULT_PARENT_COLOR)
+  const [accepted, setAccepted] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const { setUser } = useAuth()
   const navigate = useNavigate()
   const { t, i18n } = useTranslation()
+  // Pages légales servies par le backend sur le même domaine (proxy Vercel).
+  const legal = (page: 'terms' | 'privacy') => (i18n.language.startsWith('en') ? `/en/${page}` : `/${page}`)
 
   async function submit(e: FormEvent) {
     e.preventDefault()
+    const problem = passwordProblem(password)
+    if (problem) {
+      setError(t(problem))
+      return
+    }
+    if (!accepted) {
+      setError(t('auth.consentRequired'))
+      return
+    }
     setBusy(true)
     setError(null)
     try {
@@ -49,24 +65,32 @@ export default function RegisterPage() {
         <input
           id="email"
           type="email"
+          autoComplete="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
           pattern="[^@\s]+@[^@\s]+\.[^@\s]+"
           title={t('auth.emailPatternTitle')}
         />
-        <label htmlFor="password">{t('auth.passwordLabelMin')}</label>
-        <input
+        <PasswordField
           id="password"
-          type="password"
+          label={t('auth.passwordLabelMin')}
           value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          minLength={8}
-          maxLength={72}
+          onChange={setPassword}
+          autoComplete="new-password"
         />
-        <label htmlFor="color">{t('auth.colorLabel')}</label>
-        <input id="color" type="color" value={color} onChange={(e) => setColor(e.target.value)} style={{ height: 42, padding: 4 }} />
+        <label id="color-label">{t('auth.colorLabel')}</label>
+        <ColorPicker value={color} onChange={setColor} labelledBy="color-label" />
+        <label className="consent">
+          <input type="checkbox" checked={accepted} onChange={(e) => setAccepted(e.target.checked)} required />
+          <span>
+            {t('auth.consentLead')}{' '}
+            <a href={legal('terms')} target="_blank" rel="noreferrer">{t('auth.consentTerms')}</a>{' '}
+            {t('auth.consentAnd')}{' '}
+            <a href={legal('privacy')} target="_blank" rel="noreferrer">{t('auth.consentPrivacy')}</a>
+            {t('auth.consentTail')}
+          </span>
+        </label>
         {error && <div className="error">{error}</div>}
         <p style={{ marginTop: 16 }}>
           <button type="submit" disabled={busy} style={{ width: '100%' }}>

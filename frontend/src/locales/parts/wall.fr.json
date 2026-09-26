@@ -38,5 +38,8 @@
   "wall.reply": "Répondre",
   "wall.replyAuthor": "{{name}} :",
   "wall.replyPlaceholder": "Répondre…",
-  "wall.send": "Envoyer"
+  "wall.send": "Envoyer",
+  "wall.deleteTitle": "Supprimer ce message ?",
+  "wall.deleteBody": "Il disparaîtra du mur pour les deux parents, avec ses réponses.",
+  "wall.deleteReplyTitle": "Supprimer cette réponse ?"
 }

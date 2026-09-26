@@ -2,14 +2,17 @@ import type {
   Balance,
   BillingStatus,
   CalendarResponse,
+  ChangeRequest,
   Child,
   CustodyRule,
   Expense,
   Country,
+  HistoryEntry,
   Household,
   Locale,
   Member,
   Notification,
+  PendingChange,
   SchoolVacation,
   SubscriptionInfo,
   ScheduleException,
@@ -73,7 +76,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   return resp.json()
 }
 
-interface TokenResponse {
+export interface TokenResponse {
   access_token: string
   user: User
 }
@@ -84,6 +87,19 @@ export const api = {
   login: (data: { email: string; password: string }) =>
     request<TokenResponse>('/auth/login', { method: 'POST', body: JSON.stringify(data) }),
   me: () => request<User>('/auth/me'),
+  forgotPassword: (email: string) =>
+    request<{ ok: boolean }>('/auth/password/forgot', { method: 'POST', body: JSON.stringify({ email }) }),
+  resetPassword: (token: string, password: string) =>
+    request<TokenResponse>('/auth/password/reset', { method: 'POST', body: JSON.stringify({ token, password }) }),
+  changePassword: (current_password: string, new_password: string) =>
+    request<TokenResponse>('/auth/password/change', {
+      method: 'POST',
+      body: JSON.stringify({ current_password, new_password }),
+    }),
+  /** Révoque toutes les sessions (y compris celle-ci). */
+  logoutAll: () => request<void>('/auth/logout-all', { method: 'POST' }),
+  /** Export RGPD : profil, foyer, calendrier, dépenses, mur (JSON). */
+  exportData: () => request<unknown>('/auth/me/export'),
   updateMe: (data: { display_name?: string; color?: string; email_opt_in?: boolean; onboarding_seen?: boolean; locale?: Locale }) =>
     request<User>('/auth/me', { method: 'PATCH', body: JSON.stringify(data) }),
   deleteAccount: () => request<void>('/auth/me', { method: 'DELETE' }),
@@ -112,15 +128,28 @@ export const api = {
 
   addChild: (householdId: number, data: { first_name: string; birthdate?: string | null }) =>
     request<Child>(`/households/${householdId}/children`, { method: 'POST', body: JSON.stringify(data) }),
+  // Avec deux parents réels, les changements sensibles renvoient 202
+  // {"change_request": …} (en attente d'accord) : tester avec isPendingChange().
   deleteChild: (householdId: number, childId: number) =>
-    request<void>(`/households/${householdId}/children/${childId}`, { method: 'DELETE' }),
+    request<PendingChange | undefined>(`/households/${householdId}/children/${childId}`, { method: 'DELETE' }),
 
   setCustodyRule: (householdId: number, data: Omit<CustodyRule, 'custom_weeks'> & { custom_weeks?: string[] | null }) =>
-    request<CustodyRule>(`/households/${householdId}/custody-rule`, { method: 'PUT', body: JSON.stringify(data) }),
+    request<CustodyRule | PendingChange>(`/households/${householdId}/custody-rule`, { method: 'PUT', body: JSON.stringify(data) }),
   setVacationRule: (householdId: number, data: VacationRule) =>
-    request<VacationRule>(`/households/${householdId}/vacation-rule`, { method: 'PUT', body: JSON.stringify(data) }),
+    request<VacationRule | PendingChange>(`/households/${householdId}/vacation-rule`, { method: 'PUT', body: JSON.stringify(data) }),
   setSpecialDayRules: (householdId: number, data: SpecialDayRule[]) =>
-    request<SpecialDayRule[]>(`/households/${householdId}/special-day-rules`, { method: 'PUT', body: JSON.stringify(data) }),
+    request<SpecialDayRule[] | PendingChange>(`/households/${householdId}/special-day-rules`, { method: 'PUT', body: JSON.stringify(data) }),
+
+  listChangeRequests: (householdId: number, status: 'pending' | 'all' = 'pending') =>
+    request<ChangeRequest[]>(`/households/${householdId}/change-requests?status=${status}`),
+  acceptChange: (householdId: number, id: number) =>
+    request<ChangeRequest>(`/households/${householdId}/change-requests/${id}/accept`, { method: 'POST' }),
+  refuseChange: (householdId: number, id: number) =>
+    request<ChangeRequest>(`/households/${householdId}/change-requests/${id}/refuse`, { method: 'POST' }),
+  withdrawChange: (householdId: number, id: number) =>
+    request<ChangeRequest>(`/households/${householdId}/change-requests/${id}/withdraw`, { method: 'POST' }),
+  history: (householdId: number, beforeId?: number) =>
+    request<HistoryEntry[]>(`/households/${householdId}/history?limit=50${beforeId ? `&before_id=${beforeId}` : ''}`),
 
   calendar: (householdId: number, start: string, end: string) =>
     request<CalendarResponse>(`/households/${householdId}/calendar?start=${start}&end=${end}`),
@@ -146,7 +175,7 @@ export const api = {
   withdrawExchange: (householdId: number, id: number) =>
     request<ScheduleException>(`/households/${householdId}/exceptions/${id}/withdraw`, { method: 'POST' }),
   deleteException: (householdId: number, id: number) =>
-    request<void>(`/households/${householdId}/exceptions/${id}`, { method: 'DELETE' }),
+    request<PendingChange | undefined>(`/households/${householdId}/exceptions/${id}`, { method: 'DELETE' }),
 
   listExpenses: (householdId: number) =>
     request<Expense[]>(`/households/${householdId}/expenses`),
@@ -204,4 +233,9 @@ export const api = {
   notifications: () => request<Notification[]>('/notifications'),
   markRead: (ids: number[]) => request<{ updated: number }>('/notifications/read', { method: 'POST', body: JSON.stringify({ ids }) }),
   regenerateIcal: () => request<{ ical_token: string }>('/ical/regenerate', { method: 'POST' }),
+}
+
+/** Vrai si la réponse est un changement en attente d'accord (HTTP 202). */
+export function isPendingChange(x: unknown): x is PendingChange {
+  return typeof x === 'object' && x !== null && 'change_request' in x
 }

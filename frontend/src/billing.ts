@@ -1,4 +1,5 @@
 import { initializePaddle, type Paddle } from '@paddle/paddle-js'
+import i18n from './i18n'
 import type { User } from './types'
 
 const TOKEN = import.meta.env.VITE_PADDLE_CLIENT_TOKEN as string | undefined
@@ -29,7 +30,7 @@ function getPaddle(onComplete: () => void): Promise<Paddle | undefined> {
 export async function openCheckout(user: User, onComplete: () => void, plan: Plan = 'annual') {
   const priceId = plan === 'monthly' ? PRICE_MONTHLY ?? PRICE_ANNUAL : PRICE_ANNUAL
   if (!paddleConfigured || !priceId) {
-    alert("Le paiement n'est pas encore configuré. Réessayez plus tard.")
+    alert(i18n.t('paywall.notConfigured'))
     return
   }
   const paddle = await getPaddle(onComplete)
@@ -37,6 +38,6 @@ export async function openCheckout(user: User, onComplete: () => void, plan: Pla
     items: [{ priceId, quantity: 1 }],
     customer: { email: user.email },
     customData: { user_id: String(user.id) },
-    settings: { locale: 'fr', displayMode: 'overlay' },
+    settings: { locale: i18n.language.startsWith('en') ? 'en' : 'fr', displayMode: 'overlay' },
   })
 }

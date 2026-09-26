@@ -1,5 +1,22 @@
 {
+  "$schema": "https://openapi.vercel.sh/vercel.json",
   "routes": [
+    {
+      "src": "/(.*)",
+      "headers": {
+        "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+        "X-Content-Type-Options": "nosniff",
+        "X-Frame-Options": "DENY",
+        "Referrer-Policy": "strict-origin-when-cross-origin",
+        "Permissions-Policy": "camera=(), microphone=(), geolocation=()"
+      }, "continue": true
+    },
+    {
+      "src": "/assets/(.*)",
+      "headers": {
+        "Cache-Control": "public, max-age=31536000, immutable"
+      }, "continue": true
+    },
     { "src": "/", "dest": "https://web-production-d1aa3.up.railway.app/" },
     { "src": "/en", "dest": "https://web-production-d1aa3.up.railway.app/en" },
     { "src": "/blog", "dest": "https://web-production-d1aa3.up.railway.app/blog" },
@@ -14,6 +31,11 @@
     { "src": "/static/(.*)", "dest": "https://web-production-d1aa3.up.railway.app/static/$1" },
     { "src": "/ical/(.*)", "dest": "https://web-production-d1aa3.up.railway.app/api/ical/$1" },
     { "handle": "filesystem" },
-    { "src": "/(.*)", "dest": "/index.html" }
+    {
+      "src": "/(.*)",
+      "headers": {
+        "Content-Security-Policy": "default-src 'self'; script-src 'self' https://cdn.paddle.com https://*.paddle.com; style-src 'self' 'unsafe-inline' https://cdn.paddle.com; font-src 'self' data:; img-src 'self' data: https://*.paddle.com; connect-src 'self' https:; frame-src https://*.paddle.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'"
+      }, "dest": "/index.html"
+    }
   ]
 }
