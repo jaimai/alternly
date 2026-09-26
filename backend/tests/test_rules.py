@@ -14,6 +14,15 @@ def setup_family(client, auth_headers):
     return headers1, user1, headers2, user2, h
 
 
+def accept_pending(client, headers, hid, resp):
+    """Réponse 202 (demande de changement) → acceptée par l'autre parent."""
+    assert resp.status_code == 202, resp.text
+    rid = resp.json()["change_request"]["id"]
+    ok = client.post(f"/api/households/{hid}/change-requests/{rid}/accept", headers=headers)
+    assert ok.status_code == 200, ok.text
+    return ok.json()
+
+
 def premium_family(client, auth_headers, db_session):
     """Comme setup_family mais les deux parents sont abonnés (fonctions premium)."""
     from app.models import User
@@ -28,7 +37,7 @@ def premium_family(client, auth_headers, db_session):
 
 class TestCustodyRule:
     def test_upsert(self, client, auth_headers):
-        headers1, user1, _, _, h = setup_family(client, auth_headers)
+        headers1, user1, headers2, _, h = setup_family(client, auth_headers)
         resp = client.put(
             f"/api/households/{h['id']}/custody-rule",
             json={"pattern": "alternate_weeks", "start_date": "2026-01-05", "reference_parent_id": user1["id"]},
@@ -42,7 +51,10 @@ class TestCustodyRule:
             json={"pattern": "two_two_three", "start_date": "2026-01-05", "reference_parent_id": user1["id"]},
             headers=headers1,
         )
-        assert resp2.json()["pattern"] == "two_two_three"
+        # deux parents : la modification attend l'accord de l'autre
+        accept_pending(client, headers2, h["id"], resp2)
+        rule = client.get("/api/households/mine", headers=headers1).json()["custody_rule"]
+        assert rule["pattern"] == "two_two_three"
 
     def test_invalid_pattern(self, client, auth_headers):
         headers1, user1, _, _, h = setup_family(client, auth_headers)
@@ -137,14 +149,15 @@ class TestExceptions:
 
 class TestSpecialDayAlternate:
     def test_alternate_mode_persists_parent(self, client, auth_headers):
-        headers1, user1, _, user2, h = setup_family(client, auth_headers)
+        headers1, user1, headers2, user2, h = setup_family(client, auth_headers)
         resp = client.put(
             f"/api/households/{h['id']}/special-day-rules",
             json=[{"kind": "christmas_day", "parent_mode": "alternate", "parent_id": user1["id"], "enabled": True}],
             headers=headers1,
         )
-        assert resp.status_code == 200, resp.text
-        rule = next(r for r in resp.json() if r["kind"] == "christmas_day")
+        accept_pending(client, headers2, h["id"], resp)
+        rules = client.get("/api/households/mine", headers=headers1).json()["special_day_rules"]
+        rule = next(r for r in rules if r["kind"] == "christmas_day")
         assert rule["parent_mode"] == "alternate"
         assert rule["parent_id"] == user1["id"]
 
@@ -158,17 +171,18 @@ class TestSpecialDayAlternate:
         assert resp.status_code == 422
 
     def test_alternate_reflected_in_calendar(self, client, auth_headers):
-        headers1, user1, _, user2, h = setup_family(client, auth_headers)
+        headers1, user1, headers2, user2, h = setup_family(client, auth_headers)
         client.put(
             f"/api/households/{h['id']}/custody-rule",
             json={"pattern": "alternate_weeks", "start_date": "2026-01-05", "reference_parent_id": user1["id"]},
             headers=headers1,
         )
-        client.put(
+        resp = client.put(
             f"/api/households/{h['id']}/special-day-rules",
             json=[{"kind": "christmas_day", "parent_mode": "alternate", "parent_id": user1["id"], "enabled": True}],
             headers=headers1,
         )
+        accept_pending(client, headers2, h["id"], resp)
         # 2026 (pair) → user1 ; 2027 (impair) → user2
         cal26 = client.get(f"/api/households/{h['id']}/calendar?start=2026-12-25&end=2026-12-25", headers=headers1).json()
         cal27 = client.get(f"/api/households/{h['id']}/calendar?start=2027-12-25&end=2027-12-25", headers=headers1).json()

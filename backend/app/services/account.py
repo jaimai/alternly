@@ -11,8 +11,11 @@ from sqlalchemy.orm import Session
 
 from ..deps import household_members, notify
 from . import audit
+from .change_requests import summary as change_request_summary
+from .change_requests import withdraw_pending_for_leaving
 from ..models import (
     AuditLog,
+    ChangeRequest,
     Child,
     CustodyRule,
     Expense,
@@ -102,6 +105,10 @@ def export_user_data(db: Session, user: User) -> dict:
         "expenses": _rows(db, Expense, hid),
         "settlements": _rows(db, Settlement, hid),
         "wall_posts": posts,
+        "change_requests": [
+            {**_row(cr, {"household_id", "context"}), "summary": change_request_summary(db, cr, user.locale)}
+            for cr in db.scalars(select(ChangeRequest).where(ChangeRequest.household_id == hid).order_by(ChangeRequest.id))
+        ],
         "history": history_rows(db, hid, user.locale),
     }
     return data
@@ -127,6 +134,7 @@ def _delete_household(db: Session, household_id: int) -> None:
     member_ids = [m.user_id for m in household_members(db, household_id)]
 
     db.execute(delete(AuditLog).where(AuditLog.household_id == household_id))
+    db.execute(delete(ChangeRequest).where(ChangeRequest.household_id == household_id))
     post_ids = [p.id for p in db.scalars(select(WallPost).where(WallPost.household_id == household_id))]
     if post_ids:
         db.execute(delete(WallReply).where(WallReply.post_id.in_(post_ids)))
@@ -173,6 +181,7 @@ def delete_account(db: Session, user: User) -> None:
     if others_real:
         old_name = user.display_name
         _anonymize(db, user)
+        withdraw_pending_for_leaving(db, member.household_id)
         audit.record(db, member.household_id, user.id, "member.leave", "member", user.id)
         for m in others_real:
             notify(db, m.user_id, "parent_left", {"display_name": old_name})

@@ -7,6 +7,7 @@ from ..deps import get_membership
 from ..models import Child, HouseholdMember
 from ..schemas import ChildIn, ChildOut
 from ..services import audit
+from ..services import change_requests as cr_service
 from ..services import rules as rules_service
 
 router = APIRouter(prefix="/api/households/{household_id}/children", tags=["children"])
@@ -67,5 +68,11 @@ def delete_child(
     db: Session = Depends(get_db),
 ):
     child = _get_child(db, member, child_id)
+    if cr_service.needs_consent(db, member):
+        cr = cr_service.create_request(
+            db, member, "delete_child", {"child_id": child.id}, {"first_name": child.first_name}
+        )
+        db.commit()
+        return cr_service.pending_response(db, member, cr)
     rules_service.delete_child(db, child, member.user_id)
     db.commit()

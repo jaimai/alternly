@@ -9,6 +9,7 @@ from ..deps import get_membership, is_premium, notify, other_parent_id
 from ..models import HouseholdMember, ScheduleException, User, utcnow
 from ..ratelimit import DAY, rate_limit
 from ..services import audit
+from ..services import change_requests as cr_service
 from ..services import email as email_service
 from ..services import rules as rules_service
 from ..schemas import (
@@ -35,8 +36,13 @@ def upsert_custody_rule(
     hid = member.household_id
     new = rules_service.validate_custody(db, hid, data)
     rule = rules_service.get_custody(db, hid)
-    if rules_service.custody_snapshot(rule) == new:
+    old = rules_service.custody_snapshot(rule)
+    if old == new:
         return rule  # aucune modification
+    if rule is not None and cr_service.needs_consent(db, member):
+        cr = cr_service.create_request(db, member, "custody_rule", new, {"before": old, "after": new})
+        db.commit()
+        return cr_service.pending_response(db, member, cr)
     rule = rules_service.apply_custody(db, hid, new, member.user_id)
     notify(db, other_parent_id(db, hid, member.user_id), "rule_changed", {"what": "custody"})
     db.commit()
@@ -53,8 +59,13 @@ def upsert_vacation_rule(
     hid = member.household_id
     new = rules_service.validate_vacation(db, hid, data)
     rule = rules_service.get_vacation(db, hid)
-    if rules_service.vacation_snapshot(rule) == new:
+    old = rules_service.vacation_snapshot(rule)
+    if old == new:
         return rule
+    if rule is not None and cr_service.needs_consent(db, member):
+        cr = cr_service.create_request(db, member, "vacation_rule", new, {"before": old, "after": new})
+        db.commit()
+        return cr_service.pending_response(db, member, cr)
     rule = rules_service.apply_vacation(db, hid, new, member.user_id)
     notify(db, other_parent_id(db, hid, member.user_id), "rule_changed", {"what": "vacation"})
     db.commit()
@@ -71,8 +82,15 @@ def upsert_special_day_rules(
     hid = member.household_id
     items = rules_service.validate_special(db, hid, data)
     rules = rules_service.get_special(db, hid)
-    if not rules_service.special_changed(rules_service.special_snapshot(rules), items):
+    current = rules_service.special_snapshot(rules)
+    if not rules_service.special_changed(current, items):
         return rules
+    if rules and cr_service.needs_consent(db, member):
+        cr = cr_service.create_request(
+            db, member, "special_day_rules", {"items": items}, {"before": current, "after": items}
+        )
+        db.commit()
+        return cr_service.pending_response(db, member, cr)
     rules_service.apply_special(db, hid, items, member.user_id)
     notify(db, other_parent_id(db, hid, member.user_id), "rule_changed", {"what": "special_days"})
     db.commit()
@@ -257,6 +275,17 @@ def delete_exception(
     db: Session = Depends(get_db),
 ):
     exc = _get_exchange(db, member, exception_id)
+    if exc.status == "pending" and member.user_id != exc.created_by:
+        # Une proposition en attente se refuse, elle ne se supprime pas.
+        raise HTTPException(status_code=403, detail="Seul le proposeur peut supprimer sa proposition")
+    if exc.status == "accepted" and cr_service.needs_consent(db, member):
+        # Annuler un échange convenu engage les deux parents.
+        cr = cr_service.create_request(
+            db, member, "cancel_exchange", {"exception_id": exc.id},
+            {"date_start": exc.date_start, "date_end": exc.date_end, "parent_id": exc.parent_id},
+        )
+        db.commit()
+        return cr_service.pending_response(db, member, cr)
     notify(
         db,
         other_parent_id(db, member.household_id, member.user_id),

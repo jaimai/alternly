@@ -411,6 +411,17 @@ class NotificationOut(ORMModel):
     created_at: datetime
 
 
+class ChangeRequestOut(BaseModel):
+    id: int
+    kind: str
+    summary: str
+    status: str
+    requested_by: int
+    created_at: datetime
+    resolved_by: int | None
+    resolved_at: datetime | None
+
+
 class HistoryEntryOut(BaseModel):
     id: int
     actor_id: int | None

@@ -273,6 +273,24 @@ class AuditLog(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
 
+class ChangeRequest(Base):
+    """Changement sensible soumis à l'accord de l'autre parent."""
+    __tablename__ = "change_requests"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    household_id: Mapped[int] = mapped_column(ForeignKey("households.id"), index=True)
+    requested_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    # custody_rule | vacation_rule | special_day_rules | delete_child | cancel_exchange
+    kind: Mapped[str] = mapped_column(String)
+    payload: Mapped[dict] = mapped_column(JSON, default=dict)  # ce qui sera appliqué
+    # De quoi rendre le résumé à la lecture, en fr/en (avant/après, prénom, dates…).
+    context: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    status: Mapped[str] = mapped_column(String, default="pending")  # pending | accepted | refused | withdrawn
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    resolved_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+
 class SchoolHolidayCache(Base):
     __tablename__ = "school_holiday_cache"
     __table_args__ = (UniqueConstraint("zone", "label", "school_year"),)
