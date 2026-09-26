@@ -7,6 +7,7 @@ import Icon from '../components/Icon'
 import type { IconName } from '../components/Icon'
 import Spinner from '../components/Spinner'
 import TopBar from '../components/TopBar'
+import { isoLocal, parseTimestamp, todayIso } from '../dates'
 import { useFormat } from '../format'
 import type { Household, WallKind, WallPost } from '../types'
 
@@ -23,10 +24,6 @@ const SEGMENTS: { value: Segment; labelKey: string }[] = [
   { value: 'infos', labelKey: 'wall.segInfos' },
   { value: 'all', labelKey: 'wall.segAll' },
 ]
-
-function todayIso(): string {
-  return new Date().toISOString().slice(0, 10)
-}
 
 export default function WallPage() {
   const { t } = useTranslation()
@@ -135,7 +132,7 @@ export default function WallPage() {
             </span>
           )}
           {p.assigned_to && <span className="hint">{t('wall.forWhom', { name: name(p.assigned_to) })}</span>}
-          <span className="hint" style={{ marginLeft: 'auto' }}>{name(p.author_id)} · {date(p.created_at.slice(0, 10))}</span>
+          <span className="hint" style={{ marginLeft: 'auto' }}>{name(p.author_id)} · {date(isoLocal(parseTimestamp(p.created_at)))}</span>
         </div>
         <p className="wall-body">{p.body}</p>
         <Replies post={p} householdId={household!.id} myId={user!.id} names={name} onChanged={load} />

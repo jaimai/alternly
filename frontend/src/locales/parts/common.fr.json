@@ -23,5 +23,8 @@
   "common.notifSettlementRecorded": "Remboursement enregistré ({{amount}})",
   "common.notifWallPostAdded": "Nouveau sur le mur : « {{body}} »",
   "common.notifWallReplyAdded": "Nouvelle réponse : « {{body}} »",
-  "common.notifWallTaskAssigned": "Une tâche vous a été assignée : « {{body}} »"
+  "common.notifWallTaskAssigned": "Une tâche vous a été assignée : « {{body}} »",
+  "common.relToday": "aujourd'hui",
+  "common.relTomorrow": "demain",
+  "common.relInDays": "dans {{count}} jours"
 }

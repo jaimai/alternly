@@ -5,6 +5,7 @@ import { api } from '../api'
 import { useAuth } from '../auth'
 import Spinner from '../components/Spinner'
 import TopBar from '../components/TopBar'
+import { todayIso } from '../dates'
 import { useFormat } from '../format'
 import type { Balance, Expense, ExpenseCategory, Household, Settlement } from '../types'
 
@@ -17,10 +18,6 @@ const CATEGORIES: { value: ExpenseCategory; labelKey: string }[] = [
   { value: 'autre', labelKey: 'expenses.categoryAutre' },
 ]
 const CAT_LABEL = Object.fromEntries(CATEGORIES.map((c) => [c.value, c.labelKey]))
-
-function todayIso(): string {
-  return new Date().toISOString().slice(0, 10)
-}
 
 export default function ExpensesPage() {
   const { t } = useTranslation()

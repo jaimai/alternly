@@ -23,5 +23,8 @@
   "common.notifSettlementRecorded": "Reimbursement recorded ({{amount}})",
   "common.notifWallPostAdded": "New on the wall: “{{body}}”",
   "common.notifWallReplyAdded": "New reply: “{{body}}”",
-  "common.notifWallTaskAssigned": "A task was assigned to you: “{{body}}”"
+  "common.notifWallTaskAssigned": "A task was assigned to you: “{{body}}”",
+  "common.relToday": "today",
+  "common.relTomorrow": "tomorrow",
+  "common.relInDays": "in {{count}} days"
 }

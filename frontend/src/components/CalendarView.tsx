@@ -8,17 +8,12 @@ import type { EventContentArg, EventInput } from '@fullcalendar/core'
 import Icon from './Icon'
 import type { IconName } from './Icon'
 import type { CalendarResponse, Member } from '../types'
+import { addDays, isoLocal } from '../dates'
 
 interface Props {
   data: CalendarResponse
   onDayClick: (date: string) => void
   onRangeChange: (start: string, end: string) => void
-}
-
-function addDays(iso: string, n: number): string {
-  const d = new Date(iso + 'T12:00:00')
-  d.setDate(d.getDate() + n)
-  return d.toISOString().slice(0, 10)
 }
 
 const SOURCE_ICONS: Record<string, IconName> = {
@@ -167,10 +162,9 @@ export default function CalendarView({ data, onDayClick, onRangeChange }: Props)
       eventContent={renderEvent}
       dateClick={(info) => onDayClick(info.dateStr)}
       datesSet={(info) => {
-        const start = info.start.toISOString().slice(0, 10)
-        const endExclusive = new Date(info.end)
-        endExclusive.setDate(endExclusive.getDate() - 1)
-        onRangeChange(start, endExclusive.toISOString().slice(0, 10))
+        const endInclusive = new Date(info.end)
+        endInclusive.setDate(endInclusive.getDate() - 1)
+        onRangeChange(isoLocal(info.start), isoLocal(endInclusive))
       }}
       height="auto"
       firstDay={1}

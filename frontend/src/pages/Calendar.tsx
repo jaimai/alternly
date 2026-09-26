@@ -8,14 +8,9 @@ import ExceptionDialog from '../components/ExceptionDialog'
 import Icon from '../components/Icon'
 import TopBar from '../components/TopBar'
 import WelcomeTour from '../components/WelcomeTour'
+import { todayIso } from '../dates'
 import { isSolo } from '../members'
 import type { CalendarResponse, ScheduleException } from '../types'
-
-function todayIso(offset = 0): string {
-  const d = new Date()
-  d.setDate(d.getDate() + offset)
-  return d.toISOString().slice(0, 10)
-}
 
 export default function CalendarPage() {
   const { t } = useTranslation()

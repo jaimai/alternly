@@ -5,17 +5,15 @@ import { useFormat } from '../format'
 import type { Notification } from '../types'
 
 export default function NotificationBell() {
-  const { t, i18n } = useTranslation()
-  const { money, date } = useFormat()
+  const { t } = useTranslation()
+  const { money, range: fmtRange, timestamp } = useFormat()
   const [items, setItems] = useState<Notification[]>([])
   const [open, setOpen] = useState(false)
   const timer = useRef<number | undefined>(undefined)
   const wrapRef = useRef<HTMLDivElement | null>(null)
 
   function range(p: Record<string, string>): string {
-    return p.date_start === p.date_end
-      ? date(p.date_start)
-      : `${date(p.date_start)} → ${date(p.date_end)}`
+    return p.date_start ? fmtRange(p.date_start, p.date_end) : ''
   }
 
   function message(n: Notification): string {
@@ -114,7 +112,7 @@ export default function NotificationBell() {
             <div key={n.id} className={`notif-item ${n.read_at === null ? 'unread' : ''}`}>
               {message(n)}
               <div className="date">
-                {new Date(n.created_at + 'Z').toLocaleString(i18n.language)}
+                {timestamp(n.created_at)}
               </div>
             </div>
           ))}
