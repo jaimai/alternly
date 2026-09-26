@@ -43,5 +43,12 @@
   "common.colorPlum": "Plum",
   "common.colorLagoon": "Lagoon",
   "common.colorTakenAria": "{{color}} (the other parent's color)",
-  "common.colorTakenTitle": "{{color}} — already used by the other parent"
+  "common.colorTakenTitle": "{{color}} — already used by the other parent",
+  "common.notifExpenseUpdated": "The expense “{{label}}” was edited ({{amount}})",
+  "common.notifExpenseSettled": "“{{label}}” was marked as reimbursed",
+  "common.notifParentLeft": "{{name}} deleted their account",
+  "common.notifChangeRequested": "Change request awaiting your approval: {{summary}}",
+  "common.notifChangeAccepted": "Your request was accepted: {{summary}}",
+  "common.notifChangeRefused": "Your request was declined: {{summary}}",
+  "common.notifPaymentFailed": "Your subscription payment failed: please update your payment method"
 }

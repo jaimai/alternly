@@ -629,7 +629,21 @@ label {
   }
 }
 
+.notif-head {
+  padding: 12px 14px 8px;
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  border-bottom: 1px solid var(--line);
+}
+
 .notif-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  color: var(--ink);
+  font-weight: 400;
+  border-radius: 0;
   padding: 10px 14px;
   border-bottom: 1px solid var(--line);
   font-size: 0.9rem;
@@ -639,11 +653,20 @@ label {
   border-bottom: none;
 }
 
+.notif-item:active { transform: none; }
+
+@media (hover: hover) and (pointer: fine) {
+  button.notif-item:hover { background: var(--paper); }
+  button.notif-item.unread:hover { background: var(--sage); }
+}
+
 .notif-item.unread {
   background: var(--pine-soft);
 }
 
 .notif-item .date {
+  display: block;
+  margin-top: 2px;
   font-size: 0.75rem;
   color: var(--ink-soft);
 }
