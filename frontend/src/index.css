@@ -1531,6 +1531,77 @@ button.with-icon {
   .list-row { padding: 12px; gap: 10px; }
 }
 
+/* ---------- Comptes / authentification ---------- */
+.password-field {
+  position: relative;
+}
+
+.password-field input {
+  padding-right: 84px;
+}
+
+.password-field button.link {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.forgot-link {
+  text-align: right;
+  margin: 6px 0 0;
+  font-size: 0.85rem;
+}
+
+label.consent {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  color: var(--ink);
+  font-weight: 400;
+  margin-top: 16px;
+}
+
+label.consent input {
+  width: auto;
+  margin-top: 3px;
+}
+
+.settings-list {
+  display: grid;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  margin: 12px 0 4px;
+}
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+  background: var(--surface);
+  color: var(--ink);
+  font-weight: 400;
+  border-radius: 0;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--line);
+}
+
+.settings-row:last-child { border-bottom: none; }
+.settings-row:active { transform: none; }
+.settings-row > span:first-child { display: grid; gap: 2px; }
+.settings-row .hint { font-size: 0.82rem; }
+.settings-row.danger-row strong { color: var(--danger); }
+
+@media (hover: hover) and (pointer: fine) {
+  .settings-row:hover { background: var(--paper); }
+}
+
+.settings-row svg { flex: 0 0 auto; color: var(--ink-soft); }
+
 /* ---------- Barre d'onglets mobile + mises en page étroites ---------- */
 .tabbar {
   display: none;

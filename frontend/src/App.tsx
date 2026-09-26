@@ -10,11 +10,13 @@ import Spinner from './components/Spinner'
 // les pages premium ni les réglages.
 const CalendarPage = lazy(() => import('./pages/Calendar'))
 const ExpensesPage = lazy(() => import('./pages/Expenses'))
+const ForgotPasswordPage = lazy(() => import('./pages/ForgotPassword'))
 const JoinPage = lazy(() => import('./pages/Join'))
 const LoginPage = lazy(() => import('./pages/Login'))
 const NotFoundPage = lazy(() => import('./pages/NotFound'))
 const OnboardingPage = lazy(() => import('./pages/Onboarding'))
 const RegisterPage = lazy(() => import('./pages/Register'))
+const ResetPasswordPage = lazy(() => import('./pages/ResetPassword'))
 const SettingsPage = lazy(() => import('./pages/Settings'))
 const WallPage = lazy(() => import('./pages/Wall'))
 
@@ -27,6 +29,8 @@ export default function App() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/join/:token" element={<JoinPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route
         path="/onboarding"
         element={

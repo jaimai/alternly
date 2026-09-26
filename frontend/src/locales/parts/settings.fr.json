@@ -47,5 +47,17 @@
   "settings.removeChildAria": "Retirer {{name}}",
   "settings.removeChildTitle": "Retirer {{name}} du foyer ?",
   "settings.removeChildBody": "Son prénom disparaît du foyer pour les deux parents. Vous pourrez l'ajouter de nouveau plus tard.",
-  "settings.removeBreakTitle": "Supprimer « {{name}} » ?"
+  "settings.removeBreakTitle": "Supprimer « {{name}} » ?",
+  "settings.changePassword": "Changer mon mot de passe",
+  "settings.changePasswordHint": "Vos autres appareils seront déconnectés.",
+  "settings.currentPassword": "Mot de passe actuel",
+  "settings.passwordChanged": "Mot de passe modifié ✓",
+  "settings.exportData": "Exporter mes données",
+  "settings.exportDataHint": "Un fichier JSON avec votre profil, le calendrier, les dépenses et le mur.",
+  "settings.exportDone": "Export téléchargé ✓",
+  "settings.logoutAll": "Me déconnecter de tous les appareils",
+  "settings.logoutAllHint": "Utile après avoir utilisé un téléphone ou un ordinateur partagé.",
+  "settings.logoutAllTitle": "Se déconnecter partout ?",
+  "settings.logoutAllBody": "Toutes vos sessions seront fermées, y compris celle-ci. Il faudra vous reconnecter.",
+  "settings.logoutAllConfirm": "Tout déconnecter"
 }

@@ -5,6 +5,7 @@ import { QRCodeSVG } from 'qrcode.react'
 import { api } from '../api'
 import { useAuth, usePremium } from '../auth'
 import { openCheckout } from '../billing'
+import AccountCard from '../components/AccountCard'
 import ColorPicker from '../components/ColorPicker'
 import Icon from '../components/Icon'
 import RuleForm from '../components/RuleForm'
@@ -29,7 +30,7 @@ const SPECIAL_LABEL_KEYS: Record<SpecialDayRule['kind'], string> = {
 
 export default function SettingsPage() {
   const { t, i18n } = useTranslation()
-  const { user, setUser, household, householdLoaded, refreshHousehold, refreshBilling, logout } = useAuth()
+  const { user, setUser, household, householdLoaded, refreshHousehold, refreshBilling } = useAuth()
   const premium = usePremium()
   const navigate = useNavigate()
   const [inviteUrl, setInviteUrl] = useState<string | null>(null)
@@ -397,11 +398,7 @@ export default function SettingsPage() {
           </label>
         </div>
 
-        <div className="card" id="account">
-          <h2>{t('settings.accountTitle')}</h2>
-          <p className="hint">{t('settings.signedInAs', { email: user.email })}</p>
-          <button className="secondary" onClick={logout}>{t('common.logout')}</button>
-        </div>
+        <AccountCard user={user} onMessage={flash} onError={fail} />
 
         <DangerZone />
       </div>

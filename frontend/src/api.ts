@@ -73,7 +73,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   return resp.json()
 }
 
-interface TokenResponse {
+export interface TokenResponse {
   access_token: string
   user: User
 }
@@ -84,6 +84,19 @@ export const api = {
   login: (data: { email: string; password: string }) =>
     request<TokenResponse>('/auth/login', { method: 'POST', body: JSON.stringify(data) }),
   me: () => request<User>('/auth/me'),
+  forgotPassword: (email: string) =>
+    request<{ ok: boolean }>('/auth/password/forgot', { method: 'POST', body: JSON.stringify({ email }) }),
+  resetPassword: (token: string, password: string) =>
+    request<TokenResponse>('/auth/password/reset', { method: 'POST', body: JSON.stringify({ token, password }) }),
+  changePassword: (current_password: string, new_password: string) =>
+    request<TokenResponse>('/auth/password/change', {
+      method: 'POST',
+      body: JSON.stringify({ current_password, new_password }),
+    }),
+  /** Révoque toutes les sessions (y compris celle-ci). */
+  logoutAll: () => request<void>('/auth/logout-all', { method: 'POST' }),
+  /** Export RGPD : profil, foyer, calendrier, dépenses, mur (JSON). */
+  exportData: () => request<unknown>('/auth/me/export'),
   updateMe: (data: { display_name?: string; color?: string; email_opt_in?: boolean; onboarding_seen?: boolean; locale?: Locale }) =>
     request<User>('/auth/me', { method: 'PATCH', body: JSON.stringify(data) }),
   deleteAccount: () => request<void>('/auth/me', { method: 'DELETE' }),
