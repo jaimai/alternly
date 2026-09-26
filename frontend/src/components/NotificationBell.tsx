@@ -1,9 +1,20 @@
 import { useEffect, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { api } from '../api'
+import { fmtRange, fmtTimestamp } from '../dates'
 import type { Notification } from '../types'
 
 function range(p: Record<string, string>): string {
-  return p.date_start === p.date_end ? p.date_start : `${p.date_start} → ${p.date_end}`
+  return p.date_start ? fmtRange(p.date_start, p.date_end ?? p.date_start) : ''
+}
+
+// Où mène un clic sur la notification.
+function target(type: string): string {
+  if (type.startsWith('expense_') || type.startsWith('settlement_')) return '/expenses'
+  if (type.startsWith('wall_')) return '/wall'
+  if (type === 'parent_joined' || type.startsWith('change_')) return '/settings'
+  if (type === 'payment_failed') return '/billing'
+  return '/'
 }
 
 const LABELS: Record<string, (p: Record<string, string>) => string> = {
@@ -14,6 +25,12 @@ const LABELS: Record<string, (p: Record<string, string>) => string> = {
   exception_deleted: (p) => `Échange de garde annulé (${range(p)})`,
   rule_changed: () => 'Les règles de garde ont été modifiées',
   parent_joined: (p) => `${p.display_name} a rejoint le foyer 🎉`,
+  parent_left: (p) => `${p.display_name} a supprimé son compte`,
+  change_requested: (p) => `Demande de changement à valider : ${p.summary}`,
+  change_accepted: (p) => `Votre demande a été acceptée ✅ : ${p.summary}`,
+  change_refused: (p) => `Votre demande a été refusée : ${p.summary}`,
+  expense_updated: (p) => `La dépense « ${p.label} » a été modifiée (${euros(p.amount_cents)})`,
+  payment_failed: () => "Le paiement de votre abonnement a échoué : mettez à jour votre moyen de paiement",
   expense_added: (p) => `Nouvelle dépense « ${p.label} » (${euros(p.amount_cents)})`,
   expense_disputed: (p) => `Votre dépense « ${p.label} » a été contestée`,
   expense_resolved: (p) => `La contestation sur « ${p.label} » a été levée`,
@@ -31,6 +48,8 @@ export default function NotificationBell() {
   const [items, setItems] = useState<Notification[]>([])
   const [open, setOpen] = useState(false)
   const timer = useRef<number | undefined>(undefined)
+  const root = useRef<HTMLDivElement>(null)
+  const navigate = useNavigate()
 
   async function refresh() {
     try {
@@ -46,6 +65,21 @@ export default function NotificationBell() {
     return () => window.clearInterval(timer.current)
   }, [])
 
+  // Fermeture : Échap ou clic en dehors du panneau.
+  useEffect(() => {
+    if (!open) return
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false)
+    const onClick = (e: MouseEvent) => {
+      if (root.current && !root.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('keydown', onKey)
+    document.addEventListener('mousedown', onClick)
+    return () => {
+      document.removeEventListener('keydown', onKey)
+      document.removeEventListener('mousedown', onClick)
+    }
+  }, [open])
+
   const unread = items.filter((n) => n.read_at === null)
 
   async function toggle() {
@@ -58,8 +92,8 @@ export default function NotificationBell() {
   }
 
   return (
-    <>
-      <button className="bell" onClick={toggle} title="Notifications" aria-label="Notifications">
+    <div ref={root} className="bell-wrap">
+      <button className="bell" onClick={toggle} title="Notifications" aria-label="Notifications" aria-expanded={open}>
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
           <path d="M13.73 21a2 2 0 0 1-3.46 0" />
@@ -67,18 +101,30 @@ export default function NotificationBell() {
         {unread.length > 0 && <span className="badge">{unread.length}</span>}
       </button>
       {open && (
-        <div className="notif-panel">
-          {items.length === 0 && <div className="notif-empty">Aucune notification</div>}
-          {items.map((n) => (
-            <div key={n.id} className={`notif-item ${n.read_at === null ? 'unread' : ''}`}>
-              {(LABELS[n.type] ?? (() => n.type))(n.payload)}
-              <div className="date">
-                {new Date(n.created_at + 'Z').toLocaleString('fr-FR')}
-              </div>
+        <div className="notif-panel" role="dialog" aria-label="Notifications">
+          <div className="notif-head">Notifications</div>
+          {items.length === 0 && (
+            <div className="notif-empty">
+              <span aria-hidden="true">🔔</span>
+              Rien de neuf. Les échanges, dépenses et messages de l'autre parent apparaîtront ici.
             </div>
+          )}
+          {items.map((n) => (
+            <button
+              key={n.id}
+              type="button"
+              className={`notif-item ${n.read_at === null ? 'unread' : ''}`}
+              onClick={() => {
+                setOpen(false)
+                navigate(target(n.type))
+              }}
+            >
+              {(LABELS[n.type] ?? (() => n.type))(n.payload)}
+              <span className="date">{fmtTimestamp(n.created_at)}</span>
+            </button>
           ))}
         </div>
       )}
-    </>
+    </div>
   )
 }

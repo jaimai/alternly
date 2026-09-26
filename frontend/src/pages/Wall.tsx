@@ -2,8 +2,10 @@ import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api, ApiError } from '../api'
 import { useAuth } from '../auth'
+import { useConfirm } from '../components/Modal'
 import TopBar from '../components/TopBar'
-import type { Household, WallKind, WallPost } from '../types'
+import { daysBetween, fmtDay, fmtTimestamp, todayIso } from '../dates'
+import type { Household, Member, WallKind, WallPost } from '../types'
 
 const KIND_META: Record<WallKind, { label: string; icon: string }> = {
   message: { label: 'Info', icon: '💬' },
@@ -17,6 +19,7 @@ export default function WallPage() {
   const [household, setHousehold] = useState<Household | null>(null)
   const [posts, setPosts] = useState<WallPost[]>([])
   const [error, setError] = useState<string | null>(null)
+  const [confirm, confirmNode] = useConfirm()
 
   useEffect(() => {
     api
@@ -33,73 +36,125 @@ export default function WallPage() {
 
   const load = useCallback(() => {
     if (!household) return
-    api.listWall(household.id).then(setPosts).catch(() => {})
+    api
+      .listWall(household.id)
+      .then(setPosts)
+      .catch((err) => setError(err instanceof Error ? err.message : 'Chargement impossible'))
   }, [household])
 
   useEffect(load, [load])
 
   if (!household || !user) return <div className="page-loading">Chargement…</div>
 
+  const member = (id: number | null) => household.members.find((m) => m.id === id)
   const name = (id: number | null) =>
-    id === null ? null : household.members.find((m) => m.id === id)?.display_name ?? '?'
+    id === null ? null : id === user.id ? 'vous' : member(id)?.display_name ?? '?'
+  const today = todayIso()
   const childName = (id: number | null) =>
     id === null ? null : household.children.find((c) => c.id === id)?.first_name ?? null
 
   return (
     <>
       <TopBar householdName={household.name} />
-      <div className="layout" style={{ maxWidth: 720 }}>
-        <h1>Mur de communication</h1>
+      <div className="layout narrow">
+        <h1>Mur</h1>
+        <p className="hint" style={{ marginTop: 0 }}>Infos, tâches et questions entre parents, au même endroit.</p>
         {error && <div className="error">{error}</div>}
 
-        <Composer household={household} onDone={load} />
+        <Composer household={household} myId={user.id} onDone={load} />
 
-        {posts.length === 0 && <p className="hint">Rien sur le mur pour l'instant.</p>}
+        {posts.length === 0 && (
+          <div className="empty-state">
+            <span className="empty-icon" aria-hidden="true">💬</span>
+            <h2>Le mur est vide</h2>
+            <p>
+              Réunion parents-profs, carnet à signer, doudou oublié… Publiez une info ou une tâche : l'autre parent est
+              prévenu, et les tâches datées apparaissent sur le calendrier.
+            </p>
+          </div>
+        )}
         {posts.map((p) => {
           const meta = KIND_META[p.kind]
           const done = p.completed_at !== null
+          const author = member(p.author_id)
+          const checkable = p.kind === 'task' || p.kind === 'question'
+          const overdue = !done && p.due_date !== null && p.due_date < today
           return (
-            <div key={p.id} className="card" style={{ padding: 14 }}>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
-                <span className="tag tag-accepted">{meta.icon} {meta.label}</span>
-                <span className="hint">{name(p.author_id)}</span>
-                {childName(p.child_id) && <span className="hint">· {childName(p.child_id)}</span>}
-                {p.due_date && <span className="hint">· 📅 {p.due_date}</span>}
-                {p.assigned_to && <span className="hint">· pour {name(p.assigned_to)}</span>}
-                <span className="hint" style={{ marginLeft: 'auto' }}>{p.created_at.slice(0, 10)}</span>
-              </div>
-              <p style={{ margin: '8px 0 0', textDecoration: done ? 'line-through' : 'none', opacity: done ? 0.6 : 1 }}>
-                {p.body}
-              </p>
-
-              <div className="row" style={{ gap: 8, marginTop: 10, alignItems: 'center' }}>
-                {(p.kind === 'task' || p.kind === 'question') &&
-                  (done ? (
-                    <button className="secondary" onClick={() => api.reopenPost(household.id, p.id).then(load)}>
-                      Rouvrir
-                    </button>
-                  ) : (
-                    <button onClick={() => api.completePost(household.id, p.id).then(load)}>
-                      {p.kind === 'task' ? 'Marquer fait' : 'Marquer résolu'}
-                    </button>
-                  ))}
-                {p.author_id === user.id && (
-                  <button className="danger-link" onClick={() => api.deletePost(household.id, p.id).then(load)}>
-                    Supprimer
-                  </button>
+            <article key={p.id} className={`post${done ? ' done' : ''}`}>
+              <Avatar member={author} />
+              <div className="post-body">
+                <div className="post-meta">
+                  <strong>{author ? (author.id === user.id ? 'Vous' : author.display_name) : '?'}</strong>
+                  <span className={`kind kind-${p.kind}`}>{meta.label}</span>
+                  <span className="hint">{fmtTimestamp(p.created_at)}</span>
+                </div>
+                <div className="post-content">
+                  {checkable && (
+                    <input
+                      type="checkbox"
+                      className="check"
+                      checked={done}
+                      aria-label={done ? 'Rouvrir' : p.kind === 'task' ? 'Marquer comme fait' : 'Marquer comme résolue'}
+                      onChange={() =>
+                        (done ? api.reopenPost(household.id, p.id) : api.completePost(household.id, p.id)).then(load)
+                      }
+                    />
+                  )}
+                  <p>{p.body}</p>
+                </div>
+                {(childName(p.child_id) || p.due_date || p.assigned_to) && (
+                  <div className="post-tags">
+                    {childName(p.child_id) && <span className="chip small">{childName(p.child_id)}</span>}
+                    {p.due_date && (
+                      <span className={`chip small${overdue ? ' warn' : ''}`}>
+                        📅 {fmtDay(p.due_date)}
+                        {!done && daysBetween(today, p.due_date) === 0 ? " · aujourd'hui" : ''}
+                        {overdue ? ' · en retard' : ''}
+                      </span>
+                    )}
+                    {p.assigned_to && <span className="chip small">pour {name(p.assigned_to)}</span>}
+                  </div>
                 )}
+                {p.author_id === user.id && (
+                  <div className="row-actions">
+                    <button
+                      className="link danger-text"
+                      onClick={async () => {
+                        if (
+                          await confirm({
+                            title: 'Supprimer ce message ?',
+                            body: 'Il disparaîtra aussi pour l’autre parent, avec ses réponses.',
+                            confirmLabel: 'Supprimer',
+                            danger: true,
+                          })
+                        )
+                          api.deletePost(household.id, p.id).then(load)
+                      }}
+                    >
+                      Supprimer
+                    </button>
+                  </div>
+                )}
+                <Replies post={p} householdId={household.id} myId={user.id} names={name} onChanged={load} />
               </div>
-
-              <Replies post={p} householdId={household.id} myId={user.id} names={name} onChanged={load} />
-            </div>
+            </article>
           )
         })}
       </div>
+      {confirmNode}
     </>
   )
 }
 
-function Composer({ household, onDone }: { household: Household; onDone: () => void }) {
+function Avatar({ member }: { member?: Member }) {
+  return (
+    <span className="avatar" style={{ background: member?.color ?? 'var(--line)' }} aria-hidden="true">
+      {member?.display_name.charAt(0).toUpperCase() ?? '?'}
+    </span>
+  )
+}
+
+function Composer({ household, myId, onDone }: { household: Household; myId: number; onDone: () => void }) {
   const [kind, setKind] = useState<WallKind>('message')
   const [body, setBody] = useState('')
   const [childId, setChildId] = useState<number | ''>('')
@@ -136,25 +191,29 @@ function Composer({ household, onDone }: { household: Household; onDone: () => v
   }
 
   return (
-    <div className="card">
-      <div className="row" style={{ marginBottom: 8 }}>
+    <div className="card composer">
+      <div className="segmented" role="radiogroup" aria-label="Type de message">
         {(['message', 'task', 'question'] as WallKind[]).map((k) => (
           <button
             key={k}
             type="button"
-            className={kind === k ? '' : 'secondary'}
+            role="radio"
+            aria-checked={kind === k}
+            className={kind === k ? 'on' : ''}
             onClick={() => setKind(k)}
           >
-            {KIND_META[k].icon} {KIND_META[k].label}
+            <span aria-hidden="true">{KIND_META[k].icon}</span> {KIND_META[k].label}
           </button>
         ))}
       </div>
+      <label htmlFor="wbody" className="sr-only">Message</label>
       <textarea
+        id="wbody"
         value={body}
         onChange={(e) => setBody(e.target.value)}
-        placeholder={kind === 'question' ? 'Ta question à l’autre parent…' : kind === 'task' ? 'Ce qu’il y a à faire…' : 'Une info à partager…'}
+        placeholder={kind === 'question' ? 'Votre question à l’autre parent…' : kind === 'task' ? 'Ce qu’il y a à faire…' : 'Une info à partager…'}
         rows={2}
-        style={{ width: '100%', font: 'inherit', padding: '9px 12px', border: '1px solid var(--line)', borderRadius: 'var(--radius-sm)', background: 'var(--surface)', color: 'var(--ink)', resize: 'vertical' }}
+        maxLength={2000}
       />
       <div className="row" style={{ marginTop: 8 }}>
         <div>
@@ -177,7 +236,7 @@ function Composer({ household, onDone }: { household: Household; onDone: () => v
               <select id="wass" value={assignedTo} onChange={(e) => setAssignedTo(e.target.value === '' ? '' : Number(e.target.value))}>
                 <option value="">L'un ou l'autre</option>
                 {household.members.map((m) => (
-                  <option key={m.id} value={m.id}>{m.display_name}</option>
+                  <option key={m.id} value={m.id}>{m.id === myId ? `${m.display_name} (vous)` : m.display_name}</option>
                 ))}
               </select>
             </div>
@@ -185,8 +244,8 @@ function Composer({ household, onDone }: { household: Household; onDone: () => v
         )}
       </div>
       {error && <div className="error">{error}</div>}
-      <div style={{ marginTop: 12 }}>
-        <button onClick={submit} disabled={busy}>Publier</button>
+      <div className="actions end" style={{ marginTop: 12 }}>
+        <button onClick={submit} disabled={busy || !body.trim()}>Publier</button>
       </div>
     </div>
   )
@@ -221,20 +280,27 @@ function Replies({
   }
 
   return (
-    <div style={{ marginTop: 10, borderTop: '1px solid var(--line)', paddingTop: 8 }}>
+    <div className="replies">
       {post.replies.map((r) => (
-        <div key={r.id} className="hint" style={{ display: 'flex', gap: 6, margin: '4px 0' }}>
-          <strong style={{ color: 'var(--ink)' }}>{names(r.author_id)} :</strong>
-          <span style={{ marginRight: 'auto' }}>{r.body}</span>
+        <div key={r.id} className="reply">
+          <strong>{r.author_id === myId ? 'Vous' : names(r.author_id)}</strong>
+          <span className="reply-text">{r.body}</span>
           {r.author_id === myId && (
-            <button className="danger-link" style={{ padding: '0 6px' }} onClick={() => api.deleteReply(householdId, r.id).then(onChanged)}>
+            <button
+              className="link danger-text"
+              aria-label="Supprimer ma réponse"
+              title="Supprimer ma réponse"
+              onClick={() => api.deleteReply(householdId, r.id).then(onChanged)}
+            >
               ✕
             </button>
           )}
         </div>
       ))}
-      <div className="row" style={{ marginTop: 6 }}>
+      <div className="reply-form">
         <input
+          aria-label="Répondre"
+          maxLength={2000}
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder="Répondre…"
@@ -245,9 +311,11 @@ function Replies({
             }
           }}
         />
-        <button className="secondary" onClick={send} disabled={busy || !text.trim()} style={{ flex: '0 0 auto' }}>
-          Répondre
-        </button>
+        {text.trim() && (
+          <button className="secondary" onClick={send} disabled={busy}>
+            Envoyer
+          </button>
+        )}
       </div>
     </div>
   )

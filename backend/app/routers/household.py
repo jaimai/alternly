@@ -6,6 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ..auth import get_current_user
+from ..config import settings
 from ..db import get_db
 from ..deps import get_membership, household_members, notify
 from ..models import (
@@ -19,6 +20,8 @@ from ..models import (
     VacationRule,
     utcnow,
 )
+from ..ratelimit import HOUR, rate_limit
+from ..services import audit
 from ..schemas import (
     ZONES,
     HouseholdCreate,
@@ -95,11 +98,21 @@ def update_household(
     db: Session = Depends(get_db),
 ):
     household = db.get(Household, member.household_id)
-    if data.name is not None:
+    if data.school_zone is not None and data.school_zone not in ZONES:
+        raise HTTPException(status_code=422, detail="Zone invalide (A, B ou C)")
+    if data.name is not None and data.name != household.name:
+        audit.record(
+            db, household.id, member.user_id, "household.rename", "household", household.id,
+            f"a renommé le foyer : {household.name} → {data.name}",
+            {"before": {"name": household.name}, "after": {"name": data.name}},
+        )
         household.name = data.name
-    if data.school_zone is not None:
-        if data.school_zone not in ZONES:
-            raise HTTPException(status_code=422, detail="Zone invalide (A, B ou C)")
+    if data.school_zone is not None and data.school_zone != household.school_zone:
+        audit.record(
+            db, household.id, member.user_id, "household.zone", "household", household.id,
+            f"a changé la zone scolaire : {household.school_zone} → {data.school_zone}",
+            {"before": {"school_zone": household.school_zone}, "after": {"school_zone": data.school_zone}},
+        )
         household.school_zone = data.school_zone
     db.commit()
     return _household_out(db, household, member.user_id)
@@ -118,7 +131,8 @@ def create_invitation(member: HouseholdMember = Depends(get_membership), db: Ses
     db.add(invitation)
     db.commit()
     return InvitationOut(
-        invite_url=f"/app/join/{invitation.token}",
+        # Lien absolu vers la SPA (Vercel) : route /join/:token.
+        invite_url=f"{settings.app_url.rstrip('/')}/join/{invitation.token}",
         token=invitation.token,
         expires_at=invitation.expires_at,
     )
@@ -133,7 +147,11 @@ def _valid_invitation(db: Session, token: str) -> Invitation:
     return invitation
 
 
-@router.get("/invitations/{token}", response_model=InvitationPreview)
+@router.get(
+    "/invitations/{token}",
+    response_model=InvitationPreview,
+    dependencies=[Depends(rate_limit("invitation", 30, HOUR))],
+)
 def preview_invitation(token: str, db: Session = Depends(get_db)):
     invitation = _valid_invitation(db, token)
     household = db.get(Household, invitation.household_id)
@@ -141,7 +159,11 @@ def preview_invitation(token: str, db: Session = Depends(get_db)):
     return InvitationPreview(household_name=household.name, invited_by_name=inviter.display_name)
 
 
-@router.post("/invitations/{token}/accept", response_model=HouseholdOut)
+@router.post(
+    "/invitations/{token}/accept",
+    response_model=HouseholdOut,
+    dependencies=[Depends(rate_limit("invitation", 30, HOUR))],
+)
 def accept_invitation(token: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     invitation = _valid_invitation(db, token)
     members = household_members(db, invitation.household_id)
@@ -153,6 +175,7 @@ def accept_invitation(token: str, user: User = Depends(get_current_user), db: Se
         raise HTTPException(status_code=409, detail="Vous appartenez déjà à un autre foyer")
     db.add(HouseholdMember(household_id=invitation.household_id, user_id=user.id, role="parent2"))
     invitation.used_at = utcnow()
+    audit.record(db, invitation.household_id, user.id, "member.join", "member", user.id, "a rejoint le foyer")
     notify(db, invitation.invited_by, "parent_joined", {"display_name": user.display_name})
     db.commit()
     return _household_out(db, db.get(Household, invitation.household_id), user.id)

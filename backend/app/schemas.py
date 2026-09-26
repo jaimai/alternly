@@ -1,6 +1,7 @@
 from datetime import date, datetime
+from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import AfterValidator, BaseModel, ConfigDict, EmailStr, Field
 
 # Alias : un champ nommé « date » masque le type `date` dans son annotation
 # quand il a une valeur par défaut (ex. `date: date | None = None`).
@@ -20,19 +21,33 @@ class ORMModel(BaseModel):
 
 
 COLOR_PATTERN = r"^#[0-9a-fA-F]{6}$"
+TIME_PATTERN = r"^([01]\d|2[0-3]):[0-5]\d$"
+# Bornes des saisies libres et montants (anti-abus / cohérence).
+NOTE_MAX = 2000
+MAX_AMOUNT_CENTS = 10_000_000  # 100 000 €
+
+
+def _password_bytes(v: str) -> str:
+    # bcrypt refuse au-delà de 72 octets (et non caractères : accents = 2 octets)
+    if len(v.encode()) > 72:
+        raise ValueError("Mot de passe trop long (72 octets maximum)")
+    return v
+
+
+# Nouveau mot de passe : mêmes règles à l'inscription, au reset et au changement.
+NewPassword = Annotated[str, Field(min_length=8, max_length=72), AfterValidator(_password_bytes)]
 
 
 class UserCreate(BaseModel):
     email: EmailStr
-    # bcrypt tronque à 72 octets : borne haute explicite
-    password: str = Field(min_length=8, max_length=72)
+    password: NewPassword
     display_name: str = Field(min_length=1, max_length=50)
     color: str = Field(default="#4f7cac", pattern=COLOR_PATTERN)
 
 
 class UserLogin(BaseModel):
     email: EmailStr
-    password: str
+    password: str = Field(max_length=200)
 
 
 class UserOut(ORMModel):
@@ -51,6 +66,24 @@ class UserUpdate(BaseModel):
     onboarding_seen: bool | None = None
 
 
+class ForgotPasswordIn(BaseModel):
+    email: EmailStr
+
+
+class ResetPasswordIn(BaseModel):
+    token: str = Field(min_length=1, max_length=200)
+    password: NewPassword
+
+
+class ChangePasswordIn(BaseModel):
+    current_password: str = Field(max_length=200)
+    new_password: NewPassword
+
+
+class DeleteAccountIn(BaseModel):
+    password: str = Field(max_length=200)
+
+
 class Token(BaseModel):
     access_token: str
     token_type: str = "bearer"
@@ -65,7 +98,7 @@ class MemberOut(ORMModel):
 
 
 class ChildIn(BaseModel):
-    first_name: str = Field(min_length=1)
+    first_name: str = Field(min_length=1, max_length=50)
     birthdate: date | None = None
 
 
@@ -80,8 +113,8 @@ class CustodyRuleIn(BaseModel):
     start_date: date
     reference_parent_id: int
     handover_day: int = Field(default=0, ge=0, le=6)
-    handover_time: str = "18:00"
-    custom_weeks: list[str] | None = None
+    handover_time: str = Field(default="18:00", pattern=TIME_PATTERN)
+    custom_weeks: list[str] | None = Field(default=None, max_length=14)
 
 
 class CustodyRuleOut(ORMModel):
@@ -110,6 +143,9 @@ class SpecialDayRuleIn(BaseModel):
     enabled: bool = True
 
 
+SpecialDayRulesIn = Annotated[list[SpecialDayRuleIn], Field(max_length=50)]
+
+
 class SpecialDayRuleOut(ORMModel):
     kind: str
     parent_mode: str
@@ -118,12 +154,12 @@ class SpecialDayRuleOut(ORMModel):
 
 
 class HouseholdCreate(BaseModel):
-    name: str = Field(min_length=1)
+    name: str = Field(min_length=1, max_length=80)
     school_zone: str = "A"
 
 
 class HouseholdUpdate(BaseModel):
-    name: str | None = None
+    name: str | None = Field(default=None, min_length=1, max_length=80)
     school_zone: str | None = None
 
 
@@ -143,12 +179,12 @@ class ExceptionIn(BaseModel):
     date_start: date
     date_end: date
     parent_id: int
-    note: str = ""
+    note: str = Field(default="", max_length=NOTE_MAX)
     replaces_id: int | None = None
 
 
 class ExchangeResponseIn(BaseModel):
-    response_note: str = ""
+    response_note: str = Field(default="", max_length=NOTE_MAX)
 
 
 class ExceptionOut(ORMModel):
@@ -224,7 +260,7 @@ class CalendarResponse(BaseModel):
 
 class ExpenseIn(BaseModel):
     label: str = Field(min_length=1, max_length=120)
-    amount_cents: int = Field(gt=0)
+    amount_cents: int = Field(ge=1, le=MAX_AMOUNT_CENTS)
     date: date
     category: str
     child_id: int | None = None
@@ -234,7 +270,7 @@ class ExpenseIn(BaseModel):
 
 class ExpensePatch(BaseModel):
     label: str | None = Field(default=None, min_length=1, max_length=120)
-    amount_cents: int | None = Field(default=None, gt=0)
+    amount_cents: int | None = Field(default=None, ge=1, le=MAX_AMOUNT_CENTS)
     date: DateType | None = None
     category: str | None = None
     child_id: int | None = None
@@ -257,15 +293,15 @@ class ExpenseOut(ORMModel):
 
 
 class DisputeIn(BaseModel):
-    dispute_note: str = ""
+    dispute_note: str = Field(default="", max_length=NOTE_MAX)
 
 
 class SettlementIn(BaseModel):
     from_user: int
     to_user: int
-    amount_cents: int = Field(gt=0)
+    amount_cents: int = Field(ge=1, le=MAX_AMOUNT_CENTS)
     date: date
-    note: str = ""
+    note: str = Field(default="", max_length=NOTE_MAX)
 
 
 class SettlementOut(ORMModel):
@@ -292,21 +328,21 @@ class BalanceOut(BaseModel):
 
 class WallPostIn(BaseModel):
     kind: str
-    body: str = Field(min_length=1, max_length=2000)
+    body: str = Field(min_length=1, max_length=NOTE_MAX)
     child_id: int | None = None
     due_date: DateType | None = None
     assigned_to: int | None = None
 
 
 class WallPostPatch(BaseModel):
-    body: str | None = Field(default=None, min_length=1, max_length=2000)
+    body: str | None = Field(default=None, min_length=1, max_length=NOTE_MAX)
     child_id: int | None = None
     due_date: DateType | None = None
     assigned_to: int | None = None
 
 
 class WallReplyIn(BaseModel):
-    body: str = Field(min_length=1, max_length=2000)
+    body: str = Field(min_length=1, max_length=NOTE_MAX)
 
 
 class WallReplyOut(ORMModel):
@@ -340,4 +376,39 @@ class NotificationOut(ORMModel):
 
 
 class ReadNotificationsIn(BaseModel):
-    ids: list[int]
+    ids: list[int] = Field(max_length=200)
+
+
+class BillingStatusOut(BaseModel):
+    enabled: bool
+    status: str  # trialing | active | past_due | canceled | expired
+    has_access: bool
+    read_only: bool
+    trial_ends_at: datetime | None
+    current_period_end: datetime | None
+    cancel_at_period_end: bool
+    days_left: int | None
+    price_label: str
+
+
+class BillingUrlOut(BaseModel):
+    url: str
+
+
+class ChangeRequestOut(ORMModel):
+    id: int
+    kind: str
+    summary: str
+    status: str
+    requested_by: int
+    created_at: datetime
+    resolved_by: int | None
+    resolved_at: datetime | None
+
+
+class HistoryEntryOut(ORMModel):
+    id: int
+    actor_id: int | None
+    action: str
+    summary: str
+    created_at: datetime

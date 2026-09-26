@@ -16,7 +16,7 @@ router = APIRouter(prefix="/api/ical", tags=["ical"])
 @router.get("/{ical_token}.ics")
 def ical_feed(ical_token: str, db: Session = Depends(get_db)):
     user = db.scalar(select(User).where(User.ical_token == ical_token))
-    if user is None:
+    if user is None or user.deleted_at is not None:
         raise HTTPException(status_code=404, detail="Flux introuvable")
     member = db.scalar(select(HouseholdMember).where(HouseholdMember.user_id == user.id))
     if member is None:
@@ -30,6 +30,14 @@ def ical_feed(ical_token: str, db: Session = Depends(get_db)):
         data = build_calendar(db, household, start, end)
     except NoCustodyRule:
         raise HTTPException(status_code=409, detail="Aucune règle de garde définie")
+    if not data.school_holidays_loaded:
+        # Sans vacances scolaires, le calendrier serait faux : les clients
+        # d'agenda réessaieront plutôt que d'écraser le bon flux.
+        raise HTTPException(
+            status_code=503,
+            detail="Données publiques indisponibles, réessayez plus tard",
+            headers={"Retry-After": "3600"},
+        )
 
     names = {}
     for m in db.scalars(select(HouseholdMember).where(HouseholdMember.household_id == household.id)):
@@ -40,7 +48,10 @@ def ical_feed(ical_token: str, db: Session = Depends(get_db)):
     return Response(
         content=ics,
         media_type="text/calendar; charset=utf-8",
-        headers={"Content-Disposition": 'attachment; filename="alternly.ics"'},
+        headers={
+            "Content-Disposition": 'attachment; filename="alternly.ics"',
+            "Cache-Control": "private, max-age=3600",
+        },
     )
 
 

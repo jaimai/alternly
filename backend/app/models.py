@@ -1,9 +1,10 @@
 import uuid
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 
 from sqlalchemy import JSON, Boolean, Date, DateTime, ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from .config import settings
 from .db import Base
 
 
@@ -14,6 +15,10 @@ def utcnow() -> datetime:
 
 def new_token() -> str:
     return uuid.uuid4().hex
+
+
+def trial_end_default() -> datetime:
+    return utcnow() + timedelta(days=settings.trial_days)
 
 
 class User(Base):
@@ -28,6 +33,18 @@ class User(Base):
     email_opt_in: Mapped[bool] = mapped_column(Boolean, default=True)
     onboarding_seen: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    # Incrémenté pour révoquer tous les jetons émis (claim JWT "tv").
+    token_version: Mapped[int] = mapped_column(Integer, default=0)
+    # Compte supprimé mais anonymisé (co-parent restant) : plus de connexion possible.
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    # Abonnement individuel (Stripe) : chaque parent a le sien.
+    trial_ends_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True, default=trial_end_default)
+    stripe_customer_id: Mapped[str | None] = mapped_column(String, nullable=True, index=True)
+    stripe_subscription_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    # Statut Stripe brut : trialing | active | past_due | canceled | incomplete | unpaid…
+    subscription_status: Mapped[str | None] = mapped_column(String, nullable=True)
+    current_period_end: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    cancel_at_period_end: Mapped[bool] = mapped_column(Boolean, default=False)
 
 
 class Household(Base):
@@ -48,7 +65,7 @@ class HouseholdMember(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     household_id: Mapped[int] = mapped_column(ForeignKey("households.id"))
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
     role: Mapped[str] = mapped_column(String)  # parent1 | parent2
 
     household: Mapped[Household] = relationship(back_populates="members")
@@ -59,7 +76,7 @@ class Child(Base):
     __tablename__ = "children"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    household_id: Mapped[int] = mapped_column(ForeignKey("households.id"))
+    household_id: Mapped[int] = mapped_column(ForeignKey("households.id"), index=True)
     first_name: Mapped[str] = mapped_column(String)
     birthdate: Mapped[date | None] = mapped_column(Date, nullable=True)
 
@@ -102,7 +119,7 @@ class ScheduleException(Base):
     __tablename__ = "schedule_exceptions"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    household_id: Mapped[int] = mapped_column(ForeignKey("households.id"))
+    household_id: Mapped[int] = mapped_column(ForeignKey("households.id"), index=True)
     date_start: Mapped[date] = mapped_column(Date)
     date_end: Mapped[date] = mapped_column(Date)
     parent_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
@@ -123,7 +140,7 @@ class Expense(Base):
     __tablename__ = "expenses"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    household_id: Mapped[int] = mapped_column(ForeignKey("households.id"))
+    household_id: Mapped[int] = mapped_column(ForeignKey("households.id"), index=True)
     label: Mapped[str] = mapped_column(String)
     amount_cents: Mapped[int] = mapped_column(Integer)  # > 0
     date: Mapped[date] = mapped_column(Date)
@@ -141,7 +158,7 @@ class Settlement(Base):
     __tablename__ = "settlements"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    household_id: Mapped[int] = mapped_column(ForeignKey("households.id"))
+    household_id: Mapped[int] = mapped_column(ForeignKey("households.id"), index=True)
     from_user: Mapped[int] = mapped_column(ForeignKey("users.id"))
     to_user: Mapped[int] = mapped_column(ForeignKey("users.id"))
     amount_cents: Mapped[int] = mapped_column(Integer)  # > 0
@@ -155,7 +172,7 @@ class WallPost(Base):
     __tablename__ = "wall_posts"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    household_id: Mapped[int] = mapped_column(ForeignKey("households.id"))
+    household_id: Mapped[int] = mapped_column(ForeignKey("households.id"), index=True)
     author_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
     kind: Mapped[str] = mapped_column(String)  # message | task | question
     body: Mapped[str] = mapped_column(String)
@@ -172,7 +189,7 @@ class WallReply(Base):
     __tablename__ = "wall_replies"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    post_id: Mapped[int] = mapped_column(ForeignKey("wall_posts.id"))
+    post_id: Mapped[int] = mapped_column(ForeignKey("wall_posts.id"), index=True)
     author_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
     body: Mapped[str] = mapped_column(String)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
@@ -182,7 +199,7 @@ class Invitation(Base):
     __tablename__ = "invitations"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    household_id: Mapped[int] = mapped_column(ForeignKey("households.id"))
+    household_id: Mapped[int] = mapped_column(ForeignKey("households.id"), index=True)
     token: Mapped[str] = mapped_column(String, unique=True)
     invited_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
     expires_at: Mapped[datetime] = mapped_column(DateTime)
@@ -193,10 +210,21 @@ class Notification(Base):
     __tablename__ = "notifications"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
     type: Mapped[str] = mapped_column(String)
     payload: Mapped[dict] = mapped_column(JSON, default=dict)
     read_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+
+class PasswordResetToken(Base):
+    __tablename__ = "password_reset_tokens"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    token_hash: Mapped[str] = mapped_column(String, unique=True)  # sha256 hex ; jamais le jeton brut
+    expires_at: Mapped[datetime] = mapped_column(DateTime)
+    used_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
 
@@ -218,3 +246,46 @@ class PublicHolidayCache(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     date: Mapped[date] = mapped_column(Date, unique=True)
     label: Mapped[str] = mapped_column(String)
+
+
+class StripeEvent(Base):
+    """Événements webhook Stripe déjà traités (idempotence : Stripe peut renvoyer)."""
+    __tablename__ = "stripe_events"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True)  # evt_…
+    type: Mapped[str] = mapped_column(String, default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+
+class AuditLog(Base):
+    """Journal des modifications du foyer, en ajout seul (aucune route de
+    modification ni de suppression ; seule la suppression du foyer l'efface)."""
+    __tablename__ = "audit_log"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    household_id: Mapped[int] = mapped_column(ForeignKey("households.id"), index=True)
+    actor_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    action: Mapped[str] = mapped_column(String)  # ex. custody_rule.update, expense.create
+    entity: Mapped[str] = mapped_column(String)  # ex. custody_rule, expense
+    entity_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    # Fragment de phrase au passé, sans le nom de l'auteur (« a ajouté la dépense … »).
+    summary: Mapped[str] = mapped_column(String)
+    data: Mapped[dict | None] = mapped_column(JSON, nullable=True)  # avant/après
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+
+class ChangeRequest(Base):
+    """Changement sensible soumis à l'accord de l'autre parent."""
+    __tablename__ = "change_requests"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    household_id: Mapped[int] = mapped_column(ForeignKey("households.id"), index=True)
+    requested_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    # custody_rule | vacation_rule | special_day_rules | delete_child | cancel_exchange
+    kind: Mapped[str] = mapped_column(String)
+    payload: Mapped[dict] = mapped_column(JSON, default=dict)
+    summary: Mapped[str] = mapped_column(String)
+    status: Mapped[str] = mapped_column(String, default="pending")  # pending | accepted | refused | withdrawn
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    resolved_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)

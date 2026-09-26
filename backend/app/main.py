@@ -1,15 +1,53 @@
 import logging
+import re
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
+from sqlalchemy import text
+from sqlalchemy.orm import Session
 
 from . import models  # noqa: F401 — enregistre les tables
 from .config import settings
-from .db import Base, engine
+from .db import Base, engine, get_db
 from .migrations import run_migrations
+
+# Segments d'URL portant un secret (flux iCal, invitation).
+_SECRET_PATH = re.compile(r"(/api/(?:ical|invitations)/)[^/?#]+")
+# En-têtes jamais transmis à Sentry (jetons, cookies, clé cron).
+_SENSITIVE_HEADERS = {"authorization", "cookie", "set-cookie", "x-cron-key", "stripe-signature"}
+
+
+def _scrub_event(event, hint):
+    """before_send Sentry : retire corps de requête, cookies et secrets (RGPD)."""
+    request = event.get("request")
+    if isinstance(request, dict):
+        request.pop("data", None)  # mots de passe, notes, messages entre parents…
+        request.pop("cookies", None)
+        request.pop("query_string", None)  # jetons de reset / d'invitation possibles
+        if isinstance(request.get("url"), str):
+            request["url"] = _SECRET_PATH.sub(r"\1[filtré]", request["url"])
+        headers = request.get("headers")
+        if isinstance(headers, dict):
+            for name in list(headers):
+                if name.lower() in _SENSITIVE_HEADERS:
+                    headers[name] = "[filtré]"
+    return event
+
+
+if settings.sentry_dsn:
+    import sentry_sdk
+
+    sentry_sdk.init(
+        dsn=settings.sentry_dsn,
+        environment=settings.sentry_environment,
+        traces_sample_rate=settings.sentry_traces_sample_rate,
+        send_default_pii=False,
+        before_send=_scrub_event,
+    )
 
 
 @asynccontextmanager
@@ -24,6 +62,8 @@ async def lifespan(app: FastAPI):
 
 
 from .routers import auth as auth_router
+from .routers import billing as billing_router
+from .routers import change_requests as change_requests_router
 from .routers import children as children_router
 from .routers import cron as cron_router
 from .routers import expenses as expenses_router
@@ -35,7 +75,28 @@ from .routers import notifications as notifications_router
 from .routers import rules as rules_router
 from .routers import wall as wall_router
 
-app = FastAPI(title="Alternly", lifespan=lifespan)
+# Documentation interactive seulement en dev (SQLite) : inutile d'exposer le
+# schéma complet de l'API en production.
+_docs = {} if settings.is_sqlite else {"docs_url": None, "redoc_url": None, "openapi_url": None}
+app = FastAPI(title="Alternly", lifespan=lifespan, **_docs)
+
+_SECURITY_HEADERS = {
+    "X-Content-Type-Options": "nosniff",
+    "Referrer-Policy": "strict-origin-when-cross-origin",
+    "X-Frame-Options": "DENY",
+    "Permissions-Policy": "camera=(), microphone=(), geolocation=(), payment=()",
+}
+if not settings.is_sqlite:
+    _SECURITY_HEADERS["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+
+
+@app.middleware("http")
+async def security_headers(request: Request, call_next):
+    response = await call_next(request)
+    for name, value in _SECURITY_HEADERS.items():
+        response.headers.setdefault(name, value)
+    return response
+
 
 # La SPA (Vercel) appelle l'API depuis une autre origine → CORS.
 # Auth par jeton Bearer (pas de cookies) : allow_credentials inutile.
@@ -56,10 +117,18 @@ app.include_router(notifications_router.router)
 app.include_router(cron_router.router)
 app.include_router(expenses_router.router)
 app.include_router(wall_router.router)
+app.include_router(billing_router.router)
+app.include_router(change_requests_router.router)
 
 
 @app.get("/api/health")
-def health():
+def health(db: Session = Depends(get_db)):
+    # Vérifie la base : Railway ne bascule le trafic que si elle répond.
+    try:
+        db.execute(text("SELECT 1"))
+    except Exception:
+        logging.getLogger("coparent").exception("Healthcheck : base de données injoignable")
+        return JSONResponse(status_code=503, content={"status": "error", "db": "down"})
     return {"status": "ok"}
 
 

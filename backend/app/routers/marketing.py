@@ -15,6 +15,15 @@ templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 # URL de la SPA (Vercel) : les liens « se connecter / s'inscrire » de la landing
 # pointent vers l'app hébergée séparément.
 templates.env.globals["app_url"] = settings.app_url.rstrip("/")
+templates.env.globals["contact_email"] = settings.contact_email
+
+
+def site_base(request: Request) -> str:
+    """Origine publique canonique (SITE_URL), sinon celle de la requête."""
+    return settings.site_url.rstrip("/") or str(request.base_url).rstrip("/")
+
+
+templates.env.globals["site_base"] = site_base
 
 MONTHS_FR = [
     "janvier", "février", "mars", "avril", "mai", "juin",
@@ -49,6 +58,28 @@ def blog_post(request: Request, slug: str):
     )
 
 
+# Pages légales : (chemin, gabarit). Dernière mise à jour affichée sur chaque page.
+LEGAL_PAGES = {
+    "/mentions-legales": "legal_mentions.html",
+    "/confidentialite": "legal_privacy.html",
+    "/cgu": "legal_terms.html",
+}
+LEGAL_UPDATED = date(2026, 9, 26)
+
+
+def _legal_route(template: str):
+    def page(request: Request):
+        return templates.TemplateResponse(request, template, {"updated": LEGAL_UPDATED})
+
+    return page
+
+
+for _path, _template in LEGAL_PAGES.items():
+    router.add_api_route(
+        _path, _legal_route(_template), response_class=HTMLResponse, include_in_schema=False, methods=["GET"]
+    )
+
+
 # Crawlers de moteurs de réponse IA : on les autorise explicitement (visibilité AEO).
 _AI_AGENTS = [
     "GPTBot", "OAI-SearchBot", "ChatGPT-User", "PerplexityBot", "Perplexity-User",
@@ -58,7 +89,7 @@ _AI_AGENTS = [
 
 @router.get("/robots.txt", response_class=PlainTextResponse, include_in_schema=False)
 def robots(request: Request):
-    base = str(request.base_url).rstrip("/")
+    base = site_base(request)
     lines = ["User-agent: *", "Allow: /", "Disallow: /app", "Disallow: /api", ""]
     for agent in _AI_AGENTS:
         lines += [f"User-agent: {agent}", "Allow: /", ""]
@@ -68,8 +99,9 @@ def robots(request: Request):
 
 @router.get("/sitemap.xml", include_in_schema=False)
 def sitemap(request: Request):
-    base = str(request.base_url).rstrip("/")
+    base = site_base(request)
     entries = [(f"{base}/", None, "1.0"), (f"{base}/blog", None, "0.7")]
+    entries += [(f"{base}{path}", LEGAL_UPDATED.isoformat(), "0.2") for path in LEGAL_PAGES]
     for a in load_articles():
         entries.append((f"{base}/blog/{a.slug}", a.date.isoformat(), "0.6"))
     items = "\n".join(
@@ -89,7 +121,7 @@ def sitemap(request: Request):
 @router.get("/llms.txt", response_class=PlainTextResponse, include_in_schema=False)
 def llms_txt(request: Request):
     """Résumé structuré pour les moteurs de réponse IA (convention llms.txt)."""
-    base = str(request.base_url).rstrip("/")
+    base = site_base(request)
     articles = load_articles()
     guides = "\n".join(f"- [{a.title}]({base}/blog/{a.slug}) : {a.description}" for a in articles)
     return f"""# Alternly
@@ -119,5 +151,5 @@ def llms_txt(request: Request):
 - Site : {base}/
 - Fonctionnalités : {base}/#fonctionnalites
 - Tarifs : {base}/#tarifs
-- Créer un compte : {base}/app/register
+- Créer un compte : {settings.app_url.rstrip("/")}/register
 """

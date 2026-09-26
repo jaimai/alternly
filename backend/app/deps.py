@@ -1,19 +1,27 @@
 """Dépendances et helpers partagés entre routers."""
-from fastapi import Depends, HTTPException, Path
+from fastapi import Depends, HTTPException, Path, Request
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from .auth import get_current_user
 from .db import get_db
 from .models import Household, HouseholdMember, Notification, User
+from .services.billing import PAYWALL_DETAIL, paywall_blocks
 
 
 def get_membership(
+    request: Request,
     household_id: int = Path(...),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> HouseholdMember:
-    """Vérifie que l'utilisateur courant est membre du foyer, sinon 404."""
+    """Vérifie que l'utilisateur courant est membre du foyer, sinon 404.
+
+    Applique aussi le paywall à toutes les routes du foyer (/api/households/{id}/…) :
+    essai terminé sans abonnement → 402 sur les écritures (mode read_only) ou
+    sur tout (mode block). Hors foyer, jamais de paywall : auth, facturation,
+    export/suppression du compte, acceptation d'invitation, flux iCal, cron.
+    """
     member = db.scalar(
         select(HouseholdMember).where(
             HouseholdMember.household_id == household_id,
@@ -22,6 +30,8 @@ def get_membership(
     )
     if member is None:
         raise HTTPException(status_code=404, detail="Foyer introuvable")
+    if paywall_blocks(user, request.method):
+        raise HTTPException(status_code=402, detail=PAYWALL_DETAIL)
     return member
 
 

@@ -1,18 +1,15 @@
 import { useCallback, useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { api, ApiError } from '../api'
 import { useAuth } from '../auth'
 import CalendarView from '../components/CalendarView'
+import ChangeRequests from '../components/ChangeRequests'
 import ExceptionDialog from '../components/ExceptionDialog'
+import StatusCard from '../components/StatusCard'
 import TopBar from '../components/TopBar'
 import WelcomeTour from '../components/WelcomeTour'
+import { todayIso } from '../dates'
 import type { CalendarResponse, Household, ScheduleException } from '../types'
-
-function todayIso(offset = 0): string {
-  const d = new Date()
-  d.setDate(d.getDate() + offset)
-  return d.toISOString().slice(0, 10)
-}
 
 export default function CalendarPage() {
   const navigate = useNavigate()
@@ -23,6 +20,7 @@ export default function CalendarPage() {
   const [range, setRange] = useState<{ start: string; end: string } | null>(null)
   const [selectedDay, setSelectedDay] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [refreshKey, setRefreshKey] = useState(0)
 
   useEffect(() => {
     api
@@ -48,16 +46,6 @@ export default function CalendarPage() {
 
   useEffect(loadCalendar, [loadCalendar])
 
-  const byDate = new Map((data?.days ?? []).map((d) => [d.date, d]))
-  const today = byDate.get(todayIso())
-  const tomorrow = byDate.get(todayIso(1))
-  const handoverTomorrow = today && tomorrow && today.parent_id !== tomorrow.parent_id
-  const tomorrowParent = tomorrow && data?.members.find((m) => m.id === tomorrow.parent_id)
-
-  // Propositions en attente non expirées, à traiter par moi (destinataire).
-  const pendingForMe = exceptions.filter(
-    (e) => e.status === 'pending' && e.created_by !== user?.id && e.date_start >= todayIso(),
-  )
   // Propositions en attente qui expirent demain (date de début = demain).
   const expiringTomorrow = exceptions.filter((e) => e.status === 'pending' && e.date_start === todayIso(1))
 
@@ -67,42 +55,66 @@ export default function CalendarPage() {
       <TopBar householdName={household?.name} />
       <div className="layout">
         {error && <div className="error">{error}</div>}
-        {pendingForMe.length > 0 && (
-          <div className="info-banner">
-            ⏳ {pendingForMe.length === 1 ? 'Une proposition d’échange attend' : `${pendingForMe.length} propositions d’échange attendent`}{' '}
-            votre réponse — cliquez sur le jour concerné pour accepter ou refuser.
+        {household && user && (
+          <StatusCard
+            household={household}
+            myId={user.id}
+            exceptions={exceptions}
+            refreshKey={refreshKey}
+            onOpenDay={setSelectedDay}
+          />
+        )}
+        {household && user && household.members.length > 1 && (
+          <ChangeRequests
+            householdId={household.id}
+            myId={user.id}
+            members={household.members}
+            refreshKey={refreshKey}
+            onResolved={() => {
+              loadCalendar()
+              setRefreshKey((k) => k + 1)
+            }}
+          />
+        )}
+        {household?.members.length === 1 && (
+          <div className="callout">
+            <div>
+              <strong>Vous êtes seul·e sur ce calendrier.</strong>
+              <p>Invitez l'autre parent : il verra le même planning et pourra proposer des échanges.</p>
+            </div>
+            <Link className="button" to="/settings#parents">
+              Inviter l'autre parent
+            </Link>
           </div>
         )}
         {expiringTomorrow.length > 0 && (
           <div className="info-banner">
-            ⚠️ {expiringTomorrow.length === 1 ? 'Une proposition expire demain' : `${expiringTomorrow.length} propositions expirent demain`}{' '}
+            {expiringTomorrow.length === 1 ? 'Une proposition expire demain' : `${expiringTomorrow.length} propositions expirent demain`}{' '}
             si elles ne sont pas traitées.
           </div>
         )}
-        {handoverTomorrow && tomorrowParent && (
-          <div className="info-banner">
-            🔁 Changement de foyer demain : {household?.children.map((c) => c.first_name).join(', ') || "l'enfant"}{' '}
-            sera chez <strong>{tomorrowParent.display_name}</strong>
-            {data && ` (passage vers ${data.handover_time})`}.
-          </div>
-        )}
         {data && !data.school_holidays_loaded && (
-          <div className="error">
-            Les vacances scolaires n'ont pas pu être chargées — le calendrier affiche uniquement le rythme de base.
+          <div className="info-banner">
+            Les vacances scolaires n'ont pas pu être chargées : le calendrier affiche pour l'instant le rythme de base.
           </div>
         )}
         {data && (
           <div className="legend">
             {data.members.map((m) => (
-              <span key={m.id}>
+              <span key={m.id} className="legend-item">
                 <span className="dot" style={{ background: m.color }} />
-                {m.display_name}
+                {m.id === user?.id ? `${m.display_name} (vous)` : m.display_name}
               </span>
             ))}
-            <span style={{ color: 'var(--ink-soft)' }}>🏖️ vacances · 📌 férié · ↔️ échange · ⭐ fête · ⏳ proposé</span>
-            <span style={{ marginLeft: 'auto', color: 'var(--ink-soft)' }}>
-              Cliquez sur un jour pour proposer un échange
+            <span className="legend-item">
+              <span className="dot handover-dot" />
+              Jour de passage
             </span>
+            <span className="legend-item">
+              <span className="dot pending-dot" />
+              Échange proposé
+            </span>
+            <span className="legend-hint">Touchez un jour pour proposer un échange</span>
           </div>
         )}
         {household && (
@@ -126,12 +138,6 @@ export default function CalendarPage() {
             }
           />
         )}
-        {household?.members.length === 1 && (
-          <div className="info-banner" style={{ marginTop: 12 }}>
-            Vous utilisez Alternly en solo pour l'instant. Invitez l'autre parent depuis les{' '}
-            <a href="/settings">réglages</a> pour partager ce calendrier.
-          </div>
-        )}
       </div>
       {selectedDay && household && (
         <ExceptionDialog
@@ -139,8 +145,12 @@ export default function CalendarPage() {
           date={selectedDay}
           members={household.members}
           existing={exceptions}
+          currentParentId={data?.days.find((d) => d.date === selectedDay)?.parent_id}
           onClose={() => setSelectedDay(null)}
-          onChanged={loadCalendar}
+          onChanged={() => {
+            loadCalendar()
+            setRefreshKey((k) => k + 1)
+          }}
         />
       )}
     </>
