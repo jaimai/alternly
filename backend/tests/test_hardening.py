@@ -1,9 +1,16 @@
 """Durcissement : bornes d'entrée, iCal 503, cache négatif, en-têtes, migrations."""
+import os
+import subprocess
+import sys
 from datetime import date
+from pathlib import Path
 
 import httpx
 
+from app.config import settings
 from app.services import public_holidays, school_holidays
+
+BACKEND_DIR = Path(__file__).resolve().parent.parent
 
 
 def _down(request):
@@ -45,3 +52,53 @@ class TestNegativeCache:
         hiver = next(p for p in periods if p.label == "Vacances d'Hiver")
         assert hiver.start == date(2026, 2, 14) and hiver.end == date(2026, 3, 1)
         assert public_holidays.get(db_session, 2026)[date(2026, 7, 14)] == "14 juillet"
+
+
+class TestSecretKeyGuard:
+    def _import_config(self, secret: str):
+        env = {**os.environ, "DATABASE_URL": "postgresql://u:p@localhost/db", "SECRET_KEY": secret}
+        return subprocess.run(
+            [sys.executable, "-c", "import app.config"], cwd=BACKEND_DIR, env=env, capture_output=True
+        )
+
+    def test_weak_or_short_key_refused_outside_sqlite(self):
+        for secret in ("change-me-in-production", "dev-secret-change-me", "", "trop-courte"):
+            assert self._import_config(secret).returncode != 0, secret
+
+    def test_strong_key_accepted(self):
+        assert self._import_config("x" * 48).returncode == 0
+
+
+class TestHttpHardening:
+    def test_security_headers_and_health(self, client):
+        resp = client.get("/api/health")
+        assert resp.status_code == 200
+        assert resp.json() == {"status": "ok"}
+        assert resp.headers["x-content-type-options"] == "nosniff"
+        assert resp.headers["x-frame-options"] == "DENY"
+        assert resp.headers["referrer-policy"] == "strict-origin-when-cross-origin"
+        assert "payment" not in resp.headers["permissions-policy"]  # checkout Paddle
+        assert "strict-transport-security" not in resp.headers  # SQLite (dev)
+
+    def test_health_503_when_db_down(self, client, db_session, monkeypatch):
+        def boom(*a, **k):
+            raise RuntimeError("db down")
+
+        monkeypatch.setattr(db_session, "execute", boom)
+        resp = client.get("/api/health")
+        assert resp.status_code == 503
+        assert resp.json()["db"] == "down"
+
+    def test_docs_available_in_dev(self, client):
+        assert client.get("/openapi.json").status_code == 200
+
+    def test_docs_disabled_outside_sqlite(self):
+        env = {**os.environ, "DATABASE_URL": "postgresql://u:p@localhost/db", "SECRET_KEY": "x" * 48}
+        code = "from app.main import app; assert app.openapi_url is None and app.docs_url is None"
+        assert subprocess.run([sys.executable, "-c", code], cwd=BACKEND_DIR, env=env, capture_output=True).returncode == 0
+
+    def test_cron_wrong_key(self, client, monkeypatch):
+        monkeypatch.setattr(settings, "cron_secret", "bon-secret")
+        assert client.post("/api/cron/exchange-reminders", headers={"X-Cron-Key": "mauvais"}).status_code == 401
+        assert client.post("/api/cron/exchange-reminders").status_code == 401
+        assert client.post("/api/cron/exchange-reminders", headers={"X-Cron-Key": "bon-secret"}).status_code == 200

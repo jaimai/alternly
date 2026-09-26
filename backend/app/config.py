@@ -1,3 +1,4 @@
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -28,6 +29,16 @@ class Settings(BaseSettings):
     paddle_price_monthly: str = ""  # price_id de l'offre mensuelle
 
     @property
+    def is_sqlite(self) -> bool:
+        return self.database_url.startswith("sqlite")
+
+    @field_validator("secret_key")
+    @classmethod
+    def _default_secret(cls, v: str) -> str:
+        # `SECRET_KEY=` vide (copie brute de .env.example) → clé de dev ; refusée hors SQLite.
+        return v or "dev-secret-change-me"
+
+    @property
     def paddle_api_base(self) -> str:
         return (
             "https://api.paddle.com"
@@ -44,7 +55,12 @@ class Settings(BaseSettings):
 
 settings = Settings()
 
-# Garde-fou : une base non-SQLite signale un déploiement réel — la clé de
-# signature JWT par défaut y rendrait tous les comptes usurpables.
-if settings.secret_key == "dev-secret-change-me" and not settings.database_url.startswith("sqlite"):
-    raise RuntimeError("SECRET_KEY doit être définie (voir .env.example) hors environnement SQLite local")
+# Garde-fou : une base non-SQLite signale un déploiement réel — une clé de
+# signature JWT faible ou connue y rendrait tous les comptes usurpables.
+WEAK_SECRET_KEYS = {"dev-secret-change-me", "change-me-in-production", "changeme", "secret"}
+
+if not settings.is_sqlite and (settings.secret_key in WEAK_SECRET_KEYS or len(settings.secret_key) < 32):
+    raise RuntimeError(
+        "SECRET_KEY absente, connue ou trop courte (< 32 caractères) hors environnement SQLite local "
+        "(voir .env.example)"
+    )

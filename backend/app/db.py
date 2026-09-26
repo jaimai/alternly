@@ -15,8 +15,12 @@ def _normalize(url: str) -> str:
 
 
 DATABASE_URL = _normalize(settings.database_url)
-connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
-engine = create_engine(DATABASE_URL, connect_args=connect_args)
+if DATABASE_URL.startswith("sqlite"):
+    engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+else:
+    # Connexions coupées côté serveur (proxy, redémarrage de la base) : vérifiées
+    # avant usage et recyclées régulièrement.
+    engine = create_engine(DATABASE_URL, pool_pre_ping=True, pool_recycle=300)
 SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
 
 
