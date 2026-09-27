@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { api, setToken } from '../api'
+import { getAttribution, track } from '../analytics'
+import { EV } from '../analyticsEvents'
 import { useAuth } from '../auth'
 
 // « Continuer avec Google » (Google Identity Services). Affiché seulement si
@@ -76,6 +78,7 @@ export default function GoogleButton({
           ux_mode: 'popup',
           callback: async ({ credential }) => {
             setError(null)
+            if (text === 'signup_with') track(EV.signupStarted, { method: 'google', ...getAttribution() })
             try {
               const locale = i18n.language.startsWith('en') ? 'en' : 'fr'
               const resp = await api.googleLogin(credential, locale)

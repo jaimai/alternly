@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { api } from '../api'
+import { track } from '../analytics'
+import { EV } from '../analyticsEvents'
 import { useAuth } from '../auth'
 import Icon from '../components/Icon'
 import Spinner from '../components/Spinner'
@@ -43,6 +45,7 @@ export default function HistoryPage() {
   )
 
   useEffect(() => loadMore(), [loadMore])
+  useEffect(() => track(EV.historyViewed), [])
 
   if (!household) return <Spinner />
   const member = (id: number | null) => household.members.find((m) => m.id === id)
@@ -57,7 +60,7 @@ export default function HistoryPage() {
   return (
     <>
       <TopBar householdName={household.name} />
-      <div className="layout narrow">
+      <div className="layout narrow ph-mask ph-sensitive">
         <h1>{t('history.title')}</h1>
         <p className="hint" style={{ marginTop: 0 }}>{t('history.subtitle')}</p>
         {error && <div className="error">{error}</div>}

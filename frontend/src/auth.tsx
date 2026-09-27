@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { Navigate } from 'react-router-dom'
 import { invalidateAllCalendars } from './calendarCache'
 import { api, ApiError, getToken, setToken } from './api'
+import { resetIdentity } from './analytics'
 import Spinner from './components/Spinner'
 import i18n, { langExplicitlyChosen } from './i18n'
 import type { BillingStatus, Household, User } from './types'
@@ -90,6 +91,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(() => {
     setToken(null)
+    resetIdentity()
     setUser(null)
     setBilling(null)
     setHousehold(null)

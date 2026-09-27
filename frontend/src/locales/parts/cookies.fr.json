@@ -1,0 +1,13 @@
+{
+  "cookies.title": "Mesure d'audience",
+  "cookies.body": "Nous mesurons l'usage d'Alternly de façon anonyme, sans cookie. Avec votre accord, nous utilisons aussi des cookies pour comprendre les parcours et enregistrer des sessions (saisies et données personnelles masquées) afin d'améliorer l'app. Hébergé en UE, jamais revendu.",
+  "cookies.learnMore": "En savoir plus",
+  "cookies.accept": "Accepter",
+  "cookies.refuse": "Refuser",
+  "cookies.close": "Fermer",
+  "cookies.manage": "Gérer les cookies",
+  "cookies.settingsTitle": "Cookies et mesure d'audience",
+  "cookies.statusGranted": "Acceptée : mesure détaillée et replay de session (données masquées).",
+  "cookies.statusDenied": "Refusée : mesure anonyme sans cookie uniquement.",
+  "cookies.statusUnset": "Pas encore choisi : mesure anonyme sans cookie uniquement."
+}

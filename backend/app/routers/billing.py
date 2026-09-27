@@ -11,7 +11,7 @@ from ..deps import household_members, user_has_premium
 from ..models import HouseholdMember, PaddleEvent, User, utcnow
 from ..ratelimit import HOUR, rate_limit
 from ..schemas import ChangePlanIn
-from ..services import audit, billing, paddle_api
+from ..services import analytics, audit, billing, paddle_api
 
 router = APIRouter(prefix="/api/billing", tags=["billing"])
 
@@ -111,6 +111,51 @@ def change_plan(
     return {"ok": True}
 
 
+def _plan_of(data: dict) -> str | None:
+    """Offre (annual|monthly) d'après le price_id du premier article Paddle."""
+    item = (data.get("items") or [{}])[0] or {}
+    price_id = (item.get("price") or {}).get("id") or item.get("price_id")
+    if not price_id:
+        return None
+    if price_id == settings.paddle_price_annual:
+        return "annual"
+    if price_id == settings.paddle_price_monthly:
+        return "monthly"
+    return "other"
+
+
+def _amount_of(data: dict) -> float | None:
+    """Montant (unité monétaire) : total d'une transaction, sinon prix unitaire de l'abonnement."""
+    totals = (data.get("details") or {}).get("totals") or {}
+    raw = totals.get("grand_total") or totals.get("total")
+    if raw is None:
+        item = (data.get("items") or [{}])[0] or {}
+        raw = ((item.get("price") or {}).get("unit_price") or {}).get("amount")
+    try:
+        return int(raw) / 100 if raw is not None else None
+    except (TypeError, ValueError):
+        return None
+
+
+def _track_billing(db: Session, user: User, event: str, data: dict) -> None:
+    member = db.scalar(select(HouseholdMember).where(HouseholdMember.user_id == user.id))
+    analytics.capture_for_user(
+        user,
+        event,
+        {"plan": _plan_of(data), "currency": data.get("currency_code"), "amount": _amount_of(data)},
+        household_id=member.household_id if member else None,
+    )
+
+
+# Statut interne → événement analytics lors d'une transition.
+_STATUS_EVENTS = {
+    "active": "subscription_activated",
+    "trialing": "subscription_activated",
+    "past_due": "subscription_past_due",
+    "canceled": "subscription_canceled",
+}
+
+
 def _find_user(db: Session, data: dict) -> User | None:
     uid = (data.get("custom_data") or {}).get("user_id")
     if uid:
@@ -156,6 +201,7 @@ async def paddle_webhook(
         )
         stale = latest is not None and occurred_at < latest
 
+    tracked: list[tuple[User, str, dict]] = []
     if etype.startswith("subscription.") and not stale:
         user = _find_user(db, data)
         if user is not None:
@@ -168,10 +214,21 @@ async def paddle_webhook(
                 user.subscription_status = billing.map_status(data.get("status", ""))
             if user.subscription_status != previous:
                 _journal(db, user, "subscription.status", {"before": previous, "after": user.subscription_status})
+                event_name = _STATUS_EVENTS.get(user.subscription_status)
+                # Une réactivation après impayé n'est pas une nouvelle souscription.
+                if event_name and not (event_name == "subscription_activated" and previous in ("active", "trialing", "past_due")):
+                    tracked.append((user, event_name, data))
             period = data.get("current_billing_period") or {}
             ends = billing.parse_iso(period.get("ends_at"))
             if ends is not None:
                 user.subscription_ends_at = ends
+
+    # Renouvellement : transaction récurrente payée (si la destination Paddle
+    # envoie aussi les événements transaction.*).
+    if etype == "transaction.completed" and data.get("origin") == "subscription_recurring":
+        renewed = _find_user(db, {"custom_data": data.get("custom_data"), "id": data.get("subscription_id")})
+        if renewed is not None:
+            tracked.append((renewed, "subscription_renewed", data))
 
     if event_id:
         db.add(PaddleEvent(id=event_id, event_type=etype, subscription_id=sub_id, occurred_at=occurred_at))
@@ -180,4 +237,6 @@ async def paddle_webhook(
     except IntegrityError:  # même événement traité en parallèle : déjà pris en compte
         db.rollback()
         return {"ok": True, "duplicate": True}
+    for u, name, payload in tracked:
+        _track_billing(db, u, name, payload)
     return {"ok": True, "stale": True} if stale else {"ok": True}

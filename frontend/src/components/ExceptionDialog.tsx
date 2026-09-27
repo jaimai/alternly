@@ -108,7 +108,7 @@ export default function ExceptionDialog({ householdId, date, members, existing, 
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal sheet" role="dialog" aria-modal="true" aria-labelledby="xdlg-title" onClick={(ev) => ev.stopPropagation()}>
+      <div className="modal sheet ph-mask ph-sensitive" role="dialog" aria-modal="true" aria-labelledby="xdlg-title" onClick={(ev) => ev.stopPropagation()}>
         <p className="eyebrow">{dayLong(date)}</p>
         <h2 id="xdlg-title">{title}</h2>
 

@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from ..db import get_db
 from ..deps import require_premium
 from ..models import Household, HouseholdMember, User, new_token
+from ..services import analytics
 from ..services.calendar_service import NoCustodyRule, build_calendar
 from ..services.ical_export import build_ics
 
@@ -46,6 +47,8 @@ def ical_feed(ical_token: str, db: Session = Depends(get_db)):
         names[str(u.id)] = u.display_name
 
     ics = build_ics(data.days, names, ical_token[:8])
+    # Mesure de l'usage réel de la synchro (1 appel sur 20, anonyme : pas d'utilisateur).
+    analytics.capture_sampled("ical_feed_polled", {"country": household.country}, rate=20)
     return Response(
         content=ics,
         media_type="text/calendar; charset=utf-8",

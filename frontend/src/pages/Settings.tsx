@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next'
 import { Link, useNavigate } from 'react-router-dom'
 import { QRCodeSVG } from 'qrcode.react'
 import { api, isPendingChange } from '../api'
+import { track } from '../analytics'
+import { EV } from '../analyticsEvents'
 import { useAuth, usePremium } from '../auth'
 import { openCheckout } from '../billing'
 import AccountCard from '../components/AccountCard'
@@ -70,8 +72,9 @@ export default function SettingsPage() {
     }
   }
 
-  async function copy(text: string) {
+  async function copy(text: string, what: 'invite' | 'ical') {
     await navigator.clipboard.writeText(text)
+    track(what === 'invite' ? EV.inviteLinkCopied : EV.icalLinkCopied)
     flash(t('settings.copied'))
   }
 
@@ -204,7 +207,7 @@ export default function SettingsPage() {
           />
         )}
 
-        <div className="card">
+        <div className="card ph-mask ph-sensitive">
           <h2>{t('settings.parents')}</h2>
           {household.members.map((m) => (
             <p key={m.id}>
@@ -220,7 +223,7 @@ export default function SettingsPage() {
               </p>
               {inviteUrl ? (
                 <div className="invite-share">
-                  <div className="invite-qr">
+                  <div className="invite-qr ph-no-capture">
                     <QRCodeSVG value={inviteUrl} size={148} bgColor="#ffffff" fgColor="#1f4d3f" marginSize={2} />
                   </div>
                   <div className="invite-share-body">
@@ -229,7 +232,7 @@ export default function SettingsPage() {
                     </p>
                     <div className="row">
                       <input readOnly value={inviteUrl} onFocus={(e) => e.target.select()} />
-                      <button onClick={() => copy(inviteUrl)}>{t('settings.copyLink')}</button>
+                      <button onClick={() => copy(inviteUrl, 'invite')}>{t('settings.copyLink')}</button>
                     </div>
                   </div>
                 </div>
@@ -242,7 +245,7 @@ export default function SettingsPage() {
 
         <div className="card">
           <h2>{t('settings.children')}</h2>
-          <div className="chip-list">
+          <div className="chip-list ph-mask ph-sensitive">
             {household.children.map((c) => (
               <span key={c.id} className="chip">
                 {c.first_name}
@@ -355,21 +358,21 @@ export default function SettingsPage() {
           {!premium ? (
             <button
               className="secondary"
-              onClick={() => user && openCheckout(user, refreshBilling)}
+              onClick={() => user && openCheckout(user, refreshBilling, 'annual', 'settings_ical')}
               style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
             >
               <Icon name="lock" size={15} /> {t('settings.unlockWithPremium')}
             </button>
           ) : icalUrl ? (
             <div className="invite-share">
-              <div className="invite-qr">
+              <div className="invite-qr ph-no-capture">
                 <QRCodeSVG value={icalUrl.replace(/^https?:\/\//, 'webcal://')} size={148} bgColor="#ffffff" fgColor="#1f4d3f" marginSize={2} />
               </div>
               <div className="invite-share-body">
                 <p className="hint" style={{ marginTop: 0 }}>{t('settings.icalQrHint')}</p>
                 <div className="row">
                   <input readOnly value={icalUrl} onFocus={(e) => e.target.select()} />
-                  <button onClick={() => copy(icalUrl)}>{t('settings.copy')}</button>
+                  <button onClick={() => copy(icalUrl, 'ical')}>{t('settings.copy')}</button>
                 </div>
               </div>
             </div>
@@ -388,6 +391,7 @@ export default function SettingsPage() {
             value={user.locale}
             onChange={async (e) => {
               const locale = e.target.value as 'fr' | 'en'
+              track(EV.languageChanged, { from: user.locale, to: locale, source: 'settings' })
               i18n.changeLanguage(locale)
               try {
                 const updated = await api.updateMe({ locale })

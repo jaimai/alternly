@@ -7,7 +7,16 @@ import Paywall from './Paywall'
 
 /** Protège une fonctionnalité premium : montre un paywall (skippable) aux
  *  utilisateurs gratuits, sinon rend le contenu. */
-export default function PremiumGate({ feature, children }: { feature: string; children: ReactNode }) {
+export default function PremiumGate({
+  feature,
+  featureKey,
+  children,
+}: {
+  feature: string
+  /** Identifiant stable pour l'analytics (le libellé `feature` est traduit). */
+  featureKey: string
+  children: ReactNode
+}) {
   const { user, billing, refreshBilling } = useAuth()
   const navigate = useNavigate()
   const { t } = useTranslation()
@@ -19,6 +28,7 @@ export default function PremiumGate({ feature, children }: { feature: string; ch
         user={user}
         onSubscribed={refreshBilling}
         onSkip={() => navigate('/app')}
+        feature={featureKey}
         title={t('paywall.gateTitle', { feature })}
         subtitle={t('paywall.gateSubtitle')}
       />

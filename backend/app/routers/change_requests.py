@@ -8,6 +8,7 @@ from ..db import get_db
 from ..deps import get_membership
 from ..models import ChangeRequest, HouseholdMember, User, utcnow
 from ..schemas import ChangeRequestOut
+from ..services import analytics
 from ..services import change_requests as cr_service
 
 router = APIRouter(prefix="/api/households/{household_id}", tags=["change_requests"])
@@ -42,6 +43,10 @@ def _resolve(cr: ChangeRequest, member: HouseholdMember, status: str) -> None:
     cr.resolved_at = utcnow()
 
 
+def _track(db: Session, member: HouseholdMember, cr: ChangeRequest, outcome: str) -> None:
+    analytics.capture_for_member(db, member, "change_request_resolved", {"kind": cr.kind, "status": outcome})
+
+
 @router.post("/change-requests/{request_id}/accept", response_model=ChangeRequestOut)
 def accept_change_request(
     request_id: int,
@@ -60,12 +65,14 @@ def accept_change_request(
         cr_service.journal(db, cr, member.user_id, "change_request.outdated")
         cr_service.notify_about(db, cr.requested_by, "change_refused", cr)
         db.commit()
+        _track(db, member, cr, "outdated")
         raise HTTPException(status_code=409, detail=f"Demande caduque : {e}")
     _resolve(cr, member, "accepted")
     cr_service.journal(db, cr, member.user_id, "change_request.accept")
     cr_service.notify_about(db, cr.requested_by, "change_accepted", cr)
     db.commit()
     db.refresh(cr)
+    _track(db, member, cr, "accepted")
     return cr_service.to_out(db, cr, user.locale)
 
 
@@ -84,6 +91,7 @@ def refuse_change_request(
     cr_service.notify_about(db, cr.requested_by, "change_refused", cr)
     db.commit()
     db.refresh(cr)
+    _track(db, member, cr, "refused")
     return cr_service.to_out(db, cr, user.locale)
 
 
@@ -101,4 +109,5 @@ def withdraw_change_request(
     cr_service.journal(db, cr, member.user_id, "change_request.withdraw")
     db.commit()
     db.refresh(cr)
+    _track(db, member, cr, "withdrawn")
     return cr_service.to_out(db, cr, user.locale)

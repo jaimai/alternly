@@ -1,7 +1,7 @@
 """Contenu des pages légales (SSR). Rédigé comme point de départ sérieux ;
 à faire relire par un professionnel du droit avant de s'y fier."""
 
-UPDATED = "24 juillet 2026"
+UPDATED = "26 septembre 2026"
 
 CONTACT = "honoentreprise@gmail.com"
 
@@ -22,6 +22,9 @@ _SUBPROCESSORS = """
   <li><strong>Resend</strong> — envoi des e-mails transactionnels (notifications).</li>
   <li><strong>Paddle</strong> — traitement des paiements et facturation (revendeur / Merchant of Record).</li>
   <li><strong>Google</strong> — connexion « Continuer avec Google », si vous la choisissez (nom, adresse e-mail et identifiant de compte Google).</li>
+  <li><strong>PostHog Inc.</strong> — mesure d'audience et analyse d'usage du produit ; avec votre
+  consentement, enregistrement de sessions (saisies masquées). Données hébergées dans l'Union
+  européenne (Francfort, Allemagne).</li>
 </ul>
 """
 
@@ -89,7 +92,12 @@ Règlement général sur la protection des données (RGPD).</p>
   <li><strong>Foyer &amp; garde</strong> : nom du foyer, prénom des enfants (l'anniversaire est
   facultatif), zone scolaire, règles de garde, échanges, dépenses et messages que vous saisissez.</li>
   <li><strong>Techniques</strong> : données de connexion et mesure d'audience agrégée
-  (Vercel Analytics, sans cookies ni profilage individuel).</li>
+  (Vercel Analytics et PostHog, sans cookies ni profilage individuel).</li>
+  <li><strong>Analyse d'usage (avec votre accord)</strong> : pages consultées, actions effectuées
+  dans l'app (ex. « échange proposé », « dépense ajoutée » — jamais leur contenu), type
+  d'appareil et de navigateur, pays déduit de l'adresse IP (qui n'est pas conservée),
+  enregistrement de sessions avec saisies et contenus personnels masqués. Ces données sont
+  rattachées à un identifiant technique, jamais à votre e-mail ou à votre nom.</li>
 </ul>
 <p>Aucune donnée sensible (santé, opinions…) n'est requise ; nous vous invitons à ne pas en
 saisir dans les champs libres.</p>
@@ -97,7 +105,10 @@ saisir dans les champs libres.</p>
 <h2>3. Finalités et base légale</h2>
 <p>Les données servent à fournir le Service (exécution du contrat), à vous notifier des
 changements, et à assurer la sécurité. Les e-mails de notification reposent sur l'exécution du
-contrat et peuvent être désactivés dans vos réglages.</p>
+contrat et peuvent être désactivés dans vos réglages. La mesure d'audience anonyme, sans cookie
+ni identifiant persistant, repose sur notre intérêt légitime à améliorer le Service ; l'analyse
+d'usage détaillée et l'enregistrement de sessions reposent sur votre consentement, retirable à
+tout moment.</p>
 
 <h2>4. Hébergement</h2>
 <p>Les données sont hébergées dans l'Union européenne.</p>
@@ -107,7 +118,22 @@ contrat et peuvent être désactivés dans vos réglages.</p>
 
 <h2>6. Durée de conservation</h2>
 <p>Vos données sont conservées tant que votre compte est actif, puis supprimées ou anonymisées
-dans un délai raisonnable après sa fermeture, sous réserve des obligations légales (ex. facturation).</p>
+dans un délai raisonnable après sa fermeture, sous réserve des obligations légales (ex. facturation).
+Les données de mesure d'audience sont conservées au plus 13 mois, les enregistrements de session
+au plus 30 jours.</p>
+
+<h2>6 bis. Cookies et traceurs</h2>
+<p>Sans votre accord, aucun cookie de mesure n'est déposé : la fréquentation est mesurée de
+façon anonyme, sans cookie ni stockage sur votre appareil. Lors de votre première visite, une
+bannière vous propose d'accepter ou de refuser, aussi simplement l'un que l'autre, des cookies
+et un stockage local de mesure d'audience (PostHog) qui nous aident à comprendre les parcours
+et à améliorer Alternly. Si vous acceptez, un identifiant technique est conservé sur votre
+appareil et vos sessions peuvent être enregistrées, avec toutes les saisies et contenus
+personnels masqués. Votre choix est mémorisé 13 mois au plus, puis vous est redemandé.</p>
+<p>Vous pouvez changer d'avis à tout moment via le lien « Gérer les cookies » en bas de chaque
+page du site, ou dans l'app (Réglages → Compte → Cookies et mesure d'audience). Les éléments
+strictement nécessaires (session de connexion, langue, mémorisation de votre choix) ne
+nécessitent pas de consentement.</p>
 
 <h2>7. Vos droits</h2>
 <p>Vous disposez d'un droit d'accès, de rectification, d'effacement, de limitation, d'opposition
@@ -162,7 +188,7 @@ PAGES = {
 # relire par un juriste US avant un lancement public.
 # --------------------------------------------------------------------------
 
-UPDATED_EN = "July 28, 2026"
+UPDATED_EN = "September 26, 2026"
 
 EDITOR_EN = (
     "Hōnō, a French simplified joint-stock company (SASU) with share capital of "
@@ -179,6 +205,9 @@ _SUBPROCESSORS_EN = """
   <li><strong>Resend</strong> — transactional emails (notifications).</li>
   <li><strong>Paddle</strong> — payment processing and billing (reseller / Merchant of Record).</li>
   <li><strong>Google</strong> — "Continue with Google" sign-in, if you choose it (name, email address and Google account identifier).</li>
+  <li><strong>PostHog Inc.</strong> — audience measurement and product analytics; with your
+  consent, session replay (inputs masked). Data hosted in the European Union (Frankfurt,
+  Germany).</li>
 </ul>
 """
 
@@ -243,7 +272,12 @@ all users, including in the United States.</p>
   <li><strong>Household &amp; custody</strong>: household name, children’s first names (birthday
   optional), custody rules, swaps, expenses, and messages you enter.</li>
   <li><strong>Technical</strong>: sign-in data and aggregate, cookieless analytics
-  (Vercel Analytics — no individual profiling).</li>
+  (Vercel Analytics and PostHog — no individual profiling).</li>
+  <li><strong>Product analytics (with your consent)</strong>: pages viewed, actions taken in the
+  app (e.g. "swap proposed", "expense added" — never their content), device and browser type,
+  country derived from your IP address (which is not stored), and session recordings with inputs
+  and personal content masked. This data is linked to a technical identifier, never to your
+  email or name.</li>
 </ul>
 <p>No sensitive data (health, opinions, etc.) is required; please do not enter any in free-text
 fields.</p>
@@ -251,7 +285,9 @@ fields.</p>
 <h2>3. Purposes and legal basis</h2>
 <p>Data is used to provide the Service (performance of the contract), to notify you of changes,
 and to keep the Service secure. Notification emails are part of providing the Service and can be
-turned off in your settings.</p>
+turned off in your settings. Anonymous, cookieless audience measurement relies on our legitimate
+interest in improving the Service; detailed product analytics and session replay rely on your
+consent, which you can withdraw at any time.</p>
 
 <h2>4. Hosting and international transfers</h2>
 <p>Data is hosted in the European Union. If you use Alternly from the United States, your
@@ -262,7 +298,19 @@ information is transferred to and processed in the EU under GDPR-level protectio
 
 <h2>6. Retention</h2>
 <p>Your data is kept while your account is active, then deleted or anonymized within a reasonable
-period after closure, subject to legal obligations (e.g., billing records).</p>
+period after closure, subject to legal obligations (e.g., billing records). Analytics data is kept
+for at most 13 months and session recordings for at most 30 days.</p>
+
+<h2>6a. Cookies and similar technologies</h2>
+<p>Without your consent, no analytics cookie is set: traffic is measured anonymously, with no
+cookie or storage on your device. On your first visit, a banner lets you accept or decline — just
+as easily — analytics cookies and local storage (PostHog) that help us understand how Alternly
+is used and improve it. If you accept, a technical identifier is kept on your device and your
+sessions may be recorded, with all inputs and personal content masked. Your choice is remembered
+for up to 13 months, after which we ask again.</p>
+<p>You can change your mind at any time with the "Cookie settings" link at the bottom of every page
+of the site, or in the app (Settings → Account → Cookies &amp; analytics). Strictly necessary items
+(sign-in session, language, remembering your choice) do not require consent.</p>
 
 <h2>7. Your rights</h2>
 <p>You have rights of access, rectification, erasure, restriction, objection, and portability.

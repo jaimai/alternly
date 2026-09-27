@@ -194,7 +194,7 @@ export default function ExpensesPage() {
   return (
     <>
       <TopBar householdName={household.name} />
-      <div className="layout narrow">
+      <div className="layout narrow ph-mask ph-sensitive">
         <div className="page-head">
           <h1>{t('expenses.title')}</h1>
           <button className="with-icon" onClick={() => setDialog({ kind: 'expense' })}>

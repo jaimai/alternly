@@ -23,6 +23,10 @@ import type {
   WallPost,
   WallReply,
 } from './types'
+import { getAttribution, getConsent, resetIdentity, track } from './analytics'
+import type { EventProps } from './analytics'
+import { EV } from './analyticsEvents'
+import type { AnalyticsEvent } from './analyticsEvents'
 
 // Base de l'API : en prod (Vercel), pointe vers le backend Railway via
 // VITE_API_URL (ex. https://xxx.up.railway.app/api). En dev, proxy Vite sur /api.
@@ -54,6 +58,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const resp = await fetch(`${API_BASE}${path}`, { ...options, headers })
   if (resp.status === 401 && !path.startsWith('/auth/')) {
     setToken(null)
+    resetIdentity()
     window.location.href = '/login'
     throw new ApiError(401, 'Session expirée')
   }
@@ -76,33 +81,103 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   return resp.json()
 }
 
+// ---------- analytics : événements émis au succès des actions (jamais de texte libre)
+
+/** Exécute `onOk` (tracking) après succès, sans jamais affecter la réponse. */
+function tracked<T>(p: Promise<T>, onOk: (r: T) => void): Promise<T> {
+  return p.then((r) => {
+    try {
+      onOk(r)
+    } catch {
+      /* l'analytics ne casse jamais l'app */
+    }
+    return r
+  })
+}
+
+function ev<T>(p: Promise<T>, event: AnalyticsEvent, props?: EventProps): Promise<T> {
+  return tracked(p, () => track(event, props))
+}
+
+/** Modification sensible : en attente d'accord (202) → change_request_created. */
+function evChange<T>(p: Promise<T>, kind: string, otherwise?: AnalyticsEvent): Promise<T> {
+  return tracked(p, (r) => {
+    if (isPendingChange(r)) track(EV.changeRequestCreated, { kind })
+    else if (otherwise) track(otherwise)
+  })
+}
+
+function signupContext() {
+  const consent = getConsent()
+  return {
+    analytics_consent: consent === null ? undefined : consent === 'granted',
+    via_invite: Boolean(localStorage.getItem('pending_invite')),
+  }
+}
+
+function daysBetween(a: string, b: string): number {
+  return Math.round((Date.parse(b) - Date.parse(a)) / 86_400_000)
+}
+
+/** Compte créé il y a moins de 2 minutes (connexion Google = inscription). */
+function justCreated(user: User): boolean {
+  if (!user.created_at) return false
+  const iso = /(?:[zZ]|[+-]\d\d:\d\d)$/.test(user.created_at) ? user.created_at : `${user.created_at}Z`
+  return Date.now() - Date.parse(iso) < 120_000
+}
+
 export interface TokenResponse {
   access_token: string
   user: User
 }
 
 export const api = {
-  register: (data: { email: string; password: string; display_name: string; color: string; locale?: Locale }) =>
-    request<TokenResponse>('/auth/register', { method: 'POST', body: JSON.stringify(data) }),
+  register: (data: {
+    email: string; password: string; display_name: string; color: string; locale?: Locale
+    analytics_consent?: boolean; via_invite?: boolean
+  }) =>
+    tracked(
+      request<TokenResponse>('/auth/register', { method: 'POST', body: JSON.stringify({ ...signupContext(), ...data }) }),
+      () => track(EV.signedUp, { method: 'email', via_invite: signupContext().via_invite, ...getAttribution() }),
+    ),
   login: (data: { email: string; password: string }) =>
-    request<TokenResponse>('/auth/login', { method: 'POST', body: JSON.stringify(data) }),
+    ev(request<TokenResponse>('/auth/login', { method: 'POST', body: JSON.stringify(data) }), EV.login, { method: 'email' }),
   me: () => request<User>('/auth/me'),
-  googleLogin: (credential: string, locale: 'fr' | 'en') =>
-    request<TokenResponse>('/auth/google', { method: 'POST', body: JSON.stringify({ credential, locale }) }),
+  googleLogin: (credential: string, locale: 'fr' | 'en', extra: { analytics_consent?: boolean; via_invite?: boolean } = {}) =>
+    tracked(
+      request<TokenResponse>('/auth/google', {
+        method: 'POST',
+        body: JSON.stringify({ credential, locale, ...signupContext(), ...extra }),
+      }),
+      (r) =>
+        justCreated(r.user)
+          ? track(EV.signedUp, { method: 'google', via_invite: signupContext().via_invite, ...getAttribution() })
+          : track(EV.login, { method: 'google' }),
+    ),
   forgotPassword: (email: string) =>
-    request<{ ok: boolean }>('/auth/password/forgot', { method: 'POST', body: JSON.stringify({ email }) }),
+    ev(
+      request<{ ok: boolean }>('/auth/password/forgot', { method: 'POST', body: JSON.stringify({ email }) }),
+      EV.passwordResetRequested,
+    ),
   resetPassword: (token: string, password: string) =>
     request<TokenResponse>('/auth/password/reset', { method: 'POST', body: JSON.stringify({ token, password }) }),
   changePassword: (current_password: string, new_password: string) =>
-    request<TokenResponse>('/auth/password/change', {
-      method: 'POST',
-      body: JSON.stringify({ current_password, new_password }),
-    }),
+    ev(
+      request<TokenResponse>('/auth/password/change', {
+        method: 'POST',
+        body: JSON.stringify({ current_password, new_password }),
+      }),
+      EV.passwordChanged,
+      { first_password: !current_password },
+    ),
   /** Révoque toutes les sessions (y compris celle-ci). */
   logoutAll: () => request<void>('/auth/logout-all', { method: 'POST' }),
   /** Export RGPD : profil, foyer, calendrier, dépenses, mur (JSON). */
-  exportData: () => request<unknown>('/auth/me/export'),
-  updateMe: (data: { display_name?: string; color?: string; email_opt_in?: boolean; onboarding_seen?: boolean; locale?: Locale }) =>
+  exportData: () => ev(request<unknown>('/auth/me/export'), EV.dataExported),
+  updateMe: (data: {
+    display_name?: string; color?: string; email_opt_in?: boolean; onboarding_seen?: boolean; locale?: Locale
+    analytics_consent?: boolean
+  }) =>
     request<User>('/auth/me', { method: 'PATCH', body: JSON.stringify(data) }),
   deleteAccount: () => request<void>('/auth/me', { method: 'DELETE' }),
 
@@ -119,37 +194,65 @@ export const api = {
     request<void>(`/households/${householdId}/school-vacations/${periodId}`, { method: 'DELETE' }),
 
   createInvitation: (householdId: number) =>
-    request<{ invite_url: string; token: string; expires_at: string }>(
-      `/households/${householdId}/invitations`,
-      { method: 'POST' },
+    ev(
+      request<{ invite_url: string; token: string; expires_at: string }>(
+        `/households/${householdId}/invitations`,
+        { method: 'POST' },
+      ),
+      EV.inviteCreated,
     ),
   previewInvitation: (token: string) =>
     request<{ household_name: string; invited_by_name: string }>(`/invitations/${token}`),
   acceptInvitation: (token: string) =>
-    request<Household>(`/invitations/${token}/accept`, { method: 'POST' }),
+    ev(request<Household>(`/invitations/${token}/accept`, { method: 'POST' }), EV.inviteAccepted),
 
   addChild: (householdId: number, data: { first_name: string; birthdate?: string | null }) =>
-    request<Child>(`/households/${householdId}/children`, { method: 'POST', body: JSON.stringify(data) }),
+    ev(
+      request<Child>(`/households/${householdId}/children`, { method: 'POST', body: JSON.stringify(data) }),
+      EV.childAdded,
+      { has_birthdate: Boolean(data.birthdate) },
+    ),
   // Avec deux parents réels, les changements sensibles renvoient 202
   // {"change_request": …} (en attente d'accord) : tester avec isPendingChange().
   deleteChild: (householdId: number, childId: number) =>
-    request<PendingChange | undefined>(`/households/${householdId}/children/${childId}`, { method: 'DELETE' }),
+    evChange(
+      request<PendingChange | undefined>(`/households/${householdId}/children/${childId}`, { method: 'DELETE' }),
+      'delete_child',
+    ),
 
   setCustodyRule: (householdId: number, data: Omit<CustodyRule, 'custom_weeks'> & { custom_weeks?: string[] | null }) =>
-    request<CustodyRule | PendingChange>(`/households/${householdId}/custody-rule`, { method: 'PUT', body: JSON.stringify(data) }),
+    evChange(
+      request<CustodyRule | PendingChange>(`/households/${householdId}/custody-rule`, { method: 'PUT', body: JSON.stringify(data) }),
+      'custody_rule',
+    ),
   setVacationRule: (householdId: number, data: VacationRule) =>
-    request<VacationRule | PendingChange>(`/households/${householdId}/vacation-rule`, { method: 'PUT', body: JSON.stringify(data) }),
+    evChange(
+      request<VacationRule | PendingChange>(`/households/${householdId}/vacation-rule`, { method: 'PUT', body: JSON.stringify(data) }),
+      'vacation_rule',
+    ),
   setSpecialDayRules: (householdId: number, data: SpecialDayRule[]) =>
-    request<SpecialDayRule[] | PendingChange>(`/households/${householdId}/special-day-rules`, { method: 'PUT', body: JSON.stringify(data) }),
+    evChange(
+      request<SpecialDayRule[] | PendingChange>(`/households/${householdId}/special-day-rules`, { method: 'PUT', body: JSON.stringify(data) }),
+      'special_day_rules',
+    ),
 
   listChangeRequests: (householdId: number, status: 'pending' | 'all' = 'pending') =>
     request<ChangeRequest[]>(`/households/${householdId}/change-requests?status=${status}`),
   acceptChange: (householdId: number, id: number) =>
-    request<ChangeRequest>(`/households/${householdId}/change-requests/${id}/accept`, { method: 'POST' }),
+    tracked(
+      request<ChangeRequest>(`/households/${householdId}/change-requests/${id}/accept`, { method: 'POST' }),
+      (r) => track(EV.changeRequestAccepted, { kind: r.kind }),
+    ),
   refuseChange: (householdId: number, id: number) =>
-    request<ChangeRequest>(`/households/${householdId}/change-requests/${id}/refuse`, { method: 'POST' }),
+    tracked(
+      request<ChangeRequest>(`/households/${householdId}/change-requests/${id}/refuse`, { method: 'POST' }),
+      (r) => track(EV.changeRequestRefused, { kind: r.kind }),
+    ),
   withdrawChange: (householdId: number, id: number) =>
-    request<ChangeRequest>(`/households/${householdId}/change-requests/${id}/withdraw`, { method: 'POST' }),
+    tracked(
+      request<ChangeRequest>(`/households/${householdId}/change-requests/${id}/withdraw`, { method: 'POST' }),
+      (r) => track(EV.changeRequestWithdrawn, { kind: r.kind }),
+    ),
   history: (householdId: number, beforeId?: number) =>
     request<HistoryEntry[]>(`/households/${householdId}/history?limit=50${beforeId ? `&before_id=${beforeId}` : ''}`),
 
@@ -163,21 +266,40 @@ export const api = {
   createException: (
     householdId: number,
     data: { date_start: string; date_end: string; parent_id: number; note: string; replaces_id?: number },
-  ) => request<ScheduleException>(`/households/${householdId}/exceptions`, { method: 'POST', body: JSON.stringify(data) }),
+  ) =>
+    ev(
+      request<ScheduleException>(`/households/${householdId}/exceptions`, { method: 'POST', body: JSON.stringify(data) }),
+      data.replaces_id ? EV.exchangeCountered : EV.exchangeProposed,
+      {
+        days: daysBetween(data.date_start, data.date_end) + 1,
+        lead_days: daysBetween(new Date().toISOString().slice(0, 10), data.date_start),
+        has_note: Boolean(data.note),
+      },
+    ),
   acceptExchange: (householdId: number, id: number, response_note = '') =>
-    request<ScheduleException>(`/households/${householdId}/exceptions/${id}/accept`, {
-      method: 'POST',
-      body: JSON.stringify({ response_note }),
-    }),
+    ev(
+      request<ScheduleException>(`/households/${householdId}/exceptions/${id}/accept`, {
+        method: 'POST',
+        body: JSON.stringify({ response_note }),
+      }),
+      EV.exchangeAccepted,
+    ),
   refuseExchange: (householdId: number, id: number, response_note = '') =>
-    request<ScheduleException>(`/households/${householdId}/exceptions/${id}/refuse`, {
-      method: 'POST',
-      body: JSON.stringify({ response_note }),
-    }),
+    ev(
+      request<ScheduleException>(`/households/${householdId}/exceptions/${id}/refuse`, {
+        method: 'POST',
+        body: JSON.stringify({ response_note }),
+      }),
+      EV.exchangeRefused,
+    ),
   withdrawExchange: (householdId: number, id: number) =>
-    request<ScheduleException>(`/households/${householdId}/exceptions/${id}/withdraw`, { method: 'POST' }),
+    ev(request<ScheduleException>(`/households/${householdId}/exceptions/${id}/withdraw`, { method: 'POST' }), EV.exchangeWithdrawn),
   deleteException: (householdId: number, id: number) =>
-    request<PendingChange | undefined>(`/households/${householdId}/exceptions/${id}`, { method: 'DELETE' }),
+    evChange(
+      request<PendingChange | undefined>(`/households/${householdId}/exceptions/${id}`, { method: 'DELETE' }),
+      'cancel_exchange',
+      EV.exchangeDeleted,
+    ),
 
   listExpenses: (householdId: number) =>
     request<Expense[]>(`/households/${householdId}/expenses`),
@@ -187,17 +309,31 @@ export const api = {
       label: string; amount_cents: number; date: string; category: string
       child_id?: number | null; paid_by?: number; payer_percent?: number
     },
-  ) => request<Expense>(`/households/${householdId}/expenses`, { method: 'POST', body: JSON.stringify(data) }),
+  ) =>
+    ev(
+      request<Expense>(`/households/${householdId}/expenses`, { method: 'POST', body: JSON.stringify(data) }),
+      EV.expenseAdded,
+      {
+        category: data.category,
+        amount: data.amount_cents / 100,
+        payer_percent: data.payer_percent ?? 50,
+        split: (data.payer_percent ?? 50) === 50 ? 'equal' : 'custom',
+        has_child: data.child_id != null,
+      },
+    ),
   updateExpense: (householdId: number, id: number, data: Partial<Omit<Expense, 'id' | 'status' | 'dispute_note' | 'created_by'>>) =>
     request<Expense>(`/households/${householdId}/expenses/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
   deleteExpense: (householdId: number, id: number) =>
     request<void>(`/households/${householdId}/expenses/${id}`, { method: 'DELETE' }),
   disputeExpense: (householdId: number, id: number, dispute_note = '') =>
-    request<Expense>(`/households/${householdId}/expenses/${id}/dispute`, { method: 'POST', body: JSON.stringify({ dispute_note }) }),
+    ev(
+      request<Expense>(`/households/${householdId}/expenses/${id}/dispute`, { method: 'POST', body: JSON.stringify({ dispute_note }) }),
+      EV.expenseDisputed,
+    ),
   resolveExpense: (householdId: number, id: number) =>
     request<Expense>(`/households/${householdId}/expenses/${id}/resolve`, { method: 'POST' }),
   settleExpense: (householdId: number, id: number) =>
-    request<Expense>(`/households/${householdId}/expenses/${id}/settle`, { method: 'POST' }),
+    ev(request<Expense>(`/households/${householdId}/expenses/${id}/settle`, { method: 'POST' }), EV.expenseSettled),
   unsettleExpense: (householdId: number, id: number) =>
     request<Expense>(`/households/${householdId}/expenses/${id}/unsettle`, { method: 'POST' }),
   balance: (householdId: number) => request<Balance>(`/households/${householdId}/balance`),
@@ -206,7 +342,12 @@ export const api = {
   createSettlement: (
     householdId: number,
     data: { from_user: number; to_user: number; amount_cents: number; date: string; note?: string },
-  ) => request<Settlement>(`/households/${householdId}/settlements`, { method: 'POST', body: JSON.stringify(data) }),
+  ) =>
+    ev(
+      request<Settlement>(`/households/${householdId}/settlements`, { method: 'POST', body: JSON.stringify(data) }),
+      EV.settlementRecorded,
+      { amount: data.amount_cents / 100 },
+    ),
   deleteSettlement: (householdId: number, id: number) =>
     request<void>(`/households/${householdId}/settlements/${id}`, { method: 'DELETE' }),
 
@@ -214,27 +355,41 @@ export const api = {
   createPost: (
     householdId: number,
     data: { kind: string; body: string; child_id?: number | null; due_date?: string | null; assigned_to?: number | null },
-  ) => request<WallPost>(`/households/${householdId}/wall`, { method: 'POST', body: JSON.stringify(data) }),
+  ) =>
+    ev(
+      request<WallPost>(`/households/${householdId}/wall`, { method: 'POST', body: JSON.stringify(data) }),
+      EV.wallPostCreated,
+      { kind: data.kind, has_due_date: Boolean(data.due_date), assigned: data.assigned_to != null, has_child: data.child_id != null },
+    ),
   deletePost: (householdId: number, id: number) =>
     request<void>(`/households/${householdId}/wall/${id}`, { method: 'DELETE' }),
   completePost: (householdId: number, id: number) =>
-    request<WallPost>(`/households/${householdId}/wall/${id}/complete`, { method: 'POST' }),
+    ev(request<WallPost>(`/households/${householdId}/wall/${id}/complete`, { method: 'POST' }), EV.taskCompleted),
   reopenPost: (householdId: number, id: number) =>
     request<WallPost>(`/households/${householdId}/wall/${id}/reopen`, { method: 'POST' }),
   addReply: (householdId: number, postId: number, body: string) =>
-    request<WallReply>(`/households/${householdId}/wall/${postId}/replies`, { method: 'POST', body: JSON.stringify({ body }) }),
+    ev(
+      request<WallReply>(`/households/${householdId}/wall/${postId}/replies`, { method: 'POST', body: JSON.stringify({ body }) }),
+      EV.wallReplyCreated,
+    ),
   deleteReply: (householdId: number, replyId: number) =>
     request<void>(`/households/${householdId}/replies/${replyId}`, { method: 'DELETE' }),
 
   billingStatus: () => request<BillingStatus>('/billing/status'),
   subscription: () => request<SubscriptionInfo>('/billing/subscription'),
-  cancelSubscription: () => request<{ ok: boolean }>('/billing/cancel', { method: 'POST' }),
+  cancelSubscription: () =>
+    ev(request<{ ok: boolean }>('/billing/cancel', { method: 'POST' }), EV.subscriptionCancelRequested),
   changePlan: (plan: 'annual' | 'monthly') =>
-    request<{ ok: boolean }>('/billing/change-plan', { method: 'POST', body: JSON.stringify({ plan }) }),
+    ev(
+      request<{ ok: boolean }>('/billing/change-plan', { method: 'POST', body: JSON.stringify({ plan }) }),
+      EV.planChanged,
+      { plan },
+    ),
 
   notifications: () => request<Notification[]>('/notifications'),
   markRead: (ids: number[]) => request<{ updated: number }>('/notifications/read', { method: 'POST', body: JSON.stringify({ ids }) }),
-  regenerateIcal: () => request<{ ical_token: string }>('/ical/regenerate', { method: 'POST' }),
+  regenerateIcal: () =>
+    ev(request<{ ical_token: string }>('/ical/regenerate', { method: 'POST' }), EV.icalLinkGenerated),
 }
 
 /** Vrai si la réponse est un changement en attente d'accord (HTTP 202). */

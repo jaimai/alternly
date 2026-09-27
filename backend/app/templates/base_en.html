@@ -64,6 +64,7 @@
   </script>
 </head>
 <body>
+  {%- set ph_key = analytics_key() %}
   <header class="site-header">
     <nav class="wrap">
       <a class="logo" href="/en">altern<span>ly</span></a>
@@ -71,7 +72,7 @@
         <a href="/en#features">Features</a>
         <a href="/en#pricing">Pricing</a>
         <a href="/en/blog">Guides</a>
-        <a href="/">FR</a>
+        <a href="/" data-lang-switch="fr">FR</a>
         <a href="/login?lang=en" class="ghost">Sign in</a>
         <a href="/register?lang=en" class="cta">Try for free</a>
       </div>
@@ -98,9 +99,11 @@
         <a href="/en/terms">Terms of Service</a>
         <a href="/en/privacy">Privacy</a>
         <a href="/en/refund">Refund policy</a>
+        {% if ph_key %}<a href="#" data-consent-open>Cookie settings</a>{% endif %}
         <p class="fine">Alternly organizes day-to-day parenting time; it does not replace a court order or legal advice.</p>
       </div>
     </div>
   </footer>
+  {% if ph_key %}<script src="/static/analytics.js" data-key="{{ ph_key }}" data-lang="en" defer></script>{% endif %}
 </body>
 </html>

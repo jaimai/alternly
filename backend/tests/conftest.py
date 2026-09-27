@@ -4,6 +4,8 @@ import os
 # (les variables d'environnement priment sur le fichier .env dans pydantic-settings).
 os.environ["DATABASE_URL"] = "sqlite://"
 os.environ["SECRET_KEY"] = "test-secret-key-uniquement-pour-les-tests"
+# Analytics PostHog coupé (no-op) même si un .env local définit un jeton.
+os.environ["POSTHOG_TOKEN"] = ""
 
 import re
 

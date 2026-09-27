@@ -1,0 +1,13 @@
+{
+  "cookies.title": "Analytics",
+  "cookies.body": "We measure how Alternly is used anonymously, without cookies. With your consent, we also use cookies to understand user journeys and record sessions (inputs and personal data masked) to improve the app. Hosted in the EU, never sold.",
+  "cookies.learnMore": "Learn more",
+  "cookies.accept": "Accept",
+  "cookies.refuse": "Decline",
+  "cookies.close": "Close",
+  "cookies.manage": "Cookie settings",
+  "cookies.settingsTitle": "Cookies & analytics",
+  "cookies.statusGranted": "Accepted: detailed analytics and session replay (data masked).",
+  "cookies.statusDenied": "Declined: anonymous cookieless measurement only.",
+  "cookies.statusUnset": "Not chosen yet: anonymous cookieless measurement only."
+}

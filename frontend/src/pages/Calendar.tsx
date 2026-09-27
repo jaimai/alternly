@@ -110,7 +110,7 @@ export default function CalendarPage() {
         )}
         {data && !data.school_holidays_loaded && <div className="info-banner">{t('calendar.schoolHolidaysError')}</div>}
         {data && (
-          <div className="legend">
+          <div className="legend ph-mask ph-sensitive">
             {data.members.map((m) => (
               <span key={m.id} className="legend-item">
                 <span className="dot" style={{ background: m.color }} />

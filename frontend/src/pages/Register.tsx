@@ -3,6 +3,8 @@ import type { FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { api, setToken } from '../api'
+import { getAttribution, track } from '../analytics'
+import { EV } from '../analyticsEvents'
 import { useAuth } from '../auth'
 import { DEFAULT_PARENT_COLOR } from '../colors'
 import ColorPicker from '../components/ColorPicker'
@@ -37,6 +39,7 @@ export default function RegisterPage() {
     }
     setBusy(true)
     setError(null)
+    track(EV.signupStarted, { method: 'email', ...getAttribution() })
     try {
       // La langue affichée (venue de la landing) devient celle du compte.
       const locale = i18n.language.startsWith('en') ? 'en' : 'fr'

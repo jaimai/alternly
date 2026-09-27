@@ -3,6 +3,8 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Analytics } from '@vercel/analytics/react'
 import { RequireAuth } from './auth'
+import AnalyticsBridge from './components/AnalyticsBridge'
+import ConsentBanner from './components/ConsentBanner'
 import PremiumGate from './components/PremiumGate'
 import Spinner from './components/Spinner'
 
@@ -60,7 +62,7 @@ export default function App() {
         path="/expenses"
         element={
           <RequireAuth>
-            <PremiumGate feature={t('paywall.featureExpenses')}>
+            <PremiumGate feature={t('paywall.featureExpenses')} featureKey="expenses">
               <ExpensesPage />
             </PremiumGate>
           </RequireAuth>
@@ -70,7 +72,7 @@ export default function App() {
         path="/wall"
         element={
           <RequireAuth>
-            <PremiumGate feature={t('paywall.featureWall')}>
+            <PremiumGate feature={t('paywall.featureWall')} featureKey="wall">
               <WallPage />
             </PremiumGate>
           </RequireAuth>
@@ -91,6 +93,8 @@ export default function App() {
     </Routes>
     </Suspense>
     <Analytics />
+    <AnalyticsBridge />
+    <ConsentBanner />
     </>
   )
 }

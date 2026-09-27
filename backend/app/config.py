@@ -28,6 +28,12 @@ class Settings(BaseSettings):
     sentry_dsn: str = ""
     sentry_environment: str = "production"
     sentry_traces_sample_rate: float = 0.0
+    # Mesure d'audience / analytics produit PostHog (région UE). Jeton de projet
+    # (phc_…, public par conception). Vide → tout est désactivé (no-op).
+    posthog_token: str = ""
+    posthog_host: str = "https://eu.i.posthog.com"
+    # Transfère les logs WARNING+ du serveur en événements `server_log` (désactivé par défaut).
+    posthog_server_logs: bool = False
 
     # Paiement Paddle (Merchant of Record). Durée de l'essai gratuit en jours.
     trial_days: int = 14

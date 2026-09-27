@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api, setToken } from '../api'
+import { analyticsEnabled, openConsentBanner } from '../analytics'
 import { useAuth } from '../auth'
 import { todayIso } from '../dates'
 import { passwordProblem } from '../password'
 import type { User } from '../types'
+import { useConsent } from './useConsent'
 import Icon from './Icon'
 import Modal from './Modal'
 import PasswordField from './PasswordField'
@@ -25,6 +27,7 @@ export default function AccountCard({
   const [changing, setChanging] = useState(false)
   const [busy, setBusy] = useState(false)
   const [confirm, confirmNode] = useConfirm()
+  const consent = useConsent()
 
   async function exportData() {
     setBusy(true)
@@ -65,7 +68,7 @@ export default function AccountCard({
   return (
     <div className="card" id="account">
       <h2>{t('settings.accountTitle')}</h2>
-      <p className="hint">{t('settings.signedInAs', { email: user.email })}</p>
+      <p className="hint ph-mask ph-sensitive">{t('settings.signedInAs', { email: user.email })}</p>
       <div className="settings-list">
         <button type="button" className="settings-row" onClick={() => setChanging(true)}>
           <span>
@@ -83,6 +86,17 @@ export default function AccountCard({
           </span>
           <Icon name="download" size={16} />
         </button>
+        {analyticsEnabled && (
+          <button type="button" className="settings-row" onClick={openConsentBanner}>
+            <span>
+              <strong>{t('cookies.settingsTitle')}</strong>
+              <span className="hint">
+                {t(consent === 'granted' ? 'cookies.statusGranted' : consent === 'denied' ? 'cookies.statusDenied' : 'cookies.statusUnset')}
+              </span>
+            </span>
+            <Icon name="chevron" size={16} />
+          </button>
+        )}
         <button type="button" className="settings-row" onClick={logoutAll} disabled={busy}>
           <span>
             <strong>{t('settings.logoutAll')}</strong>

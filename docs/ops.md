@@ -45,6 +45,9 @@ Toutes lues par `backend/app/config.py` (insensibles à la casse).
 | `GOOGLE_CLIENT_ID` | vide | Active « Continuer avec Google » (voir la section Google). |
 | `SENTRY_ENVIRONMENT` | `production` | `staging`, `production`… |
 | `SENTRY_TRACES_SAMPLE_RATE` | `0.0` | Échantillonnage des traces de performance (0 → désactivé). |
+| `POSTHOG_TOKEN` | vide | Clé de projet PostHog (`phc_…`, UE). Vide → aucune mesure d'audience ni bannière (voir `docs/analytics.md`). |
+| `POSTHOG_HOST` | `https://eu.i.posthog.com` | Ingestion PostHog côté serveur. |
+| `POSTHOG_SERVER_LOGS` | `false` | Envoie les logs WARNING+ en événements `server_log` (30/min max). |
 | `PADDLE_WEBHOOK_SECRET` | vide | Secret de signature des webhooks (*Notifications → destination*). Vide → webhook refusé (403). |
 | `PADDLE_API_KEY` | vide | Appels serveur (détail, résiliation, changement d'offre). Vide → gestion d'abonnement indisponible (502/`plan: null`). |
 | `PADDLE_ENV` | `sandbox` | `sandbox` ou `production` (base de l'API Paddle). |
@@ -54,7 +57,7 @@ Toutes lues par `backend/app/config.py` (insensibles à la casse).
 
 Côté Vercel (préfixe `VITE_`, lues au build) : `VITE_API_URL` (URL de l'API Railway,
 suffixe `/api`), `VITE_PADDLE_ENV`, `VITE_PADDLE_CLIENT_TOKEN`, `VITE_PADDLE_PRICE_ID`,
-`VITE_PADDLE_PRICE_ID_MONTHLY`, `VITE_GOOGLE_CLIENT_ID` (voir `backend/.env.example` et le code de `frontend/`).
+`VITE_PADDLE_PRICE_ID_MONTHLY`, `VITE_GOOGLE_CLIENT_ID`, `VITE_POSTHOG_KEY` (+ `VITE_POSTHOG_HOST` optionnel, défaut `/ingest`) (voir `backend/.env.example` et le code de `frontend/`).
 
 ## Railway (API)
 

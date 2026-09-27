@@ -44,11 +44,19 @@ class User(Base):
     subscription_ends_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     paddle_customer_id: Mapped[str | None] = mapped_column(String, nullable=True)
     paddle_subscription_id: Mapped[str | None] = mapped_column(String, nullable=True, index=True)
+    # Consentement à la mesure d'audience (PostHog) : None = pas encore répondu,
+    # True = accepté (événements rattachés au compte), False = refusé (anonyme).
+    analytics_consent: Mapped[bool | None] = mapped_column(Boolean, nullable=True, default=None)
 
     @property
     def has_password(self) -> bool:
         """Faux pour un compte créé via Google qui n'a jamais défini de mot de passe."""
         return bool(self.password_hash)
+
+    @property
+    def auth_method(self) -> str:
+        """« google » pour un compte sans mot de passe relié à Google, sinon « email »."""
+        return "google" if self.google_sub and not self.password_hash else "email"
 
 
 class Household(Base):
