@@ -15,6 +15,7 @@ from ..db import get_db
 from ..deps import is_premium, other_parent_id
 from ..models import ScheduleException, User, utcnow
 from ..services import email as email_service
+from ..services import invite_reminders
 
 router = APIRouter(prefix="/api/cron", tags=["cron"])
 
@@ -57,3 +58,13 @@ def exchange_reminders(
             sent += 1
     db.commit()
     return {"sent": sent}
+
+
+@router.post("/invite-reminders")
+def invite_reminders_job(
+    x_cron_key: str | None = Header(default=None),
+    db: Session = Depends(get_db),
+):
+    """Relances de la boucle d'invitation (inviteur J+2/J+5, invité J+3, nudge onboarding)."""
+    _authorize(x_cron_key)
+    return invite_reminders.run(db)
