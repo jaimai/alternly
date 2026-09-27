@@ -1092,6 +1092,89 @@ label {
   min-width: 220px;
 }
 
+/* Boucle d'invitation : message modifiable + canaux de partage */
+.invite-box { display: flex; flex-direction: column; gap: 10px; }
+.invite-box label { margin-top: 4px; }
+.invite-message { width: 100%; font-size: 0.92rem; }
+.invite-box > button.link { align-self: flex-start; }
+.invite-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
+  gap: 8px;
+}
+.invite-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 11px 14px;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.92rem;
+  text-decoration: none;
+  background: var(--pine-soft);
+  color: var(--pine);
+  border: none;
+  min-height: 44px;
+  transition: transform 160ms var(--ease-out), background 160ms ease;
+}
+.invite-action:active { transform: scale(0.97); }
+.invite-action.primary { background: var(--pine); color: #fff; }
+.invite-action.whatsapp { background: #1f8f4e; color: #fff; }
+@media (hover: hover) and (pointer: fine) {
+  .invite-action:hover { background: var(--sage); }
+  .invite-action.primary:hover { background: var(--pine-deep); }
+  .invite-action.whatsapp:hover { background: #197a42; }
+}
+.invite-flash { margin: 0; color: var(--pine); font-weight: 600; font-size: 0.88rem; }
+.invite-link-row { display: flex; gap: 8px; align-items: center; }
+.invite-link-row input { flex: 1 1 auto; min-width: 0; font-size: 0.85rem; color: var(--ink-soft); }
+.invite-link-row button { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; }
+.invite-email {
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+  margin-top: 4px;
+}
+.invite-email .row { flex-wrap: nowrap; }
+.invite-email input[type='email'] { flex: 1 1 auto; min-width: 0; }
+.invite-email .invite-lang { flex: 0 0 auto; width: auto; }
+.invite-email button { flex: 0 0 auto; }
+.invite-email .hint svg, .invite-expired svg { vertical-align: -2px; }
+@media (max-width: 480px) {
+  .invite-email .row { flex-wrap: wrap; }
+  .invite-email input[type='email'] { flex-basis: 100%; }
+}
+
+/* Page /join : aperçu du planning de l'invité */
+.join-preview h2 { margin-bottom: 4px; }
+.join-strip {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  margin: 12px 0;
+}
+.join-strip .wd { font-size: 0.7rem; color: var(--ink-soft); text-align: center; text-transform: uppercase; }
+.join-day {
+  aspect-ratio: 1;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 600;
+  background: var(--pine-soft);
+  color: var(--pine);
+}
+.join-day.you { background: var(--terra); color: #fff; }
+.join-day.today { outline: 2px solid var(--ink); outline-offset: 1px; }
+.join-legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 0.82rem; color: var(--ink-soft); }
+.join-legend .sw { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: 0; }
+.join-periods { margin: 10px 0 0; padding-left: 18px; }
+.join-periods li { margin: 2px 0; }
+.join-trust { list-style: none; padding: 0; margin: 12px 0 0; display: grid; gap: 6px; font-size: 0.9rem; }
+.join-trust li { display: flex; gap: 8px; align-items: flex-start; }
+.join-trust svg { color: var(--pine); flex: 0 0 auto; margin-top: 3px; }
+
 /* ---------- Primitives ---------- */
 .sr-only {
   position: absolute;

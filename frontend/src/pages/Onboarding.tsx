@@ -5,6 +5,7 @@ import { api, ApiError } from '../api'
 import { track } from '../analytics'
 import { EV } from '../analyticsEvents'
 import { useAuth } from '../auth'
+import InviteShare from '../components/InviteShare'
 import Paywall from '../components/Paywall'
 import Spinner from '../components/Spinner'
 import RuleForm from '../components/RuleForm'
@@ -101,9 +102,8 @@ export default function OnboardingPage() {
         children_count: household.children.length,
         pattern: value.custody.pattern,
       })
-      // Freemium : on propose l'abonnement (skippable) à la fin de l'inscription.
-      if (billing && !billing.access) setStep(3)
-      else navigate('/app')
+      // Étape d'invitation de l'autre parent (le levier d'activation n° 1).
+      setStep(3)
     } catch (err) {
       setError(err instanceof Error ? err.message : t('onboarding.errorGeneric'))
     } finally {
@@ -111,9 +111,16 @@ export default function OnboardingPage() {
     }
   }
 
+  function finishInvite(skipped: boolean) {
+    track(EV.onboardingStepCompleted, { step: 'invite', skipped })
+    // Freemium : on propose l'abonnement (skippable) à la fin de l'inscription.
+    if (billing && !billing.access) setStep(4)
+    else navigate('/app')
+  }
+
   if (loading) return <Spinner />
 
-  if (step === 3 && user) {
+  if (step === 4 && user) {
     return (
       <Paywall
         user={user}
@@ -137,7 +144,7 @@ export default function OnboardingPage() {
         <p>{t('onboarding.welcomeSubtitle')}</p>
       </div>
       <div className="step-dots">
-        {[0, 1, 2].map((i) => (
+        {[0, 1, 2, 3].map((i) => (
           <span key={i} className={i <= step ? 'active' : ''} />
         ))}
       </div>
@@ -247,6 +254,20 @@ export default function OnboardingPage() {
             busy={busy}
             onSubmit={saveRules}
           />
+        </div>
+      )}
+
+      {step === 3 && household && (
+        <div className="card">
+          <h2>{t('invite.stepTitle')}</h2>
+          <p style={{ color: 'var(--ink-soft)', marginTop: 0 }}>{t('invite.stepBody')}</p>
+          <InviteShare household={household} source="onboarding" />
+          <div className="row" style={{ marginTop: 16 }}>
+            <button className="secondary" onClick={() => finishInvite(true)}>
+              {t('invite.stepLater')}
+            </button>
+            <button onClick={() => finishInvite(false)}>{t('invite.stepContinue')}</button>
+          </div>
         </div>
       )}
     </div>

@@ -263,6 +263,11 @@ def dashboards(action_ids: dict[str, int], household: int) -> list[dict]:
                     ev("signed_up"), ev("exchange_proposed"),
                 ], window_days=7)),
                 ("Étapes d'onboarding", trends([ev("onboarding_step_completed")], breakdown="step", display="ActionsBarValue")),
+                ("Partage d'invitation par canal", trends([ev("invite_shared")], breakdown="channel", display="ActionsBarValue")),
+                # Aperçus /join anonymes : volumes comparés, pas un funnel par personne.
+                ("Boucle d'invitation (volumes)", trends([
+                    ev("invite_shared"), ev("invite_email_sent"), ev("invite_preview_viewed"), ev("partner_joined"),
+                ], interval="week", date_from="-90d")),
             ],
         },
         {

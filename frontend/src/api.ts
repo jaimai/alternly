@@ -9,6 +9,8 @@ import type {
   Country,
   HistoryEntry,
   Household,
+  Invitation,
+  InvitationSchedulePreview,
   Locale,
   Member,
   Notification,
@@ -45,9 +47,12 @@ export function setToken(token: string | null) {
 
 export class ApiError extends Error {
   status: number
-  constructor(status: number, detail: string) {
+  /** `detail` structuré renvoyé par l'API (ex. invitation expirée), sinon undefined. */
+  data?: Record<string, unknown>
+  constructor(status: number, detail: string, data?: Record<string, unknown>) {
     super(detail)
     this.status = status
+    this.data = data
   }
 }
 
@@ -64,9 +69,13 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   }
   if (!resp.ok) {
     let detail = resp.statusText
+    let data: Record<string, unknown> | undefined
     try {
       const body = await resp.json()
-      if (typeof body.detail === 'string') {
+      if (body.detail && typeof body.detail === 'object' && !Array.isArray(body.detail)) {
+        data = body.detail
+        if (typeof body.detail.message === 'string') detail = body.detail.message
+      } else if (typeof body.detail === 'string') {
         detail = body.detail
       } else if (Array.isArray(body.detail)) {
         // Erreur de validation FastAPI/Pydantic : detail = liste d'objets {loc, msg}
@@ -75,7 +84,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     } catch {
       /* corps non JSON */
     }
-    throw new ApiError(resp.status, detail)
+    throw new ApiError(resp.status, detail, data)
   }
   if (resp.status === 204) return undefined as T
   return resp.json()
@@ -194,15 +203,19 @@ export const api = {
     request<void>(`/households/${householdId}/school-vacations/${periodId}`, { method: 'DELETE' }),
 
   createInvitation: (householdId: number) =>
+    ev(request<Invitation>(`/households/${householdId}/invitations`, { method: 'POST' }), EV.inviteCreated),
+  currentInvitation: (householdId: number) =>
+    request<{ invitation: Invitation | null; last_expired: boolean }>(`/households/${householdId}/invitations/current`),
+  emailInvitation: (householdId: number, data: { email: string; locale: Locale }) =>
     ev(
-      request<{ invite_url: string; token: string; expires_at: string }>(
-        `/households/${householdId}/invitations`,
-        { method: 'POST' },
-      ),
-      EV.inviteCreated,
+      request<Invitation>(`/households/${householdId}/invitations/email`, { method: 'POST', body: JSON.stringify(data) }),
+      EV.inviteShared,
+      { channel: 'alternly_email' },
     ),
   previewInvitation: (token: string) =>
     request<{ household_name: string; invited_by_name: string }>(`/invitations/${token}`),
+  previewInvitationSchedule: (token: string) =>
+    request<InvitationSchedulePreview>(`/invitations/${token}/preview-schedule`),
   acceptInvitation: (token: string) =>
     ev(request<Household>(`/invitations/${token}/accept`, { method: 'POST' }), EV.inviteAccepted),
 

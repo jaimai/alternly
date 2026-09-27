@@ -1,0 +1,20 @@
+{
+  "join.invalidTitle": "Invitation link",
+  "join.expired": "This invitation link has expired. Ask {{name}} for a new one: it can be regenerated in one click.",
+  "join.expiredAnon": "This invitation link has expired. Ask your co-parent for a new one: it can be regenerated in one click.",
+  "join.used": "This link has already been used. If it was you, log in to see your calendar.",
+  "join.unknown": "This invitation link can't be found. Check that it was copied in full, or ask for a new one.",
+  "join.askNewLink": "Invitation links are personal and valid for 14 days.",
+  "join.previewTitle": "Your schedule for the next 4 weeks",
+  "join.previewSubtitle": "Custody of {{children}}, as set up by {{name}}. You can propose changes once you've joined.",
+  "join.previewSubtitleNoChildren": "As set up by {{name}}. You can propose changes once you've joined.",
+  "join.stripAria": "Calendar for the next 4 weeks: your days are highlighted",
+  "join.legendYou": "You",
+  "join.yourPeriods": "You have the kids:",
+  "join.handover": "Handover at {{time}}.",
+  "join.trust.free": "Free for you, no credit card",
+  "join.trust.same": "You both see exactly the same calendar",
+  "join.trust.swaps": "Nothing changes without your agreement: swaps are proposed and accepted",
+  "join.trust.leave": "You can leave the household and delete your account at any time",
+  "join.trust.eu": "Data hosted in the European Union, never sold"
+}

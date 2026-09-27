@@ -50,5 +50,6 @@
   "common.notifChangeRequested": "Demande de changement à valider : {{summary}}",
   "common.notifChangeAccepted": "Votre demande a été acceptée : {{summary}}",
   "common.notifChangeRefused": "Votre demande a été refusée : {{summary}}",
-  "common.notifPaymentFailed": "Le paiement de votre abonnement a échoué : mettez à jour votre moyen de paiement"
+  "common.notifPaymentFailed": "Le paiement de votre abonnement a échoué : mettez à jour votre moyen de paiement",
+  "common.notifInviteReminder": "L'autre parent n'a pas encore rejoint le calendrier. Renvoyez-lui l'invitation en un geste."
 }

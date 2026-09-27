@@ -1,0 +1,20 @@
+{
+  "join.invalidTitle": "Lien d'invitation",
+  "join.expired": "Ce lien d'invitation a expiré. Demandez un nouveau lien à {{name}} : il ou elle peut le régénérer en un clic.",
+  "join.expiredAnon": "Ce lien d'invitation a expiré. Demandez un nouveau lien à l'autre parent : il se régénère en un clic.",
+  "join.used": "Ce lien a déjà été utilisé. Si c'était vous, connectez-vous pour retrouver votre calendrier.",
+  "join.unknown": "Ce lien d'invitation est introuvable. Vérifiez qu'il a été copié en entier, ou demandez-en un nouveau.",
+  "join.askNewLink": "Les liens d'invitation sont personnels et valables 14 jours.",
+  "join.previewTitle": "Votre planning des 4 prochaines semaines",
+  "join.previewSubtitle": "Garde de {{children}}, telle que {{name}} l'a configurée. Vous pourrez proposer des changements une fois inscrit·e.",
+  "join.previewSubtitleNoChildren": "Tel que {{name}} l'a configuré. Vous pourrez proposer des changements une fois inscrit·e.",
+  "join.stripAria": "Calendrier des 4 prochaines semaines : vos jours sont mis en évidence",
+  "join.legendYou": "Vous",
+  "join.yourPeriods": "Vous avez les enfants :",
+  "join.handover": "Passage de relais à {{time}}.",
+  "join.trust.free": "Gratuit pour vous, sans carte bancaire",
+  "join.trust.same": "Vous voyez tous les deux exactement le même calendrier",
+  "join.trust.swaps": "Aucun changement sans votre accord : les échanges se proposent et s'acceptent",
+  "join.trust.leave": "Vous pouvez quitter le foyer et supprimer votre compte à tout moment",
+  "join.trust.eu": "Données hébergées dans l'Union européenne, jamais revendues"
+}
