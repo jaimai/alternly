@@ -1,16 +1,21 @@
 from datetime import date
 from pathlib import Path
 
-from fastapi import APIRouter, HTTPException, Request
-from fastapi.responses import HTMLResponse, PlainTextResponse, Response
+from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
+from sqlalchemy.orm import Session
 
 from ..config import settings
+from ..db import get_db
 from ..legal import PAGES as LEGAL_PAGES
 from ..legal import PAGES_EN as LEGAL_PAGES_EN
 from ..legal import UPDATED as LEGAL_UPDATED
 from ..legal import UPDATED_EN as LEGAL_UPDATED_EN
+from ..ratelimit import MINUTE, rate_limit
+from ..services import vacation_tool
 from ..services.blog import CONTENT_DIR_EN, load_articles, render_article
+from ..services.public_holidays import PublicDataUnavailable
 
 router = APIRouter(tags=["marketing"])
 
@@ -95,6 +100,118 @@ def blog_post_en(request: Request, slug: str):
     )
 
 
+# ---------------------------------------------------------------- outils gratuits
+TOOL_PATH = "/outils/vacances-garde-alternee"
+TOOL_TITLE = "Qui a les enfants pendant les vacances ?"
+TOOL_CTA = "/register?lang=fr&utm_source=outil&utm_medium=web&utm_campaign=toussaint-2026"
+
+# Rattachement des académies (métropole) aux zones de vacances.
+ZONE_ACADEMIES = {
+    "A": "Besançon, Bordeaux, Clermont-Ferrand, Dijon, Grenoble, Limoges, Lyon, Poitiers",
+    "B": "Aix-Marseille, Amiens, Lille, Nancy-Metz, Nantes, Nice, Normandie, Orléans-Tours, "
+         "Reims, Rennes, Strasbourg",
+    "C": "Créteil, Montpellier, Paris, Toulouse, Versailles",
+}
+
+TOOL_FAQ = [
+    (
+        "Comment sont partagées les vacances « par moitié » ?",
+        "La période officielle (du premier au dernier jour sans école) est coupée en deux. "
+        "Si elle compte un nombre impair de jours, le jour supplémentaire revient à la "
+        "première moitié. Le jour de passage est le premier jour de la seconde moitié : "
+        "pour une Toussaint de 16 jours commençant un samedi, c'est le dimanche de la "
+        "semaine suivante.",
+    ),
+    (
+        "Qui a la première moitié les années paires ?",
+        "C'est votre jugement ou votre convention parentale qui le dit, par exemple "
+        "« le père a la première moitié les années paires ». L'attribution s'inverse "
+        "les années impaires. Pour les vacances à cheval sur deux années (Noël), "
+        "c'est l'année du premier jour des vacances qui compte.",
+    ),
+    (
+        "Les vacances de la Toussaint dépendent-elles de la zone ?",
+        "Non : la Toussaint, Noël et l'été sont communs aux zones A, B et C. Seules les "
+        "vacances d'hiver et de printemps sont décalées selon la zone de l'école de l'enfant.",
+    ),
+    (
+        "À quelle heure se fait le passage de bras ?",
+        "Le calcul se fait en journées entières. L'heure (samedi midi, dimanche 18 h…) "
+        "est celle prévue par votre accord ; à défaut, mettez-vous d'accord par écrit.",
+    ),
+    (
+        "Mes données sont-elles enregistrées ?",
+        "Non. L'outil ne demande ni compte ni e-mail, et les prénoms éventuellement "
+        "saisis restent dans votre navigateur.",
+    ),
+]
+
+
+def _tool_form(params) -> tuple[dict, bool]:
+    """Valeurs du formulaire (défauts si absent/invalide) et présence d'une demande."""
+    default = vacation_tool.default_option()
+    options = {o["value"]: o for o in vacation_tool.period_options()}
+    zone = params.get("zone", "")
+    vac = params.get("vacances", "")
+    mode = params.get("mode", "")
+    even_first = params.get("even_first", "")
+    submitted = (
+        zone in vacation_tool.ZONES and vac in options
+        and mode in vacation_tool.MODES and even_first in vacation_tool.PARENTS
+    )
+    form = {
+        "zone": zone if zone in vacation_tool.ZONES else "",
+        "vacances": vac if vac in options else default["value"],
+        "mode": mode if mode in vacation_tool.MODES else "split_half",
+        "even_first": even_first if even_first in vacation_tool.PARENTS else "A",
+    }
+    return form, submitted
+
+
+@router.get("/outils", include_in_schema=False)
+def tools_index():
+    return RedirectResponse(TOOL_PATH, status_code=302)
+
+
+@router.get(TOOL_PATH, response_class=HTMLResponse, include_in_schema=False)
+def tool_vacation_split(request: Request, db: Session = Depends(get_db)):
+    """Outil SSR : fonctionne sans JS (formulaire GET), amélioré par outil-vacances.js."""
+    form, submitted = _tool_form(request.query_params)
+    result, error = None, None
+    if submitted:
+        try:
+            rate_limit("vacation_tool", 30, MINUTE)(request)
+            period, year = form["vacances"].rsplit("-", 1)
+            result = vacation_tool.vacation_split(
+                db, form["zone"], period, int(year), form["mode"], form["even_first"]
+            )
+        except HTTPException:
+            error = "Trop de demandes d'affilée : réessayez dans une minute."
+        except PublicDataUnavailable:
+            error = ("Le calendrier scolaire officiel est momentanément indisponible. "
+                     "Réessayez dans quelques minutes.")
+        except vacation_tool.PeriodNotPublished:
+            error = ("Les dates officielles de ces vacances ne sont pas encore publiées "
+                     "pour cette zone. Choisissez une autre période.")
+    elif "vacances" in request.query_params and not form["zone"]:
+        error = "Choisissez la zone scolaire de l'école de l'enfant (A, B ou C)."
+    return templates.TemplateResponse(
+        request,
+        "outil_vacances.html",
+        {
+            "form": form,
+            "options": vacation_tool.period_options(),
+            "result": result,
+            "error": error,
+            "zones": ZONE_ACADEMIES,
+            "faq": TOOL_FAQ,
+            "cta_href": TOOL_CTA,
+            "tool_title": TOOL_TITLE,
+            "canonical": f"{site_base(request)}{TOOL_PATH}",
+        },
+    )
+
+
 # Crawlers de moteurs de réponse IA : on les autorise explicitement (visibilité AEO).
 _AI_AGENTS = [
     "GPTBot", "OAI-SearchBot", "ChatGPT-User", "PerplexityBot", "Perplexity-User",
@@ -151,7 +268,8 @@ def robots(request: Request):
 @router.get("/sitemap.xml", include_in_schema=False)
 def sitemap(request: Request):
     base = site_base(request)
-    entries = [(f"{base}/", None, "1.0"), (f"{base}/en", None, "0.9"), (f"{base}/blog", None, "0.7")]
+    entries = [(f"{base}/", None, "1.0"), (f"{base}/en", None, "0.9"), (f"{base}/blog", None, "0.7"),
+               (f"{base}{TOOL_PATH}", None, "0.8")]
     for a in load_articles():
         entries.append((f"{base}/blog/{a.slug}", a.date.isoformat(), "0.6"))
     entries.append((f"{base}/en/blog", None, "0.7"))
@@ -202,6 +320,9 @@ def llms_txt(request: Request):
 ## Confidentialité
 - Données hébergées en Union européenne, minimisation stricte (le prénom de l'enfant suffit).
 - Alternly organise le quotidien ; il ne remplace ni une décision de justice ni un conseil juridique.
+
+## Outils gratuits (sans inscription)
+- [{TOOL_TITLE}]({base}{TOOL_PATH}) : zone scolaire, période (Toussaint, Noël, hiver, printemps, été) et règle de partage (moitié/moitié ou vacances entières, années paires/impaires) → dates officielles et jour de passage entre les parents.
 
 ## Guides
 {guides}
