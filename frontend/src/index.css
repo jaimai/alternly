@@ -1143,6 +1143,7 @@ label {
 @media (max-width: 480px) {
   .invite-email .row { flex-wrap: wrap; }
   .invite-email input[type='email'] { flex-basis: 100%; }
+  .invite-email button { flex: 1 1 auto; }
 }
 
 /* Page /join : aperçu du planning de l'invité */
