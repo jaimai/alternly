@@ -266,11 +266,47 @@ class InvitationOut(BaseModel):
     invite_url: str
     token: str
     expires_at: datetime
+    created_at: datetime | None = None
+    # Adresse saisie pour l'envoi par Alternly (visible du seul foyer émetteur).
+    invitee_email: str | None = None
+    email_sent: bool = False
+
+
+class InvitationCurrent(BaseModel):
+    """Invitation active du foyer (s'il y en a une) et état de la précédente."""
+    invitation: InvitationOut | None = None
+    # Vrai si la dernière invitation a expiré sans être acceptée (régénérer en un clic).
+    last_expired: bool = False
+
+
+class InvitationEmailIn(BaseModel):
+    email: EmailStr
+    locale: Literal["fr", "en"] | None = None
 
 
 class InvitationPreview(BaseModel):
     household_name: str
     invited_by_name: str
+
+
+class PreviewDay(BaseModel):
+    date: date
+    who: Literal["you", "inviter"]
+
+
+class PreviewPeriod(BaseModel):
+    start: date
+    end: date
+
+
+class InvitationSchedulePreview(BaseModel):
+    """Aperçu public (jeton = secret) : dates et « qui », prénoms seulement."""
+    inviter_first_name: str
+    children: list[str]
+    has_schedule: bool
+    handover_time: str | None = None
+    days: list[PreviewDay] = []
+    your_periods: list[PreviewPeriod] = []
 
 
 class CalendarDay(BaseModel):

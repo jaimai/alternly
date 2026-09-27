@@ -40,7 +40,7 @@ _SUBJECT_COLUMNS = [
 ]
 
 
-def _placeholder_member(db: Session, household_id: int) -> HouseholdMember | None:
+def placeholder_member(db: Session, household_id: int) -> HouseholdMember | None:
     for m in db.scalars(
         select(HouseholdMember).where(HouseholdMember.household_id == household_id)
     ):
@@ -82,7 +82,7 @@ def claim_placeholder(db: Session, household_id: int, real_user_id: int) -> bool
     """Le vrai parent réclame le placeholder du foyer : bascule ses références
     vers le vrai compte, supprime l'adhésion puis le compte fantôme.
     Renvoie True si un placeholder a été réclamé. Ne commit pas."""
-    member = _placeholder_member(db, household_id)
+    member = placeholder_member(db, household_id)
     if member is None:
         return False
     ghost_id = member.user_id

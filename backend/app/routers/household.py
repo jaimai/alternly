@@ -1,7 +1,7 @@
 import secrets
-from datetime import timedelta
+from datetime import date, timedelta
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -11,7 +11,10 @@ from ..db import get_db
 from ..deps import get_membership, household_members, notify
 from ..ratelimit import DAY, HOUR, rate_limit
 from ..services import analytics, audit
-from ..services.parents import claim_placeholder, ensure_second_parent
+from ..services import email as email_service
+from ..services.invite_reminders import INVITATION_TTL
+from ..services.calendar_service import NoCustodyRule, build_calendar
+from ..services.parents import claim_placeholder, ensure_second_parent, placeholder_member
 from ..models import (
     Child,
     CustodyRule,
@@ -29,8 +32,13 @@ from ..schemas import (
     HouseholdCreate,
     HouseholdOut,
     HouseholdUpdate,
+    InvitationCurrent,
+    InvitationEmailIn,
     InvitationOut,
     InvitationPreview,
+    InvitationSchedulePreview,
+    PreviewDay,
+    PreviewPeriod,
     MemberOut,
     PartnerUpdate,
     SchoolVacationIn,
@@ -245,32 +253,133 @@ def rename_partner(
     return _member_out(db, ghost_member)
 
 
-@router.post("/households/{household_id}/invitations", response_model=InvitationOut, status_code=201)
-def create_invitation(member: HouseholdMember = Depends(get_membership), db: Session = Depends(get_db)):
-    if len(_real_members(db, member.household_id)) >= 2:
-        raise HTTPException(status_code=409, detail="Le foyer a déjà deux parents")
-    invitation = Invitation(
-        household_id=member.household_id,
-        token=secrets.token_urlsafe(32),
-        invited_by=member.user_id,
-        expires_at=utcnow() + timedelta(days=14),
-    )
-    db.add(invitation)
-    db.commit()
+def _invitation_out(invitation: Invitation) -> InvitationOut:
     return InvitationOut(
         # Lien absolu vers la route SPA /join/:token.
         invite_url=f"{settings.app_url.rstrip('/')}/join/{invitation.token}",
         token=invitation.token,
         expires_at=invitation.expires_at,
+        created_at=invitation.created_at,
+        invitee_email=invitation.invitee_email,
+        email_sent=invitation.email_sent_at is not None,
     )
 
 
-def _valid_invitation(db: Session, token: str) -> Invitation:
+def latest_invitation(db: Session, household_id: int) -> Invitation | None:
+    """Dernière invitation émise par le foyer (la seule relancée par le cron)."""
+    return db.scalar(
+        select(Invitation)
+        .where(Invitation.household_id == household_id)
+        .order_by(Invitation.id.desc())
+        .limit(1)
+    )
+
+
+def _active_invitation(db: Session, household_id: int) -> Invitation | None:
+    inv = latest_invitation(db, household_id)
+    if inv is None or inv.used_at is not None or inv.expires_at < utcnow():
+        return None
+    return inv
+
+
+def _ensure_solo(db: Session, household_id: int) -> None:
+    if len(_real_members(db, household_id)) >= 2:
+        raise HTTPException(status_code=409, detail="Le foyer a déjà deux parents")
+
+
+def _new_invitation(db: Session, member: HouseholdMember) -> Invitation:
+    invitation = Invitation(
+        household_id=member.household_id,
+        token=secrets.token_urlsafe(32),
+        invited_by=member.user_id,
+        created_at=utcnow(),
+        expires_at=utcnow() + INVITATION_TTL,
+    )
+    db.add(invitation)
+    db.flush()
+    return invitation
+
+
+@router.post("/households/{household_id}/invitations", response_model=InvitationOut, status_code=201)
+def create_invitation(member: HouseholdMember = Depends(get_membership), db: Session = Depends(get_db)):
+    _ensure_solo(db, member.household_id)
+    invitation = _new_invitation(db, member)
+    db.commit()
+    return _invitation_out(invitation)
+
+
+@router.get("/households/{household_id}/invitations/current", response_model=InvitationCurrent)
+def current_invitation(member: HouseholdMember = Depends(get_membership), db: Session = Depends(get_db)):
+    """Invitation encore valide (réutilisée par l'écran de partage), sinon l'état
+    de la dernière : expirée → l'inviteur peut en régénérer une en un clic."""
+    latest = latest_invitation(db, member.household_id)
+    active = _active_invitation(db, member.household_id)
+    return InvitationCurrent(
+        invitation=_invitation_out(active) if active else None,
+        last_expired=bool(latest and latest.used_at is None and latest.expires_at < utcnow()),
+    )
+
+
+def _send_invitation_email(to: str, subject: str, html: str, inviter: User, household_id: int) -> None:
+    """Tâche d'arrière-plan : envoi Resend puis événement analytics si accepté."""
+    if email_service.send_email(to, subject, html):
+        analytics.capture_for_user(inviter, "invite_email_sent", {"reminder": False}, household_id=household_id)
+
+
+@router.post(
+    "/households/{household_id}/invitations/email",
+    response_model=InvitationOut,
+    dependencies=[Depends(rate_limit("invitation_email", 5, DAY, by="household"))],
+)
+def email_invitation(
+    data: InvitationEmailIn,
+    background: BackgroundTasks,
+    member: HouseholdMember = Depends(get_membership),
+    db: Session = Depends(get_db),
+):
+    """Alternly envoie lui-même l'invitation à l'adresse saisie (facultative).
+
+    Ne révèle jamais si l'adresse a déjà un compte : même réponse dans tous les cas.
+    """
+    _ensure_solo(db, member.household_id)
+    inviter = db.get(User, member.user_id)
+    address = data.email.strip().lower()
+    if address == inviter.email.lower():
+        raise HTTPException(status_code=422, detail="Saisissez l'adresse de l'autre parent, pas la vôtre")
+    invitation = _active_invitation(db, member.household_id) or _new_invitation(db, member)
+    locale = data.locale or inviter.locale or "fr"
+    invitation.invitee_email = address
+    invitation.invitee_locale = locale
+    invitation.email_sent_at = utcnow()
+    db.commit()
+    children = [
+        c.first_name
+        for c in db.scalars(select(Child).where(Child.household_id == member.household_id).order_by(Child.id))
+    ]
+    subject, html = email_service.invitation_email(inviter.display_name, children, invitation.token, locale)
+    background.add_task(_send_invitation_email, address, subject, html, inviter, member.household_id)
+    return _invitation_out(invitation)
+
+
+def _valid_invitation(db: Session, token: str, rich: bool = False) -> Invitation:
+    """Invitation utilisable. `rich` : erreurs détaillées pour la page /join
+    (prénom de l'inviteur pour « demande un nouveau lien à … »)."""
     invitation = db.scalar(select(Invitation).where(Invitation.token == token))
     if invitation is None:
         raise HTTPException(status_code=404, detail="Invitation introuvable")
     if invitation.used_at is not None or invitation.expires_at < utcnow():
-        raise HTTPException(status_code=410, detail="Invitation expirée ou déjà utilisée")
+        message = "Invitation expirée ou déjà utilisée"
+        if not rich:
+            raise HTTPException(status_code=410, detail=message)
+        inviter = db.get(User, invitation.invited_by)
+        raise HTTPException(
+            status_code=410,
+            detail={
+                "code": "used" if invitation.used_at is not None else "expired",
+                "message": message,
+                "inviter_first_name": email_service.first_name(inviter.display_name) if inviter else "",
+            },
+        )
     return invitation
 
 
@@ -280,10 +389,69 @@ def _valid_invitation(db: Session, token: str) -> Invitation:
     dependencies=[Depends(rate_limit("invitation", 30, HOUR))],
 )
 def preview_invitation(token: str, db: Session = Depends(get_db)):
-    invitation = _valid_invitation(db, token)
+    invitation = _valid_invitation(db, token, rich=True)
     household = db.get(Household, invitation.household_id)
     inviter = db.get(User, invitation.invited_by)
     return InvitationPreview(household_name=household.name, invited_by_name=inviter.display_name)
+
+
+PREVIEW_DAYS = 28
+PREVIEW_PERIOD_DAYS = 70
+
+
+def _periods(days: list[tuple[date, bool]]) -> list[PreviewPeriod]:
+    """Plages consécutives où l'invité a les enfants."""
+    out: list[PreviewPeriod] = []
+    for d, mine in days:
+        if not mine:
+            continue
+        if out and out[-1].end == d - timedelta(days=1):
+            out[-1].end = d
+        else:
+            out.append(PreviewPeriod(start=d, end=d))
+    return out
+
+
+@router.get(
+    "/invitations/{token}/preview-schedule",
+    response_model=InvitationSchedulePreview,
+    dependencies=[Depends(rate_limit("invitation_preview", 30, HOUR))],
+)
+def preview_invitation_schedule(token: str, db: Session = Depends(get_db)):
+    """Aperçu public du planning de l'invité (le jeton fait office de secret).
+
+    L'invité réclamera le second parent placeholder : « vous » = ce placeholder.
+    Ne contient que des dates, « vous / inviteur », le prénom de l'inviteur et les
+    prénoms des enfants — jamais d'e-mail, de dépense, de note ni de message.
+    """
+    invitation = _valid_invitation(db, token, rich=True)
+    household = db.get(Household, invitation.household_id)
+    inviter = db.get(User, invitation.invited_by)
+    children = [
+        c.first_name
+        for c in db.scalars(select(Child).where(Child.household_id == household.id).order_by(Child.id))
+    ]
+    out = InvitationSchedulePreview(
+        inviter_first_name=email_service.first_name(inviter.display_name),
+        children=children,
+        has_schedule=False,
+    )
+    analytics.capture(None, "invite_preview_viewed", {"country": household.country})
+    ghost = placeholder_member(db, household.id)
+    if ghost is None:
+        return out
+    start = date.today()
+    end = start + timedelta(days=PREVIEW_PERIOD_DAYS - 1)
+    try:
+        cal = build_calendar(db, household, start, end)
+    except NoCustodyRule:
+        return out
+    marked = [(d.day, d.parent == str(ghost.user_id)) for d in cal.days]
+    out.has_schedule = True
+    out.handover_time = cal.rule.handover_time
+    out.days = [PreviewDay(date=d, who="you" if mine else "inviter") for d, mine in marked[:PREVIEW_DAYS]]
+    out.your_periods = _periods(marked)
+    return out
 
 
 @router.post(
