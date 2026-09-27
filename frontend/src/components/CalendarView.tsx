@@ -1,10 +1,12 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import FullCalendar from '@fullcalendar/react'
 import dayGridPlugin from '@fullcalendar/daygrid'
 import interactionPlugin from '@fullcalendar/interaction'
 import frLocale from '@fullcalendar/core/locales/fr'
 import type { EventContentArg, EventInput } from '@fullcalendar/core'
+import { track } from '../analytics'
+import { EV } from '../analyticsEvents'
 import Icon from './Icon'
 import type { IconName } from './Icon'
 import type { CalendarResponse, Member } from '../types'
@@ -22,6 +24,10 @@ const SOURCE_ICONS: Record<string, IconName> = {
 }
 
 const MOBILE_QUERY = '(max-width: 640px)'
+
+// calendar_navigated : au plus un événement toutes les 10 s (navigation rapide mois par mois).
+const NAV_THROTTLE_MS = 10_000
+let lastNavTrack = 0
 
 function useIsMobile(): boolean {
   const [mobile, setMobile] = useState(() => window.matchMedia(MOBILE_QUERY).matches)
@@ -48,6 +54,7 @@ function renderEvent(arg: EventContentArg) {
 export default function CalendarView({ data, onDayClick, onRangeChange }: Props) {
   const { t, i18n } = useTranslation()
   const mobile = useIsMobile()
+  const prevStart = useRef<number | null>(null)
   const memberById = useMemo(() => {
     const map = new Map<number, Member>()
     data.members.forEach((m) => map.set(m.id, m))
@@ -138,7 +145,7 @@ export default function CalendarView({ data, onDayClick, onRangeChange }: Props)
   }, [data, memberById, t])
 
   return (
-    <div className="calendar-shell">
+    <div className="calendar-shell ph-mask ph-sensitive">
       <style>{paletteCss}</style>
       <FullCalendar
         plugins={[dayGridPlugin, interactionPlugin]}
@@ -165,6 +172,13 @@ export default function CalendarView({ data, onDayClick, onRangeChange }: Props)
           const endInclusive = new Date(info.end)
           endInclusive.setDate(endInclusive.getDate() - 1)
           onRangeChange(isoLocal(info.start), isoLocal(endInclusive))
+          const start = info.start.getTime()
+          const before = prevStart.current
+          prevStart.current = start
+          if (before !== null && before !== start && Date.now() - lastNavTrack > NAV_THROTTLE_MS) {
+            lastNavTrack = Date.now()
+            track(EV.calendarNavigated, { direction: start > before ? 'forward' : 'backward', view: info.view.type })
+          }
         }}
         height="auto"
         firstDay={1}

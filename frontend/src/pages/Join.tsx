@@ -3,6 +3,8 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import GoogleButton from '../components/GoogleButton'
 import { useTranslation } from 'react-i18next'
 import { api } from '../api'
+import { track } from '../analytics'
+import { EV } from '../analyticsEvents'
 import { useAuth } from '../auth'
 import Spinner from '../components/Spinner'
 
@@ -19,8 +21,14 @@ export default function JoinPage() {
     if (!token) return
     api
       .previewInvitation(token)
-      .then(setPreview)
-      .catch((err) => setError(err instanceof Error ? err.message : t('auth.invitationInvalid')))
+      .then((p) => {
+        setPreview(p)
+        track(EV.inviteOpened, { valid: true })
+      })
+      .catch((err) => {
+        track(EV.inviteOpened, { valid: false })
+        setError(err instanceof Error ? err.message : t('auth.invitationInvalid'))
+      })
   }, [token])
 
   async function accept() {
@@ -61,7 +69,7 @@ export default function JoinPage() {
         {error && <div className="error">{error}</div>}
         {preview && (
           <>
-            <p>
+            <p className="ph-mask ph-sensitive">
               <strong>{preview.invited_by_name}</strong> {t('auth.inviteMiddle')}{' '}
               <strong>{preview.household_name}</strong> {t('auth.inviteTail')}
             </p>

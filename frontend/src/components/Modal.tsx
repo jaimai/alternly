@@ -28,7 +28,7 @@ export default function Modal({
     <div className="modal-backdrop" onClick={onClose}>
       <div
         ref={box}
-        className="modal sheet"
+        className="modal sheet ph-mask ph-sensitive"
         role="dialog"
         aria-modal="true"
         aria-label={title}

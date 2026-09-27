@@ -167,7 +167,7 @@ export default function WallPage() {
   return (
     <>
       <TopBar householdName={household.name} />
-      <div className="layout" style={{ maxWidth: 720 }}>
+      <div className="layout ph-mask ph-sensitive" style={{ maxWidth: 720 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <h1 style={{ marginRight: 'auto' }}>{t('wall.title')}</h1>
           <button className="wall-fab" onClick={() => setShowComposer((v) => !v)}>

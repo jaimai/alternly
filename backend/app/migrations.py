@@ -30,6 +30,7 @@ _ADD_COLUMNS: dict[str, dict[str, str]] = {
         "locale": "VARCHAR",
         "token_version": "INTEGER",
         "google_sub": "VARCHAR",
+        "analytics_consent": "BOOLEAN",
     },
     "expenses": {
         "settled_at": "TIMESTAMP",

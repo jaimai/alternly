@@ -22,7 +22,7 @@ export default function TopBar({ householdName }: { householdName?: string }) {
   return (
     <>
       <header className="topbar">
-        <Link to="/app" className="wordmark small" style={{ textDecoration: 'none' }} title={householdName}>
+        <Link to="/app" className="wordmark small ph-no-capture" style={{ textDecoration: 'none' }} title={householdName}>
           altern<span>ly</span>
         </Link>
         <nav className="topnav" aria-label={t('common.mainNav')}>
@@ -37,7 +37,7 @@ export default function TopBar({ householdName }: { householdName?: string }) {
           {locked && user && (
             <button
               className="trial-chip"
-              onClick={() => openCheckout(user, refreshBilling)}
+              onClick={() => openCheckout(user, refreshBilling, 'annual', 'topbar')}
               title={t('common.upgradeTitle')}
               aria-label={t('common.upgradeTitle')}
             >

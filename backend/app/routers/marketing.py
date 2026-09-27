@@ -20,6 +20,8 @@ templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 # les liens « se connecter/s'inscrire » sont donc relatifs (/login, /register).
 # `site_url` sert au canonical/OG (la landing est proxifiée par Vercel).
 templates.env.globals["site_url"] = settings.public_site_url.rstrip("/")
+# Jeton de projet PostHog (public) : lu au rendu, vide → ni bannière ni mesure d'audience.
+templates.env.globals["analytics_key"] = lambda: settings.posthog_token
 
 
 def site_base(request: Request) -> str:

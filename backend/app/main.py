@@ -14,6 +14,7 @@ from . import models  # noqa: F401 — enregistre les tables
 from .config import settings
 from .db import Base, engine, get_db
 from .migrations import run_migrations
+from .services import analytics
 
 # Segments d'URL portant un secret (flux iCal, invitation).
 _SECRET_PATH = re.compile(r"(/api/(?:ical|invitations)/)[^/?#]+")
@@ -58,7 +59,10 @@ async def lifespan(app: FastAPI):
         )
     Base.metadata.create_all(bind=engine)
     run_migrations(engine)
+    analytics.install_log_handler()
     yield
+    # Vide la file d'événements PostHog avant l'arrêt du processus.
+    analytics.shutdown()
 
 
 from .routers import auth as auth_router
@@ -99,6 +103,21 @@ async def security_headers(request: Request, call_next):
     for name, value in _SECURITY_HEADERS.items():
         response.headers.setdefault(name, value)
     return response
+
+@app.middleware("http")
+async def analytics_errors(request: Request, call_next):
+    """Suivi d'erreurs PostHog : remonte les exceptions non gérées (sans corps de
+    requête ni en-têtes ; chemin nettoyé des jetons), puis les relance telles quelles
+    (réponse 500 et Sentry inchangés)."""
+    token = analytics.current_path.set(analytics.scrub_path(request.url.path))
+    try:
+        return await call_next(request)
+    except Exception as exc:
+        analytics.capture_exception(exc, {"method": request.method})
+        raise
+    finally:
+        analytics.current_path.reset(token)
+
 
 # La SPA (Vercel) appelle l'API depuis une autre origine → CORS.
 # Auth par jeton Bearer (pas de cookies) : allow_credentials inutile.

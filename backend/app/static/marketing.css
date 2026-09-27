@@ -436,3 +436,58 @@ h2 { font-size: clamp(1.6rem, 3.2vw, 2.3rem); }
   .nav-links a.ghost { display: none; }
   .nav-links a:not(.cta) { display: none; }
 }
+
+/* ---------- Bannière de consentement (mesure d'audience) ----------
+   Non bloquante ; « Refuser » et « Accepter » ont exactement le même poids (CNIL). */
+.consent-banner {
+  position: fixed;
+  z-index: 100;
+  left: 16px;
+  right: 16px;
+  bottom: 16px;
+  max-width: 720px;
+  margin: 0 auto;
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  padding: 14px 16px;
+  background: #fff;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  font-family: var(--font-body);
+  font-size: 0.88rem;
+  line-height: 1.45;
+  animation: consent-in 240ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+.consent-text { flex: 1; min-width: 0; }
+.consent-text strong { display: block; margin-bottom: 2px; font-size: 0.95rem; }
+.consent-text p { margin: 0; color: var(--ink-soft); }
+.consent-text a { color: var(--pine); }
+.consent-actions { display: flex; gap: 8px; flex-shrink: 0; }
+.consent-actions button {
+  min-width: 104px;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 999px;
+  padding: 8px 16px;
+  background: #fff;
+  color: var(--pine);
+  border: 1.5px solid var(--pine);
+  transition: background 160ms ease, color 160ms ease;
+}
+.consent-actions button:hover { background: var(--pine); color: #fff; }
+.consent-actions button:focus-visible { outline: 2px solid var(--pine); outline-offset: 2px; }
+@media (max-width: 640px) {
+  .consent-banner { flex-direction: column; align-items: stretch; left: 12px; right: 12px; bottom: 12px; gap: 12px; }
+  .consent-actions > button { flex: 1; }
+}
+@keyframes consent-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .consent-banner { animation: none; }
+}

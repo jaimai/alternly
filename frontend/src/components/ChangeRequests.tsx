@@ -50,7 +50,7 @@ export default function ChangeRequests({
   }
 
   return (
-    <section className="change-requests" aria-label={t('changes.title')}>
+    <section className="change-requests ph-mask ph-sensitive" aria-label={t('changes.title')}>
       {items.map((r) => {
         const mine = r.requested_by === myId
         return (

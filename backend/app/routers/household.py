@@ -10,7 +10,7 @@ from ..config import settings
 from ..db import get_db
 from ..deps import get_membership, household_members, notify
 from ..ratelimit import DAY, HOUR, rate_limit
-from ..services import audit
+from ..services import analytics, audit
 from ..services.parents import claim_placeholder, ensure_second_parent
 from ..models import (
     Child,
@@ -118,6 +118,9 @@ def create_household(data: HouseholdCreate, user: User = Depends(get_current_use
     for kind, enabled in DEFAULT_SPECIAL_RULES_BY_COUNTRY.get(data.country, DEFAULT_SPECIAL_RULES_BY_COUNTRY["FR"]):
         db.add(SpecialDayRule(household_id=household.id, kind=kind, parent_mode="auto", enabled=enabled))
     db.commit()
+    analytics.capture_for_user(
+        user, "household_created", {"country": household.country}, household_id=household.id
+    )
     return _household_out(db, household, user.id)
 
 
@@ -304,4 +307,11 @@ def accept_invitation(token: str, user: User = Depends(get_current_user), db: Se
     audit.record(db, invitation.household_id, user.id, "member.join", "member", user.id)
     notify(db, invitation.invited_by, "parent_joined", {"display_name": user.display_name})
     db.commit()
+    household = db.get(Household, invitation.household_id)
+    days_to_join = (utcnow() - household.created_at).days if household.created_at else None
+    analytics.capture_for_user(
+        user, "partner_joined",
+        {"country": household.country, "days_since_household_created": days_to_join},
+        household_id=household.id,
+    )
     return _household_out(db, db.get(Household, invitation.household_id), user.id)
