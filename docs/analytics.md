@@ -154,6 +154,7 @@ consentement). PostHog renseigne aussi `$initial_utm_*` sur la personne après c
 | `change_request_created` | C | modification sensible soumise à accord (202) | `kind` |
 | `change_request_accepted` / `_refused` / `_withdrawn` | C | réponse | `kind` |
 | `change_request_resolved` | S | idem (fait autorité) | `kind`, `status` (dont `outdated`) |
+| `custody_rule_saved` | C | règles de garde enregistrées depuis les réglages | `pattern`, `pending`, `source` |
 | `calendar_navigated` | C | changement de mois/semaine (max 1 / 10 s) | `direction`, `view` |
 | `history_viewed` | C | page Historique | — |
 | `notification_opened` | C | clic sur une notification | `type`, `unread` |
