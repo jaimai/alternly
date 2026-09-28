@@ -305,6 +305,7 @@ def create_invitation(member: HouseholdMember = Depends(get_membership), db: Ses
     _ensure_solo(db, member.household_id)
     invitation = _new_invitation(db, member)
     db.commit()
+    analytics.capture_for_member(db, member, "invite_link_created")
     return _invitation_out(invitation)
 
 

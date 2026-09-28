@@ -156,6 +156,27 @@ class TestConsentApi:
         (joined,) = spy.events("partner_joined")
         assert joined["properties"]["$process_person_profile"] is False  # p2 n'a pas consenti
 
+    def test_activation_steps_are_counted_server_side(self, client, auth_headers, spy):
+        """#21 : règle posée et lien d'invitation comptés côté serveur, même sans
+        consentement (anonymes) : les volumes d'activation restent complets."""
+        h1, u1 = auth_headers("p1@test.fr")  # pas de consentement
+        hh = client.post("/api/households", json={"name": "Foyer", "school_zone": "A"}, headers=h1).json()
+        rule = {"pattern": "alternate_weeks", "start_date": "2026-01-05", "reference_parent_id": u1["id"]}
+        assert client.put(f"/api/households/{hh['id']}/custody-rule", json=rule, headers=h1).status_code == 200
+        rule["pattern"] = "two_two_three"
+        client.put(f"/api/households/{hh['id']}/custody-rule", json=rule, headers=h1)
+        # Règle identique : aucun événement.
+        client.put(f"/api/households/{hh['id']}/custody-rule", json=rule, headers=h1)
+        first, second = spy.events("custody_rule_set")
+        assert first["properties"]["first"] is True and first["properties"]["pattern"] == "alternate_weeks"
+        assert second["properties"]["first"] is False and second["properties"]["pattern"] == "two_two_three"
+        assert first["distinct_id"] != str(u1["id"])
+        assert first["properties"]["$process_person_profile"] is False
+
+        client.post(f"/api/households/{hh['id']}/invitations", headers=h1)
+        (link,) = spy.events("invite_link_created")
+        assert link["distinct_id"] != str(u1["id"])
+
 
 class TestBillingEvents:
     def _post(self, client, event):

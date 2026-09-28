@@ -246,6 +246,18 @@ def dashboards(action_ids: dict[str, int], household: int) -> list[dict]:
             "name": "Activation",
             "description": "De l'inscription au foyer à deux parents actif.",
             "insights": [
+                # Volumes serveur : tous les parents, consentement ou non (voir docs/analytics.md).
+                ("Activation — volumes (tous les parents)", trends([
+                    ev("user_signed_up", name="Inscriptions"),
+                    ev("household_created", name="Foyers créés"),
+                    ev("custody_rule_set", props=[prop("first", ["true"])], name="Règle posée"),
+                    ev("invite_link_created", name="Lien d'invitation créé"),
+                    ev("partner_joined", name="2e parent"),
+                ], interval="week", date_from="-90d", display="ActionsBarValue")),
+                ("% foyers avec règle posée", trends(
+                    [ev("household_created"), ev("custody_rule_set", props=[prop("first", ["true"])])],
+                    date_from="-90d", formula="B / A * 100", display="BoldNumber",
+                )),
                 ("Funnel inscription → onboarding (14 j)", funnel([
                     ev("signed_up"), ev("onboarding_completed"), ev("invite_created"),
                 ], window_days=14)),
