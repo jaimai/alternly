@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../auth'
 import CalendarView from '../components/CalendarView'
@@ -30,6 +30,9 @@ export default function CalendarPage() {
   const [error, setError] = useState<string | null>(null)
   // Incrémenté après chaque changement : recharge la carte de statut.
   const [refreshKey, setRefreshKey] = useState(0)
+  // Arrivée depuis un lien d'invitation déjà utilisé par ce parent (page /join).
+  const location = useLocation()
+  const alreadyMember = (location.state as { notice?: string } | null)?.notice === 'alreadyMember'
 
   useEffect(() => {
     if (householdLoaded && (!household || !household.custody_rule)) navigate('/onboarding', { replace: true })
@@ -81,6 +84,7 @@ export default function CalendarPage() {
       <TopBar householdName={household?.name} />
       <div className="layout">
         {error && <div className="error">{error}</div>}
+        {alreadyMember && <div className="info-banner">{t('calendar.alreadyMember')}</div>}
         {household && user && (
           <StatusCard
             household={household}

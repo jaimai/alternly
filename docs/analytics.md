@@ -94,6 +94,27 @@ Limites connues : les funnels multi-étapes et la rétention ne relient que les 
 ayant **accepté** (ou, avant consentement, les événements d'une même journée, même
 navigateur, grâce au hash cookieless). Les compteurs simples (trends) incluent tout le monde.
 
+### Quelle source pour quelle question ?
+
+Un parent qui refuse la mesure reste anonyme **des deux côtés** : ses événements client
+(cookieless) et serveur (identifiant aléatoire, sans profil ni groupe) ne sont jamais reliés
+entre eux ni à son compte. C'est voulu (RGPD) : on ne « recolle » pas ces parcours.
+
+| Question | Utiliser | Pourquoi |
+| --- | --- | --- |
+| Combien d'inscriptions, de foyers, de règles posées, de 2es parents ? Quel taux ? | **Événements S en trends** (`user_signed_up`, `household_created`, `custody_rule_set` `first=true`, `invite_link_created`, `partner_joined`) | émis pour tout le monde, consentement ou non : volumes complets |
+| Où les gens décrochent dans l'interface ? | **Funnels d'événements C** (`signup_started` → `signed_up` → `onboarding_completed` → `invite_created`) | même navigateur, même personne ; échantillon = parents ayant accepté |
+| Parcours d'un foyer jusqu'au 2e parent | Funnel **par groupe `household`** | seuls les foyers ayant accepté portent le groupe |
+
+Ne pas mélanger un événement C et son jumeau S dans un même funnel par personne :
+- `signed_up` (C, parcours, UTM) ↔ `user_signed_up` (S, volume fait autorité) ;
+- `exchange_proposed` (C) ↔ `exchange_submitted` (S) ;
+- `invite_created` (C) ↔ `invite_link_created` (S) ;
+- `onboarding_completed` (C) ↔ `custody_rule_set` `first=true` (S) ;
+- `invite_accepted` (C) ↔ `partner_joined` (S).
+
+Les jumeaux sont conservés (pas de renommage) pour ne pas casser l'historique ni les insights existants.
+
 ## Dictionnaire des événements
 
 Propriétés : uniquement énumérations, booléens et nombres — **jamais de texte libre** (libellés,
@@ -126,8 +147,10 @@ consentement). PostHog renseigne aussi `$initial_utm_*` sur la personne après c
 | `household_created` | S | foyer créé | `country` |
 | `onboarding_step_completed` | C | étape d'onboarding | `step` (household, children, rules, invite), `skipped`, `country`, `zone`, `children_count`, `pattern` |
 | `onboarding_completed` | C | règles de garde enregistrées | `country`, `children_count`, `pattern` |
+| `custody_rule_set` | S | règle de garde appliquée (fait autorité ; pas émis pour une demande en attente d'accord) | `pattern`, `first` |
 | `child_added` | C | enfant ajouté | `has_birthdate` |
 | `invite_created` | C | lien d'invitation généré | — |
+| `invite_link_created` | S | lien d'invitation généré (fait autorité) | — |
 | `invite_shared` | C | partage de l'invitation | `channel` (native, whatsapp, sms, email, copy, qr, alternly_email), `source` (settings, onboarding, calendar) |
 | `invite_message_edited` | C | message pré-rédigé modifié (1 fois par écran) | `source` |
 | `invite_email_sent` | S | invitation envoyée par Alternly (Resend a accepté) | `reminder` |
@@ -136,7 +159,7 @@ consentement). PostHog renseigne aussi `$initial_utm_*` sur la personne après c
 | `lifecycle_email_sent` | S | e-mail de la séquence de bienvenue accepté par Resend | `kind` (welcome, j1_rule, j3_invite, j7_value), `variant` (owner, partner ; J0), `premium` (J7) |
 | `holiday_reminder_sent` | S | rappel ~10 j avant des vacances scolaires | `period` (toussaint, noel, hiver, printemps, ete, other = congé saisi à la main), `teaser` (rappel offert d'un foyer gratuit), `country` |
 | `email_unsubscribed` | S | désinscription depuis le lien d'un e-mail | `source` (link, one_click) |
-| `invite_opened` | C | page `/join` (souvent anonyme) | `valid` |
+| `invite_opened` | C | page `/join` (souvent anonyme) | `valid`, `already_member` (parent déjà dans le foyer → renvoyé sur `/app`) |
 | `invite_preview_viewed` | S | aperçu public du planning (`/join`, anonyme) | `country` |
 | `invite_accepted` | C | invitation acceptée | — |
 | `partner_joined` | S | 2e parent a rejoint | `country`, `days_since_household_created` |

@@ -16,5 +16,6 @@
   "join.trust.same": "Vous voyez tous les deux exactement le même calendrier",
   "join.trust.swaps": "Aucun changement sans votre accord : les échanges se proposent et s'acceptent",
   "join.trust.leave": "Vous pouvez quitter le foyer et supprimer votre compte à tout moment",
-  "join.trust.eu": "Données hébergées dans l'Union européenne, jamais revendues"
+  "join.trust.eu": "Données hébergées dans l'Union européenne, jamais revendues",
+  "join.openCalendar": "Ouvrir mon calendrier"
 }

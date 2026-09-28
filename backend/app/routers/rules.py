@@ -43,10 +43,13 @@ def upsert_custody_rule(
         cr = cr_service.create_request(db, member, "custody_rule", new, {"before": old, "after": new})
         db.commit()
         return cr_service.pending_response(db, member, cr)
+    first = rule is None
     rule = rules_service.apply_custody(db, hid, new, member.user_id)
     notify(db, other_parent_id(db, hid, member.user_id), "rule_changed", {"what": "custody"})
     db.commit()
     db.refresh(rule)
+    # Fait autorité (compté même sans consentement, en anonyme) : étape « règle posée ».
+    analytics.capture_for_member(db, member, "custody_rule_set", {"pattern": rule.pattern, "first": first})
     return rule
 
 

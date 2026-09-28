@@ -151,6 +151,38 @@ class TestCurrentInvitation:
         assert r.json()["detail"]["code"] == "expired"
         assert r.json()["detail"]["inviter_first_name"] == "Camille"
         assert client.get(f"/api/invitations/{token}/preview-schedule").status_code == 410
+        assert r.json()["detail"]["already_member"] is False
+
+
+class TestAlreadyMember:
+    """Un parent déjà dans le foyer rouvre le lien reçu (#20) : la page /join
+    le renvoie sur son calendrier au lieu d'une erreur."""
+
+    def test_used_link_reopened_by_joined_parent(self, client, auth_headers):
+        headers, _, h = solo_household(client, auth_headers)
+        token = invite(client, headers, h)["token"]
+        partner, _ = auth_headers(email="parent2@test.fr", name="Dominique")
+        assert client.post(f"/api/invitations/{token}/accept", headers=partner).status_code == 200
+        r = client.get(f"/api/invitations/{token}", headers=partner)
+        assert r.status_code == 410
+        assert r.json()["detail"]["code"] == "used"
+        assert r.json()["detail"]["already_member"] is True
+        # Anonyme ou autre compte : rien n'est révélé sur l'appartenance.
+        assert client.get(f"/api/invitations/{token}").json()["detail"]["already_member"] is False
+        other, _ = auth_headers(email="autre@test.fr", name="Sam")
+        assert client.get(f"/api/invitations/{token}", headers=other).json()["detail"]["already_member"] is False
+
+    def test_valid_link_opened_by_inviter(self, client, auth_headers):
+        headers, _, h = solo_household(client, auth_headers)
+        token = invite(client, headers, h)["token"]
+        assert client.get(f"/api/invitations/{token}", headers=headers).json()["already_member"] is True
+        assert client.get(f"/api/invitations/{token}").json()["already_member"] is False
+
+    def test_bad_token_is_ignored(self, client, auth_headers):
+        headers, _, h = solo_household(client, auth_headers)
+        token = invite(client, headers, h)["token"]
+        r = client.get(f"/api/invitations/{token}", headers={"Authorization": "Bearer pas-un-jeton"})
+        assert r.status_code == 200 and r.json()["already_member"] is False
 
 
 class TestPreviewSchedule:
