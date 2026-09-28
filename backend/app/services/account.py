@@ -18,6 +18,7 @@ from ..models import (
     ChangeRequest,
     Child,
     CustodyRule,
+    EmailLog,
     Expense,
     Household,
     HouseholdMember,
@@ -128,6 +129,7 @@ def _delete_user_rows(db: Session, user_ids: list[int]) -> None:
     """Lignes personnelles rattachées à un compte (hors foyer)."""
     db.execute(delete(Notification).where(Notification.user_id.in_(user_ids)))
     db.execute(delete(PasswordResetToken).where(PasswordResetToken.user_id.in_(user_ids)))
+    db.execute(delete(EmailLog).where(EmailLog.user_id.in_(user_ids)))
 
 
 def _delete_household(db: Session, household_id: int) -> None:

@@ -23,7 +23,7 @@ from ..schemas import (
     UserOut,
     UserUpdate,
 )
-from ..services import account, analytics, google_auth, paddle_api
+from ..services import account, analytics, google_auth, lifecycle, paddle_api
 from ..services import email as email_service
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
@@ -70,6 +70,7 @@ def _detect_locale(accept_language: str | None) -> str:
 )
 def register(
     data: UserCreate,
+    background: BackgroundTasks,
     db: Session = Depends(get_db),
     accept_language: str | None = Header(default=None),
 ):
@@ -96,6 +97,9 @@ def register(
     analytics.capture_for_user(
         user, "user_signed_up", {"method": "email", "via_invite": data.via_invite, "locale": user.locale}
     )
+    # J0 : le parent invité reçoit son propre accueil à l'acceptation de l'invitation.
+    if not data.via_invite:
+        lifecycle.queue_welcome(db, user, background)
     return _token_response(user)
 
 
@@ -125,6 +129,7 @@ GOOGLE_DEFAULT_COLOR = "#2f6b57"
 )
 def google_login(
     data: GoogleLoginIn,
+    background: BackgroundTasks,
     db: Session = Depends(get_db),
     accept_language: str | None = Header(default=None),
 ):
@@ -167,6 +172,8 @@ def google_login(
         analytics.capture_for_user(
             user, "user_signed_up", {"method": "google", "via_invite": data.via_invite, "locale": user.locale}
         )
+        if not data.via_invite:
+            lifecycle.queue_welcome(db, user, background)
     return _token_response(user)
 
 

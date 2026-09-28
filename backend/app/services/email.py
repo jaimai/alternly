@@ -27,6 +27,23 @@ def mask_email(address: str) -> str:
 
 def send_email(to: str, subject: str, html: str) -> bool:
     """Envoie un e-mail. Retourne True si accepté par Resend, False sinon."""
+    return _deliver(to, subject, {"html": html})
+
+
+def send_lifecycle_email(to: str, subject: str, html: str, text: str, unsubscribe_url: str) -> bool:
+    """E-mail de cycle de vie (bienvenue, rappels de vacances) : version texte et
+    désinscription en un clic (RFC 8058, attendue par Gmail / Yahoo)."""
+    return _deliver(to, subject, {
+        "html": html,
+        "text": text,
+        "headers": {
+            "List-Unsubscribe": f"<{unsubscribe_url}>",
+            "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+        },
+    })
+
+
+def _deliver(to: str, subject: str, content: dict) -> bool:
     if not settings.resend_api_key:
         logger.info("RESEND_API_KEY absente — e-mail « %s » vers %s non envoyé", subject, mask_email(to))
         return False
@@ -35,7 +52,7 @@ def send_email(to: str, subject: str, html: str) -> bool:
             resp = client.post(
                 RESEND_ENDPOINT,
                 headers={"Authorization": f"Bearer {settings.resend_api_key}"},
-                json={"from": settings.email_from, "to": [to], "subject": subject, "html": html},
+                json={"from": settings.email_from, "to": [to], "subject": subject, **content},
             )
         if resp.status_code >= 400:
             logger.warning(

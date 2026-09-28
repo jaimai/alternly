@@ -10,7 +10,7 @@ from ..config import settings
 from ..db import get_db
 from ..deps import get_membership, household_members, notify
 from ..ratelimit import DAY, HOUR, rate_limit
-from ..services import analytics, audit
+from ..services import analytics, audit, lifecycle
 from ..services import email as email_service
 from ..services.invite_reminders import INVITATION_TTL
 from ..services.calendar_service import NoCustodyRule, build_calendar
@@ -459,7 +459,12 @@ def preview_invitation_schedule(token: str, db: Session = Depends(get_db)):
     response_model=HouseholdOut,
     dependencies=[Depends(rate_limit("invitation", 30, HOUR))],
 )
-def accept_invitation(token: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def accept_invitation(
+    token: str,
+    background: BackgroundTasks,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     invitation = _valid_invitation(db, token)
     members = household_members(db, invitation.household_id)
     if any(m.user_id == user.id for m in members):
@@ -482,4 +487,5 @@ def accept_invitation(token: str, user: User = Depends(get_current_user), db: Se
         {"country": household.country, "days_since_household_created": days_to_join},
         household_id=household.id,
     )
+    lifecycle.queue_partner_welcome(db, user, household, db.get(User, invitation.invited_by), background)
     return _household_out(db, db.get(Household, invitation.household_id), user.id)
