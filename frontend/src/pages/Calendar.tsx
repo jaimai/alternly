@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../auth'
 import CalendarView from '../components/CalendarView'
@@ -34,6 +34,16 @@ export default function CalendarPage() {
   useEffect(() => {
     if (householdLoaded && (!household || !household.custody_rule)) navigate('/onboarding')
   }, [householdLoaded, household, navigate])
+
+  // Lien profond /app?propose=AAAA-MM-JJ (e-mail de rappel de vacances) : ouvre la
+  // proposition d'échange sur ce jour, puis retire le paramètre de l'URL.
+  const [searchParams, setSearchParams] = useSearchParams()
+  useEffect(() => {
+    const day = searchParams.get('propose')
+    if (!day || !household) return
+    if (/^\d{4}-\d{2}-\d{2}$/.test(day)) setSelectedDay(day)
+    setSearchParams({}, { replace: true })
+  }, [searchParams, setSearchParams, household])
 
   const loadCalendar = useCallback(() => {
     if (!household || !range) return
