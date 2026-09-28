@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../auth'
 import CalendarView from '../components/CalendarView'
 import ChangeRequests from '../components/ChangeRequests'
 import ExceptionDialog from '../components/ExceptionDialog'
 import Icon from '../components/Icon'
+import InviteShare from '../components/InviteShare'
+import Modal from '../components/Modal'
 import Spinner from '../components/Spinner'
 import { cachedCalendar, cachedExceptions, fetchCalendar, fetchExceptions, invalidateCalendar } from '../calendarCache'
 import StatusCard from '../components/StatusCard'
@@ -24,6 +26,7 @@ export default function CalendarPage() {
   const [exceptions, setExceptions] = useState<ScheduleException[]>([])
   const [range, setRange] = useState<{ start: string; end: string } | null>(null)
   const [selectedDay, setSelectedDay] = useState<string | null>(null)
+  const [inviteOpen, setInviteOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
   // Incrémenté après chaque changement : recharge la carte de statut.
   const [refreshKey, setRefreshKey] = useState(0)
@@ -92,9 +95,7 @@ export default function CalendarPage() {
               <strong>{t('calendar.soloTitle')}</strong>
               <p>{t('calendar.soloBody')}</p>
             </div>
-            <Link className="button" to="/settings">
-              {t('calendar.soloCta')}
-            </Link>
+            <button onClick={() => setInviteOpen(true)}>{t('calendar.soloCta')}</button>
           </div>
         )}
         {expiringTomorrow.length > 0 && (
@@ -158,6 +159,14 @@ export default function CalendarPage() {
           />
         )}
       </div>
+      {inviteOpen && household && (
+        <Modal eyebrow={t('invite.modalEyebrow')} title={t('invite.modalTitle')} onClose={() => setInviteOpen(false)}>
+          <InviteShare household={household} source="calendar" />
+          <p style={{ marginTop: 12, textAlign: 'right' }}>
+            <button className="secondary" onClick={() => setInviteOpen(false)}>{t('invite.close')}</button>
+          </p>
+        </Modal>
+      )}
       {selectedDay && household && (
         <ExceptionDialog
           householdId={household.id}

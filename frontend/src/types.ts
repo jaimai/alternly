@@ -252,3 +252,23 @@ export interface HistoryEntry {
   summary: string
   created_at: string
 }
+
+/** Invitation du second parent (lien /join/:token). */
+export interface Invitation {
+  invite_url: string
+  token: string
+  expires_at: string
+  created_at: string | null
+  invitee_email: string | null
+  email_sent: boolean
+}
+
+/** Aperçu public du planning de l'invité (page /join). */
+export interface InvitationSchedulePreview {
+  inviter_first_name: string
+  children: string[]
+  has_schedule: boolean
+  handover_time: string | null
+  days: { date: string; who: 'you' | 'inviter' }[]
+  your_periods: { start: string; end: string }[]
+}

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { QRCodeSVG } from 'qrcode.react'
 import { api, isPendingChange } from '../api'
 import { track } from '../analytics'
@@ -11,6 +11,7 @@ import AccountCard from '../components/AccountCard'
 import ChangeRequests from '../components/ChangeRequests'
 import ColorPicker from '../components/ColorPicker'
 import Icon from '../components/Icon'
+import InviteShare from '../components/InviteShare'
 import RuleForm from '../components/RuleForm'
 import Spinner from '../components/Spinner'
 import type { RuleFormValue } from '../components/RuleForm'
@@ -36,7 +37,6 @@ export default function SettingsPage() {
   const { user, setUser, household, householdLoaded, refreshHousehold, refreshBilling } = useAuth()
   const premium = usePremium()
   const navigate = useNavigate()
-  const [inviteUrl, setInviteUrl] = useState<string | null>(null)
   const [icalUrl, setIcalUrl] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -52,6 +52,16 @@ export default function SettingsPage() {
     if (householdLoaded && !household) navigate('/onboarding')
   }, [householdLoaded, household, navigate])
 
+  // Lien profond /settings#invite (e-mails de relance, notification) : défile jusqu'au partage.
+  const location = useLocation()
+  useEffect(() => {
+    if (location.hash !== '#invite' || !household) return
+    const id = window.setTimeout(() => {
+      document.getElementById('invite')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 50)
+    return () => window.clearTimeout(id)
+  }, [location.hash, household])
+
   function flash(msg: string) {
     setMessage(msg)
     setError(null)
@@ -62,19 +72,9 @@ export default function SettingsPage() {
     setError(err instanceof Error ? err.message : t('settings.errorGeneric'))
   }
 
-  async function createInvite() {
-    if (!household) return
-    try {
-      const inv = await api.createInvitation(household.id)
-      setInviteUrl(`${window.location.origin}/join/${inv.token}`)
-    } catch (err) {
-      fail(err)
-    }
-  }
-
-  async function copy(text: string, what: 'invite' | 'ical') {
+  async function copy(text: string) {
     await navigator.clipboard.writeText(text)
-    track(what === 'invite' ? EV.inviteLinkCopied : EV.icalLinkCopied)
+    track(EV.icalLinkCopied)
     flash(t('settings.copied'))
   }
 
@@ -207,7 +207,7 @@ export default function SettingsPage() {
           />
         )}
 
-        <div className="card ph-mask ph-sensitive">
+        <div className="card ph-mask ph-sensitive" id="invite">
           <h2>{t('settings.parents')}</h2>
           {household.members.map((m) => (
             <p key={m.id}>
@@ -221,24 +221,7 @@ export default function SettingsPage() {
               <p style={{ color: 'var(--ink-soft)' }}>
                 {t('settings.inviteOtherParent')}
               </p>
-              {inviteUrl ? (
-                <div className="invite-share">
-                  <div className="invite-qr ph-no-capture">
-                    <QRCodeSVG value={inviteUrl} size={148} bgColor="#ffffff" fgColor="#1f4d3f" marginSize={2} />
-                  </div>
-                  <div className="invite-share-body">
-                    <p className="hint" style={{ marginTop: 0 }}>
-                      {t('settings.scanQr')}
-                    </p>
-                    <div className="row">
-                      <input readOnly value={inviteUrl} onFocus={(e) => e.target.select()} />
-                      <button onClick={() => copy(inviteUrl, 'invite')}>{t('settings.copyLink')}</button>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <button onClick={createInvite}>{t('settings.createInviteLink')}</button>
-              )}
+              <InviteShare household={household} source="settings" />
             </>
           )}
         </div>
@@ -372,7 +355,7 @@ export default function SettingsPage() {
                 <p className="hint" style={{ marginTop: 0 }}>{t('settings.icalQrHint')}</p>
                 <div className="row">
                   <input readOnly value={icalUrl} onFocus={(e) => e.target.select()} />
-                  <button onClick={() => copy(icalUrl, 'ical')}>{t('settings.copy')}</button>
+                  <button onClick={() => copy(icalUrl)}>{t('settings.copy')}</button>
                 </div>
               </div>
             </div>

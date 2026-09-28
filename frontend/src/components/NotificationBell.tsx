@@ -12,6 +12,7 @@ import type { Notification } from '../types'
 function target(type: string): string {
   if (type.startsWith('expense_') || type.startsWith('settlement_')) return '/expenses'
   if (type.startsWith('wall_')) return '/wall'
+  if (type === 'invite_reminder') return '/settings#invite'
   if (type === 'parent_joined' || type === 'parent_left' || type === 'payment_failed') return '/settings'
   return '/app'
 }
@@ -46,6 +47,8 @@ export default function NotificationBell() {
         return t('common.notifExceptionDeleted', { range: range(p) })
       case 'rule_changed':
         return t('common.notifRuleChanged')
+      case 'invite_reminder':
+        return t('common.notifInviteReminder')
       case 'parent_joined':
         return t('common.notifParentJoined', { name: p.display_name })
       case 'expense_added':

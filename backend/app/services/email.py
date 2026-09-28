@@ -162,3 +162,169 @@ def password_reset_email(token: str, locale: str | None = "fr") -> tuple[str, st
         "Réinitialisation de votre mot de passe Alternly",
         _layout(intro, "Choisir un nouveau mot de passe", path, footer),
     )
+
+
+# ---------------------------------------------------------------- invitation du coparent
+
+
+def first_name(display_name: str | None) -> str:
+    """Prénom affichable (premier mot du nom saisi)."""
+    return (display_name or "").strip().split(" ")[0] or (display_name or "")
+
+
+def join_names(names: list[str], locale: str | None = "fr") -> str:
+    """« Léo, Lina et Tom » / « Leo, Lina and Tom »."""
+    names = [n for n in names if n]
+    if not names:
+        return ""
+    if len(names) == 1:
+        return names[0]
+    conj = " and " if _lang(locale) == "en" else " et "
+    return ", ".join(names[:-1]) + conj + names[-1]
+
+
+_INVITE_TRUST = {
+    "fr": [
+        "Gratuit pour vous, sans carte bancaire",
+        "Vous voyez exactement le même calendrier, en temps réel",
+        "Les échanges se proposent et s'acceptent à deux",
+        "Vous pouvez quitter le foyer à tout moment",
+        "Données hébergées dans l'Union européenne",
+    ],
+    "en": [
+        "Free for you, no credit card",
+        "You both see exactly the same calendar, in real time",
+        "Swaps are proposed and accepted by both of you",
+        "You can leave the household at any time",
+        "Data hosted in the European Union",
+    ],
+}
+
+
+def _invite_layout(heading: str, intro: str, cta_label: str, cta_path: str, footer: str, lang: str) -> str:
+    bullets = "".join(
+        f'<li style="margin:4px 0;padding-left:22px;position:relative">'
+        f'<span style="position:absolute;left:0;color:#1f4d3f;font-weight:700">✓</span>{b}</li>'
+        for b in _INVITE_TRUST[lang]
+    )
+    return (
+        '<div style="font-family:-apple-system,Segoe UI,sans-serif;max-width:520px;margin:0 auto;'
+        'color:#24312b;line-height:1.6;padding:8px">'
+        '<p style="font-size:1.3rem;font-weight:600;margin:0 0 16px">altern<span style="color:#1f4d3f">ly</span></p>'
+        '<div style="background:#f4f1ea;border-radius:16px;padding:24px">'
+        f'<h1 style="font-size:1.25rem;margin:0 0 12px;color:#1f4d3f">{heading}</h1>'
+        f"<p style=\"margin:0 0 20px\">{intro}</p>"
+        f'<p style="margin:0 0 20px">{_button(cta_label, cta_path)}</p>'
+        f'<ul style="list-style:none;padding:0;margin:0;font-size:0.92rem">{bullets}</ul>'
+        "</div>"
+        f'<p style="color:#5d6b63;font-size:0.8rem;margin-top:20px">{footer}</p>'
+        "</div>"
+    )
+
+
+def _join_path(token: str, lang: str) -> str:
+    # ?lang= : la page /join s'affiche dans la langue de l'e-mail.
+    return f"/join/{token}?lang={lang}"
+
+
+def invitation_email(
+    inviter_name: str, children: list[str], token: str, locale: str | None = "fr", reminder: bool = False
+) -> tuple[str, str]:
+    """(sujet, html) de l'invitation envoyée par Alternly à l'autre parent.
+    Le nom de l'inviteur et les prénoms sont saisis librement → échappés."""
+    lang = _lang(locale)
+    who = html.escape(first_name(inviter_name))
+    kids = html.escape(join_names(children, lang))
+    path = _join_path(token, lang)
+    if lang == "en":
+        for_kids = f" for {kids}" if kids else ""
+        heading = f"{who} invited you to your shared custody calendar"
+        intro = (
+            f"{who} set up the custody calendar{for_kids} on Alternly: weeks, school breaks and "
+            "handovers in one place, visible to both of you. You can see your upcoming days "
+            "before creating your account."
+        )
+        if reminder:
+            subject = f"Reminder: {first_name(inviter_name)} is waiting for you on Alternly"
+            intro = f"Just a gentle reminder. {intro}"
+        else:
+            subject = f"{first_name(inviter_name)} invited you to share the custody calendar"
+        footer = (
+            f"You are receiving this email because {who} entered your address on Alternly. "
+            "We will not email you again unless you create an account."
+        )
+        return subject, _invite_layout(heading, intro, "See the calendar", path, footer, lang)
+    for_kids = f" pour {kids}" if kids else ""
+    heading = f"{who} vous invite sur votre calendrier de garde partagé"
+    intro = (
+        f"{who} a mis en place le calendrier de garde{for_kids} sur Alternly : les semaines, "
+        "les vacances et les échanges au même endroit, visibles par vous deux. Vous pouvez voir "
+        "vos prochains jours avant même de créer votre compte."
+    )
+    if reminder:
+        subject = f"Petit rappel : {first_name(inviter_name)} vous attend sur Alternly"
+        intro = f"Un petit rappel, sans insister. {intro}"
+    else:
+        subject = f"{first_name(inviter_name)} vous invite à partager le calendrier de garde"
+    footer = (
+        f"Vous recevez cet e-mail car {who} a saisi votre adresse sur Alternly. "
+        "Nous ne vous écrirons plus sans que vous ayez créé de compte."
+    )
+    return subject, _invite_layout(heading, intro, "Voir le calendrier", path, footer, lang)
+
+
+_FOOTER_ACCOUNT = {
+    "fr": "Vous pouvez couper ces e-mails dans vos réglages Alternly.",
+    "en": "You can turn these emails off in your Alternly settings.",
+}
+
+
+def inviter_reminder_email(day: int, locale: str | None = "fr") -> tuple[str, str]:
+    """(sujet, html) : relance de l'inviteur, invitation non acceptée après `day` jours."""
+    lang = _lang(locale)
+    if lang == "en":
+        intro = (
+            "Your co-parent hasn't joined your Alternly calendar yet. A message often gets lost: "
+            "resend the invitation in one tap, by WhatsApp, text or email. Once they join, "
+            "you both see the same schedule and can propose swaps."
+        )
+        if day >= 5:
+            intro = "Still no answer? " + intro
+        return (
+            "Your co-parent hasn't joined yet",
+            _layout(intro, "Resend the invitation", "/settings#invite", _FOOTER_ACCOUNT["en"]),
+        )
+    intro = (
+        "L'autre parent n'a pas encore rejoint votre calendrier Alternly. Un message se perd "
+        "facilement : renvoyez l'invitation en un geste, par WhatsApp, SMS ou e-mail. Une fois "
+        "inscrit·e, vous verrez tous les deux le même planning et pourrez proposer des échanges."
+    )
+    if day >= 5:
+        intro = "Toujours pas de réponse ? " + intro
+    return (
+        "L'autre parent n'a pas encore rejoint Alternly",
+        _layout(intro, "Renvoyer l'invitation", "/settings#invite", _FOOTER_ACCOUNT["fr"]),
+    )
+
+
+def invite_nudge_email(locale: str | None = "fr") -> tuple[str, str]:
+    """(sujet, html) : onboarding terminé mais aucune invitation créée après 24 h."""
+    if _lang(locale) == "en":
+        intro = (
+            "Your custody calendar is ready. It becomes really useful once your co-parent sees it "
+            "too: same schedule for both of you, swaps proposed and accepted in the app, no more "
+            "back-and-forth messages. Inviting them takes 10 seconds (WhatsApp, text or email)."
+        )
+        return (
+            "Invite your co-parent to your calendar",
+            _layout(intro, "Invite my co-parent", "/settings#invite", _FOOTER_ACCOUNT["en"]),
+        )
+    intro = (
+        "Votre calendrier de garde est prêt. Il devient vraiment utile quand l'autre parent le voit "
+        "aussi : le même planning pour vous deux, des échanges proposés et acceptés dans l'app, "
+        "moins d'allers-retours de messages. L'inviter prend 10 secondes (WhatsApp, SMS ou e-mail)."
+    )
+    return (
+        "Invitez l'autre parent sur votre calendrier",
+        _layout(intro, "Inviter l'autre parent", "/settings#invite", _FOOTER_ACCOUNT["fr"]),
+    )

@@ -124,12 +124,17 @@ consentement). PostHog renseigne aussi `$initial_utm_*` sur la personne après c
 | `user_signed_up` | S | compte créé (fait autorité) | `method`, `via_invite`, `locale` |
 | `login` | C | connexion réussie | `method` |
 | `household_created` | S | foyer créé | `country` |
-| `onboarding_step_completed` | C | étape d'onboarding | `step` (household, children, rules), `country`, `zone`, `children_count`, `pattern` |
+| `onboarding_step_completed` | C | étape d'onboarding | `step` (household, children, rules, invite), `skipped`, `country`, `zone`, `children_count`, `pattern` |
 | `onboarding_completed` | C | règles de garde enregistrées | `country`, `children_count`, `pattern` |
 | `child_added` | C | enfant ajouté | `has_birthdate` |
 | `invite_created` | C | lien d'invitation généré | — |
-| `invite_link_copied` | C | lien copié | — |
+| `invite_shared` | C | partage de l'invitation | `channel` (native, whatsapp, sms, email, copy, qr, alternly_email), `source` (settings, onboarding, calendar) |
+| `invite_message_edited` | C | message pré-rédigé modifié (1 fois par écran) | `source` |
+| `invite_email_sent` | S | invitation envoyée par Alternly (Resend a accepté) | `reminder` |
+| `invite_reminder_sent` | S | relance cron (inviteur à J+2/J+5, invité à J+3) | `day`, `target` (inviter, invitee), `email` |
+| `invite_nudge_sent` | S | relance unique « invitez l'autre parent » 24 h après l'onboarding | — |
 | `invite_opened` | C | page `/join` (souvent anonyme) | `valid` |
+| `invite_preview_viewed` | S | aperçu public du planning (`/join`, anonyme) | `country` |
 | `invite_accepted` | C | invitation acceptée | — |
 | `partner_joined` | S | 2e parent a rejoint | `country`, `days_since_household_created` |
 | `password_reset_requested` | C | « mot de passe oublié » | — |

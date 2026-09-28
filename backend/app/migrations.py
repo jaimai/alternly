@@ -31,6 +31,16 @@ _ADD_COLUMNS: dict[str, dict[str, str]] = {
         "token_version": "INTEGER",
         "google_sub": "VARCHAR",
         "analytics_consent": "BOOLEAN",
+        "invite_nudge_sent_at": "TIMESTAMP",
+    },
+    "invitations": {
+        "created_at": "TIMESTAMP",
+        "invitee_email": "VARCHAR",
+        "invitee_locale": "VARCHAR",
+        "email_sent_at": "TIMESTAMP",
+        "inviter_reminder_d2_at": "TIMESTAMP",
+        "inviter_reminder_d5_at": "TIMESTAMP",
+        "invitee_reminder_at": "TIMESTAMP",
     },
     "expenses": {
         "settled_at": "TIMESTAMP",

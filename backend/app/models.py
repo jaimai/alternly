@@ -32,6 +32,8 @@ class User(Base):
     # de pouvoir lui assigner des dépenses avant qu'il n'ait un vrai compte.
     # Ne peut pas se connecter ; réclamé (claim) quand le vrai parent rejoint.
     is_placeholder: Mapped[bool] = mapped_column(Boolean, default=False)
+    # Relance unique « invitez l'autre parent » (onboarding terminé, aucune invitation).
+    invite_nudge_sent_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
     # Incrémenté pour révoquer tous les jetons émis (claim JWT "tv").
     token_version: Mapped[int] = mapped_column(Integer, default=0)
@@ -233,6 +235,16 @@ class Invitation(Base):
     invited_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
     expires_at: Mapped[datetime] = mapped_column(DateTime)
     used_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    # Nullable : invitations antérieures à la colonne (âge déduit de expires_at).
+    created_at: Mapped[datetime | None] = mapped_column(DateTime, default=utcnow, nullable=True)
+    # E-mail saisi (facultatif) pour qu'Alternly envoie l'invitation lui-même.
+    invitee_email: Mapped[str | None] = mapped_column(String, nullable=True)
+    invitee_locale: Mapped[str | None] = mapped_column(String, nullable=True)  # fr | en
+    email_sent_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    # Relances (idempotence du cron) : inviteur à J+2 et J+5, invité à J+3.
+    inviter_reminder_d2_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    inviter_reminder_d5_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    invitee_reminder_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
 
 class Notification(Base):
@@ -255,6 +267,16 @@ class PasswordResetToken(Base):
     token_hash: Mapped[str] = mapped_column(String, unique=True)  # sha256 hex ; jamais le jeton brut
     expires_at: Mapped[datetime] = mapped_column(DateTime)
     used_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    # Nullable : invitations antérieures à la colonne (âge déduit de expires_at).
+    created_at: Mapped[datetime | None] = mapped_column(DateTime, default=utcnow, nullable=True)
+    # E-mail saisi (facultatif) pour qu'Alternly envoie l'invitation lui-même.
+    invitee_email: Mapped[str | None] = mapped_column(String, nullable=True)
+    invitee_locale: Mapped[str | None] = mapped_column(String, nullable=True)  # fr | en
+    email_sent_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    # Relances (idempotence du cron) : inviteur à J+2 et J+5, invité à J+3.
+    inviter_reminder_d2_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    inviter_reminder_d5_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    invitee_reminder_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
 
