@@ -47,7 +47,7 @@ export default function RegisterPage() {
       setToken(resp.access_token)
       setUser(resp.user)
       const pending = localStorage.getItem('pending_invite')
-      navigate(pending ? `/join/${pending}` : '/onboarding')
+      navigate(pending ? `/join/${pending}` : '/onboarding', { replace: true })
     } catch (err) {
       setError(err instanceof Error ? err.message : t('auth.registerError'))
     } finally {

@@ -2,7 +2,7 @@ import { lazy, Suspense } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Analytics } from '@vercel/analytics/react'
-import { RequireAuth } from './auth'
+import { RedirectIfAuthed, RequireAuth } from './auth'
 import AnalyticsBridge from './components/AnalyticsBridge'
 import ConsentBanner from './components/ConsentBanner'
 import PremiumGate from './components/PremiumGate'
@@ -29,8 +29,8 @@ export default function App() {
     <>
     <Suspense fallback={<Spinner />}>
     <Routes>
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/register" element={<RegisterPage />} />
+      <Route path="/login" element={<RedirectIfAuthed><LoginPage /></RedirectIfAuthed>} />
+      <Route path="/register" element={<RedirectIfAuthed><RegisterPage /></RedirectIfAuthed>} />
       <Route path="/join/:token" element={<JoinPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />

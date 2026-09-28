@@ -26,7 +26,7 @@ export default function HistoryPage() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (householdLoaded && !household) navigate('/onboarding')
+    if (householdLoaded && !household) navigate('/onboarding', { replace: true })
   }, [householdLoaded, household, navigate])
 
   const loadMore = useCallback(

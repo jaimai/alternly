@@ -49,7 +49,7 @@ export default function SettingsPage() {
   const refresh = refreshHousehold
 
   useEffect(() => {
-    if (householdLoaded && !household) navigate('/onboarding')
+    if (householdLoaded && !household) navigate('/onboarding', { replace: true })
   }, [householdLoaded, household, navigate])
 
   // Lien profond /settings#invite (e-mails de relance, notification) : défile jusqu'au partage.

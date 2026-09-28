@@ -33,7 +33,7 @@ export default function ResetPasswordPage() {
       const resp = await api.resetPassword(token, password)
       setToken(resp.access_token)
       setUser(resp.user)
-      navigate('/app')
+      navigate('/app', { replace: true })
     } catch (err) {
       setExpired(err instanceof ApiError && (err.status === 400 || err.status === 410))
       setError(err instanceof Error ? err.message : t('auth.genericError'))

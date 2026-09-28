@@ -41,7 +41,7 @@ export default function WallPage() {
   const [confirm, confirmNode] = useConfirm()
 
   useEffect(() => {
-    if (householdLoaded && (!household || !household.custody_rule)) navigate('/onboarding')
+    if (householdLoaded && (!household || !household.custody_rule)) navigate('/onboarding', { replace: true })
   }, [householdLoaded, household, navigate])
 
   const load = useCallback(() => {

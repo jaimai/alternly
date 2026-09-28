@@ -32,7 +32,7 @@ export default function CalendarPage() {
   const [refreshKey, setRefreshKey] = useState(0)
 
   useEffect(() => {
-    if (householdLoaded && (!household || !household.custody_rule)) navigate('/onboarding')
+    if (householdLoaded && (!household || !household.custody_rule)) navigate('/onboarding', { replace: true })
   }, [householdLoaded, household, navigate])
 
   const loadCalendar = useCallback(() => {

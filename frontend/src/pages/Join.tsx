@@ -58,7 +58,7 @@ export default function JoinPage() {
     try {
       await api.acceptInvitation(token)
       localStorage.removeItem('pending_invite')
-      navigate('/app')
+      navigate('/app', { replace: true })
     } catch (err) {
       setError(err instanceof Error ? err.message : t('auth.joinError'))
     } finally {
