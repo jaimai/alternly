@@ -13,8 +13,7 @@
   "rules.referenceParentLabel": "Who has the child at the start?",
   "rules.handoverDayLabel": "Handover day",
   "rules.handoverTimeLabel": "Handover time",
-  "rules.customCycleLabel": "2-week cycle — click to toggle each day ({{parent}} in blue)",
-  "rules.customDayTitle": "Week {{week}} — {{day}}",
+  "rules.customCycleLabel": "Your two-week cycle",
   "rules.vacationsTitle": "School holidays",
   "rules.vacSplitHalfTitle": "Split in half",
   "rules.vacSplitHalfDesc": "Each holiday period is split in two; the order flips between even and odd years.",
@@ -38,5 +37,13 @@
   "rules.weekdayShortThu": "T",
   "rules.weekdayShortFri": "F",
   "rules.weekdayShortSat": "S",
-  "rules.weekdayShortSun": "S"
+  "rules.weekdayShortSun": "S",
+  "rules.customHint": "Tap a day to give it to the other parent. The cycle repeats every two weeks.",
+  "rules.previewTitle": "Preview",
+  "rules.previewThisWeek": "This week",
+  "rules.previewNextWeek": "Next week",
+  "rules.previewDayTitle": "{{day}} {{date}}: {{parent}}",
+  "rules.otherParent": "The other parent",
+  "rules.upToDate": "Schedule up to date",
+  "rules.seeCalendar": "See the calendar →"
 }
