@@ -39,7 +39,7 @@ export default function OnboardingPage() {
       .myHousehold()
       .then((h) => {
         setHousehold(h)
-        if (h.custody_rule) navigate('/app')
+        if (h.custody_rule) navigate('/app', { replace: true })
         else setStep(2) // foyer déjà créé : reste la règle de garde
       })
       .catch((err) => {
@@ -115,7 +115,7 @@ export default function OnboardingPage() {
     track(EV.onboardingStepCompleted, { step: 'invite', skipped })
     // Freemium : on propose l'abonnement (skippable) à la fin de l'inscription.
     if (billing && !billing.access) setStep(4)
-    else navigate('/app')
+    else navigate('/app', { replace: true })
   }
 
   if (loading) return <Spinner />
@@ -126,9 +126,9 @@ export default function OnboardingPage() {
         user={user}
         onSubscribed={() => {
           refreshBilling()
-          navigate('/app')
+          navigate('/app', { replace: true })
         }}
-        onSkip={() => navigate('/app')}
+        onSkip={() => navigate('/app', { replace: true })}
         feature="onboarding"
         title={t('onboarding.paywallTitle')}
         subtitle={t('onboarding.paywallSubtitle')}

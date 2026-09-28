@@ -85,7 +85,7 @@ export default function GoogleButton({
               setToken(resp.access_token)
               setUser(resp.user)
               const pending = localStorage.getItem('pending_invite')
-              navigate(pending ? `/join/${pending}` : '/app')
+              navigate(pending ? `/join/${pending}` : '/app', { replace: true })
             } catch (err) {
               setError(err instanceof Error ? err.message : t('auth.googleError'))
             }

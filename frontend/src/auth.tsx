@@ -120,6 +120,21 @@ export function RequireAuth({ children }: { children: ReactNode }) {
   return <>{children}</>
 }
 
+/**
+ * Pages publiques d'authentification (/login, /register) : un parent déjà
+ * connecté (retour arrière sur mobile, favori…) repart directement dans l'app
+ * au lieu de revoir le formulaire.
+ */
+export function RedirectIfAuthed({ children }: { children: ReactNode }) {
+  const { user, loading } = useAuth()
+  if (loading) return <Spinner />
+  if (user) {
+    const pending = localStorage.getItem('pending_invite')
+    return <Navigate to={pending ? `/join/${pending}` : '/app'} replace />
+  }
+  return <>{children}</>
+}
+
 /** Accès premium (abonnement actif). `billing === null` = pas encore chargé. */
 export function usePremium(): boolean {
   const { billing } = useAuth()

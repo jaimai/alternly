@@ -37,6 +37,7 @@ export const EV = {
   changeRequestAccepted: 'change_request_accepted', // kind
   changeRequestRefused: 'change_request_refused', // kind
   changeRequestWithdrawn: 'change_request_withdrawn', // kind
+  custodyRuleSaved: 'custody_rule_saved', // pattern, pending, source
   calendarNavigated: 'calendar_navigated', // direction (limité à 1 / 10 s)
   historyViewed: 'history_viewed',
   notificationOpened: 'notification_opened', // type

@@ -45,11 +45,14 @@ export default function SettingsPage() {
   const [confirm, confirmNode] = useConfirm()
   // Recharge le panneau des demandes de changement après une modification.
   const [changesKey, setChangesKey] = useState(0)
+  // Confirmation affichée sous le formulaire des règles (le bandeau du haut
+  // est hors écran sur mobile quand on enregistre).
+  const [rulesMessage, setRulesMessage] = useState<string | null>(null)
 
   const refresh = refreshHousehold
 
   useEffect(() => {
-    if (householdLoaded && !household) navigate('/onboarding')
+    if (householdLoaded && !household) navigate('/onboarding', { replace: true })
   }, [householdLoaded, household, navigate])
 
   // Lien profond /settings#invite (e-mails de relance, notification) : défile jusqu'au partage.
@@ -85,10 +88,14 @@ export default function SettingsPage() {
       const custody = await api.setCustodyRule(household.id, value.custody)
       const vacation = await api.setVacationRule(household.id, value.vacation)
       // Deux parents réels : le changement attend l'accord de l'autre (202).
-      flash(isPendingChange(custody) || isPendingChange(vacation) ? t('changes.sent') : t('settings.rulesSaved'))
+      const pending = isPendingChange(custody) || isPendingChange(vacation)
+      setRulesMessage(pending ? t('changes.sent') : t('settings.rulesSaved'))
+      setError(null)
+      track(EV.custodyRuleSaved, { pattern: value.custody.pattern, pending, source: 'settings' })
       setChangesKey((k) => k + 1)
       refresh()
     } catch (err) {
+      setRulesMessage(null)
       fail(err)
     } finally {
       setBusy(false)
@@ -329,6 +336,7 @@ export default function SettingsPage() {
             initialVacation={household.vacation_rule}
             submitLabel={t('settings.saveRules')}
             busy={busy}
+            savedMessage={rulesMessage}
             onSubmit={saveRules}
           />
         </div>

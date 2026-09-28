@@ -13,8 +13,7 @@
   "rules.referenceParentLabel": "Qui a l’enfant au départ ?",
   "rules.handoverDayLabel": "Jour de changement",
   "rules.handoverTimeLabel": "Heure de passage",
-  "rules.customCycleLabel": "Cycle de 2 semaines — cliquez pour basculer chaque jour ({{parent}} en bleu)",
-  "rules.customDayTitle": "Semaine {{week}} — {{day}}",
+  "rules.customCycleLabel": "Votre cycle de deux semaines",
   "rules.vacationsTitle": "Vacances scolaires",
   "rules.vacSplitHalfTitle": "Partage par moitié",
   "rules.vacSplitHalfDesc": "Chaque période de vacances est coupée en deux ; l'ordre s'inverse entre années paires et impaires.",
@@ -38,5 +37,13 @@
   "rules.weekdayShortThu": "J",
   "rules.weekdayShortFri": "V",
   "rules.weekdayShortSat": "S",
-  "rules.weekdayShortSun": "D"
+  "rules.weekdayShortSun": "D",
+  "rules.customHint": "Touchez un jour pour le donner à l’autre parent. Le cycle se répète toutes les deux semaines.",
+  "rules.previewTitle": "Aperçu",
+  "rules.previewThisWeek": "Cette semaine",
+  "rules.previewNextWeek": "Semaine prochaine",
+  "rules.previewDayTitle": "{{day}} {{date}} : {{parent}}",
+  "rules.otherParent": "L’autre parent",
+  "rules.upToDate": "Règles à jour",
+  "rules.seeCalendar": "Voir le calendrier →"
 }
