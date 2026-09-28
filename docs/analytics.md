@@ -133,6 +133,9 @@ consentement). PostHog renseigne aussi `$initial_utm_*` sur la personne après c
 | `invite_email_sent` | S | invitation envoyée par Alternly (Resend a accepté) | `reminder` |
 | `invite_reminder_sent` | S | relance cron (inviteur à J+2/J+5, invité à J+3) | `day`, `target` (inviter, invitee), `email` |
 | `invite_nudge_sent` | S | relance unique « invitez l'autre parent » 24 h après l'onboarding | — |
+| `lifecycle_email_sent` | S | e-mail de la séquence de bienvenue accepté par Resend | `kind` (welcome, j1_rule, j3_invite, j7_value), `variant` (owner, partner ; J0), `premium` (J7) |
+| `holiday_reminder_sent` | S | rappel ~10 j avant des vacances scolaires | `period` (toussaint, noel, hiver, printemps, ete, other = congé saisi à la main), `teaser` (rappel offert d'un foyer gratuit), `country` |
+| `email_unsubscribed` | S | désinscription depuis le lien d'un e-mail | `source` (link, one_click) |
 | `invite_opened` | C | page `/join` (souvent anonyme) | `valid` |
 | `invite_preview_viewed` | S | aperçu public du planning (`/join`, anonyme) | `country` |
 | `invite_accepted` | C | invitation acceptée | — |

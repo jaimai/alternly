@@ -4,13 +4,13 @@ Architecture de production (mono-domaine `alternly.com`) :
 
 | Composant | Hébergeur | Contenu |
 |---|---|---|
-| Domaine public + SPA React | Vercel (`frontend/`, `frontend/vercel.json`) | sert l'app (`/app`, `/login`, `/register`, `/join/:token`, `/reset-password`, `/settings`, `/expenses`, `/wall`…) et **proxifie** vers Railway la landing (`/`, `/en`), le blog, les pages légales (`/terms`, `/privacy`, `/refund`, `/en/…`), `robots.txt`, `sitemap.xml`, `llms.txt`, `/static/*` et `/ical/*` (→ `/api/ical/*`) |
+| Domaine public + SPA React | Vercel (`frontend/`, `frontend/vercel.json`) | sert l'app (`/app`, `/login`, `/register`, `/join/:token`, `/reset-password`, `/settings`, `/expenses`, `/wall`…) et **proxifie** vers Railway la landing (`/`, `/en`), le blog, les pages légales (`/terms`, `/privacy`, `/refund`, `/en/…`), `robots.txt`, `sitemap.xml`, `llms.txt`, `/static/*`, `/ical/*` (→ `/api/ical/*`) et `/api/email/*` (désinscription des e-mails) |
 | API + site marketing SSR | Railway (service Docker, `Dockerfile` + `railway.json`) | `/api/*` appelée directement par la SPA (CORS, `VITE_API_URL`), pages SSR servies via le proxy Vercel |
 | Base de données | PostgreSQL **alwaysdata** (UE) | toutes les données applicatives |
 | Paiement | Paddle Billing (Merchant of Record) | abonnement Premium, webhooks `subscription.*` |
-| E-mails | Resend | mot de passe oublié, propositions et rappels d'échange |
+| E-mails | Resend | mot de passe oublié, échanges, boucle d'invitation, cycle de vie (bienvenue, rappels de vacances) — voir « E-mails » |
 | Erreurs | Sentry (optionnel) | exceptions backend, expurgées |
-| Cron | GitHub Actions (`.github/workflows/cron.yml`) | rappels d'échange quotidiens |
+| Cron | GitHub Actions (`.github/workflows/cron.yml`) | rappels d'échange, relances d'invitation, e-mails de cycle de vie (quotidien) |
 | CI | GitHub Actions (`.github/workflows/ci.yml`) | pytest backend, traductions fusionnées, lint + build frontend |
 
 Points d'attention :
@@ -35,11 +35,11 @@ Toutes lues par `backend/app/config.py` (insensibles à la casse).
 | `SECRET_KEY` | — | Signature JWT. **Obligatoire** hors SQLite : refusée si vide, connue ou < 32 caractères (`python -c "import secrets;print(secrets.token_urlsafe(48))"`). La changer déconnecte tout le monde. |
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | `43200` (30 j) | Durée de vie des jetons. |
 | `APP_URL` | `http://localhost:5173` | Origine publique de la SPA (`https://alternly.com`) : liens des e-mails (`/app`, `/reset-password?token=…`) et d'invitation (`/join/<jeton>`), lien d'inscription de `llms.txt`. |
-| `PUBLIC_SITE_URL` | `http://localhost:8000` | Origine publique du site (`https://alternly.com`) : canonical/OG, sitemap, robots, llms.txt (la landing étant proxifiée, l'URL de la requête serait celle de Railway). Vide → origine de la requête. |
+| `PUBLIC_SITE_URL` | `http://localhost:8000` | Origine publique du site (`https://alternly.com`) : canonical/OG, sitemap, robots, llms.txt, liens de désinscription des e-mails (`/api/email/unsubscribe`, relayé par Vercel) (la landing étant proxifiée, l'URL de la requête serait celle de Railway). Vide → origine de la requête. |
 | `CORS_ORIGINS` | `http://localhost:5173` | Origines autorisées, séparées par des virgules (`https://alternly.com`, + domaines de preview Vercel si besoin). |
 | `RESEND_API_KEY` | vide | Vide → aucun e-mail envoyé (no-op journalisé, adresse masquée). |
 | `EMAIL_FROM` | `Alternly <no-reply@alternly.com>` | Expéditeur ; domaine vérifié chez Resend. |
-| `CRON_SECRET` | vide | Protège `POST /api/cron/exchange-reminders` (en-tête `X-Cron-Key`, comparaison à temps constant). Vide → endpoint désactivé (403). |
+| `CRON_SECRET` | vide | Protège les endpoints `POST /api/cron/*` (`exchange-reminders`, `invite-reminders`, `lifecycle` ; en-tête `X-Cron-Key`, comparaison à temps constant). Vide → endpoint désactivé (403). |
 | `RATE_LIMIT_ENABLED` | `true` | Coupe la limitation de débit (à ne faire qu'en cas d'incident). |
 | `SENTRY_DSN` | vide | Active Sentry si renseigné. |
 | `GOOGLE_CLIENT_ID` | vide | Active « Continuer avec Google » (voir la section Google). |
@@ -166,17 +166,62 @@ Mise en place (Google Cloud Console → APIs & Services) :
 
 ## Cron (GitHub Actions)
 
-`.github/workflows/cron.yml` appelle chaque jour à 06:07 UTC l'endpoint des rappels
-d'échange ; le job échoue si la réponse n'est pas 2xx (notification GitHub). Les rappels
-sont idempotents (`reminder_sent_at`), les retries sont sans risque.
+`.github/workflows/cron.yml` tourne chaque jour à 06:07 UTC et enchaîne trois jobs ;
+chacun échoue si la réponse n'est pas 2xx (notification GitHub). Tous sont idempotents
+(horodatages / `email_log`), les retries sont sans risque.
+
+| Job | Endpoint | Rôle |
+|---|---|---|
+| `exchange-reminders` | `POST /api/cron/exchange-reminders` | proposition d'échange qui expire demain (Premium) |
+| `invite-reminders` | `POST /api/cron/invite-reminders` | relances de l'invitation (inviteur J+2/J+5, invité J+3, nudge 24 h) |
+| `lifecycle` | `POST /api/cron/lifecycle` | rappels de vacances scolaires puis séquence J1/J3/J7 ; lancé **après** `invite-reminders` (`needs` + `if: always()`) pour que le garde-fou « un e-mail par jour » voie leurs envois |
 
 Secrets du dépôt (*Settings → Secrets and variables → Actions*) :
 
-- `CRON_URL` = `https://<api railway>/api/cron/exchange-reminders`
+- `CRON_URL` = `https://<api railway>/api/cron/exchange-reminders` (les autres URL en sont
+  déduites : même base, autre suffixe)
 - `CRON_SECRET` = même valeur que `CRON_SECRET` sur Railway (envoyée dans `X-Cron-Key`)
 
 Déclenchement manuel : onglet *Actions → Cron → Run workflow*. Attention : GitHub
 désactive les workflows planifiés après 60 jours sans activité sur le dépôt.
+
+## E-mails
+
+Tous partent par Resend (`backend/app/services/email.py`), dans la langue du destinataire
+(`users.locale`), et seulement si `users.email_opt_in` est vrai (sauf mot de passe oublié
+et invitation envoyée à une adresse saisie).
+
+| E-mail | Quand | Conditions |
+|---|---|---|
+| Bienvenue (J0) | à l'inscription (tâche d'arrière-plan) | inscription hors invitation |
+| Bienvenue dans le foyer de {prénom} (J0) | à l'acceptation de l'invitation | parent invité ; ses prochains jours de garde (même calcul que l'app) |
+| Il ne manque que votre règle de garde (J1) | cron, compte âgé de 1 à 3 j | aucune règle de garde |
+| Comment présenter Alternly à l'autre parent (J3) | cron, 3 à 7 j | foyer encore solo (placeholder ignoré) |
+| Deux astuces… synchro + échanges (J7) | cron, 7 à 10 j | règle posée ; foyer gratuit → mention Premium douce |
+| Rappel de vacances scolaires | cron, J-10 à J-6 avant le début de chaque période | foyer avec règle ; FR : zone officielle, US : congés saisis (rien si aucun) ; qui a les enfants, du … au …, passage de relais ; une fois par membre et par période |
+| Relances d'invitation, nudge d'onboarding | cron `invite-reminders` | voir `services/invite_reminders.py` |
+| Proposition / rappel d'échange | à la proposition / la veille de l'expiration | Premium |
+
+Règles communes au cycle de vie (`backend/app/services/lifecycle.py`) :
+
+- **Idempotence** : table `email_log (user_id, kind)` unique (`welcome`, `j1_rule`, `j3_invite`,
+  `j7_value`, `holiday:<libellé>:<date de début>`), purgée à la suppression du compte.
+- **Un e-mail « non sollicité » par jour et par personne** (fenêtre de 20 h) : `email_log`
+  et relances de la boucle d'invitation (J+2/J+5, nudge). Une étape retardée part le lendemain
+  (fenêtres d'âge), les rappels de vacances passent en premier.
+- Jamais de placeholder ni de compte anonymisé (`*.invalid`).
+- **Premium** : les rappels par e-mail sont une fonction Premium (comme les rappels d'échange).
+  Foyer Premium → rappel avant chaque période ; foyer gratuit → **un seul** rappel « offert »
+  (la première période après l'inscription), qui mentionne que Premium les envoie à chaque
+  vacances. La séquence de bienvenue n'est pas soumise à Premium.
+- **Désinscription** : chaque e-mail de cycle de vie a une version texte, un lien de
+  désinscription en pied de page et les en-têtes `List-Unsubscribe` +
+  `List-Unsubscribe-Post: List-Unsubscribe=One-Click` (RFC 8058). Le lien
+  `PUBLIC_SITE_URL/api/email/unsubscribe?token=<id>.<HMAC SECRET_KEY>` (GET : page de
+  confirmation ; POST : un clic depuis le client mail) passe `email_opt_in` à faux, ce qui
+  coupe aussi les e-mails d'échange. Réactivation dans les réglages. Changer `SECRET_KEY`
+  invalide les anciens liens (ils affichent « Lien invalide »).
+- Lien « Proposer un échange » : `/app?propose=AAAA-MM-JJ` ouvre la proposition sur ce jour.
 
 ## Sentry
 
@@ -220,7 +265,7 @@ usage unique).
 - [ ] Domaine Resend vérifié (SPF, DKIM, DMARC).
 - [ ] Paddle : parcours validé en sandbox (checkout → webhook → gestion → résiliation),
       puis prix, webhook et clés recréés en production.
-- [ ] Secrets GitHub `CRON_URL` / `CRON_SECRET` posés, un *Run workflow* manuel réussi.
+- [ ] Secrets GitHub `CRON_URL` / `CRON_SECRET` posés, un *Run workflow* manuel réussi (3 jobs verts).
 - [ ] Logs du premier boot (migrations) propres, `/api/health` = `{"status": "ok"}`.
 - [ ] Smoke test : inscription, connexion, création de foyer, invitation (`/join/…`),
       demande de changement acceptée, historique, export des données, mot de passe
