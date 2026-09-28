@@ -19,7 +19,10 @@ Le partage « classique » des vacances par moitié, avec alternance selon les
 années paires et impaires, règle déjà en partie la question de Noël : le
 parent qui a la première moitié des vacances de fin d'année a généralement le
 24 et le 25 décembre. Nous l'expliquons en détail dans notre guide sur
-[le partage des vacances scolaires](/blog/partage-vacances-scolaires-annees-paires-impaires).
+[le partage des vacances scolaires](/blog/partage-vacances-scolaires-annees-paires-impaires),
+et notre [outil gratuit](/outils/vacances-garde-alternee) indique en quelques
+secondes qui a la première et la seconde moitié des vacances de Noël selon
+votre zone et votre règle.
 
 Mais ce mécanisme a ses limites :
 

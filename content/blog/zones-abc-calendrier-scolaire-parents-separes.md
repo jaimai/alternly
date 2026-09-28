@@ -76,3 +76,8 @@ chaque période :
 moins une fois — et une erreur de planning de vacances, entre parents séparés,
 c'est rarement un détail. C'est précisément le travail qu'un calendrier de garde
 automatisé fait pour vous, avec les dates officielles toujours à jour.
+
+Pour une seule période, notre [outil gratuit « Qui a les enfants pendant les
+vacances ? »](/outils/vacances-garde-alternee) fait les trois étapes d'un coup :
+choisissez la zone, les vacances (Toussaint, Noël, hiver, printemps, été) et
+votre règle, il affiche les dates officielles et le jour du passage de bras.

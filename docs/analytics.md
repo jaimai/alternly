@@ -108,6 +108,8 @@ notes, messages, prénoms, e-mails). C = client (SPA), M = site marketing, S = s
 | `blog_article_viewed` | M | ouverture d'un article | `slug`, `lang` |
 | `blog_cta_clicked` | M | CTA d'inscription d'un article | `slug`, `location`, `lang` |
 | `faq_opened` | M | ouverture d'une question | `question_index`, `lang` |
+| `tool_used` | M | calcul lancé dans un outil gratuit (ex. `/outils/vacances-garde-alternee`) | `tool`, `zone`, `period` (ex. `toussaint-2026`), `mode`, `lang` |
+| `tool_cta_clicked` | M | clic vers `/register` depuis un outil gratuit | `tool`, `location`, `lang` |
 | `language_switched` | M | lien FR/EN | `from`, `to` |
 
 UTM, `gclid` et `fbclid` de l'URL d'arrivée sont ajoutés aux liens `/register` et `/login`,

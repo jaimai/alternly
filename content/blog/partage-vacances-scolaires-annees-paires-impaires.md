@@ -45,6 +45,12 @@ Deux points de vigilance :
   midi ou le dimanche à 18 h au milieu de la période. Notez-la quelque part de
   partagé pour éviter le débat récurrent.
 
+Pour vérifier une période précise sans rien calculer, utilisez notre
+[outil gratuit « Qui a les enfants pendant les vacances ? »](/outils/vacances-garde-alternee) :
+zone, vacances et règle de partage suffisent pour obtenir les dates officielles
+et le jour du passage de bras. Exemple détaillé :
+[la Toussaint 2026 en garde alternée](/blog/vacances-toussaint-2026-garde-alternee).
+
 ## Le piège classique : les vacances de Noël
 
 Les vacances de Noël commencent en décembre et finissent en janvier — elles sont

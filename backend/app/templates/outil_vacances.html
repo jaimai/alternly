@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+{% block title %}Qui a les enfants pendant les vacances ? Outil gratuit garde alternée — Alternly{% endblock %}
+{% block description %}Toussaint, Noël, hiver, printemps, été : indiquez votre zone scolaire et votre règle (moitié/moitié, années paires/impaires) et voyez tout de suite chez quel parent sont les enfants, avec les dates officielles. Gratuit, sans inscription.{% endblock %}
+{% block head %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebApplication",
+      "name": {{ tool_title | tojson }},
+      "url": {{ canonical | tojson }},
+      "applicationCategory": "UtilitiesApplication",
+      "operatingSystem": "Web",
+      "inLanguage": "fr-FR",
+      "isAccessibleForFree": true,
+      "offers": {"@type": "Offer", "price": "0", "priceCurrency": "EUR"},
+      "publisher": {"@id": "{{ site_url }}/#organization"}
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        {%- for q, a in faq %}
+        {"@type": "Question", "name": {{ q | tojson }}, "acceptedAnswer": {"@type": "Answer", "text": {{ a | tojson }}}}{{ "," if not loop.last }}
+        {%- endfor %}
+      ]
+    }
+  ]
+}
+</script>
+{% endblock %}
+{% block content %}
+{%- macro parent(p) -%}<span class="who who-{{ p | lower }}" data-parent-label="{{ p }}">Parent {{ p }}</span>{%- endmacro %}
+<article class="tool" data-tool="vacances-garde-alternee">
+  <div class="wrap tool-wrap">
+    <header class="tool-intro">
+      <p class="eyebrow">Outil gratuit · sans inscription</p>
+      <h1>Qui a les enfants <em>pendant les vacances&nbsp;?</em></h1>
+      <p class="lede">Choisissez votre zone, la période et la règle de votre jugement ou convention&nbsp;: vous obtenez les dates officielles et le jour exact du passage d'un parent à l'autre.</p>
+    </header>
+
+    <div class="tool-grid">
+      <form class="tool-form" method="get" action="/outils/vacances-garde-alternee" id="tool-form">
+        <fieldset>
+          <legend>Zone scolaire de l'école</legend>
+          <div class="seg" role="radiogroup">
+            {%- for z in ["A", "B", "C"] %}
+            <label class="seg-opt"><input type="radio" name="zone" value="{{ z }}" required {{ "checked" if form.zone == z }} /><span>Zone {{ z }}</span></label>
+            {%- endfor %}
+          </div>
+          <details class="zone-help">
+            <summary>Trouver ma zone</summary>
+            <dl>
+              {%- for z, acads in zones.items() %}
+              <dt>Zone {{ z }}</dt><dd>Académies de {{ acads }}.</dd>
+              {%- endfor %}
+            </dl>
+            <p class="hint">C'est l'académie de l'école de l'enfant qui compte, pas le domicile des parents. Corse et outre-mer&nbsp;: calendriers spécifiques.</p>
+          </details>
+        </fieldset>
+
+        <div class="field">
+          <label for="f-vacances">Vacances</label>
+          <select id="f-vacances" name="vacances">
+            {%- for sy, group in options | groupby("school_year") %}
+            <optgroup label="Année scolaire {{ sy }}">
+              {%- for o in group %}
+              <option value="{{ o.value }}" {{ "selected" if o.value == form.vacances }}>{{ o.label }}{{ " (passées)" if o.past }}</option>
+              {%- endfor %}
+            </optgroup>
+            {%- endfor %}
+          </select>
+        </div>
+
+        <fieldset>
+          <legend>Règle de partage</legend>
+          <label class="radio-row"><input type="radio" name="mode" value="split_half" {{ "checked" if form.mode == "split_half" }} /><span><strong>Moitié / moitié</strong><small>chaque parent a la moitié de chaque période</small></span></label>
+          <label class="radio-row"><input type="radio" name="mode" value="alternate_full" {{ "checked" if form.mode == "alternate_full" }} /><span><strong>Vacances entières alternées</strong><small>un parent a toute la période, l'autre l'année suivante</small></span></label>
+        </fieldset>
+
+        <div class="field">
+          <label for="f-even" id="f-even-label" data-split="Les années paires, la première moitié est chez" data-full="Les années paires, les vacances sont chez">{{ "Les années paires, les vacances sont chez" if form.mode == "alternate_full" else "Les années paires, la première moitié est chez" }}</label>
+          <select id="f-even" name="even_first">
+            <option value="A" {{ "selected" if form.even_first == "A" }} data-parent-option="A">Parent A</option>
+            <option value="B" {{ "selected" if form.even_first == "B" }} data-parent-option="B">Parent B</option>
+          </select>
+          <p class="hint">Formule habituelle&nbsp;: «&nbsp;la première moitié les années paires, la seconde les années impaires&nbsp;».</p>
+        </div>
+
+        <details class="names ph-no-capture">
+          <summary>Personnaliser «&nbsp;Parent A&nbsp;» et «&nbsp;Parent B&nbsp;» (facultatif)</summary>
+          <p class="hint">Les prénoms restent dans votre navigateur&nbsp;: ils ne sont ni envoyés ni enregistrés.</p>
+          <div class="names-grid">
+            <div class="field"><label for="f-name-a">Parent A</label><input id="f-name-a" type="text" maxlength="24" autocomplete="off" placeholder="ex. Maman" data-name-for="A" /></div>
+            <div class="field"><label for="f-name-b">Parent B</label><input id="f-name-b" type="text" maxlength="24" autocomplete="off" placeholder="ex. Papa" data-name-for="B" /></div>
+          </div>
+        </details>
+
+        <button type="submit" class="cta big tool-submit">Voir qui a les enfants</button>
+      </form>
+
+      <section class="tool-result" id="tool-result" aria-live="polite" aria-labelledby="result-title">
+        {%- if error %}
+        <div class="result-card result-empty">
+          <h2 id="result-title">Résultat indisponible</h2>
+          <p>{{ error }}</p>
+        </div>
+        {%- elif result %}
+        {%- set p = result.period %}
+        <div class="result-card">
+          <p class="result-kicker">{{ p.label }} · zone {{ result.zone }} · année {{ result.year_parity }}</p>
+          <h2 id="result-title">Du {{ p.start_label }} au {{ p.end_label }} {{ p.start[:4] }}</h2>
+          <ul class="result-lines">
+            {%- for s in result.segments %}
+            <li class="seg-line seg-{{ s.parent | lower }}"><span class="seg-dates">Du {{ s.start_label }} au {{ s.end_label }}</span> <span class="seg-who">chez {{ parent(s.parent) }}</span> <span class="seg-days">{{ s.days }} jour{{ "s" if s.days > 1 }}</span></li>
+            {%- endfor %}
+          </ul>
+          <div class="timeline {{ 'dense' if result.timeline | length > 21 }}" style="--n: {{ result.timeline | length }}" role="img" aria-label="Frise des {{ p.days }} jours de vacances, colorée par parent">
+            {%- for d in result.timeline %}
+            <span class="tl-day tl-{{ d.parent | lower }}{{ ' tl-handover' if result.handover and d.date == result.handover.date }}" title="{{ d.date }}"><b>{{ d.dow }}</b>{{ d.day }}</span>
+            {%- endfor %}
+          </div>
+          <div class="tl-legend"><span><i class="dot p1"></i>{{ parent("A") }}</span><span><i class="dot p2"></i>{{ parent("B") }}</span></div>
+          {%- if result.handover %}
+          <p class="handover"><strong>Passage de bras&nbsp;: {{ result.handover.label }}</strong> — c'est le premier jour de la seconde moitié. L'heure est celle de votre accord (le calcul se fait en journées entières).</p>
+          {%- endif %}
+          <p class="hint">Reprise de l'école&nbsp;: {{ p.resume_label }} · {{ result.source }}</p>
+        </div>
+        {%- else %}
+        <div class="result-card result-empty">
+          <h2 id="result-title">Votre résultat s'affichera ici</h2>
+          <p>Choisissez la zone de l'école de l'enfant, puis cliquez sur «&nbsp;Voir qui a les enfants&nbsp;».</p>
+        </div>
+        {%- endif %}
+        <aside class="tool-cta" data-cta="tool_result">
+          <h3>Toute l'année, pas seulement ces vacances</h3>
+          <p>Alternly applique votre règle à toutes les vacances et à votre rythme de garde, des années à l'avance, dans un calendrier partagé avec l'autre parent.</p>
+          <a class="cta big" href="{{ cta_href }}">Créer mon calendrier complet gratuit</a>
+        </aside>
+      </section>
+    </div>
+  </div>
+</article>
+
+<section class="faq">
+  <div class="wrap narrow">
+    <h2>Questions fréquentes</h2>
+    {%- for q, a in faq %}
+    <details>
+      <summary>{{ q }}</summary>
+      <p>{{ a }}</p>
+    </details>
+    {%- endfor %}
+    <p class="tool-links">À lire aussi&nbsp;: <a href="/blog/vacances-toussaint-2026-garde-alternee">Toussaint 2026 en garde alternée</a> · <a href="/blog/partage-vacances-scolaires-annees-paires-impaires">années paires et impaires</a> · <a href="/blog/zones-abc-calendrier-scolaire-parents-separes">zones A, B, C</a></p>
+  </div>
+</section>
+<script src="/static/outil-vacances.js" defer></script>
+{% endblock %}
