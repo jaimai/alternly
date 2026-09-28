@@ -183,6 +183,8 @@ consentement). PostHog renseigne aussi `$initial_utm_*` sur la personne après c
 | `custody_rule_saved` | C | règles de garde enregistrées depuis les réglages | `pattern`, `pending`, `source` |
 | `calendar_navigated` | C | changement de mois/semaine (max 1 / 10 s) | `direction`, `view` |
 | `history_viewed` | C | page Historique | — |
+| `tip_completed` | C | astuce de prise en main validée (remplace la visite guidée) | `tip` (day, tabs, sync), `via` (button, action) |
+| `tips_dismissed` | C | astuces masquées avec × | `at` |
 | `notification_opened` | C | clic sur une notification | `type`, `unread` |
 
 ### Dépenses, mur, synchro
