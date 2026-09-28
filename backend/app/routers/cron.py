@@ -15,7 +15,7 @@ from ..db import get_db
 from ..deps import is_premium, other_parent_id
 from ..models import ScheduleException, User, utcnow
 from ..services import email as email_service
-from ..services import invite_reminders
+from ..services import invite_reminders, lifecycle
 
 router = APIRouter(prefix="/api/cron", tags=["cron"])
 
@@ -68,3 +68,14 @@ def invite_reminders_job(
     """Relances de la boucle d'invitation (inviteur J+2/J+5, invité J+3, nudge onboarding)."""
     _authorize(x_cron_key)
     return invite_reminders.run(db)
+
+
+@router.post("/lifecycle")
+def lifecycle_job(
+    x_cron_key: str | None = Header(default=None),
+    db: Session = Depends(get_db),
+):
+    """E-mails de cycle de vie : rappels de vacances scolaires puis séquence J1/J3/J7.
+    Idempotent (email_log) ; au plus un e-mail par utilisateur et par jour."""
+    _authorize(x_cron_key)
+    return lifecycle.run(db)
