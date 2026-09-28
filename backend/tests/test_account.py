@@ -342,3 +342,13 @@ class TestDeleteAccountExtended:
         # l'historique partagé reste lisible par le coparent
         assert client.get(f"/api/households/{h['id']}/expenses", headers=headers2).json()
         assert client.get(f"/api/households/{h['id']}/balance", headers=headers2).status_code == 200
+
+
+def test_password_reset_token_schema_is_stable():
+    """Régression : des colonnes d'invitation s'étaient glissées dans ce modèle,
+    ce qui cassait « mot de passe oublié » sur une base Postgres existante."""
+    from app.models import PasswordResetToken
+
+    assert {c.name for c in PasswordResetToken.__table__.columns} == {
+        "id", "user_id", "token_hash", "expires_at", "used_at", "created_at",
+    }
