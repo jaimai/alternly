@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { useAuth } from '../auth'
 import CalendarView from '../components/CalendarView'
 import ChangeRequests from '../components/ChangeRequests'
+import ContextTips from '../components/ContextTips'
 import ExceptionDialog from '../components/ExceptionDialog'
 import Icon from '../components/Icon'
 import InviteShare from '../components/InviteShare'
@@ -12,7 +13,6 @@ import Spinner from '../components/Spinner'
 import { cachedCalendar, cachedExceptions, fetchCalendar, fetchExceptions, invalidateCalendar } from '../calendarCache'
 import StatusCard from '../components/StatusCard'
 import TopBar from '../components/TopBar'
-import WelcomeTour from '../components/WelcomeTour'
 import { todayIso } from '../dates'
 import { isSolo } from '../members'
 import type { CalendarResponse, ScheduleException } from '../types'
@@ -80,7 +80,6 @@ export default function CalendarPage() {
 
   return (
     <>
-      {user && !user.onboarding_seen && <WelcomeTour />}
       <TopBar householdName={household?.name} />
       <div className="layout">
         {error && <div className="error">{error}</div>}
@@ -151,6 +150,7 @@ export default function CalendarPage() {
             </span>
           </div>
         )}
+        <ContextTips dayOpened={selectedDay !== null} />
         {household && (
           <CalendarView
             data={
