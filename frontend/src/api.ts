@@ -10,6 +10,7 @@ import type {
   HistoryEntry,
   Household,
   Invitation,
+  InvitationPreview,
   InvitationSchedulePreview,
   Locale,
   Member,
@@ -213,7 +214,7 @@ export const api = {
       { channel: 'alternly_email' },
     ),
   previewInvitation: (token: string) =>
-    request<{ household_name: string; invited_by_name: string }>(`/invitations/${token}`),
+    request<InvitationPreview>(`/invitations/${token}`),
   previewInvitationSchedule: (token: string) =>
     request<InvitationSchedulePreview>(`/invitations/${token}/preview-schedule`),
   acceptInvitation: (token: string) =>

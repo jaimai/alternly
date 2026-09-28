@@ -16,5 +16,6 @@
   "join.trust.same": "You both see exactly the same calendar",
   "join.trust.swaps": "Nothing changes without your agreement: swaps are proposed and accepted",
   "join.trust.leave": "You can leave the household and delete your account at any time",
-  "join.trust.eu": "Data hosted in the European Union, never sold"
+  "join.trust.eu": "Data hosted in the European Union, never sold",
+  "join.openCalendar": "Open my calendar"
 }

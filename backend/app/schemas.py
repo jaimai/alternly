@@ -287,6 +287,8 @@ class InvitationEmailIn(BaseModel):
 class InvitationPreview(BaseModel):
     household_name: str
     invited_by_name: str
+    # Le parent connecté fait déjà partie de ce foyer (il rouvre le lien reçu).
+    already_member: bool = False
 
 
 class PreviewDay(BaseModel):

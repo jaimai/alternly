@@ -5,7 +5,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from ..auth import get_current_user
+from ..auth import get_current_user, get_optional_user
 from ..config import settings
 from ..db import get_db
 from ..deps import get_membership, household_members, notify
@@ -361,9 +361,14 @@ def email_invitation(
     return _invitation_out(invitation)
 
 
-def _valid_invitation(db: Session, token: str, rich: bool = False) -> Invitation:
+def _is_member(db: Session, household_id: int, user: User | None) -> bool:
+    return user is not None and any(m.user_id == user.id for m in household_members(db, household_id))
+
+
+def _valid_invitation(db: Session, token: str, rich: bool = False, viewer: User | None = None) -> Invitation:
     """Invitation utilisable. `rich` : erreurs détaillées pour la page /join
-    (prénom de l'inviteur pour « demande un nouveau lien à … »)."""
+    (prénom de l'inviteur pour « demande un nouveau lien à … », et
+    `already_member` si le parent connecté est déjà dans ce foyer)."""
     invitation = db.scalar(select(Invitation).where(Invitation.token == token))
     if invitation is None:
         raise HTTPException(status_code=404, detail="Invitation introuvable")
@@ -378,6 +383,7 @@ def _valid_invitation(db: Session, token: str, rich: bool = False) -> Invitation
                 "code": "used" if invitation.used_at is not None else "expired",
                 "message": message,
                 "inviter_first_name": email_service.first_name(inviter.display_name) if inviter else "",
+                "already_member": _is_member(db, invitation.household_id, viewer),
             },
         )
     return invitation
@@ -388,11 +394,19 @@ def _valid_invitation(db: Session, token: str, rich: bool = False) -> Invitation
     response_model=InvitationPreview,
     dependencies=[Depends(rate_limit("invitation", 30, HOUR))],
 )
-def preview_invitation(token: str, db: Session = Depends(get_db)):
-    invitation = _valid_invitation(db, token, rich=True)
+def preview_invitation(
+    token: str,
+    db: Session = Depends(get_db),
+    viewer: User | None = Depends(get_optional_user),
+):
+    invitation = _valid_invitation(db, token, rich=True, viewer=viewer)
     household = db.get(Household, invitation.household_id)
     inviter = db.get(User, invitation.invited_by)
-    return InvitationPreview(household_name=household.name, invited_by_name=inviter.display_name)
+    return InvitationPreview(
+        household_name=household.name,
+        invited_by_name=inviter.display_name,
+        already_member=_is_member(db, household.id, viewer),
+    )
 
 
 PREVIEW_DAYS = 28

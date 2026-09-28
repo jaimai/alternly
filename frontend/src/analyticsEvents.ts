@@ -23,7 +23,7 @@ export const EV = {
   inviteCreated: 'invite_created',
   inviteShared: 'invite_shared', // channel: native|whatsapp|sms|email|copy|qr|alternly_email, source
   inviteMessageEdited: 'invite_message_edited', // source
-  inviteOpened: 'invite_opened', // valid (page /join, anonyme)
+  inviteOpened: 'invite_opened', // valid, already_member (page /join)
   inviteAccepted: 'invite_accepted',
 
   // Calendrier / échanges

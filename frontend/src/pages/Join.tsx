@@ -10,7 +10,7 @@ import Icon from '../components/Icon'
 import Spinner from '../components/Spinner'
 import { parseIso, todayIso } from '../dates'
 import { useFormat } from '../format'
-import type { InvitationSchedulePreview } from '../types'
+import type { InvitationPreview, InvitationSchedulePreview } from '../types'
 
 type InvalidState = { code: 'expired' | 'used' | 'unknown'; inviter: string }
 
@@ -22,7 +22,7 @@ export default function JoinPage() {
   const navigate = useNavigate()
   const { t, i18n } = useTranslation()
   const { range } = useFormat()
-  const [preview, setPreview] = useState<{ household_name: string; invited_by_name: string } | null>(null)
+  const [preview, setPreview] = useState<InvitationPreview | null>(null)
   const [schedule, setSchedule] = useState<InvitationSchedulePreview | null>(null)
   const [invalid, setInvalid] = useState<InvalidState | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -33,13 +33,16 @@ export default function JoinPage() {
     api
       .previewInvitation(token)
       .then((p) => {
+        track(EV.inviteOpened, { valid: true, already_member: p.already_member })
+        if (p.already_member) return goHome()
         setPreview(p)
-        track(EV.inviteOpened, { valid: true })
         // Aperçu du planning : secondaire, jamais bloquant.
         api.previewInvitationSchedule(token).then(setSchedule).catch(() => {})
       })
       .catch((err) => {
-        track(EV.inviteOpened, { valid: false })
+        const alreadyMember = err instanceof ApiError && err.status === 410 && err.data?.already_member === true
+        track(EV.inviteOpened, { valid: false, already_member: alreadyMember })
+        if (alreadyMember) return goHome()
         if (err instanceof ApiError && err.status === 410 && err.data) {
           const code = err.data.code === 'used' ? 'used' : 'expired'
           setInvalid({ code, inviter: String(err.data.inviter_first_name ?? '') })
@@ -49,7 +52,12 @@ export default function JoinPage() {
           setError(err instanceof Error ? err.message : t('auth.invitationInvalid'))
         }
       })
-  }, [token, t])
+    // Parent déjà dans ce foyer qui rouvre le lien reçu : direction le calendrier.
+    function goHome() {
+      localStorage.removeItem('pending_invite')
+      navigate('/app', { replace: true, state: { notice: 'alreadyMember' } })
+    }
+  }, [token, t, navigate])
 
   async function accept() {
     if (!token) return
@@ -109,11 +117,13 @@ export default function JoinPage() {
           {invalid.code !== 'used' && <p className="hint">{t('join.askNewLink')}</p>}
           {invalid.code === 'used' && (
             <p>
-              <Link className="button" to="/login">{t('auth.loginLink')}</Link>
+              <Link className="button" to={user ? '/app' : '/login'}>
+                {user ? t('join.openCalendar') : t('auth.loginLink')}
+              </Link>
             </p>
           )}
           <p style={{ marginTop: 16, textAlign: 'center' }}>
-            <Link to="/">{t('auth.backHome')}</Link>
+            {user ? <Link to="/app">{t('join.openCalendar')}</Link> : <Link to="/">{t('auth.backHome')}</Link>}
           </p>
         </div>
       )}

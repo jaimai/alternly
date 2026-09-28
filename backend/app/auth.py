@@ -53,3 +53,16 @@ def get_current_user(
     if token_version != (user.token_version or 0):
         raise HTTPException(status_code=401, detail="Session expirée, reconnectez-vous")
     return user
+
+
+def get_optional_user(
+    credentials: HTTPAuthorizationCredentials | None = Depends(bearer),
+    db: Session = Depends(get_db),
+) -> User | None:
+    """Comme get_current_user, mais None au lieu d'une 401 (routes publiques)."""
+    if credentials is None:
+        return None
+    try:
+        return get_current_user(credentials, db)
+    except HTTPException:
+        return None

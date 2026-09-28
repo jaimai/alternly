@@ -39,5 +39,6 @@
   "calendar.soloCta": "Inviter l'autre parent",
   "calendar.legendYou": "{{name}} (vous)",
   "calendar.legendHandover": "Jour de passage",
-  "calendar.legendProposedExchange": "Échange proposé"
+  "calendar.legendProposedExchange": "Échange proposé",
+  "calendar.alreadyMember": "Vous faites déjà partie de ce foyer : voici votre calendrier partagé."
 }

@@ -264,6 +264,12 @@ export interface Invitation {
 }
 
 /** Aperçu public du planning de l'invité (page /join). */
+export interface InvitationPreview {
+  household_name: string
+  invited_by_name: string
+  already_member: boolean
+}
+
 export interface InvitationSchedulePreview {
   inviter_first_name: string
   children: string[]
