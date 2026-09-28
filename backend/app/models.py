@@ -258,6 +258,19 @@ class Notification(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
 
+class EmailLog(Base):
+    """E-mails de cycle de vie déjà envoyés (séquence de bienvenue, rappels de
+    vacances) : un seul envoi par (utilisateur, type), même si le cron repasse."""
+    __tablename__ = "email_log"
+    __table_args__ = (UniqueConstraint("user_id", "kind"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    # welcome | j1_rule | j3_invite | j7_value | holiday:<libellé>:<date de début>
+    kind: Mapped[str] = mapped_column(String)
+    sent_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+
 class PasswordResetToken(Base):
     """Jeton de réinitialisation du mot de passe (usage unique, 1 h)."""
     __tablename__ = "password_reset_tokens"

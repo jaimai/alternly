@@ -70,6 +70,7 @@ from .routers import billing as billing_router
 from .routers import change_requests as change_requests_router
 from .routers import children as children_router
 from .routers import cron as cron_router
+from .routers import email_prefs as email_prefs_router
 from .routers import expenses as expenses_router
 from .routers import history as history_router
 from .routers import household as household_router
@@ -137,6 +138,7 @@ app.include_router(calendar_router.router)
 app.include_router(ical_router.router)
 app.include_router(notifications_router.router)
 app.include_router(cron_router.router)
+app.include_router(email_prefs_router.router)
 app.include_router(expenses_router.router)
 app.include_router(wall_router.router)
 app.include_router(billing_router.router)
