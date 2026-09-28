@@ -69,9 +69,14 @@
   function forwardAttribution() {
     var attr = attribution || storedAttribution();
     if (!attr) return;
+    // Une vraie source d'arrivée (pub, e-mail…) remplace les UTM « internes »
+    // posés en dur sur certains CTA (ex. utm_source=outil sur l'outil vacances) :
+    // sinon une inscription venue d'une pub serait attribuée à l'outil.
+    var external = !!(attr.utm_source || attr.gclid || attr.fbclid);
     var links = document.querySelectorAll('a[href^="/register"], a[href^="/login"]');
     Array.prototype.forEach.call(links, function (a) {
       var url = new URL(a.getAttribute('href'), location.origin);
+      if (external) ATTR_PARAMS.forEach(function (k) { url.searchParams.delete(k); });
       Object.keys(attr).forEach(function (k) { if (!url.searchParams.has(k)) url.searchParams.set(k, attr[k]); });
       a.setAttribute('href', url.pathname + url.search + url.hash);
     });
