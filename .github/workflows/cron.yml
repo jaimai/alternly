@@ -1,5 +1,5 @@
 # Tâches planifiées de l'API (pas de scheduler interne au backend).
-# Secrets du dépôt requis :
+# Secrets requis (secrets de l'environnement GitHub « alternly / production », ou du dépôt) :
 #   CRON_URL    = https://<api>/api/cron/exchange-reminders
 #                 (les autres tâches sont déduites : même base, autre suffixe)
 #   CRON_SECRET = même valeur que la variable CRON_SECRET côté Railway
@@ -15,6 +15,7 @@ jobs:
   exchange-reminders:
     name: Rappels d'échange de garde
     runs-on: ubuntu-latest
+    environment: "alternly / production" # secrets CRON_URL / CRON_SECRET (environnement créé par Railway)
     timeout-minutes: 5
     steps:
       - name: POST /api/cron/exchange-reminders
@@ -39,6 +40,7 @@ jobs:
   invite-reminders:
     name: Relances d'invitation du coparent
     runs-on: ubuntu-latest
+    environment: "alternly / production" # secrets CRON_URL / CRON_SECRET (environnement créé par Railway)
     timeout-minutes: 5
     steps:
       - name: POST /api/cron/invite-reminders
@@ -68,6 +70,7 @@ jobs:
     needs: invite-reminders
     if: ${{ always() }}
     runs-on: ubuntu-latest
+    environment: "alternly / production" # secrets CRON_URL / CRON_SECRET (environnement créé par Railway)
     timeout-minutes: 10
     steps:
       - name: POST /api/cron/lifecycle
