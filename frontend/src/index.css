@@ -654,38 +654,57 @@ label {
   }
 }
 
-.modal.tour {
-  text-align: center;
-  width: min(440px, 92vw);
-}
-
-.modal.tour .tour-icon {
-  font-size: 2.6rem;
-  margin-bottom: 6px;
-}
-
-.modal.tour p {
-  color: var(--ink-soft);
-}
-
-.tour-dots {
+.context-tip {
   display: flex;
-  gap: 6px;
-  justify-content: center;
-  margin-top: 18px;
+  gap: 12px;
+  align-items: flex-start;
+  margin: 0 0 12px;
+  padding: 12px 12px 12px 14px;
+  background: var(--pine-soft);
+  border-radius: var(--radius);
+  font-size: 0.92rem;
+  animation: tip-in 220ms var(--ease-out);
 }
 
-.tour-dots span {
-  width: 8px;
-  height: 8px;
+@keyframes tip-in {
+  from { opacity: 0; transform: translateY(4px); }
+}
+
+.context-tip-icon {
+  display: inline-flex;
+  flex: none;
+  padding: 7px;
   border-radius: 999px;
-  background: var(--line);
-  transition: width 250ms var(--ease-out), background 250ms ease;
+  background: var(--surface);
+  color: var(--pine);
 }
 
-.tour-dots span.active {
-  width: 24px;
-  background: var(--pine);
+.context-tip-body { flex: 1; min-width: 0; }
+.context-tip-body p { margin: 2px 0 8px; }
+
+.context-tip-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.context-tip-count {
+  margin-right: auto;
+  color: var(--ink-soft);
+  font-size: 0.8rem;
+}
+
+.context-tip-actions button { padding: 6px 14px; }
+
+.context-tip-close {
+  flex: none;
+  padding: 4px;
+  background: none;
+  border: 0;
+  color: var(--ink-soft);
+  cursor: pointer;
 }
 
 .notif-wrap {

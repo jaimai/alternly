@@ -1,0 +1,12 @@
+{
+  "tips.dayTitle": "Touchez un jour du calendrier",
+  "tips.dayBody": "pour proposer un échange, noter un événement ou voir qui a les enfants.",
+  "tips.tabsTitle": "Dépenses et Mur sont dans les onglets :",
+  "tips.tabsBody": "frais partagés, soldes, infos et tâches pour les enfants, au même endroit que le calendrier.",
+  "tips.syncTitle": "Retrouvez la garde dans votre agenda",
+  "tips.syncBody": "(Google, Apple, Outlook) grâce au lien de synchronisation.",
+  "tips.syncLink": "Configurer",
+  "tips.gotIt": "Compris",
+  "tips.close": "Masquer les astuces",
+  "tips.count": "Astuce {{n}}/{{total}}"
+}

@@ -1,0 +1,12 @@
+{
+  "tips.dayTitle": "Tap any day on the calendar",
+  "tips.dayBody": "to propose a swap, add an event or see who has the kids.",
+  "tips.tabsTitle": "Expenses and Wall live in the tabs:",
+  "tips.tabsBody": "shared costs, balances, notes and to-dos for the kids, right next to the calendar.",
+  "tips.syncTitle": "See custody in your own calendar",
+  "tips.syncBody": "(Google, Apple, Outlook) with the sync link.",
+  "tips.syncLink": "Set it up",
+  "tips.gotIt": "Got it",
+  "tips.close": "Hide tips",
+  "tips.count": "Tip {{n}}/{{total}}"
+}
