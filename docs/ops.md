@@ -181,6 +181,7 @@ Secrets du dépôt (*Settings → Secrets and variables → Actions*) :
 - `CRON_URL` = `https://<api railway>/api/cron/exchange-reminders` (les autres URL en sont
   déduites : même base, autre suffixe)
 - `CRON_SECRET` = même valeur que `CRON_SECRET` sur Railway (envoyée dans `X-Cron-Key`)
+- Ces deux secrets peuvent être des secrets du dépôt ou de l'environnement GitHub `production` (les jobs de `cron.yml` déclarent `environment: production`).
 
 Déclenchement manuel : onglet *Actions → Cron → Run workflow*. Attention : GitHub
 désactive les workflows planifiés après 60 jours sans activité sur le dépôt.
