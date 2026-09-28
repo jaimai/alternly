@@ -202,9 +202,30 @@
     return article ? article.getAttribute('data-blog-slug') : null;
   }
 
+  // Outils gratuits (ex. /outils/vacances-garde-alternee) : événements relayés
+  // depuis la page via CustomEvent, filtrés (noms et propriétés autorisés seulement).
+  var TOOL_EVENTS = { tool_used: ['zone', 'period', 'mode'] };
+  function toolName() {
+    var el = document.querySelector('[data-tool]');
+    return el ? el.getAttribute('data-tool') : null;
+  }
+
   function bindEvents() {
     var slug = blogSlug();
+    var tool = toolName();
     if (slug) track('blog_article_viewed', { slug: slug, lang: LANG });
+
+    document.addEventListener('alternly:track', function (e) {
+      var d = e.detail || {};
+      var allowed = TOOL_EVENTS[d.event];
+      if (!allowed || !tool) return;
+      var props = { tool: tool, lang: LANG };
+      allowed.forEach(function (k) {
+        var v = d.props && d.props[k];
+        if (typeof v === 'string') props[k] = v.slice(0, 40);
+      });
+      track(d.event, props);
+    });
 
     document.addEventListener('click', function (e) {
       var a = e.target && e.target.closest ? e.target.closest('a') : null;
@@ -220,6 +241,7 @@
       } else if (href.indexOf('/register') === 0) {
         var props = { location: ctaLocation(a), lang: LANG };
         if (slug) { props.slug = slug; track('blog_cta_clicked', props); }
+        else if (tool) { props.tool = tool; track('tool_cta_clicked', props); }
         else track('landing_cta_clicked', props);
       }
     });
