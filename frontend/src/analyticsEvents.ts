@@ -40,6 +40,7 @@ export const EV = {
   custodyRuleSaved: 'custody_rule_saved', // pattern, pending, source
   calendarNavigated: 'calendar_navigated', // direction (limité à 1 / 10 s)
   historyViewed: 'history_viewed',
+  feedbackOpened: 'feedback_opened', // source (fab, settings) ; l'envoi est compté côté serveur (feedback_sent)
   tipCompleted: 'tip_completed', // tip (day, tabs, sync), via (button, action)
   tipsDismissed: 'tips_dismissed', // at
   notificationOpened: 'notification_opened', // type

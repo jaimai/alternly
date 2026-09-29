@@ -10,6 +10,9 @@ class Settings(BaseSettings):
     # Notifications e-mail (Resend). Vide → envoi désactivé (no-op).
     resend_api_key: str = ""
     email_from: str = "Alternly <no-reply@alternly.com>"
+    # Boîte qui reçoit les signalements « Signaler un problème / Une idée ».
+    # Vide → signalements enregistrés en base seulement (table feedback).
+    feedback_email: str = ""
     # URL publique du site (Vercel sert la landing en / et l'app). Utilisée pour
     # les liens absolus des e-mails et le canonical/OG (la landing est proxifiée,
     # donc request.url refléterait l'URL interne Railway).

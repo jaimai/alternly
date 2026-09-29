@@ -141,6 +141,9 @@ export interface TokenResponse {
   user: User
 }
 
+export type FeedbackKind = 'problem' | 'idea' | 'question'
+export type FeedbackSource = 'fab' | 'settings' | 'footer'
+
 export const api = {
   register: (data: {
     email: string; password: string; display_name: string; color: string; locale?: Locale
@@ -217,6 +220,15 @@ export const api = {
     request<InvitationPreview>(`/invitations/${token}`),
   previewInvitationSchedule: (token: string) =>
     request<InvitationSchedulePreview>(`/invitations/${token}/preview-schedule`),
+  sendFeedback: (data: {
+    kind: FeedbackKind
+    message: string
+    email?: string
+    source: FeedbackSource
+    page: string
+    locale: 'fr' | 'en'
+    website: string
+  }) => request<{ ok: boolean }>('/feedback', { method: 'POST', body: JSON.stringify(data) }),
   acceptInvitation: (token: string) =>
     ev(request<Household>(`/invitations/${token}/accept`, { method: 'POST' }), EV.inviteAccepted),
 

@@ -80,6 +80,12 @@ def check_household_limit(scope: str, household_id: int, limit: int, window: int
         _check(f"{scope}:hh:{household_id}", limit, window)
 
 
+def check_account_limit(scope: str, user_id: int, limit: int, window: int) -> None:
+    """Contrôle manuel par compte (route accessible connecté ou non)."""
+    if settings.rate_limit_enabled:
+        _check(f"{scope}:user:{user_id}", limit, window)
+
+
 def _client_ip(request: Request) -> str:
     return request.client.host if request.client else "inconnu"
 

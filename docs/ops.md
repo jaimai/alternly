@@ -40,6 +40,7 @@ Toutes lues par `backend/app/config.py` (insensibles à la casse).
 | `RESEND_API_KEY` | vide | Vide → aucun e-mail envoyé (no-op journalisé, adresse masquée). |
 | `EMAIL_FROM` | `Alternly <no-reply@alternly.com>` | Expéditeur ; domaine vérifié chez Resend. |
 | `CRON_SECRET` | vide | Protège les endpoints `POST /api/cron/*` (`exchange-reminders`, `invite-reminders`, `lifecycle` ; en-tête `X-Cron-Key`, comparaison à temps constant). Vide → endpoint désactivé (403). |
+| `FEEDBACK_EMAIL` | vide | Boîte qui reçoit les signalements « Signaler un problème / Une idée » (`POST /api/feedback`, Reply-To = e-mail de l'utilisateur). Vide → signalements seulement enregistrés en base (table `feedback`). |
 | `RATE_LIMIT_ENABLED` | `true` | Coupe la limitation de débit (à ne faire qu'en cas d'incident). |
 | `SENTRY_DSN` | vide | Active Sentry si renseigné. |
 | `GOOGLE_CLIENT_ID` | vide | Active « Continuer avec Google » (voir la section Google). |

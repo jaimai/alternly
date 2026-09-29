@@ -186,6 +186,8 @@ consentement). PostHog renseigne aussi `$initial_utm_*` sur la personne après c
 | `tip_completed` | C | astuce de prise en main validée (remplace la visite guidée) | `tip` (day, tabs, sync), `via` (button, action) |
 | `tips_dismissed` | C | astuces masquées avec × | `at` |
 | `notification_opened` | C | clic sur une notification | `type`, `unread` |
+| `feedback_opened` | C | ouverture du formulaire de signalement | `source` (fab, settings) |
+| `feedback_sent` | S | signalement enregistré (fait autorité) | `type` (problem, idea, question), `source` (fab, settings, footer) |
 
 ### Dépenses, mur, synchro
 | Événement | Source | Quand | Propriétés |
