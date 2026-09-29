@@ -9,7 +9,9 @@ class Settings(BaseSettings):
 
     # Notifications e-mail (Resend). Vide → envoi désactivé (no-op).
     resend_api_key: str = ""
-    email_from: str = "Alternly <no-reply@alternly.com>"
+    # Domaine d'envoi vérifié chez Resend : hōnō.com (forme ASCII/IDNA obligatoire),
+    # alias dédié à Alternly. Surchargeable par EMAIL_FROM.
+    email_from: str = "Alternly <alternly@xn--hn-vrab.com>"
     # Boîte qui reçoit les signalements « Signaler un problème / Une idée ».
     # Vide → signalements enregistrés en base seulement (table feedback).
     feedback_email: str = ""

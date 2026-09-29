@@ -38,7 +38,7 @@ Toutes lues par `backend/app/config.py` (insensibles à la casse).
 | `PUBLIC_SITE_URL` | `http://localhost:8000` | Origine publique du site (`https://alternly.com`) : canonical/OG, sitemap, robots, llms.txt, liens de désinscription des e-mails (`/api/email/unsubscribe`, relayé par Vercel) (la landing étant proxifiée, l'URL de la requête serait celle de Railway). Vide → origine de la requête. |
 | `CORS_ORIGINS` | `http://localhost:5173` | Origines autorisées, séparées par des virgules (`https://alternly.com`, + domaines de preview Vercel si besoin). |
 | `RESEND_API_KEY` | vide | Vide → aucun e-mail envoyé (no-op journalisé, adresse masquée). |
-| `EMAIL_FROM` | `Alternly <no-reply@alternly.com>` | Expéditeur ; domaine vérifié chez Resend. |
+| `EMAIL_FROM` | `Alternly <alternly@xn--hn-vrab.com>` | Expéditeur ; domaine vérifié chez Resend (`hōnō.com`, forme ASCII ; un domaine accentué est converti automatiquement). |
 | `CRON_SECRET` | vide | Protège les endpoints `POST /api/cron/*` (`exchange-reminders`, `invite-reminders`, `lifecycle` ; en-tête `X-Cron-Key`, comparaison à temps constant). Vide → endpoint désactivé (403). |
 | `FEEDBACK_EMAIL` | vide | Boîte qui reçoit les signalements « Signaler un problème / Une idée » (`POST /api/feedback`, Reply-To = e-mail de l'utilisateur). Vide → signalements seulement enregistrés en base (table `feedback`). |
 | `RATE_LIMIT_ENABLED` | `true` | Coupe la limitation de débit (à ne faire qu'en cas d'incident). |
@@ -238,6 +238,11 @@ Règles communes au cycle de vie (`backend/app/services/lifecycle.py`) :
    FR et EN) avant de l'activer.
 
 ## Resend — domaine d'envoi
+
+**Configuration actuelle** : envoi depuis le domaine `hōnō.com` (`xn--hn-vrab.com`), déjà
+vérifié dans le compte Resend (région eu-west-1), avec l'alias `alternly@…` et le nom
+d'expéditeur « Alternly ». `RESEND_API_KEY` = une clé de ce compte. La procédure ci-dessous
+ne sert que pour passer plus tard à un domaine `alternly.com` dédié.
 
 Dans Resend : *Domains → Add domain* (ex. `alternly.com` ou sous-domaine `mail.alternly.com`),
 puis ajouter chez le registrar DNS les enregistrements **exactement tels qu'affichés** :

@@ -41,6 +41,14 @@ def ascii_address(address: str) -> str:
         return address
 
 
+def ascii_sender(sender: str) -> str:
+    """« Nom <adresse> » avec domaine converti en ASCII (EMAIL_FROM saisi avec accents)."""
+    name, sep, rest = sender.rpartition("<")
+    if not sep:
+        return ascii_address(sender)
+    return f"{name}<{ascii_address(rest.rstrip('>'))}>"
+
+
 def send_email(to: str, subject: str, html: str, reply_to: str | None = None) -> bool:
     """Envoie un e-mail. Retourne True si accepté par Resend, False sinon."""
     content: dict = {"html": html}
@@ -71,7 +79,7 @@ def _deliver(to: str, subject: str, content: dict) -> bool:
             resp = client.post(
                 RESEND_ENDPOINT,
                 headers={"Authorization": f"Bearer {settings.resend_api_key}"},
-                json={"from": settings.email_from, "to": [ascii_address(to)], "subject": subject, **content},
+                json={"from": ascii_sender(settings.email_from), "to": [ascii_address(to)], "subject": subject, **content},
             )
         if resp.status_code >= 400:
             logger.warning(
