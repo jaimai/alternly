@@ -25,11 +25,27 @@ def mask_email(address: str) -> str:
     return f"{local[:1]}***{sep}{domain}" if sep else "***"
 
 
+def ascii_address(address: str) -> str:
+    """Domaine accentué → forme ASCII (IDNA) : alternly@hōnō.com → alternly@xn--hn-vrab.com.
+
+    Resend (comme beaucoup de serveurs SMTP) refuse les domaines non ASCII.
+    La partie locale reste telle quelle.
+    """
+    address = address.strip()
+    local, sep, domain = address.rpartition("@")
+    if not sep or domain.isascii():
+        return address
+    try:
+        return f"{local}@{domain.encode('idna').decode('ascii')}"
+    except UnicodeError:
+        return address
+
+
 def send_email(to: str, subject: str, html: str, reply_to: str | None = None) -> bool:
     """Envoie un e-mail. Retourne True si accepté par Resend, False sinon."""
     content: dict = {"html": html}
     if reply_to:
-        content["reply_to"] = [reply_to]
+        content["reply_to"] = [ascii_address(reply_to)]
     return _deliver(to, subject, content)
 
 
@@ -55,7 +71,7 @@ def _deliver(to: str, subject: str, content: dict) -> bool:
             resp = client.post(
                 RESEND_ENDPOINT,
                 headers={"Authorization": f"Bearer {settings.resend_api_key}"},
-                json={"from": settings.email_from, "to": [to], "subject": subject, **content},
+                json={"from": settings.email_from, "to": [ascii_address(to)], "subject": subject, **content},
             )
         if resp.status_code >= 400:
             logger.warning(
