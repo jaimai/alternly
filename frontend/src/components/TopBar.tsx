@@ -4,6 +4,7 @@ import { useAuth } from '../auth'
 import { openCheckout } from '../billing'
 import Icon from './Icon'
 import type { IconName } from './Icon'
+import FeedbackButton from './FeedbackButton'
 import NotificationBell from './NotificationBell'
 
 const navClass = ({ isActive }: { isActive: boolean }) => (isActive ? 'active' : undefined)
@@ -73,6 +74,7 @@ export default function TopBar({ householdName }: { householdName?: string }) {
           <span>{t('common.settings')}</span>
         </NavLink>
       </nav>
+      <FeedbackButton />
     </>
   )
 }

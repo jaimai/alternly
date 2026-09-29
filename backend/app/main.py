@@ -79,6 +79,7 @@ from .routers import ical as ical_router
 from .routers import marketing as marketing_router
 from .routers import notifications as notifications_router
 from .routers import public_tools as public_tools_router
+from .routers import feedback as feedback_router
 from .routers import rules as rules_router
 from .routers import wall as wall_router
 
@@ -145,6 +146,7 @@ app.include_router(billing_router.router)
 app.include_router(history_router.router)
 app.include_router(change_requests_router.router)
 app.include_router(public_tools_router.router)
+app.include_router(feedback_router.router)
 
 
 @app.get("/api/health")

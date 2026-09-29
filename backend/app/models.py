@@ -1,7 +1,7 @@
 import uuid
 from datetime import date, datetime, timezone
 
-from sqlalchemy import JSON, Boolean, Date, DateTime, ForeignKey, Integer, String, UniqueConstraint
+from sqlalchemy import JSON, Boolean, Date, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .db import Base
@@ -349,3 +349,26 @@ class PublicHolidayCache(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     date: Mapped[date] = mapped_column(Date, unique=True)
     label: Mapped[str] = mapped_column(String)
+
+
+class Feedback(Base):
+    """Signalement envoyé depuis l'app ou le site (problème, idée, question).
+
+    Gardé en base même si l'e-mail à l'équipe échoue. Contexte technique limité :
+    route, langue, navigateur, identifiants — jamais de prénom ni de contenu du foyer.
+    """
+    __tablename__ = "feedback"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, index=True)
+    kind: Mapped[str] = mapped_column(String)  # problem | idea | question
+    message: Mapped[str] = mapped_column(Text)
+    reply_email: Mapped[str] = mapped_column(String)
+    user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True, index=True)
+    household_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    premium: Mapped[bool] = mapped_column(Boolean, default=False)
+    source: Mapped[str] = mapped_column(String, default="app")  # fab | settings | footer
+    page: Mapped[str] = mapped_column(String, default="")
+    locale: Mapped[str] = mapped_column(String, default="")
+    user_agent: Mapped[str] = mapped_column(String, default="")
+    emailed: Mapped[bool] = mapped_column(Boolean, default=False)

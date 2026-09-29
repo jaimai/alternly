@@ -25,9 +25,12 @@ def mask_email(address: str) -> str:
     return f"{local[:1]}***{sep}{domain}" if sep else "***"
 
 
-def send_email(to: str, subject: str, html: str) -> bool:
+def send_email(to: str, subject: str, html: str, reply_to: str | None = None) -> bool:
     """Envoie un e-mail. Retourne True si accepté par Resend, False sinon."""
-    return _deliver(to, subject, {"html": html})
+    content: dict = {"html": html}
+    if reply_to:
+        content["reply_to"] = [reply_to]
+    return _deliver(to, subject, content)
 
 
 def send_lifecycle_email(to: str, subject: str, html: str, text: str, unsubscribe_url: str) -> bool:

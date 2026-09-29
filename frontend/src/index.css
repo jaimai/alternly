@@ -2044,3 +2044,43 @@ button.consent-btn {
 @media (prefers-reduced-motion: reduce) {
   .consent-banner { animation: none; }
 }
+
+/* ---------- Signalement (pastille flottante + formulaire) ---------- */
+.feedback-fab {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 25; /* sous la barre d'onglets (30) et les modales */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--pine);
+  border: 1px solid var(--line);
+  box-shadow: 0 6px 18px -8px rgba(36, 49, 43, 0.35);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .feedback-fab:hover { background: var(--pine-soft); }
+}
+
+@media (max-width: 640px) {
+  .feedback-fab {
+    right: 12px;
+    bottom: calc(76px + env(safe-area-inset-bottom));
+    width: 40px;
+    height: 40px;
+  }
+}
+
+@media print { .feedback-fab { display: none; } }
+
+.feedback-form textarea { width: 100%; resize: vertical; min-height: 110px; }
+.feedback-form .segmented { margin: 4px 0 12px; }
+.feedback-count { text-align: right; margin: 2px 0 8px; }
+.feedback-trap { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
+.feedback-done p { margin: 4px 0 16px; }

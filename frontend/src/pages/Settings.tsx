@@ -15,6 +15,7 @@ import InviteShare from '../components/InviteShare'
 import RuleForm from '../components/RuleForm'
 import Spinner from '../components/Spinner'
 import type { RuleFormValue } from '../components/RuleForm'
+import { FeedbackDialog } from '../components/FeedbackButton'
 import TopBar from '../components/TopBar'
 import { useConfirm } from '../components/useConfirm'
 import { useFormat } from '../format'
@@ -430,6 +431,8 @@ export default function SettingsPage() {
 
         <AccountCard user={user} onMessage={flash} onError={fail} />
 
+        <HelpCard />
+
         <DangerZone />
       </div>
       {confirmNode}
@@ -510,6 +513,27 @@ function SubscriptionCard({ onChanged }: { onChanged: () => void }) {
         </>
       )}
       {confirmNode}
+    </div>
+  )
+}
+
+function HelpCard() {
+  const { t } = useTranslation()
+  const [open, setOpen] = useState(false)
+  return (
+    <div className="card">
+      <h2>{t('feedback.settingsTitle')}</h2>
+      <p className="hint" style={{ marginTop: 0 }}>{t('feedback.settingsBody')}</p>
+      <button
+        className="secondary"
+        onClick={() => {
+          track(EV.feedbackOpened, { source: 'settings' })
+          setOpen(true)
+        }}
+      >
+        {t('feedback.settingsCta')}
+      </button>
+      {open && <FeedbackDialog source="settings" onClose={() => setOpen(false)} />}
     </div>
   )
 }
