@@ -58,6 +58,11 @@ class TestAccentedDomains:
         assert email_service.ascii_address(" contact@alternly.com ") == "contact@alternly.com"
         assert email_service.ascii_address("pas-une-adresse") == "pas-une-adresse"
 
+    def test_ascii_sender(self):
+        assert email_service.ascii_sender("Alternly <alternly@hōnō.com>") == "Alternly <alternly@xn--hn-vrab.com>"
+        assert email_service.ascii_sender("Alternly <alternly@xn--hn-vrab.com>") == "Alternly <alternly@xn--hn-vrab.com>"
+        assert email_service.ascii_sender("alternly@hōnō.com") == "alternly@xn--hn-vrab.com"
+
     def test_to_and_reply_to_are_converted(self, monkeypatch):
         import json
 
