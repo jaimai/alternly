@@ -6,6 +6,7 @@ remonter dans une requête utilisateur (fire-and-forget).
 """
 import html
 import logging
+import re
 
 import httpx
 
@@ -49,9 +50,23 @@ def ascii_sender(sender: str) -> str:
     return f"{name}<{ascii_address(rest.rstrip('>'))}>"
 
 
+def html_to_text(html_body: str) -> str:
+    """Version texte d'un e-mail HTML (multipart/alternative) : un e-mail HTML seul
+    est un signal de spam classique. Liens conservés sous la forme « libellé (url) »."""
+    s = re.sub(r"(?is)<(script|style)[^>]*>.*?</\1>", "", html_body)
+    s = re.sub(r'(?is)<a\s[^>]*href="([^"]+)"[^>]*>(.*?)</a>', lambda m: f"{m.group(2)} ({m.group(1)})", s)
+    s = re.sub(r"(?i)<br\s*/?>", "\n", s)
+    s = re.sub(r"(?i)</(p|div|h[1-6]|li|tr|table)>", "\n\n", s)
+    s = re.sub(r"<[^>]+>", "", s)
+    s = html.unescape(s)
+    s = re.sub(r"[ \t]+", " ", s)
+    s = re.sub(r"\n\s*\n\s*\n+", "\n\n", s)
+    return "\n".join(line.strip() for line in s.strip().splitlines())
+
+
 def send_email(to: str, subject: str, html: str, reply_to: str | None = None) -> bool:
     """Envoie un e-mail. Retourne True si accepté par Resend, False sinon."""
-    content: dict = {"html": html}
+    content: dict = {"html": html, "text": html_to_text(html)}
     if reply_to:
         content["reply_to"] = [ascii_address(reply_to)]
     return _deliver(to, subject, content)
@@ -112,8 +127,17 @@ def diagnose(to: str | None) -> dict:
                 json={
                     "from": ascii_sender(settings.email_from),
                     "to": [ascii_address(to)],
-                    "subject": "[Alternly] Test d'envoi",
-                    "html": "<p>Test d'envoi depuis le serveur Alternly : la configuration e-mail fonctionne.</p>",
+                    "subject": "Alternly : vérification de l'envoi des e-mails",
+                    "html": (
+                        "<p>Bonjour,</p><p>Ce message confirme que le serveur Alternly envoie "
+                        "correctement ses e-mails (bienvenue, invitations, rappels, signalements).</p>"
+                        "<p>Aucune action n'est nécessaire.</p><p>— Alternly</p>"
+                    ),
+                    "text": (
+                        "Bonjour,\n\nCe message confirme que le serveur Alternly envoie correctement "
+                        "ses e-mails (bienvenue, invitations, rappels, signalements).\n\n"
+                        "Aucune action n'est nécessaire.\n\n— Alternly"
+                    ),
                 },
             )
         out["test"] = {"status": resp.status_code, "response": resp.text[:500]}
