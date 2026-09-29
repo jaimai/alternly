@@ -13,7 +13,7 @@
   "feedback.placeholder_idea": "What would make your life easier…",
   "feedback.placeholder_question": "Ask away — we'll reply by email.",
   "feedback.emailLabel": "Your email (so we can reply)",
-  "feedback.replyToAccount": "We'll reply to {{email}}.",
+  "feedback.replyToAccount": "Our reply will go to your address: {{email}}",
   "feedback.contextNote": "We attach the page, language and browser to understand the issue — never your household's content.",
   "feedback.send": "Send",
   "feedback.sending": "Sending…",
