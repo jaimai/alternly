@@ -289,7 +289,7 @@
   "feedback.placeholder_idea": "What would make your life easier…",
   "feedback.placeholder_problem": "What you were doing, what you saw, what you expected…",
   "feedback.placeholder_question": "Ask away — we'll reply by email.",
-  "feedback.replyToAccount": "We'll reply to {{email}}.",
+  "feedback.replyToAccount": "Our reply will go to your address: {{email}}",
   "feedback.send": "Send",
   "feedback.sending": "Sending…",
   "feedback.settingsBody": "A bug, a question or an idea: write to us, we reply within 48 hours.",

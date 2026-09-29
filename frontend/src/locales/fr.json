@@ -289,7 +289,7 @@
   "feedback.placeholder_idea": "Ce qui vous simplifierait la vie…",
   "feedback.placeholder_problem": "Ce que vous faisiez, ce qui s'est affiché, ce que vous attendiez…",
   "feedback.placeholder_question": "Posez votre question, nous vous répondons par e-mail.",
-  "feedback.replyToAccount": "Nous vous répondrons à {{email}}.",
+  "feedback.replyToAccount": "Notre réponse arrivera sur votre adresse : {{email}}",
   "feedback.send": "Envoyer",
   "feedback.sending": "Envoi…",
   "feedback.settingsBody": "Un bug, une question ou une idée d'amélioration : écrivez-nous, nous répondons sous 48 h.",
