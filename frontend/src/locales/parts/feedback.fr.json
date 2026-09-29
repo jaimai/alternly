@@ -13,7 +13,7 @@
   "feedback.placeholder_idea": "Ce qui vous simplifierait la vie…",
   "feedback.placeholder_question": "Posez votre question, nous vous répondons par e-mail.",
   "feedback.emailLabel": "Votre e-mail (pour vous répondre)",
-  "feedback.replyToAccount": "Nous vous répondrons à {{email}}.",
+  "feedback.replyToAccount": "Notre réponse arrivera sur votre adresse : {{email}}",
   "feedback.contextNote": "Nous joignons la page, la langue et le navigateur pour comprendre le problème — jamais le contenu de votre foyer.",
   "feedback.send": "Envoyer",
   "feedback.sending": "Envoi…",

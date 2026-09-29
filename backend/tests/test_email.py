@@ -50,6 +50,30 @@ class TestSendEmail:
         assert "Sujet" in captured["body"]
 
 
+class TestAccentedDomains:
+    """Resend refuse les domaines non ASCII : ils sont convertis (IDNA) avant l'envoi."""
+
+    def test_ascii_address(self):
+        assert email_service.ascii_address("alternly@hōnō.com") == "alternly@xn--hn-vrab.com"
+        assert email_service.ascii_address(" contact@alternly.com ") == "contact@alternly.com"
+        assert email_service.ascii_address("pas-une-adresse") == "pas-une-adresse"
+
+    def test_to_and_reply_to_are_converted(self, monkeypatch):
+        import json
+
+        captured = {}
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            captured["body"] = json.loads(request.read())
+            return httpx.Response(200, json={"id": "abc"})
+
+        monkeypatch.setattr(email_service.settings, "resend_api_key", "re_test")
+        monkeypatch.setattr(email_service, "_transport", httpx.MockTransport(handler))
+        assert email_service.send_email("alternly@hōnō.com", "S", "<p>x</p>", reply_to="parent@école.fr")
+        assert captured["body"]["to"] == ["alternly@xn--hn-vrab.com"]
+        assert captured["body"]["reply_to"] == ["parent@xn--cole-9oa.fr"]
+
+
 class TestTemplateEscaping:
     def test_note_is_html_escaped(self):
         _, html = email_service.exchange_proposed_email(
