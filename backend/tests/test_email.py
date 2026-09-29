@@ -248,3 +248,19 @@ class TestEmailCheck:
         monkeypatch.setattr(email_service.settings, "resend_api_key", "")
         r = client.post("/api/cron/email-check", headers={"X-Cron-Key": "s3cret"})
         assert r.json()["resend_api_key"] == "absente"
+
+
+class TestPlainTextPart:
+    def test_send_email_includes_text_version(self, monkeypatch):
+        import json
+
+        captured = {}
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            captured["body"] = json.loads(request.read())
+            return httpx.Response(200, json={"id": "abc"})
+
+        monkeypatch.setattr(email_service.settings, "resend_api_key", "re_test")
+        monkeypatch.setattr(email_service, "_transport", httpx.MockTransport(handler))
+        email_service.send_email("a@test.fr", "S", '<p>Bonjour &amp; bienvenue</p><p><a href="https://x.fr/app">Ouvrir</a></p>')
+        assert captured["body"]["text"] == "Bonjour & bienvenue\n\nOuvrir (https://x.fr/app)"
