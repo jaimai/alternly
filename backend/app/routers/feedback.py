@@ -5,6 +5,7 @@ puis envoyé par e-mail à `FEEDBACK_EMAIL`, avec l'adresse de l'utilisateur en
 Reply-To pour répondre directement depuis la boîte mail.
 """
 import html
+import logging
 import re
 from typing import Literal
 
@@ -21,6 +22,8 @@ from ..models import Feedback, HouseholdMember, User
 from ..ratelimit import DAY, HOUR, check_account_limit, rate_limit
 from ..services import analytics
 from ..services import email as email_service
+
+logger = logging.getLogger("coparent.feedback")
 
 router = APIRouter(prefix="/api", tags=["feedback"])
 
@@ -122,7 +125,9 @@ def send_feedback(
     db.commit()
     db.refresh(fb)
 
-    if settings.feedback_email:
+    if not settings.feedback_email:
+        logger.warning("FEEDBACK_EMAIL absente : signalement #%s enregistré sans e-mail", fb.id)
+    else:
         preview = re.sub(r"\s+", " ", fb.message)[:60]
         subject = f"[Alternly][{KIND_LABELS[fb.kind]}] {preview}"
         background.add_task(_send, db.get_bind(), fb.id, settings.feedback_email, subject, _email_html(fb, user), reply)

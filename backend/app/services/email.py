@@ -92,6 +92,36 @@ def _deliver(to: str, subject: str, content: dict) -> bool:
         return False
 
 
+def diagnose(to: str | None) -> dict:
+    """Diagnostic de l'envoi (endpoint cron protégé) : configuration vue par le
+    serveur, sans jamais exposer de secret, et essai réel vers `to` si fourni."""
+    key = settings.resend_api_key
+    out: dict = {
+        "resend_api_key": "absente" if not key else f"présente ({key[:3]}…, {len(key)} caractères)",
+        "email_from": ascii_sender(settings.email_from),
+        "feedback_email": mask_email(ascii_address(to)) if to else "absente",
+    }
+    if not key or not to:
+        out["test"] = "non lancé (clé ou destinataire manquant)"
+        return out
+    try:
+        with httpx.Client(transport=_transport, timeout=10) as client:
+            resp = client.post(
+                RESEND_ENDPOINT,
+                headers={"Authorization": f"Bearer {key}"},
+                json={
+                    "from": ascii_sender(settings.email_from),
+                    "to": [ascii_address(to)],
+                    "subject": "[Alternly] Test d'envoi",
+                    "html": "<p>Test d'envoi depuis le serveur Alternly : la configuration e-mail fonctionne.</p>",
+                },
+            )
+        out["test"] = {"status": resp.status_code, "response": resp.text[:500]}
+    except httpx.HTTPError as exc:
+        out["test"] = {"erreur_reseau": str(exc)[:300]}
+    return out
+
+
 def _lang(locale: str | None) -> str:
     return "en" if locale == "en" else "fr"
 
