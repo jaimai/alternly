@@ -28,6 +28,14 @@ def _authorize(key: str | None) -> None:
         raise HTTPException(status_code=401, detail="Clé cron invalide")
 
 
+@router.post("/email-check")
+def email_check(x_cron_key: str | None = Header(default=None)):
+    """Diagnostic e-mail : configuration vue par le serveur + envoi test vers
+    FEEDBACK_EMAIL (seul destinataire possible, pour éviter tout abus)."""
+    _authorize(x_cron_key)
+    return email_service.diagnose(settings.feedback_email or None)
+
+
 @router.post("/exchange-reminders")
 def exchange_reminders(
     x_cron_key: str | None = Header(default=None),

@@ -215,3 +215,36 @@ class TestEmailHardening:
         )
         assert sent[0]["subject"] == "New custody swap proposal"
         assert "2099-03-04 to 2099-03-05" in sent[0]["html"]
+
+
+class TestEmailCheck:
+    def test_requires_cron_key(self, client, monkeypatch):
+        monkeypatch.setattr(email_service.settings, "cron_secret", "s3cret")
+        assert client.post("/api/cron/email-check").status_code == 401
+
+    def test_reports_config_without_secrets_and_sends_test(self, client, monkeypatch):
+        import json
+
+        captured = {}
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            captured["body"] = json.loads(request.read())
+            return httpx.Response(403, json={"message": "domain not verified"})
+
+        monkeypatch.setattr(email_service.settings, "cron_secret", "s3cret")
+        monkeypatch.setattr(email_service.settings, "resend_api_key", "re_supersecretkey")
+        monkeypatch.setattr(email_service.settings, "feedback_email", "alternly@hōnō.com")
+        monkeypatch.setattr(email_service, "_transport", httpx.MockTransport(handler))
+        r = client.post("/api/cron/email-check", headers={"X-Cron-Key": "s3cret"})
+        assert r.status_code == 200
+        data = r.json()
+        assert "supersecret" not in r.text
+        assert data["resend_api_key"].startswith("présente (re_")
+        assert data["test"]["status"] == 403 and "domain not verified" in data["test"]["response"]
+        assert captured["body"]["to"] == ["alternly@xn--hn-vrab.com"]
+
+    def test_no_key_no_call(self, client, monkeypatch):
+        monkeypatch.setattr(email_service.settings, "cron_secret", "s3cret")
+        monkeypatch.setattr(email_service.settings, "resend_api_key", "")
+        r = client.post("/api/cron/email-check", headers={"X-Cron-Key": "s3cret"})
+        assert r.json()["resend_api_key"] == "absente"

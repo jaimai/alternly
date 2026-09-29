@@ -1,0 +1,30 @@
+# Diagnostic e-mail à la demande (Actions → Email check → Run workflow).
+# Affiche la configuration vue par l'API (sans secret) et le résultat d'un envoi
+# test vers FEEDBACK_EMAIL (réponse brute de Resend).
+name: Email check
+
+on:
+  workflow_dispatch:
+
+jobs:
+  email-check:
+    name: Diagnostic Resend
+    runs-on: ubuntu-latest
+    environment: "alternly / production" # secrets CRON_URL / CRON_SECRET
+    timeout-minutes: 3
+    steps:
+      - name: POST /api/cron/email-check
+        env:
+          CRON_URL: ${{ secrets.CRON_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          if [ -z "$CRON_URL" ] || [ -z "$CRON_SECRET" ]; then
+            echo "::error::Secrets CRON_URL / CRON_SECRET manquants"
+            exit 1
+          fi
+          URL="${CRON_URL%/exchange-reminders}/email-check"
+          status=$(curl --silent --show-error --output response.txt --write-out '%{http_code}' \
+            --max-time 60 -X POST -H "X-Cron-Key: $CRON_SECRET" "$URL")
+          echo "HTTP $status"
+          python3 -m json.tool response.txt || cat response.txt
+          case "$status" in 2??) ;; *) exit 1 ;; esac
