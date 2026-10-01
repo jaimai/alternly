@@ -1,6 +1,7 @@
 import { initializePaddle, type Paddle } from '@paddle/paddle-js'
 import { track } from './analytics'
 import { EV } from './analyticsEvents'
+import { API_BASE } from './api'
 import i18n from './i18n'
 import type { User } from './types'
 
@@ -10,7 +11,31 @@ const PRICE_MONTHLY = import.meta.env.VITE_PADDLE_PRICE_ID_MONTHLY as string | u
 const ENV = (import.meta.env.VITE_PADDLE_ENV as string | undefined) === 'production' ? 'production' : 'sandbox'
 
 export type Plan = 'annual' | 'monthly'
-export const paddleConfigured = Boolean(TOKEN && PRICE_ANNUAL)
+export const paddleConfigured = Boolean(TOKEN)
+
+export interface PlanInfo {
+  price_id: string | null
+  trial_days: number
+}
+export type Plans = Record<Plan, PlanInfo>
+
+// Offres servies par l'API (source de vérité : variables Railway + prix Paddle,
+// dont la durée d'essai). Repli sur les variables Vite si l'API ne répond pas.
+let plansPromise: Promise<Plans> | null = null
+export function loadPlans(): Promise<Plans> {
+  if (!plansPromise) {
+    plansPromise = fetch(`${API_BASE}/billing/plans`)
+      .then((r) => (r.ok ? (r.json() as Promise<Plans>) : Promise.reject(new Error(String(r.status)))))
+      .catch(() => {
+        plansPromise = null // nouvel essai au prochain appel
+        return {
+          annual: { price_id: PRICE_ANNUAL ?? null, trial_days: 0 },
+          monthly: { price_id: PRICE_MONTHLY ?? null, trial_days: 0 },
+        }
+      })
+  }
+  return plansPromise
+}
 
 let paddlePromise: Promise<Paddle | undefined> | null = null
 // Le callback Paddle est fixé à l'initialisation : on garde le dernier contexte d'ouverture.
@@ -40,7 +65,8 @@ export async function openCheckout(
   plan: Plan = 'annual',
   source = 'unknown',
 ) {
-  const priceId = plan === 'monthly' ? PRICE_MONTHLY ?? PRICE_ANNUAL : PRICE_ANNUAL
+  // Jamais de repli silencieux d'une offre sur l'autre : le parent paie ce qu'il a choisi.
+  const priceId = (await loadPlans())[plan].price_id
   if (!paddleConfigured || !priceId) {
     alert(i18n.t('paywall.notConfigured'))
     return

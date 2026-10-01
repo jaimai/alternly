@@ -13,6 +13,7 @@ from ..legal import PAGES_EN as LEGAL_PAGES_EN
 from ..legal import UPDATED as LEGAL_UPDATED
 from ..legal import UPDATED_EN as LEGAL_UPDATED_EN
 from ..ratelimit import MINUTE, rate_limit
+from ..services import billing as billing_service
 from ..services import vacation_tool
 from ..services.blog import CONTENT_DIR_EN, load_articles, render_article
 from ..services.public_holidays import PublicDataUnavailable
@@ -27,6 +28,7 @@ templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 templates.env.globals["site_url"] = settings.public_site_url.rstrip("/")
 # Jeton de projet PostHog (public) : lu au rendu, vide → ni bannière ni mesure d'audience.
 templates.env.globals["analytics_key"] = lambda: settings.posthog_token
+templates.env.globals["billing_plans"] = billing_service.plans
 
 
 def site_base(request: Request) -> str:

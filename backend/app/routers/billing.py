@@ -35,6 +35,12 @@ def _subscriber(db: Session, user: User) -> User | None:
     return None
 
 
+@router.get("/plans")
+def billing_plans():
+    """Offres et essais (public : landing et paywall). Les price_id ne sont pas secrets."""
+    return billing.plans()
+
+
 @router.get("/status")
 def billing_status(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     now = utcnow()
@@ -222,6 +228,13 @@ async def paddle_webhook(
             ends = billing.parse_iso(period.get("ends_at"))
             if ends is not None:
                 user.subscription_ends_at = ends
+            # Essai Paddle : fin d'essai = trial_dates de l'article, sinon fin de la
+            # période en cours (pendant l'essai, la période couvre l'essai).
+            if user.subscription_status == "trialing":
+                item = (data.get("items") or [{}])[0] or {}
+                trial_end = billing.parse_iso((item.get("trial_dates") or {}).get("ends_at")) or ends
+                if trial_end is not None:
+                    user.trial_ends_at = trial_end
 
     # Renouvellement : transaction récurrente payée (si la destination Paddle
     # envoie aussi les événements transaction.*).

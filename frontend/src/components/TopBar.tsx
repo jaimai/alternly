@@ -1,11 +1,12 @@
+import { useState } from 'react'
 import { Link, NavLink } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../auth'
-import { openCheckout } from '../billing'
 import Icon from './Icon'
 import type { IconName } from './Icon'
 import FeedbackButton from './FeedbackButton'
 import NotificationBell from './NotificationBell'
+import UpgradeDialog from './UpgradeDialog'
 
 const navClass = ({ isActive }: { isActive: boolean }) => (isActive ? 'active' : undefined)
 
@@ -20,6 +21,7 @@ export default function TopBar({ householdName }: { householdName?: string }) {
   const { user, billing, refreshBilling } = useAuth()
   const premium = billing?.access === true
   const locked = billing !== null && !premium
+  const [upgradeOpen, setUpgradeOpen] = useState(false)
   return (
     <>
       <header className="topbar">
@@ -38,7 +40,7 @@ export default function TopBar({ householdName }: { householdName?: string }) {
           {locked && user && (
             <button
               className="trial-chip"
-              onClick={() => openCheckout(user, refreshBilling, 'annual', 'topbar')}
+              onClick={() => setUpgradeOpen(true)}
               title={t('common.upgradeTitle')}
               aria-label={t('common.upgradeTitle')}
             >
@@ -75,6 +77,9 @@ export default function TopBar({ householdName }: { householdName?: string }) {
         </NavLink>
       </nav>
       <FeedbackButton />
+      {upgradeOpen && user && (
+        <UpgradeDialog user={user} source="topbar" onClose={() => setUpgradeOpen(false)} onSubscribed={refreshBilling} />
+      )}
     </>
   )
 }

@@ -27,7 +27,9 @@ def has_access(status: str, trial_ends_at, subscription_ends_at, now: datetime) 
     if status == "active":
         return True
     if status == "trialing":
-        return trial_ends_at is not None and now < trial_ends_at
+        # Fin d'essai inconnue (ancien webhook) : on s'appuie sur la fin de période Paddle.
+        end = trial_ends_at or subscription_ends_at
+        return end is not None and now < end
     if status in ("canceled", "past_due"):
         # accès conservé jusqu'à la fin de la période déjà payée
         return subscription_ends_at is not None and now < subscription_ends_at
@@ -67,3 +69,59 @@ def parse_iso(value: str | None) -> datetime | None:
     if dt.tzinfo is not None:
         dt = dt.astimezone(timezone.utc).replace(tzinfo=None)
     return dt
+
+
+# ---------------------------------------------------------------- offres affichées
+
+_TRIAL_UNIT_DAYS = {"day": 1, "week": 7, "month": 30, "year": 365}
+_plans_cache: dict = {"at": 0.0, "value": None}
+PLANS_TTL = 3600  # secondes
+
+
+def _trial_days(price_id: str) -> int | None:
+    """Durée d'essai configurée sur le prix Paddle (None si inconnue)."""
+    from . import paddle_api
+
+    if not price_id:
+        return None
+    try:
+        trial = (paddle_api.get_price(price_id) or {}).get("trial_period")
+    except paddle_api.PaddleUnavailable:
+        return None
+    if not trial:
+        return 0
+    return int(trial.get("frequency") or 0) * _TRIAL_UNIT_DAYS.get(trial.get("interval"), 0)
+
+
+def plans(now: float | None = None) -> dict:
+    """Offres proposées (price_id + jours d'essai), mises en cache une heure.
+
+    La durée d'essai vient du prix Paddle lui-même : l'app n'annonce jamais un
+    essai que Paddle n'appliquerait pas. Repli : ANNUAL_TRIAL_DAYS.
+    """
+    import time
+
+    from ..config import settings
+
+    now = time.time() if now is None else now
+    cached = _plans_cache["value"]
+    if cached is not None and now - _plans_cache["at"] < PLANS_TTL:
+        return cached
+    annual_trial = _trial_days(settings.paddle_price_annual)
+    monthly_trial = _trial_days(settings.paddle_price_monthly)
+    value = {
+        "annual": {
+            "price_id": settings.paddle_price_annual or None,
+            "trial_days": settings.annual_trial_days if annual_trial is None else annual_trial,
+        },
+        "monthly": {
+            "price_id": settings.paddle_price_monthly or None,
+            "trial_days": monthly_trial or 0,
+        },
+    }
+    _plans_cache.update(at=now, value=value)
+    return value
+
+
+def reset_plans_cache() -> None:
+    _plans_cache.update(at=0.0, value=None)

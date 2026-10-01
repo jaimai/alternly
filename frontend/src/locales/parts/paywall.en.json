@@ -22,5 +22,12 @@
   "paywall.gateSubtitle": "The calendar is free. This feature is included in the Alternly subscription.",
   "paywall.featureExpenses": "Shared expenses",
   "paywall.featureWall": "Message board",
-  "paywall.notConfigured": "Payments aren't set up yet. Please try again later."
+  "paywall.notConfigured": "Payments aren't set up yet. Please try again later.",
+  "paywall.planLabel": "Plan",
+  "paywall.trialBadge_one": "{{count}}-day free trial",
+  "paywall.trialBadge_other": "{{count}}-day free trial",
+  "paywall.trialThen_one": "{{count}} day free, then {{price}}. Cancel anytime during the trial at no cost.",
+  "paywall.trialThen_other": "{{count}} days free, then {{price}}. Cancel anytime during the trial at no cost.",
+  "paywall.startTrial_one": "Start {{count}}-day free trial",
+  "paywall.startTrial_other": "Start {{count}}-day free trial"
 }
