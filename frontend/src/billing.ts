@@ -64,6 +64,7 @@ export async function openCheckout(
   onComplete: () => void,
   plan: Plan = 'annual',
   source = 'unknown',
+  discountCode?: string,
 ) {
   // Jamais de repli silencieux d'une offre sur l'autre : le parent paie ce qu'il a choisi.
   const priceId = (await loadPlans())[plan].price_id
@@ -72,12 +73,19 @@ export async function openCheckout(
     return
   }
   current = { onComplete, plan }
-  track(EV.checkoutOpened, { plan, source })
+  track(EV.checkoutOpened, { plan, source, discount: Boolean(discountCode) })
   const paddle = await getPaddle()
   paddle?.Checkout.open({
     items: [{ priceId, quantity: 1 }],
+    ...(discountCode ? { discountCode } : {}),
     customer: { email: user.email },
     customData: { user_id: String(user.id) },
     settings: { locale: i18n.language.startsWith('en') ? 'en' : 'fr', displayMode: 'overlay' },
   })
+}
+
+/** Code promo transmis par le lien de l'e-mail d'offre (`/app?offre=CODE`). */
+export function offerCodeFrom(search: string): string | null {
+  const code = new URLSearchParams(search).get('offre')?.trim().toUpperCase() ?? ''
+  return /^[A-Z0-9]{3,30}$/.test(code) ? code : null
 }

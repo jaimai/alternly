@@ -29,5 +29,7 @@
   "paywall.trialThen_one": "{{count}} jour gratuit, puis {{price}}. Annulable à tout moment pendant l'essai, sans frais.",
   "paywall.trialThen_other": "{{count}} jours gratuits, puis {{price}}. Annulable à tout moment pendant l'essai, sans frais.",
   "paywall.startTrial_one": "Essayer {{count}} jour gratuitement",
-  "paywall.startTrial_other": "Essayer {{count}} jours gratuitement"
+  "paywall.startTrial_other": "Essayer {{count}} jours gratuitement",
+  "paywall.offerApplied": "🎁 Code {{code}} : -20 % sur votre première année, appliqué au paiement.",
+  "paywall.offerAnnualOnly": "Le code {{code}} s'applique à l'offre annuelle."
 }

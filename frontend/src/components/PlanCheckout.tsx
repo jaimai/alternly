@@ -10,10 +10,13 @@ export default function PlanCheckout({
   user,
   source,
   onSubscribed,
+  discountCode,
 }: {
   user: User
   source: string
   onSubscribed: () => void
+  /** Code de l'offre de bienvenue (−X % la première année, offre annuelle). */
+  discountCode?: string
 }) {
   const { t } = useTranslation()
   const [plans, setPlans] = useState<Plans | null>(null)
@@ -39,6 +42,7 @@ export default function PlanCheckout({
       },
       plan,
       source,
+      plan === 'annual' ? discountCode : undefined,
     )
     setBusy(false)
   }
@@ -77,6 +81,13 @@ export default function PlanCheckout({
           ? t('paywall.trialThen', { count: trialDays, price: plan === 'annual' ? '69 €/an' : '8,99 €/mois' })
           : t('paywall.oneParentPays')}
       </p>
+      {discountCode && (
+        <div className={`offer-banner${plan === 'annual' ? '' : ' muted'}`}>
+          {plan === 'annual'
+            ? t('paywall.offerApplied', { code: discountCode })
+            : t('paywall.offerAnnualOnly', { code: discountCode })}
+        </div>
+      )}
       {done && <div className="info-banner">{t('paywall.activating')}</div>}
       <button onClick={subscribe} disabled={busy || !plans} style={{ width: '100%' }}>
         {busy

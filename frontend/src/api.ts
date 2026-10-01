@@ -220,6 +220,7 @@ export const api = {
     request<InvitationPreview>(`/invitations/${token}`),
   previewInvitationSchedule: (token: string) =>
     request<InvitationSchedulePreview>(`/invitations/${token}/preview-schedule`),
+  markPaywallSeen: () => request<{ ok: boolean }>('/billing/paywall-seen', { method: 'POST' }),
   sendFeedback: (data: {
     kind: FeedbackKind
     message: string

@@ -390,6 +390,8 @@
   "paywall.gateTitle": "{{feature}} — premium feature",
   "paywall.logout": "Log out",
   "paywall.notConfigured": "Payments aren't set up yet. Please try again later.",
+  "paywall.offerAnnualOnly": "Code {{code}} applies to the yearly plan.",
+  "paywall.offerApplied": "🎁 Code {{code}}: 20% off your first year, applied at checkout.",
   "paywall.oneParentPays": "One parent pays — both get access.",
   "paywall.opening": "Opening payment…",
   "paywall.paymentSoon": "Payment will be available soon.",
