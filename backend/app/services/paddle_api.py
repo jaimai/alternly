@@ -16,11 +16,11 @@ def _headers() -> dict[str, str]:
     return {"Authorization": f"Bearer {settings.paddle_api_key}", "Content-Type": "application/json"}
 
 
-def _request(method: str, path: str, json: dict | None = None) -> dict:
+def _request(method: str, path: str, json: dict | None = None, timeout: float = 15) -> dict:
     if not settings.paddle_api_key:
         raise PaddleUnavailable("clé API Paddle absente")
     try:
-        with httpx.Client(timeout=15) as client:
+        with httpx.Client(timeout=timeout) as client:
             resp = client.request(method, f"{settings.paddle_api_base}{path}", headers=_headers(), json=json)
             resp.raise_for_status()
             return resp.json().get("data", {})
@@ -49,3 +49,9 @@ def change_price(subscription_id: str, price_id: str) -> dict:
             "proration_billing_mode": "prorated_immediately",
         },
     )
+
+
+def get_price(price_id: str) -> dict:
+    """Prix Paddle (dont `trial_period` : {interval, frequency} ou null)."""
+    # Lu au rendu de la landing (cache 1 h) : délai court, repli sur ANNUAL_TRIAL_DAYS.
+    return _request("GET", f"/prices/{price_id}", timeout=4)

@@ -22,5 +22,12 @@
   "paywall.gateSubtitle": "Le calendrier est gratuit. Cette fonctionnalité est incluse dans l’abonnement Alternly.",
   "paywall.featureExpenses": "Dépenses partagées",
   "paywall.featureWall": "Mur de communication",
-  "paywall.notConfigured": "Le paiement n'est pas encore configuré. Réessayez plus tard."
+  "paywall.notConfigured": "Le paiement n'est pas encore configuré. Réessayez plus tard.",
+  "paywall.planLabel": "Offre",
+  "paywall.trialBadge_one": "{{count}} jour d'essai gratuit",
+  "paywall.trialBadge_other": "{{count}} jours d'essai gratuits",
+  "paywall.trialThen_one": "{{count}} jour gratuit, puis {{price}}. Annulable à tout moment pendant l'essai, sans frais.",
+  "paywall.trialThen_other": "{{count}} jours gratuits, puis {{price}}. Annulable à tout moment pendant l'essai, sans frais.",
+  "paywall.startTrial_one": "Essayer {{count}} jour gratuitement",
+  "paywall.startTrial_other": "Essayer {{count}} jours gratuitement"
 }

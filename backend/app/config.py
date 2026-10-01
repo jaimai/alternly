@@ -47,6 +47,8 @@ class Settings(BaseSettings):
     paddle_env: str = "sandbox"  # sandbox | production → base de l'API Paddle
     paddle_price_annual: str = ""   # price_id de l'offre annuelle
     paddle_price_monthly: str = ""  # price_id de l'offre mensuelle
+    # Essai affiché si l'API Paddle est injoignable (sinon lu sur le prix annuel Paddle).
+    annual_trial_days: int = 0
 
     @property
     def is_sqlite(self) -> bool:

@@ -6,7 +6,6 @@ import { api, isPendingChange } from '../api'
 import { track } from '../analytics'
 import { EV } from '../analyticsEvents'
 import { useAuth, usePremium } from '../auth'
-import { openCheckout } from '../billing'
 import AccountCard from '../components/AccountCard'
 import ChangeRequests from '../components/ChangeRequests'
 import ColorPicker from '../components/ColorPicker'
@@ -17,6 +16,7 @@ import Spinner from '../components/Spinner'
 import type { RuleFormValue } from '../components/RuleForm'
 import { FeedbackDialog } from '../components/FeedbackButton'
 import TopBar from '../components/TopBar'
+import UpgradeDialog from '../components/UpgradeDialog'
 import { useConfirm } from '../components/useConfirm'
 import { useFormat } from '../format'
 import { isSolo } from '../members'
@@ -49,6 +49,7 @@ export default function SettingsPage() {
   // Confirmation affichée sous le formulaire des règles (le bandeau du haut
   // est hors écran sur mobile quand on enregistre).
   const [rulesMessage, setRulesMessage] = useState<string | null>(null)
+  const [upgradeOpen, setUpgradeOpen] = useState(false)
 
   const refresh = refreshHousehold
 
@@ -350,7 +351,7 @@ export default function SettingsPage() {
           {!premium ? (
             <button
               className="secondary"
-              onClick={() => user && openCheckout(user, refreshBilling, 'annual', 'settings_ical')}
+              onClick={() => setUpgradeOpen(true)}
               style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
             >
               <Icon name="lock" size={15} /> {t('settings.unlockWithPremium')}
@@ -370,6 +371,9 @@ export default function SettingsPage() {
             </div>
           ) : (
             <button onClick={getIcalUrl}>{t('settings.generateIcal')}</button>
+          )}
+          {!premium && upgradeOpen && (
+            <UpgradeDialog user={user} source="settings_ical" onClose={() => setUpgradeOpen(false)} onSubscribed={refreshBilling} />
           )}
         </div>
 

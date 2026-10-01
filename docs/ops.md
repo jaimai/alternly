@@ -52,7 +52,8 @@ Toutes lues par `backend/app/config.py` (insensibles à la casse).
 | `PADDLE_WEBHOOK_SECRET` | vide | Secret de signature des webhooks (*Notifications → destination*). Vide → webhook refusé (403). |
 | `PADDLE_API_KEY` | vide | Appels serveur (détail, résiliation, changement d'offre). Vide → gestion d'abonnement indisponible (502/`plan: null`). |
 | `PADDLE_ENV` | `sandbox` | `sandbox` ou `production` (base de l'API Paddle). |
-| `PADDLE_PRICE_ANNUAL` / `PADDLE_PRICE_MONTHLY` | vide | `price_id` des offres (changement d'offre, affichage de l'offre courante). |
+| `PADDLE_PRICE_ANNUAL` / `PADDLE_PRICE_MONTHLY` | vide | `price_id` des offres. **Source de vérité** : servis à l'app et à la landing par `GET /api/billing/plans` (le mensuel n'est proposé que si `PADDLE_PRICE_MONTHLY` est renseigné ; plus de repli silencieux sur l'annuel). |
+| `ANNUAL_TRIAL_DAYS` | `0` | Essai affiché **seulement si l'API Paddle est injoignable**. Sinon, la durée d'essai est lue sur le prix annuel Paddle (cache 1 h) : l'app n'annonce jamais un essai que Paddle n'applique pas. |
 | `TRIAL_DAYS` | `14` | Durée d'essai (héritée ; l'inscription est gratuite/freemium). |
 | `PORT` | fourni par Railway | Port d'écoute uvicorn. |
 
@@ -296,3 +297,12 @@ usage unique).
    personnes), notifier la **CNIL sous 72 h** (notifications.cnil.fr) si risque pour
    les personnes, et informer les utilisateurs concernés si risque élevé.
 6. **Après coup** : courte note post-mortem (cause, impact, correctifs).
+
+## Essai gratuit sur l'offre annuelle
+
+L'essai se règle **dans Paddle**, sur le prix (pas dans le code) :
+*Catalog → Products → Alternly Premium → prix annuel → Edit → Trial period : 7 days*.
+Paddle collecte le moyen de paiement au début de l'essai et prélève 69 € à la fin, sauf
+annulation. Dans l'heure (cache), l'app et la landing affichent « 7 jours d'essai gratuit »,
+le bouton devient « Essayer 7 jours gratuitement ». Pendant l'essai, le webhook
+`subscription.*` (statut `trialing`) enregistre la fin d'essai et donne accès à Premium.

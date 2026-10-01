@@ -191,3 +191,67 @@ class TestWebhookHardening:
         # un événement plus récent est bien appliqué
         self._send(client, self._event(user, "evt_d", "subscription.updated", "active", "2026-09-04T10:00:00Z"))
         assert client.get("/api/billing/status", headers=headers).json()["status"] == "active"
+
+
+class TestTrialAndPlans:
+    """Essai sur l'offre annuelle + offres exposées à la landing / au paywall."""
+
+    def test_trialing_without_trial_end_uses_period_end(self):
+        assert billing.has_access("trialing", None, NOW + timedelta(days=5), NOW) is True
+        assert billing.has_access("trialing", None, None, NOW) is False
+
+    def test_webhook_trialing_sets_trial_end_and_grants_access(self, client, auth_headers, monkeypatch):
+        monkeypatch.setattr(billing.settings, "paddle_webhook_secret", "sk_test")
+        headers, user = auth_headers()
+        ends = (datetime.utcnow() + timedelta(days=7)).strftime("%Y-%m-%dT%H:%M:%SZ")
+        event = {
+            "event_type": "subscription.created",
+            "data": {
+                "id": "sub_t",
+                "customer_id": "ctm_t",
+                "status": "trialing",
+                "current_billing_period": {"ends_at": ends},
+                "items": [{"price": {"id": "pri_annual"}, "trial_dates": {"ends_at": ends}}],
+                "custom_data": {"user_id": str(user["id"])},
+            },
+        }
+        sig, raw = _signed(event, "sk_test")
+        assert client.post("/api/billing/webhook", content=raw, headers={"Paddle-Signature": sig}).status_code == 200
+        s = client.get("/api/billing/status", headers=headers).json()
+        assert s["status"] == "trialing" and s["access"] is True
+        assert s["trial_days_left"] in (7, 8)
+
+    def test_plans_read_trial_from_paddle(self, client, monkeypatch):
+        from app.services import paddle_api
+
+        billing.reset_plans_cache()
+        monkeypatch.setattr(billing.settings, "paddle_price_annual", "pri_annual")
+        monkeypatch.setattr(billing.settings, "paddle_price_monthly", "pri_monthly")
+        prices = {
+            "pri_annual": {"id": "pri_annual", "trial_period": {"interval": "week", "frequency": 1}},
+            "pri_monthly": {"id": "pri_monthly", "trial_period": None},
+        }
+        monkeypatch.setattr(paddle_api, "get_price", lambda pid: prices[pid])
+        r = client.get("/api/billing/plans")
+        assert r.json() == {
+            "annual": {"price_id": "pri_annual", "trial_days": 7},
+            "monthly": {"price_id": "pri_monthly", "trial_days": 0},
+        }
+        billing.reset_plans_cache()
+
+    def test_plans_fallback_when_paddle_unreachable(self, client, monkeypatch):
+        from app.services import paddle_api
+
+        billing.reset_plans_cache()
+        monkeypatch.setattr(billing.settings, "paddle_price_annual", "pri_annual")
+        monkeypatch.setattr(billing.settings, "paddle_price_monthly", "")
+        monkeypatch.setattr(billing.settings, "annual_trial_days", 7)
+
+        def boom(pid):
+            raise paddle_api.PaddleUnavailable("x")
+
+        monkeypatch.setattr(paddle_api, "get_price", boom)
+        plans = client.get("/api/billing/plans").json()
+        assert plans["annual"]["trial_days"] == 7
+        assert plans["monthly"]["price_id"] is None  # pas de mensuel → le paywall le masque
+        billing.reset_plans_cache()

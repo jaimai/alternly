@@ -1,9 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { resetIdentity, track } from '../analytics'
 import { EV } from '../analyticsEvents'
-import { openCheckout, paddleConfigured } from '../billing'
-import type { Plan } from '../billing'
+import PlanCheckout from './PlanCheckout'
 import { API_BASE, setToken } from '../api'
 import type { User } from '../types'
 
@@ -30,28 +29,10 @@ interface Props {
 
 export default function Paywall({ user, onSubscribed, onSkip, title, subtitle, feature = 'generic' }: Props) {
   const { t } = useTranslation()
-  const [busy, setBusy] = useState(false)
-  const [done, setDone] = useState(false)
-  const [plan, setPlan] = useState<Plan>('annual')
 
   useEffect(() => {
     track(EV.paywallViewed, { feature })
   }, [feature])
-
-  async function subscribe() {
-    setBusy(true)
-    await openCheckout(
-      user,
-      () => {
-        setDone(true)
-        onSubscribed()
-        window.setTimeout(onSubscribed, 4000)
-      },
-      plan,
-      `paywall_${feature}`,
-    )
-    setBusy(false)
-  }
 
   function logout() {
     setToken(null)
@@ -69,15 +50,6 @@ export default function Paywall({ user, onSubscribed, onSkip, title, subtitle, f
         <p className="hint">
           {subtitle ?? t('paywall.subtitle')}
         </p>
-        <div className="plan-toggle">
-          <button className={plan === 'annual' ? 'active' : ''} onClick={() => setPlan('annual')}>
-            {t('paywall.planAnnual')} <strong>69&nbsp;€</strong><span>{t('paywall.planAnnualSuffix')}</span>
-          </button>
-          <button className={plan === 'monthly' ? 'active' : ''} onClick={() => setPlan('monthly')}>
-            {t('paywall.planMonthly')} <strong>8,99&nbsp;€</strong><span>{t('paywall.planMonthlySuffix')}</span>
-          </button>
-        </div>
-        <p className="hint" style={{ marginTop: 4 }}>{t('paywall.oneParentPays')}</p>
         <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 20px', textAlign: 'left' }}>
           {PERK_KEYS.map((k) => (
             <li key={k} style={{ padding: '6px 0 6px 26px', position: 'relative', fontSize: '0.92rem' }}>
@@ -86,13 +58,7 @@ export default function Paywall({ user, onSubscribed, onSkip, title, subtitle, f
             </li>
           ))}
         </ul>
-        {done && <div className="info-banner">{t('paywall.activating')}</div>}
-        <button onClick={subscribe} disabled={busy} style={{ width: '100%' }}>
-          {busy ? t('paywall.opening') : t('paywall.subscribe')}
-        </button>
-        {!paddleConfigured && (
-          <p className="hint" style={{ marginTop: 10 }}>{t('paywall.paymentSoon')}</p>
-        )}
+        <PlanCheckout user={user} source={`paywall_${feature}`} onSubscribed={onSubscribed} />
         <p style={{ marginTop: 14 }}>
           {onSkip ? (
             <button className="danger-link" onClick={onSkip}>{t('paywall.continueFree')}</button>

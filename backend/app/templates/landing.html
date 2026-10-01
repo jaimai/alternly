@@ -195,11 +195,24 @@
       </div>
       <div class="price-card featured">
         <span class="price-badge">Premium</span>
-        <div class="price-head">
-          <span class="price-amount">69&nbsp;€</span>
-          <span class="price-per">/ an et par foyer</span>
+        {%- set plans = billing_plans() %}
+        <div class="price-options">
+          <div class="price-option">
+            <span class="price-option-label">Annuel</span>
+            <span class="price-option-amount"><span class="price-amount">69&nbsp;€</span><span class="price-per">/ an</span></span>
+            {%- if plans.annual.trial_days %}
+            <span class="price-option-note strong">{{ plans.annual.trial_days }} jours d'essai gratuit</span>
+            {%- else %}
+            <span class="price-option-note">soit 5,75&nbsp;€ / mois</span>
+            {%- endif %}
+          </div>
+          <div class="price-option">
+            <span class="price-option-label">Mensuel</span>
+            <span class="price-option-amount"><span class="price-amount">8,99&nbsp;€</span><span class="price-per">/ mois</span></span>
+            <span class="price-option-note">sans engagement</span>
+          </div>
         </div>
-        <p class="price-trial">ou 8,99&nbsp;€ / mois · un seul parent paie, les deux en profitent</p>
+        <p class="price-trial">Par foyer · un seul parent paie, les deux en profitent</p>
         <ul class="price-list">
           <li>Tout le gratuit, plus&nbsp;:</li>
           <li>Dépenses partagées &amp; solde entre parents</li>

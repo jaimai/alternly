@@ -183,11 +183,24 @@
       </div>
       <div class="price-card featured">
         <span class="price-badge">Premium</span>
-        <div class="price-head">
-          <span class="price-amount">$79</span>
-          <span class="price-per">/ year per household</span>
+        {%- set plans = billing_plans() %}
+        <div class="price-options">
+          <div class="price-option">
+            <span class="price-option-label">Yearly</span>
+            <span class="price-option-amount"><span class="price-amount">$79</span><span class="price-per">/ year</span></span>
+            {%- if plans.annual.trial_days %}
+            <span class="price-option-note strong">{{ plans.annual.trial_days }}-day free trial</span>
+            {%- else %}
+            <span class="price-option-note">just $6.58 / month</span>
+            {%- endif %}
+          </div>
+          <div class="price-option">
+            <span class="price-option-label">Monthly</span>
+            <span class="price-option-amount"><span class="price-amount">$8.99</span><span class="price-per">/ month</span></span>
+            <span class="price-option-note">no commitment</span>
+          </div>
         </div>
-        <p class="price-trial">or $8.99 / month · one parent pays, both get access</p>
+        <p class="price-trial">Per household · one parent pays, both get access</p>
         <ul class="price-list">
           <li>Everything in Free, plus:</li>
           <li>Shared expenses &amp; balance between parents</li>

@@ -338,6 +338,15 @@ label {
   font-size: 0.72rem;
   color: var(--ink-soft);
 }
+.plan-toggle button .plan-trial {
+  font-style: normal;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--terra);
+}
+.perk-list { list-style: none; padding: 0; margin: 0 0 8px; }
+.perk-list li { position: relative; padding: 5px 0 5px 24px; font-size: 0.92rem; }
+.perk-list li::before { content: '✓'; position: absolute; left: 2px; color: var(--pine); font-weight: 700; }
 .plan-toggle button.active {
   border-color: var(--pine);
   background: var(--pine-soft);
