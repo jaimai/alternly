@@ -35,6 +35,15 @@ def _subscriber(db: Session, user: User) -> User | None:
     return None
 
 
+@router.post("/paywall-seen")
+def paywall_seen(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Premier affichage du paywall : sert à proposer l'offre de bienvenue 48 h plus tard."""
+    if user.paywall_seen_at is None:
+        user.paywall_seen_at = utcnow()
+        db.commit()
+    return {"ok": True}
+
+
 @router.get("/plans")
 def billing_plans():
     """Offres et essais (public : landing et paywall). Les price_id ne sont pas secrets."""

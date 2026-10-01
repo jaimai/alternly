@@ -29,5 +29,7 @@
   "paywall.trialThen_one": "{{count}} day free, then {{price}}. Cancel anytime during the trial at no cost.",
   "paywall.trialThen_other": "{{count}} days free, then {{price}}. Cancel anytime during the trial at no cost.",
   "paywall.startTrial_one": "Start {{count}}-day free trial",
-  "paywall.startTrial_other": "Start {{count}}-day free trial"
+  "paywall.startTrial_other": "Start {{count}}-day free trial",
+  "paywall.offerApplied": "🎁 Code {{code}}: 20% off your first year, applied at checkout.",
+  "paywall.offerAnnualOnly": "Code {{code}} applies to the yearly plan."
 }

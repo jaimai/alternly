@@ -23,6 +23,7 @@ _ADD_COLUMNS: dict[str, dict[str, str]] = {
         "onboarding_seen": "BOOLEAN",
         "subscription_status": "VARCHAR",
         "trial_ends_at": "TIMESTAMP",
+        "paywall_seen_at": "TIMESTAMP",
         "subscription_ends_at": "TIMESTAMP",
         "paddle_customer_id": "VARCHAR",
         "paddle_subscription_id": "VARCHAR",

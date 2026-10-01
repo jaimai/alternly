@@ -42,6 +42,8 @@ class User(Base):
     # Abonnement Paddle. status : trialing | active | past_due | canceled | none.
     subscription_status: Mapped[str] = mapped_column(String, default="trialing")
     trial_ends_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    # Premier affichage du paywall (intérêt pour Premium) : déclenche l'offre de bienvenue.
+    paywall_seen_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     # Accès payé jusqu'à (fin de période) ; permet de garder l'accès après résiliation.
     subscription_ends_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     paddle_customer_id: Mapped[str | None] = mapped_column(String, nullable=True)

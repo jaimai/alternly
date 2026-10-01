@@ -1,5 +1,6 @@
-import { useState } from 'react'
-import { Link, NavLink } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
+import { offerCodeFrom } from '../billing'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../auth'
 import Icon from './Icon'
@@ -22,6 +23,22 @@ export default function TopBar({ householdName }: { householdName?: string }) {
   const premium = billing?.access === true
   const locked = billing !== null && !premium
   const [upgradeOpen, setUpgradeOpen] = useState(false)
+  const [offerCode, setOfferCode] = useState<string | undefined>()
+  const location = useLocation()
+  const navigate = useNavigate()
+
+  // Lien de l'e-mail d'offre (/app?offre=CODE) : ouvre le choix de l'offre, code appliqué.
+  useEffect(() => {
+    const code = offerCodeFrom(location.search)
+    if (!code || billing === null) return // attendre l'état d'abonnement (abonné : on ignore l'offre)
+    const params = new URLSearchParams(location.search)
+    params.delete('offre')
+    navigate({ pathname: location.pathname, search: params.toString() }, { replace: true })
+    if (!premium) {
+      setOfferCode(code)
+      setUpgradeOpen(true)
+    }
+  }, [location.pathname, location.search, navigate, premium, billing])
   return (
     <>
       <header className="topbar">
@@ -78,7 +95,13 @@ export default function TopBar({ householdName }: { householdName?: string }) {
       </nav>
       <FeedbackButton />
       {upgradeOpen && user && (
-        <UpgradeDialog user={user} source="topbar" onClose={() => setUpgradeOpen(false)} onSubscribed={refreshBilling} />
+        <UpgradeDialog
+          user={user}
+          source={offerCode ? 'offer_email' : 'topbar'}
+          discountCode={offerCode}
+          onClose={() => setUpgradeOpen(false)}
+          onSubscribed={refreshBilling}
+        />
       )}
     </>
   )

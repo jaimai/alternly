@@ -49,6 +49,11 @@ class Settings(BaseSettings):
     paddle_price_monthly: str = ""  # price_id de l'offre mensuelle
     # Essai affiché si l'API Paddle est injoignable (sinon lu sur le prix annuel Paddle).
     annual_trial_days: int = 0
+    # Offre de bienvenue envoyée aux parents intéressés qui n'ont pas souscrit
+    # (code créé dans Paddle → Catalog → Discounts). Vide → offre désactivée.
+    discount_code: str = "BIENVENUE20"
+    discount_percent: int = 20
+    discount_valid_days: int = 7
 
     @property
     def is_sqlite(self) -> bool:

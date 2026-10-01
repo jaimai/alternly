@@ -156,7 +156,7 @@ consentement). PostHog renseigne aussi `$initial_utm_*` sur la personne après c
 | `invite_email_sent` | S | invitation envoyée par Alternly (Resend a accepté) | `reminder` |
 | `invite_reminder_sent` | S | relance cron (inviteur à J+2/J+5, invité à J+3) | `day`, `target` (inviter, invitee), `email` |
 | `invite_nudge_sent` | S | relance unique « invitez l'autre parent » 24 h après l'onboarding | — |
-| `lifecycle_email_sent` | S | e-mail de la séquence de bienvenue accepté par Resend | `kind` (welcome, j1_rule, j3_invite, j7_value), `variant` (owner, partner ; J0), `premium` (J7) |
+| `lifecycle_email_sent` | S | e-mail de la séquence de bienvenue accepté par Resend | `kind` (welcome, j1_rule, j3_invite, j7_value, discount), `variant` (owner, partner ; J0), `premium` (J7), `reason` (discount : paywall, active) |
 | `holiday_reminder_sent` | S | rappel ~10 j avant des vacances scolaires | `period` (toussaint, noel, hiver, printemps, ete, other = congé saisi à la main), `teaser` (rappel offert d'un foyer gratuit), `country` |
 | `email_unsubscribed` | S | désinscription depuis le lien d'un e-mail | `source` (link, one_click) |
 | `invite_opened` | C | page `/join` (souvent anonyme) | `valid`, `already_member` (parent déjà dans le foyer → renvoyé sur `/app`) |
@@ -204,7 +204,7 @@ consentement). PostHog renseigne aussi `$initial_utm_*` sur la personne après c
 | Événement | Source | Quand | Propriétés |
 | --- | --- | --- | --- |
 | `paywall_viewed` | C | paywall affiché | `feature` (expenses, wall, onboarding) |
-| `checkout_opened` | C | ouverture du checkout Paddle | `plan`, `source` |
+| `checkout_opened` | C | ouverture du checkout Paddle | `plan`, `source` (dont `offer_email`), `discount` (code d'offre appliqué) |
 | `checkout_completed` | C | callback Paddle `checkout.completed` | `plan` |
 | `plan_changed` | C | bascule annuel/mensuel | `plan` |
 | `subscription_cancel_requested` | C | clic « résilier » | — |

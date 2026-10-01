@@ -390,6 +390,8 @@
   "paywall.gateTitle": "{{feature}} — fonctionnalité premium",
   "paywall.logout": "Se déconnecter",
   "paywall.notConfigured": "Le paiement n'est pas encore configuré. Réessayez plus tard.",
+  "paywall.offerAnnualOnly": "Le code {{code}} s'applique à l'offre annuelle.",
+  "paywall.offerApplied": "🎁 Code {{code}} : -20 % sur votre première année, appliqué au paiement.",
   "paywall.oneParentPays": "Un seul parent paie — les deux en profitent.",
   "paywall.opening": "Ouverture du paiement…",
   "paywall.paymentSoon": "Le paiement sera bientôt disponible.",

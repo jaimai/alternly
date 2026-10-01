@@ -30,7 +30,8 @@ from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from ..deps import household_has_premium
+from ..config import settings
+from ..deps import household_has_premium, user_has_premium
 from ..models import (
     Child,
     CustodyRule,
@@ -53,6 +54,7 @@ WELCOME = "welcome"
 J1_RULE = "j1_rule"
 J3_INVITE = "j3_invite"
 J7_VALUE = "j7_value"
+DISCOUNT = "discount"
 HOLIDAY_PREFIX = "holiday:"
 
 # Fenêtres d'âge du compte (bornes [min, max[) : un envoi retardé par le garde-fou
@@ -356,9 +358,68 @@ def run_holidays(db: Session, now: datetime, today: date) -> dict[str, int]:
     return stats
 
 
+# ---------------------------------------------------------------- offre de bienvenue
+
+# Intérêt pour Premium (paywall vu) sans souscription : offre 48 h plus tard,
+# jamais avant J+3 (après la bienvenue) ; paywall vu il y a plus de 30 j : ignoré.
+DISCOUNT_AFTER_PAYWALL = timedelta(hours=48)
+DISCOUNT_PAYWALL_MAX_AGE = timedelta(days=30)
+DISCOUNT_MIN_ACCOUNT_AGE = timedelta(days=3)
+# Filet de sécurité : parents actifs (règle posée) qui n'ont jamais vu le paywall.
+DISCOUNT_ACTIVE_WINDOW = (timedelta(days=10), timedelta(days=14))
+
+
+def _discount_reason(db: Session, user: User, now: datetime) -> str | None:
+    """« paywall », « active » ou None (pas éligible)."""
+    if now - user.created_at < DISCOUNT_MIN_ACCOUNT_AGE:
+        return None
+    if user.subscription_status in ("active", "trialing", "past_due") or user_has_premium(db, user):
+        return None
+    seen = user.paywall_seen_at
+    if seen is not None:
+        return "paywall" if now - DISCOUNT_PAYWALL_MAX_AGE <= seen <= now - DISCOUNT_AFTER_PAYWALL else None
+    lo, hi = DISCOUNT_ACTIVE_WINDOW
+    if lo <= now - user.created_at < hi:
+        member = _membership(db, user.id)
+        if member is not None and _has_rule(db, member.household_id):
+            return "active"
+    return None
+
+
+def run_discount(db: Session, now: datetime) -> dict[str, int]:
+    stats = {"discount": 0}
+    code = settings.discount_code.strip()
+    if not code:
+        return stats
+    lo, hi = DISCOUNT_ACTIVE_WINDOW
+    users = db.scalars(
+        select(User).where(
+            (User.paywall_seen_at.is_not(None) & (User.paywall_seen_at >= now - DISCOUNT_PAYWALL_MAX_AGE))
+            | ((User.created_at > now - hi) & (User.created_at <= now - lo))
+        ).order_by(User.id)
+    ).all()
+    for user in users:
+        if not can_email(user) or emailed_recently(db, user, now) or already_sent(db, user.id, DISCOUNT):
+            continue
+        reason = _discount_reason(db, user, now)
+        if reason is None or not _claim(db, user, DISCOUNT, now):
+            continue
+        until = (now + timedelta(days=settings.discount_valid_days)).date()
+        email = tpl.discount_email(code, settings.discount_percent, until, user.locale, tpl.unsubscribe_url(user.id))
+        if _send(user, email):
+            stats["discount"] += 1
+            member = _membership(db, user.id)
+            analytics.capture_for_user(
+                user, "lifecycle_email_sent", {"kind": DISCOUNT, "reason": reason},
+                household_id=member.household_id if member else None,
+            )
+    return stats
+
+
 def run(db: Session, now: datetime | None = None, today: date | None = None) -> dict[str, int]:
     """Tâche quotidienne. Rappels de vacances d'abord (datés), puis la séquence :
     une étape retardée par le garde-fou quotidien part le lendemain."""
     now = now or utcnow()
     today = today or date.today()
-    return {**run_holidays(db, now, today), **run_sequence(db, now)}
+    # Offre en dernier : la séquence d'accueil passe avant (un e-mail par jour au plus).
+    return {**run_holidays(db, now, today), **run_sequence(db, now), **run_discount(db, now)}

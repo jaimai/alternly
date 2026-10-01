@@ -53,6 +53,7 @@ Toutes lues par `backend/app/config.py` (insensibles à la casse).
 | `PADDLE_API_KEY` | vide | Appels serveur (détail, résiliation, changement d'offre). Vide → gestion d'abonnement indisponible (502/`plan: null`). |
 | `PADDLE_ENV` | `sandbox` | `sandbox` ou `production` (base de l'API Paddle). |
 | `PADDLE_PRICE_ANNUAL` / `PADDLE_PRICE_MONTHLY` | vide | `price_id` des offres. **Source de vérité** : servis à l'app et à la landing par `GET /api/billing/plans` (le mensuel n'est proposé que si `PADDLE_PRICE_MONTHLY` est renseigné ; plus de repli silencieux sur l'annuel). |
+| `DISCOUNT_CODE` / `DISCOUNT_PERCENT` / `DISCOUNT_VALID_DAYS` | `BIENVENUE20` / `20` / `7` | Offre de bienvenue (e-mail unique, voir plus bas). `DISCOUNT_CODE` vide → offre désactivée. Le code doit exister dans Paddle. |
 | `ANNUAL_TRIAL_DAYS` | `0` | Essai affiché **seulement si l'API Paddle est injoignable**. Sinon, la durée d'essai est lue sur le prix annuel Paddle (cache 1 h) : l'app n'annonce jamais un essai que Paddle n'applique pas. |
 | `TRIAL_DAYS` | `14` | Durée d'essai (héritée ; l'inscription est gratuite/freemium). |
 | `PORT` | fourni par Railway | Port d'écoute uvicorn. |
@@ -306,3 +307,22 @@ Paddle collecte le moyen de paiement au début de l'essai et prélève 69 € à
 annulation. Dans l'heure (cache), l'app et la landing affichent « 7 jours d'essai gratuit »,
 le bouton devient « Essayer 7 jours gratuitement ». Pendant l'essai, le webhook
 `subscription.*` (statut `trialing`) enregistre la fin d'essai et donne accès à Premium.
+
+## Offre de bienvenue (BIENVENUE20)
+
+E-mail **unique** envoyé par le cron `lifecycle` (après la séquence d'accueil, au plus
+un e-mail par jour) aux parents gratuits joignables :
+
+- **intérêt pour Premium** : paywall vu (Dépenses / Mur en gratuit, bouton « Premium »,
+  bouton Premium des réglages — pas le paywall de fin d'onboarding montré à tous)
+  il y a **48 h** à 30 j, sans souscription ; jamais avant J+3 ;
+- **filet de sécurité** : parent actif (règle de garde posée) à **J+10–14** qui n'a jamais
+  vu le paywall.
+
+Le lien `/app?offre=BIENVENUE20` ouvre le choix de l'offre avec le code appliqué au
+checkout Paddle (offre annuelle). Exclus : abonnés, essais en cours, e-mails refusés.
+
+**Dans Paddle** (*Catalog → Discounts → New discount*) : code `BIENVENUE20`, 20 %,
+restreint au prix annuel, **non récurrent** (première année seulement), utilisable une
+fois par client. La date « valable jusqu'au » de l'e-mail est indicative (le code Paddle
+n'expire pas par personne).

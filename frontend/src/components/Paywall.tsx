@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { resetIdentity, track } from '../analytics'
 import { EV } from '../analyticsEvents'
 import PlanCheckout from './PlanCheckout'
-import { API_BASE, setToken } from '../api'
+import { api, API_BASE, setToken } from '../api'
 import type { User } from '../types'
 
 // Les pages légales sont servies par le backend (site marketing).
@@ -32,6 +32,9 @@ export default function Paywall({ user, onSubscribed, onSkip, title, subtitle, f
 
   useEffect(() => {
     track(EV.paywallViewed, { feature })
+    // Intérêt réel pour Premium (pas le paywall montré à tous en fin d'onboarding) :
+    // déclenche l'offre de bienvenue 48 h plus tard s'il ne souscrit pas.
+    if (feature !== 'onboarding') api.markPaywallSeen().catch(() => {})
   }, [feature])
 
   function logout() {

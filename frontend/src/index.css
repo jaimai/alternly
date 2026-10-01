@@ -344,6 +344,16 @@ label {
   font-weight: 600;
   color: var(--terra);
 }
+.offer-banner {
+  margin: 10px 0 12px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--terra-soft);
+  color: #8c4a2c;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+.offer-banner.muted { background: var(--paper-deep); color: var(--ink-soft); font-weight: 500; }
 .perk-list { list-style: none; padding: 0; margin: 0 0 8px; }
 .perk-list li { position: relative; padding: 5px 0 5px 24px; font-size: 0.92rem; }
 .perk-list li::before { content: '✓'; position: absolute; left: 2px; color: var(--pine); font-weight: 700; }

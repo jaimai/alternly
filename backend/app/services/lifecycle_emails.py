@@ -77,6 +77,21 @@ def fmt_day(d: date, locale: str | None = "fr") -> str:
     return _fmt_day_fr(d)
 
 
+_FR_DAYS_LONG = ["lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche"]
+_FR_MONTHS_LONG = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août",
+                   "septembre", "octobre", "novembre", "décembre"]
+_EN_DAYS_LONG = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+_EN_MONTHS_LONG = ["January", "February", "March", "April", "May", "June", "July", "August",
+                   "September", "October", "November", "December"]
+
+
+def fmt_day_long(d: date, locale: str | None = "fr") -> str:
+    """fr : « jeudi 8 octobre » ; en : « Thursday, October 8 »."""
+    if _lang(locale) == "en":
+        return f"{_EN_DAYS_LONG[d.weekday()]}, {_EN_MONTHS_LONG[d.month - 1]} {d.day}"
+    return f"{_FR_DAYS_LONG[d.weekday()]} {d.day} {_FR_MONTHS_LONG[d.month - 1]}"
+
+
 def fmt_range(start: date, end: date, locale: str | None = "fr") -> str:
     en = _lang(locale) == "en"
     if start == end:
@@ -434,6 +449,51 @@ def value_email(premium: bool, locale: str | None, unsub_url: str) -> Email:
             "des enfants à deux. Un seul abonnement couvre tout le foyer, et le calendrier reste "
             f'gratuit. <a href="{_url("/settings")}" style="color:{GREEN}">Découvrir Premium</a>'
         ],
+    )
+
+
+# ---------------------------------------------------------------- offre de bienvenue
+
+
+def discount_email(code: str, percent: int, until: date, locale: str | None, unsub_url: str) -> Email:
+    """Offre de bienvenue (une seule fois) : -X % sur la première année Premium.
+    Le lien ouvre directement le choix de l'offre avec le code appliqué."""
+    lang = _lang(locale)
+    path = f"/app?offre={code}"
+    yearly = 69 * (100 - percent) / 100
+    if lang == "en":
+        price = f"€{yearly:.2f}"
+        return _render(
+            lang,
+            f"{percent}% off your first year of Alternly Premium",
+            f"A welcome offer: {percent}% off your first year",
+            [
+                "You've started using Alternly to organise your custody calendar. If shared expenses, "
+                "the family wall and calendar sync could help, here's a little push to try Premium.",
+                f"With the code <strong>{code}</strong>, your first year is <strong>{price}</strong> "
+                "instead of €69. One subscription covers the whole household: both parents get access.",
+                f"This offer is valid until <strong>{fmt_day_long(until, 'en')}</strong>.",
+            ],
+            [("Use my offer", path)],
+            unsub_url,
+            after=["The custody calendar stays free, with or without Premium."],
+        )
+    price = f"{yearly:.2f}".replace(".", ",") + " €"
+    return _render(
+        lang,
+        f"-{percent} % sur votre première année Alternly Premium",
+        f"Une offre de bienvenue : -{percent} % la première année",
+        [
+            "Vous avez commencé à organiser votre garde avec Alternly. Si le suivi des dépenses "
+            "partagées, le mur et la synchronisation avec votre agenda peuvent vous aider, voici un "
+            "petit coup de pouce pour essayer Premium.",
+            f"Avec le code <strong>{code}</strong>, votre première année revient à <strong>{price}</strong> "
+            "au lieu de 69 €. Un seul abonnement couvre tout le foyer : les deux parents en profitent.",
+            f"Offre valable jusqu'au <strong>{fmt_day_long(until, 'fr')}</strong>.",
+        ],
+        [("Profiter de l'offre", path)],
+        unsub_url,
+        after=["Le calendrier de garde reste gratuit, avec ou sans Premium."],
     )
 
 
