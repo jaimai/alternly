@@ -67,6 +67,8 @@ précautions :
   particuliers de l'enfant…).
 - **Elle ne dit rien des frais exceptionnels**, qui se règlent à côté.
 
+Pourcentages par enfant et exemples chiffrés pas à pas : voir notre guide [calcul de la pension alimentaire en garde alternée](/blog/calcul-pension-alimentaire-garde-alternee-exemples).
+
 ## Frais ordinaires et frais exceptionnels : la distinction qui évite les disputes
 
 La plupart des conflits financiers entre parents séparés ne portent pas sur la

@@ -220,6 +220,6 @@ class TestSeo:
     def test_toussaint_guide_published(self, client):
         slugs = [a.slug for a in load_articles()]
         assert "vacances-toussaint-2026-garde-alternee" in slugs
-        assert len(slugs) == 11
+        assert len(slugs) == 14
         resp = client.get("/blog/vacances-toussaint-2026-garde-alternee")
         assert resp.status_code == 200 and "Toussaint 2026" in resp.text

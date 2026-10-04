@@ -1,5 +1,6 @@
 """Articles de blog : fichiers markdown avec frontmatter simple (clé: valeur)."""
-from dataclasses import dataclass
+import re
+from dataclasses import dataclass, field
 from datetime import date
 from pathlib import Path
 
@@ -17,6 +18,8 @@ class Article:
     description: str
     date: date
     body_md: str
+    # Questions/réponses de la section « Questions fréquentes » (données structurées FAQPage).
+    faq: list[tuple[str, str]] = field(default_factory=list)
 
 
 def _parse_frontmatter(text: str) -> tuple[dict[str, str], str]:
@@ -38,6 +41,37 @@ def _parse_frontmatter(text: str) -> tuple[dict[str, str], str]:
     return meta, body.strip()
 
 
+FAQ_HEADINGS = {"questions fréquentes", "faq", "frequently asked questions"}
+
+
+def _plain(md: str) -> str:
+    """Markdown → texte brut d'une ligne (liens, gras, italique retirés)."""
+    text = re.sub(r"\[([^\]]+)\]\([^)]*\)", r"\1", md)
+    text = re.sub(r"[*_`>]", "", text)
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def extract_faq(body_md: str) -> list[tuple[str, str]]:
+    """Paires (question, réponse) : chaque `### …` de la section `## Questions fréquentes`."""
+    faq: list[tuple[str, str]] = []
+    in_section = False
+    question: str | None = None
+    answer: list[str] = []
+    for line in body_md.splitlines() + ["## "]:
+        if line.startswith("## "):
+            if question and answer:
+                faq.append((question, _plain(" ".join(answer))))
+            question, answer = None, []
+            in_section = line[3:].strip().lower() in FAQ_HEADINGS
+        elif in_section and line.startswith("### "):
+            if question and answer:
+                faq.append((question, _plain(" ".join(answer))))
+            question, answer = _plain(line[4:]), []
+        elif in_section and question:
+            answer.append(line)
+    return faq
+
+
 def load_articles(content_dir: Path = CONTENT_DIR) -> list[Article]:
     if not content_dir.is_dir():
         return []
@@ -57,6 +91,7 @@ def load_articles(content_dir: Path = CONTENT_DIR) -> list[Article]:
                 description=meta.get("description", ""),
                 date=published,
                 body_md=body,
+                faq=extract_faq(body),
             )
         )
     articles.sort(key=lambda a: a.date, reverse=True)

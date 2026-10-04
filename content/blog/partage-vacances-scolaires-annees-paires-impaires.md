@@ -67,6 +67,8 @@ Certaines conventions préfèrent d'ailleurs traiter Noël à part (« le révei
 la mère les années paires… ») : dans ce cas, la clause spécifique prime sur le
 partage par moitié.
 
+Les dates et le jour de passage pour cette année sont détaillés dans notre guide [vacances de Noël 2026 en garde alternée](/blog/vacances-noel-2026-garde-alternee).
+
 ## Zones A, B, C : vérifiez les bonnes dates
 
 Les dates de vacances ne sont pas les mêmes à Lyon (zone A), Rennes (zone B) ou
@@ -85,6 +87,8 @@ long pour de jeunes enfants. Beaucoup d'accords prévoient plutôt un partage pa
 quinzaines (le fameux « 1-15 juillet / 16-31 juillet »), avec alternance
 paire/impaire du premier créneau. Là encore : la formulation exacte de votre
 jugement fait foi.
+
+Pour comparer les formules (moitié, juillet/août alternés, quinzaines) appliquées à l'été 2027, voir notre guide [vacances d'été en garde alternée](/blog/vacances-ete-garde-alternee-juillet-aout).
 
 ## En résumé
 
