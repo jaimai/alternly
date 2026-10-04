@@ -239,7 +239,7 @@ class TestOtherKinds:
     def test_cancel_accepted_exchange_request(self, client, auth_headers, db_session):
         headers1, user1, headers2, user2, h = setup_family(client, auth_headers)
         hid = h["id"]
-        eid = self._accepted_exchange(client, headers1, headers2, hid, user1["id"], "2026-10-01")
+        eid = self._accepted_exchange(client, headers1, headers2, hid, user1["id"], "2037-10-01")
         resp = client.delete(f"/api/households/{hid}/exceptions/{eid}", headers=headers2)
         assert resp.status_code == 202
         cr = resp.json()["change_request"]
