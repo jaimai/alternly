@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><title>Alternly — Feed</title>
+<link rel="stylesheet" href="base.css">
+<style>
+  .stage { width: 1080px; height: 1350px; }
+  .kicker { font-size: 30px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--terra); margin-bottom: 22px; }
+  h2.t { font-size: 76px; line-height: 1.06; text-align: center; padding: 0 70px; margin-bottom: 56px; }
+  h2.t em { color: var(--pine); font-style: italic; }
+
+  /* Scène 1 : extrait de jugement */
+  .doc { width: 880px; background: #fff; border-radius: 18px; padding: 64px 70px 70px; box-shadow: 0 40px 80px -40px rgba(36,49,43,.45); position: relative; }
+  .doc::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 14px; background: var(--paper-deep); border-radius: 18px 18px 0 0; }
+  .doc .head { font-family: 'Fraunces', serif; font-size: 34px; color: var(--ink-soft); margin-bottom: 30px; font-style: italic; }
+  .doc p { font-family: 'Fraunces', serif; font-variation-settings: 'opsz' 14; font-size: 40px; line-height: 1.55; color: var(--ink); }
+  .ln { display: block; animation: type 650ms steps(28, end) var(--t) both; clip-path: inset(0 100% 0 0); }
+  @keyframes type { to { clip-path: inset(0 0 0 0); } }
+  .hl { position: relative; z-index: 0; }
+  .hl::before { content: ''; position: absolute; left: -6px; right: -6px; top: 10%; bottom: 4%; background: var(--terra-soft); z-index: -1; border-radius: 6px; transform-origin: left; animation: mark 500ms var(--out) var(--h) both; }
+  .hl.g::before { background: var(--pine-soft); }
+  @keyframes mark { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+  /* Scène 2 : réglages */
+  .set { width: 940px; background: #fff; border-radius: 30px; padding: 34px 40px; display: flex; align-items: center; gap: 30px; margin-bottom: 26px; box-shadow: 0 26px 50px -32px rgba(36,49,43,.45); }
+  .set .k { font-size: 30px; font-weight: 600; color: var(--ink-soft); width: 170px; flex: none; }
+  .set .v { font-size: 40px; white-space: nowrap; font-weight: 700; flex: 1; }
+  .set .ok { width: 64px; height: 64px; border-radius: 50%; background: var(--pine); color: #fff; display: grid; place-items: center; font-size: 36px; flex: none; }
+  .who { display: inline-block; font-size: 30px; padding: 6px 16px; border-radius: 999px; color: #fff; vertical-align: 6px; margin-left: 8px; }
+
+  /* Scène 3 : l'année entière */
+  .year { display: grid; grid-template-columns: repeat(4, 220px); gap: 30px 34px; }
+  .mo h5 { font-size: 26px; font-weight: 700; margin-bottom: 10px; color: var(--ink-soft); text-transform: capitalize; }
+  .days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
+  .d { aspect-ratio: 1; border-radius: 6px; background: var(--paper-deep); position: relative; overflow: hidden; }
+  .d i { position: absolute; inset: 0; animation: fade 160ms linear var(--t) both; }
+  .d.A i { background: var(--pa); } .d.B i { background: var(--pb); }
+  .d.v i::after { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(-45deg, rgba(255,255,255,.55) 0 3px, transparent 3px 7px); }
+  .d.e { background: transparent; }
+  .stat { margin-top: 50px; display: flex; gap: 40px; font-size: 34px; color: var(--ink-soft); }
+  .stat b { color: var(--ink); font-size: 44px; font-family: 'Fraunces', serif; }
+
+  /* Scène 4 : notifications */
+  .toast { width: 880px; background: #fff; border-radius: 34px; padding: 34px 40px; display: flex; gap: 28px; align-items: center; margin-bottom: 28px; box-shadow: 0 30px 60px -32px rgba(36,49,43,.5); }
+  .av { width: 92px; height: 92px; border-radius: 50%; display: grid; place-items: center; color: #fff; font-size: 40px; font-weight: 700; flex: none; }
+  .toast h4 { font-size: 38px; font-weight: 700; margin-bottom: 6px; }
+  .toast p { font-size: 32px; color: var(--ink-soft); }
+  .badge { margin-left: auto; font-size: 30px; font-weight: 700; padding: 12px 22px; border-radius: 999px; background: var(--pine-soft); color: var(--pine); white-space: nowrap; }
+  .badge.t { background: var(--terra-soft); color: var(--terra); }
+
+  /* Scène 5 : CTA */
+  .s5 .wordmark { font-size: 180px; }
+  .s5 p { font-size: 50px; text-align: center; line-height: 1.25; margin-top: 26px; color: var(--ink-soft); }
+  .s5 p b { color: var(--ink); }
+  .cta { margin-top: 70px; background: var(--pine); color: #fff; font-size: 50px; font-weight: 700; padding: 34px 70px; border-radius: 999px; box-shadow: 0 30px 60px -24px rgba(31,77,63,.6); }
+  .pulse { animation: pulse 1400ms var(--inout) 15600ms infinite both; }
+  @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+  .small { margin-top: 36px; font-size: 32px; color: var(--ink-soft); }
+</style></head>
+<body>
+<div class="stage">
+
+  <!-- 1. Le jugement : 0 → 4,4 s -->
+  <section class="scene x" style="--x:4200ms">
+    <div class="kicker a" style="--k:fade;--t:100ms">Votre jugement dit…</div>
+    <div class="doc a" style="--t:200ms">
+      <div class="head">Extrait — résidence de l'enfant</div>
+      <p>
+        <span class="ln" style="--t:600ms">La résidence de l'enfant est fixée en</span>
+        <span class="ln" style="--t:1150ms">alternance <span class="hl" style="--h:2500ms">une semaine sur deux</span>,</span>
+        <span class="ln" style="--t:1700ms">avec passage <span class="hl" style="--h:2850ms">le lundi à l'école</span>.</span>
+        <span class="ln" style="--t:2250ms">La mère : <span class="hl g" style="--h:3200ms">1<sup>re</sup> moitié des vacances</span></span>
+        <span class="ln" style="--t:2800ms"><span class="hl g" style="--h:3450ms">les années paires</span>, le père l'autre.</span>
+      </p>
+    </div>
+  </section>
+
+  <!-- 2. Trois réglages : 4,4 → 8 s -->
+  <section class="scene x" style="--x:7800ms">
+    <h2 class="t serif a" style="--t:4400ms">Alternly le traduit <em>en&nbsp;3&nbsp;réglages</em></h2>
+    <div class="set a" style="--k:right;--t:4800ms"><div class="k">Rythme</div><div class="v">Semaine / semaine</div><div class="ok a" style="--k:pop;--t:5300ms">✓</div></div>
+    <div class="set a" style="--k:right;--t:5300ms"><div class="k">Passage</div><div class="v">Lundi, sortie d'école</div><div class="ok a" style="--k:pop;--t:5800ms">✓</div></div>
+    <div class="set a" style="--k:right;--t:5800ms"><div class="k">Vacances</div><div class="v">1<sup>re</sup> moitié, années paires</div><div class="ok a" style="--k:pop;--t:6300ms">✓</div></div>
+  </section>
+
+  <!-- 3. Toute l'année : 8 → 12,2 s -->
+  <section class="scene x" style="--x:12000ms">
+    <h2 class="t serif a" style="--t:8000ms;margin-bottom:44px">…et calcule <em>toute&nbsp;l'année</em></h2>
+    <div class="year a" id="year" style="--k:fade;--t:8100ms"></div>
+    <div class="stat a" style="--t:10600ms"><span><b>365</b> jours</span><span><b>5</b> vacances zone A</span><span><b>0</b> calcul</span></div>
+  </section>
+
+  <!-- 4. Au quotidien : 12,2 → 14,8 s -->
+  <section class="scene x" style="--x:14600ms">
+    <h2 class="t serif a" style="--t:12200ms">Au quotidien, <em>tout est clair</em></h2>
+    <div class="toast a" style="--k:down;--t:12500ms"><div class="av" style="background:var(--pb)">A</div><div><h4>Échange du mercredi 21</h4><p>Proposé par Alex</p></div><div class="badge a" style="--k:pop;--t:13300ms">Accepté ✓</div></div>
+    <div class="toast a" style="--k:down;--t:12950ms"><div class="av" style="background:var(--pa)">C</div><div><h4>Cantine d'octobre · 48 €</h4><p>Payé par Camille, 50/50</p></div><div class="badge t a" style="--k:pop;--t:13700ms">Solde à jour</div></div>
+  </section>
+
+  <!-- 5. CTA : 14,8 → 17 s -->
+  <section class="scene s5">
+    <div class="wordmark a" style="--k:zoom;--d:900ms;--t:14750ms">altern<span>ly</span></div>
+    <p class="a" style="--t:15100ms">Votre jugement devient<br><b>un calendrier partagé.</b></p>
+    <div class="a" style="--k:pop;--t:15400ms"><div class="cta pulse">alternly.com</div></div>
+    <div class="small a" style="--k:fade;--t:15700ms">Calendrier gratuit · sans carte bancaire</div>
+  </section>
+</div>
+<script>
+  // Année scolaire 2026-2027, zone A : semaine/semaine (passage le lundi),
+  // vacances moitié/moitié, Camille (A) 1re moitié les années paires
+  // (année du début de la période), comme le moteur d'Alternly.
+  const D = (y, m, d) => new Date(y, m - 1, d)
+  const vac = [[D(2026,10,17), D(2026,11,1)], [D(2026,12,19), D(2027,1,3)], [D(2027,2,13), D(2027,2,28)],
+               [D(2027,4,10), D(2027,4,25)], [D(2027,7,3), D(2027,8,31)]]
+  const day = 864e5
+  function parentOf(d) {
+    for (const [s, e] of vac) {
+      if (d >= s && d <= e) {
+        const n = Math.round((e - s) / day) + 1
+        const first = s.getFullYear() % 2 === 0 ? 'A' : 'B'
+        const idx = Math.round((d - s) / day)
+        return [idx < Math.floor(n / 2) ? first : (first === 'A' ? 'B' : 'A'), true]
+      }
+    }
+    const ref = D(2026, 8, 31) // lundi
+    const w = Math.floor(Math.round((d - ref) / day) / 7)
+    return [w % 2 === 0 ? 'A' : 'B', false]
+  }
+  const year = document.getElementById('year')
+  let k = 0
+  for (let m = 0; m < 12; m++) {
+    const first = new Date(2026, 8 + m, 1)
+    const mo = document.createElement('div'); mo.className = 'mo'
+    mo.innerHTML = `<h5>${first.toLocaleDateString('fr-FR', { month: 'long' })}</h5>`
+    const days = document.createElement('div'); days.className = 'days'
+    const lead = (first.getDay() + 6) % 7
+    for (let i = 0; i < lead; i++) days.insertAdjacentHTML('beforeend', '<div class="d e"></div>')
+    const len = new Date(first.getFullYear(), first.getMonth() + 1, 0).getDate()
+    for (let i = 1; i <= len; i++) {
+      const [p, v] = parentOf(new Date(first.getFullYear(), first.getMonth(), i))
+      days.insertAdjacentHTML('beforeend', `<div class="d ${p}${v ? ' v' : ''}"><i style="--t:${8400 + k * 6}ms"></i></div>`)
+      k++
+    }
+    mo.appendChild(days); year.appendChild(mo)
+  }
+</script>
+</body></html>

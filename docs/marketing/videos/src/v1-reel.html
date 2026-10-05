@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><title>Alternly — Reel</title>
+<link rel="stylesheet" href="base.css">
+<style>
+  .stage { width: 1080px; height: 1920px; }
+  /* Fond : deux taches douces aux couleurs des parents */
+  .blob { position: absolute; border-radius: 50%; filter: blur(90px); opacity: .35; }
+  .blob.a1 { width: 760px; height: 760px; background: var(--pine-soft); top: -200px; left: -260px; animation: drift1 15s linear both; }
+  .blob.b1 { width: 700px; height: 700px; background: var(--terra-soft); bottom: -160px; right: -240px; animation: drift2 15s linear both; }
+  @keyframes drift1 { to { transform: translate(180px, 260px); } }
+  @keyframes drift2 { to { transform: translate(-160px, -300px); } }
+
+  /* Scène 1 : le chaos des messages */
+  .q { font-size: 92px; line-height: 1.04; text-align: center; padding: 0 90px; margin-bottom: 90px; }
+  .q em { color: var(--terra); font-style: italic; }
+  .chat { width: 860px; display: flex; flex-direction: column; gap: 26px; }
+  .bub { max-width: 640px; padding: 28px 36px; border-radius: 38px; font-size: 40px; line-height: 1.25; box-shadow: 0 18px 40px -20px rgba(36,49,43,.35); }
+  .bub.l { align-self: flex-start; background: #fff; border-bottom-left-radius: 10px; --k: left; }
+  .bub.r { align-self: flex-end; background: var(--pine); color: #fff; border-bottom-right-radius: 10px; --k: right; }
+  .bub small { display: block; font-size: 26px; opacity: .6; margin-top: 8px; }
+
+  /* Scène 2 */
+  .s2 h2 { font-size: 104px; line-height: 1.05; text-align: center; padding: 0 80px; }
+  .s2 h2 span { display: inline-block; }
+  .s2 h2 em { color: var(--pine); font-style: italic; }
+
+  /* Scène 3 : téléphone + calendrier */
+  .s3 { justify-content: flex-start; padding-top: 150px; }
+  .s3 h3 { font-size: 72px; line-height: 1.08; text-align: center; padding: 0 70px; margin-bottom: 60px; }
+  .s3 h3 em { color: var(--pine); font-style: italic; }
+  .phone { width: 820px; background: #fff; border-radius: 64px; padding: 44px 40px 50px; box-shadow: 0 50px 100px -40px rgba(36,49,43,.45), 0 0 0 14px #1d2622; }
+  .ph-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 26px; }
+  .ph-top .wordmark { font-size: 46px; }
+  .ph-top .month { font-size: 34px; font-weight: 600; color: var(--ink-soft); }
+  .status { display: flex; align-items: center; gap: 18px; background: var(--pine-soft); border-radius: 26px; padding: 22px 26px; margin-bottom: 28px; font-size: 32px; }
+  .status .dot { width: 24px; height: 24px; border-radius: 50%; background: var(--pa); flex: none; }
+  .status b { font-weight: 700; }
+  .dow, .grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; }
+  .dow div { text-align: center; font-size: 26px; font-weight: 600; color: var(--ink-soft); padding-bottom: 10px; }
+  .cell { position: relative; height: 104px; border-radius: 20px; background: var(--paper); display: flex; align-items: flex-start; justify-content: flex-start; padding: 12px 14px; font-size: 30px; font-weight: 600; color: var(--ink); overflow: hidden; }
+  .cell.out { color: #b9b2a5; }
+  .cell .fill { position: absolute; inset: 0; border-radius: 20px; transform-origin: left center; animation: wipe 420ms var(--out) var(--t) both; }
+  .cell.A .fill { background: var(--pa); }
+  .cell.B .fill { background: var(--pb); }
+  .cell .n { position: relative; z-index: 1; }
+  .cell.A .n, .cell.B .n { color: #fff; }
+  @keyframes wipe { from { transform: scaleX(0); opacity: .2; } to { transform: scaleX(1); opacity: 1; } }
+  .cell .vac { position: absolute; left: 0; right: 0; bottom: 0; height: 12px; background: repeating-linear-gradient(-45deg, rgba(255,255,255,.95) 0 8px, rgba(255,255,255,.35) 8px 16px); z-index: 1; animation: fade 400ms var(--out) var(--tv) both; }
+  .hand { position: absolute; bottom: 16px; right: 6px; width: 42px; height: 42px; border-radius: 50%; background: #fff; color: var(--pb); display: grid; place-items: center; font-size: 26px; z-index: 2; box-shadow: 0 6px 14px -6px rgba(0,0,0,.4); }
+  .legend { display: flex; gap: 30px; margin-top: 28px; font-size: 30px; color: var(--ink-soft); }
+  .legend i { display: inline-block; width: 26px; height: 26px; border-radius: 8px; vertical-align: -4px; margin-right: 10px; }
+  .chips { position: absolute; left: 0; right: 0; bottom: 120px; display: flex; flex-direction: column; align-items: center; gap: 22px; }
+  .chip { background: #fff; border: 2px solid var(--line); border-radius: 999px; padding: 22px 38px; font-size: 38px; font-weight: 600; box-shadow: 0 16px 34px -20px rgba(36,49,43,.4); }
+  .chip b { color: var(--pine); }
+  .chip.t b { color: var(--terra); }
+  .callout { position: absolute; background: var(--ink); color: #fff; font-size: 32px; font-weight: 600; padding: 18px 26px; border-radius: 22px; white-space: nowrap; }
+  .callout::after { content: ''; position: absolute; bottom: -14px; left: 50%; margin-left: -14px; border: 14px solid transparent; border-bottom: 0; border-top-color: var(--ink); }
+
+  /* Scène 4 : fonctionnalités */
+  .s4 h3 { font-size: 80px; line-height: 1.05; text-align: center; margin-bottom: 70px; padding: 0 80px; }
+  .s4 h3 em { color: var(--terra); font-style: italic; }
+  .card { width: 880px; background: #fff; border-radius: 40px; padding: 40px 44px; display: flex; gap: 34px; align-items: center; margin-bottom: 34px; box-shadow: 0 30px 60px -34px rgba(36,49,43,.45); }
+  .ico { width: 120px; height: 120px; border-radius: 32px; display: grid; place-items: center; flex: none; }
+  .ico svg { width: 64px; height: 64px; }
+  .card h4 { font-size: 46px; font-weight: 700; margin-bottom: 8px; }
+  .card p { font-size: 34px; color: var(--ink-soft); line-height: 1.3; }
+  .tag { display: inline-block; margin-top: 14px; font-size: 28px; font-weight: 700; padding: 8px 18px; border-radius: 999px; background: var(--pine-soft); color: var(--pine); }
+
+  /* Scène 5 : CTA */
+  .s5 .wordmark { font-size: 200px; }
+  .s5 p { font-size: 54px; text-align: center; line-height: 1.25; margin-top: 30px; color: var(--ink-soft); padding: 0 100px; }
+  .s5 p b { color: var(--ink); }
+  .cta { margin-top: 80px; background: var(--pine); color: #fff; font-size: 54px; font-weight: 700; padding: 38px 76px; border-radius: 999px; box-shadow: 0 30px 60px -24px rgba(31,77,63,.6); }
+  .pulse { animation: pulse 1400ms var(--inout) 13800ms infinite both; }
+  @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+  .small { margin-top: 40px; font-size: 36px; color: var(--ink-soft); }
+</style></head>
+<body>
+<div class="stage" id="stage">
+  <div class="blob a1"></div><div class="blob b1"></div>
+
+  <!-- 1. Le problème : 0 → 3,4 s -->
+  <section class="scene x" style="--x:3000ms">
+    <h1 class="q serif a" style="--t:150ms">Qui a les enfants <em>ce&nbsp;week-end&nbsp;?</em></h1>
+    <div class="chat">
+      <div class="bub l a" style="--t:700ms">Tu les prends samedi ?</div>
+      <div class="bub r a" style="--t:1200ms">Je croyais que c'était ta semaine…</div>
+      <div class="bub l a" style="--t:1700ms">Et pour la Toussaint, on fait comment ?</div>
+      <div class="bub r a" style="--t:2200ms">Je regarde le jugement 😩<small>Vu</small></div>
+    </div>
+  </section>
+
+  <!-- 2. La promesse : 3,4 → 4,9 s -->
+  <section class="scene s2 x" style="--x:4700ms">
+    <h2 class="serif">
+      <span class="a" style="--t:3400ms">Et si le</span>
+      <span class="a" style="--t:3550ms">calendrier</span>
+      <span class="a" style="--t:3700ms"><em>répondait</em></span>
+      <span class="a" style="--t:3850ms"><em>à votre place&nbsp;?</em></span>
+    </h2>
+  </section>
+
+  <!-- 3. Le produit : 5 → 10,4 s -->
+  <section class="scene s3 x" style="--x:10200ms">
+    <h3 class="serif a" style="--t:5000ms">Votre rythme de garde, <em>calculé&nbsp;pour&nbsp;vous</em></h3>
+    <div class="phone a" style="--k:rise;--d:900ms;--t:5100ms">
+      <div class="ph-top"><div class="wordmark">altern<span>ly</span></div><div class="month">Octobre 2026</div></div>
+      <div class="status a" style="--k:fade;--t:5800ms"><span class="dot"></span><span>Ce week-end : <b>chez Camille</b> · retour lundi</span></div>
+      <div class="dow"><div>L</div><div>M</div><div>M</div><div>J</div><div>V</div><div>S</div><div>D</div></div>
+      <div class="grid" id="grid"></div>
+      <div class="legend a" style="--k:fade;--t:7200ms"><span><i style="background:var(--pa)"></i>Camille</span><span><i style="background:var(--pb)"></i>Alex</span><span><i style="background:repeating-linear-gradient(-45deg,#9aa39d 0 5px,#e3e0d8 5px 10px)"></i>Vacances</span></div>
+    </div>
+    <div class="callout a" id="callout" style="--k:pop;--t:8300ms">Passage dimanche 25 oct.</div>
+    <div class="chips">
+      <div class="chip a" style="--k:pop;--t:8800ms">✓ Vacances scolaires <b>zones A, B, C</b></div>
+      <div class="chip t a" style="--k:pop;--t:9200ms">✓ Années <b>paires / impaires</b></div>
+    </div>
+  </section>
+
+  <!-- 4. Les fonctionnalités : 10,5 → 12,9 s -->
+  <section class="scene s4 x" style="--x:12700ms">
+    <h3 class="serif a" style="--t:10450ms">Et tout le reste, <em>sans&nbsp;dispute</em></h3>
+    <div class="card a" style="--k:right;--t:10650ms">
+      <div class="ico" style="background:var(--pine-soft)"><svg viewBox="0 0 24 24" fill="none" stroke="#1f4d3f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h11l-3-3M17 17H6l3 3"/></svg></div>
+      <div><h4>Échanges de jours</h4><p>Proposez, l'autre accepte en un clic.</p></div>
+    </div>
+    <div class="card a" style="--k:right;--t:11000ms">
+      <div class="ico" style="background:var(--terra-soft)"><svg viewBox="0 0 24 24" fill="none" stroke="#c96f4a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M7 15h4"/></svg></div>
+      <div><h4>Dépenses partagées</h4><p>Qui a payé quoi, solde à jour.</p></div>
+    </div>
+    <div class="card a" style="--k:right;--t:11350ms">
+      <div class="ico" style="background:#e3eaf4"><svg viewBox="0 0 24 24" fill="none" stroke="#4a6fa5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18M9 15l2 2 4-4"/></svg></div>
+      <div><h4>Synchro agenda</h4><p>Google Agenda et Apple Calendar.</p></div>
+    </div>
+  </section>
+
+  <!-- 5. CTA : 13 → 15 s -->
+  <section class="scene s5">
+    <div class="wordmark a" style="--k:zoom;--d:900ms;--t:12950ms">altern<span>ly</span></div>
+    <p class="a" style="--t:13300ms">Le calendrier de garde alternée<br><b>clair, partagé, à jour.</b></p>
+    <div class="a" style="--k:pop;--t:13600ms"><div class="cta pulse">alternly.com</div></div>
+    <div class="small a" style="--k:fade;--t:13900ms">Calendrier gratuit · sans carte bancaire</div>
+  </section>
+</div>
+<script>
+  // Octobre 2026 (semaine du lundi 28 sept. au dimanche 1er nov.) : semaine/semaine,
+  // passage le lundi ; Toussaint du 17/10 au 1/11, moitié/moitié → passage le 25/10.
+  const grid = document.getElementById('grid')
+  const start = new Date(2026, 8, 28)
+  for (let i = 0; i < 35; i++) {
+    const d = new Date(start); d.setDate(start.getDate() + i)
+    const week = Math.floor(i / 7)
+    let p = week % 2 === 0 ? 'A' : 'B'
+    const inVac = d >= new Date(2026, 9, 17)
+    if (inVac) p = d < new Date(2026, 9, 25) ? 'A' : 'B'
+    const c = document.createElement('div')
+    c.className = 'cell ' + p + (d.getMonth() !== 9 ? ' out' : '')
+    c.innerHTML = `<div class="fill" style="--t:${6000 + i * 34}ms"></div><span class="n">${d.getDate()}</span>` +
+      (inVac ? `<div class="vac" style="--tv:${7700 + (i - 19) * 30}ms"></div>` : '')
+    if (d.getDate() === 25 && d.getMonth() === 9) { c.id = 'handoff'; c.insertAdjacentHTML('beforeend', '<div class="hand a" style="--k:pop;--t:8200ms">⇄</div>') }
+    grid.appendChild(c)
+  }
+  // Positionne la bulle au-dessus de la case du 25.
+  window.layout = () => {
+    const h = document.getElementById('handoff').getBoundingClientRect()
+    const co = document.getElementById('callout')
+    const w = co.offsetWidth
+    co.style.left = Math.min(1080 - w - 30, h.left + h.width / 2 - w / 2) + 'px'
+    co.style.top = (h.top - co.offsetHeight - 20) + 'px'
+  }
+</script>
+</body></html>
