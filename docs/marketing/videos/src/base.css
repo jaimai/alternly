@@ -1,0 +1,39 @@
+@font-face { font-family: 'Fraunces'; src: url(fraunces-latin-full-normal.woff2) format('woff2'); font-weight: 100 900; font-style: normal; }
+@font-face { font-family: 'Fraunces'; src: url(fraunces-latin-full-italic.woff2) format('woff2'); font-weight: 100 900; font-style: italic; }
+@font-face { font-family: 'Instrument Sans'; src: url(instrument-sans-latin-400-normal.woff2) format('woff2'); font-weight: 400; }
+@font-face { font-family: 'Instrument Sans'; src: url(instrument-sans-latin-500-normal.woff2) format('woff2'); font-weight: 500; }
+@font-face { font-family: 'Instrument Sans'; src: url(instrument-sans-latin-600-normal.woff2) format('woff2'); font-weight: 600; }
+@font-face { font-family: 'Instrument Sans'; src: url(instrument-sans-latin-700-normal.woff2) format('woff2'); font-weight: 700; }
+
+:root {
+  --paper: #faf6ef; --paper-deep: #f3ecdf; --ink: #24312b; --ink-soft: #5d6b63;
+  --pine: #1f4d3f; --pine-soft: #e4ede7; --terra: #c96f4a; --terra-soft: #f5e0d5;
+  --line: #e7dfd0; --pa: #2f6b57; --pb: #c96f4a;
+  --out: cubic-bezier(0.23, 1, 0.32, 1); --inout: cubic-bezier(0.77, 0, 0.175, 1);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--paper); overflow: hidden; }
+body { font-family: 'Instrument Sans', sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; }
+.stage { position: relative; overflow: hidden; background: var(--paper); }
+.serif { font-family: 'Fraunces', Georgia, serif; font-variation-settings: 'opsz' 72; letter-spacing: -0.02em; }
+.scene { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.wordmark { font-family: 'Fraunces', serif; font-variation-settings: 'opsz' 72; color: var(--ink); letter-spacing: -0.02em; }
+.wordmark span { color: var(--pine); font-style: italic; }
+
+/* Toutes les animations sont figées : le moteur de rendu les positionne image par image. */
+*, *::before, *::after { animation-play-state: paused !important; }
+
+/* Animation générique : --k (keyframes), --t (départ), --d (durée) */
+.a { animation: var(--k, up) var(--d, 700ms) var(--e, var(--out)) var(--t, 0ms) both; }
+@keyframes up { from { opacity: 0; transform: translateY(60px); } to { opacity: 1; transform: none; } }
+@keyframes down { from { opacity: 0; transform: translateY(-60px); } to { opacity: 1; transform: none; } }
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes pop { 0% { opacity: 0; transform: scale(.6); } 60% { opacity: 1; transform: scale(1.05); } 100% { opacity: 1; transform: scale(1); } }
+@keyframes left { from { opacity: 0; transform: translateX(-120px); } to { opacity: 1; transform: none; } }
+@keyframes right { from { opacity: 0; transform: translateX(120px); } to { opacity: 1; transform: none; } }
+@keyframes rise { from { opacity: 0; transform: translateY(400px); } to { opacity: 1; transform: none; } }
+@keyframes zoom { from { opacity: 0; transform: scale(.85); filter: blur(8px); } to { opacity: 1; transform: none; filter: none; } }
+/* Sortie de scène */
+.x { animation: var(--xk, exit) 500ms var(--inout) var(--x) both; }
+@keyframes exit { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(-80px); } }
+@keyframes exitfade { from { opacity: 1; } to { opacity: 0; } }
