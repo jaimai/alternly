@@ -1,0 +1,6 @@
+{
+  "errors.crashTitle": "Oups, un problème est survenu",
+  "errors.crashBody": "L'erreur nous a été signalée automatiquement. Rechargez la page pour continuer ; vos données sont en sécurité.",
+  "errors.reload": "Recharger la page",
+  "errors.report": "Nous décrire ce qui s'est passé"
+}

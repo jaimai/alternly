@@ -68,6 +68,10 @@ def _get_client():
                     on_error=lambda err, _batch: log.debug("PostHog: envoi échoué (%s)", err),
                     max_retries=2,
                     timeout=5,
+                    # Suivi d'erreurs : exceptions non gérées hors requête (tâches de fond,
+                    # threads) ; jamais les variables locales (données personnelles).
+                    enable_exception_autocapture=True,
+                    capture_exception_code_variables=False,
                 )
     return _client
 

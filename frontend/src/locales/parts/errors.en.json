@@ -1,0 +1,6 @@
+{
+  "errors.crashTitle": "Oops, something went wrong",
+  "errors.crashBody": "The error was reported to us automatically. Reload the page to continue; your data is safe.",
+  "errors.reload": "Reload the page",
+  "errors.report": "Tell us what happened"
+}

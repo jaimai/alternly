@@ -326,3 +326,26 @@ checkout Paddle (offre annuelle). Exclus : abonnés, essais en cours, e-mails re
 restreint au prix annuel, **non récurrent** (première année seulement), utilisable une
 fois par client. La date « valable jusqu'au » de l'e-mail est indicative (le code Paddle
 n'expire pas par personne).
+
+## Suivi d'erreurs (PostHog Error Tracking)
+
+Activé sur le projet PostHog (Error tracking). Ce qui remonte :
+
+- **App (SPA)** : exceptions JS non gérées et promesses rejetées (`capture_exceptions`),
+  plantages de rendu React (ErrorBoundary + `onUncaughtError` / `onRecoverableError`,
+  avec la pile de composants). Un plantage affiche un écran « Recharger la page » au lieu
+  d'une page blanche.
+- **Site marketing** : exceptions JS (`static/analytics.js`).
+- **API** : exceptions des requêtes (gestionnaire global FastAPI) et exceptions non gérées
+  hors requête (tâches de fond, threads), sans variables locales.
+
+Mêmes règles de consentement que le reste de la mesure (anonyme sans cookie tant que non
+accepté). Tableau : https://eu.posthog.com/project/285303/error_tracking
+
+**Traces lisibles (source maps)** — sur Vercel, ajouter `POSTHOG_SOURCEMAPS_API_KEY` =
+clé personnelle PostHog avec les scopes *error tracking write* et *organization read*
+(Settings → Personal API keys). Au build, `@posthog/rollup-plugin` envoie les source maps
+puis les supprime de `dist/` (jamais servies). Sans la variable, rien ne change.
+
+**Alertes** : PostHog notifie par Slack, Discord, Teams, webhook, GitHub ou Linear
+(pas par e-mail) : Error tracking → Alerts → « Issue created » ou « Issue spiking ».
