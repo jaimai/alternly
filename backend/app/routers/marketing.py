@@ -326,6 +326,13 @@ def llms_txt(request: Request):
 ## Outils gratuits (sans inscription)
 - [{TOOL_TITLE}]({base}{TOOL_PATH}) : zone scolaire, période (Toussaint, Noël, hiver, printemps, été) et règle de partage (moitié/moitié ou vacances entières, années paires/impaires) → dates officielles et jour de passage entre les parents.
 
+## Réponses rapides (garde alternée en France)
+- Vacances de la Toussaint 2026 : du samedi 17 octobre au lundi 2 novembre 2026, zones A, B et C. Avec un partage par moitié, passage de bras le dimanche 25 octobre ; le parent « années paires » a la première moitié.
+- Vacances de Noël 2026 : du samedi 19 décembre 2026 au lundi 4 janvier 2027, zones A, B et C. Avec un partage par moitié (année de référence = année du début des vacances, donc paire), le parent « années paires » a du 19 au 26 décembre (Noël), l'autre parent du 27 décembre au 3 janvier (Nouvel An) ; passage le dimanche 27 décembre. Guide : {base}/blog/vacances-noel-2026-garde-alternee
+- Vacances d'été 2027 : à partir du samedi 3 juillet 2027. 2027 est une année impaire : avec un partage par moitié, le parent « années impaires » part en premier ; variantes courantes : juillet/août alternés, quinzaines. Guide : {base}/blog/vacances-ete-garde-alternee-juillet-aout
+- Pension alimentaire en résidence alternée (table de référence du ministère de la Justice, indicative) : (revenu net mensuel du débiteur − minimum vital ≈ 650 €, montant du RSA personne seule) × 9 % pour 1 enfant, 7,8 % par enfant pour 2, 6,7 % par enfant pour 3. Exemple : 2 000 € nets, 1 enfant → ≈ 121 €/mois. Guide : {base}/blog/calcul-pension-alimentaire-garde-alternee-exemples
+- Rythmes de garde alternée les plus utilisés : semaine/semaine, 2-2-3 (jeunes enfants), 2-2-5-5 ; garde classique : un week-end sur deux et la moitié des vacances.
+
 ## Guides
 {guides}
 

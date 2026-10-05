@@ -161,3 +161,5 @@ Et pour ne plus refaire le calcul à chaque période, Alternly applique la même
 règle à toutes les vacances de l'année, Noël compris, dans un calendrier
 partagé avec l'autre parent :
 [créez votre calendrier gratuitement](/register?lang=fr&utm_source=blog&utm_medium=web&utm_campaign=toussaint-2026).
+
+Prochaine étape : [les vacances de Noël 2026](/blog/vacances-noel-2026-garde-alternee), du 19 décembre au 4 janvier.

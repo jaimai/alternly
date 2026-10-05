@@ -57,6 +57,8 @@ l'un, Nouvel An chez l'autre, et on inverse l'année suivante »). Pour les
 adolescents, qui ont souvent leurs propres projets, prévoir de la souplesse
 évite bien des tensions.
 
+Pour les dates exactes de cette année et le jour du passage de bras, voir [vacances de Noël 2026 en garde alternée : qui a les enfants ?](/blog/vacances-noel-2026-garde-alternee)
+
 ## Fête des mères, fête des pères
 
 En France, la fête des mères a lieu le dernier dimanche de mai (décalée au

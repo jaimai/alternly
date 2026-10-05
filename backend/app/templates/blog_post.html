@@ -8,6 +8,11 @@
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"Article","headline":{{ article.title | tojson }},"datePublished":"{{ article.date.isoformat() }}","description":{{ article.description | tojson }},"inLanguage":"fr-FR"}
 </script>
+{% if article.faq %}
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{% for q, a in article.faq %}{"@type":"Question","name":{{ q | tojson }},"acceptedAnswer":{"@type":"Answer","text":{{ a | tojson }}}}{% if not loop.last %},{% endif %}{% endfor %}]}
+</script>
+{% endif %}
 {% endblock %}
 {% block content %}
 <article class="post" data-blog-slug="{{ article.slug }}">
