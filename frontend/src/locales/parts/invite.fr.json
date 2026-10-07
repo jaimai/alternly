@@ -29,8 +29,11 @@
   "invite.modalEyebrow": "Inviter l'autre parent",
   "invite.modalTitle": "Partagez le calendrier en un geste",
   "invite.stepTitle": "Invitez l'autre parent",
-  "invite.stepBody": "Le calendrier devient vraiment utile quand vous le voyez tous les deux : même planning, échanges proposés et acceptés dans l'app. C'est gratuit pour lui ou elle.",
-  "invite.stepContinue": "Continuer",
-  "invite.stepLater": "Plus tard",
-  "invite.close": "Fermer"
+  "invite.stepBody": "Le calendrier devient vraiment utile quand vous le voyez tous les deux. Envoyez-lui le lien maintenant, il ne faut que dix secondes :",
+  "invite.stepContinue": "C'est envoyé, continuer",
+  "invite.stepLater": "Je l'inviterai plus tard",
+  "invite.close": "Fermer",
+  "invite.benefitDays": "Il ou elle voit ses jours à l'avance, sans avoir à vous les demander.",
+  "invite.benefitSwaps": "Les échanges de jours se proposent et s'acceptent dans l'app, avec un historique.",
+  "invite.benefitFree": "Rien à configurer et c'est gratuit pour l'autre parent : le calendrier est déjà prêt."
 }

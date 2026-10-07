@@ -9,7 +9,6 @@
   "rules.patternCustomTitle": "Custom",
   "rules.patternCustomDesc": "Set up a two-week cycle day by day.",
   "rules.startDateLabel": "Schedule start date",
-  "rules.weekendParentLabel": "Parent with the weekends",
   "rules.referenceParentLabel": "Who has the child at the start?",
   "rules.handoverDayLabel": "Handover day",
   "rules.handoverTimeLabel": "Handover time",
@@ -38,12 +37,17 @@
   "rules.weekdayShortFri": "F",
   "rules.weekdayShortSat": "S",
   "rules.weekdayShortSun": "S",
-  "rules.customHint": "Tap a day to give it to the other parent. The cycle repeats every two weeks.",
+  "rules.customHint": "Pick a parent, then tap the days the child is with them. The cycle repeats every two weeks.",
   "rules.previewTitle": "Preview",
   "rules.previewThisWeek": "This week",
   "rules.previewNextWeek": "Next week",
   "rules.previewDayTitle": "{{day}} {{date}}: {{parent}}",
   "rules.otherParent": "The other parent",
   "rules.upToDate": "Schedule up to date",
-  "rules.seeCalendar": "See the calendar →"
+  "rules.seeCalendar": "See the calendar →",
+  "rules.refQuestionAlternate": "Who has the child the week starting {{date}}?",
+  "rules.refQuestionTwoTwoThree": "Who has the child on {{date}}?",
+  "rules.refQuestionWeekend": "Who has the child on the weekend of {{date}}?",
+  "rules.weekendResidenceHint": "The rest of the time, the child lives with the other parent. Weekends then alternate automatically.",
+  "rules.customBrushLabel": "Parent to place on tapped days"
 }

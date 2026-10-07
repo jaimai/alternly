@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { track } from '../analytics'
+import { EV } from '../analyticsEvents'
 import { useAuth } from '../auth'
 import CalendarView from '../components/CalendarView'
 import ChangeRequests from '../components/ChangeRequests'
@@ -103,12 +105,19 @@ export default function CalendarPage() {
           />
         )}
         {solo && (
-          <div className="callout">
+          <div className="callout callout-invite">
             <div>
               <strong>{t('calendar.soloTitle')}</strong>
               <p>{t('calendar.soloBody')}</p>
             </div>
-            <button onClick={() => setInviteOpen(true)}>{t('calendar.soloCta')}</button>
+            <button
+              onClick={() => {
+                track(EV.invitePromptClicked, { source: 'calendar' })
+                setInviteOpen(true)
+              }}
+            >
+              {t('calendar.soloCta')}
+            </button>
           </div>
         )}
         {expiringTomorrow.length > 0 && (

@@ -16,5 +16,8 @@
   "onboarding.childrenHeading": "Vos enfants",
   "onboarding.firstNameLabel": "Prénom",
   "onboarding.add": "Ajouter",
-  "onboarding.generateCalendar": "Générer mon calendrier"
+  "onboarding.generateCalendar": "Générer mon calendrier",
+  "onboarding.restartTitle": "Reprenons votre rythme de garde",
+  "onboarding.restartSubtitle": "Votre foyer et vos enfants sont conservés : ajustez la règle pas à pas, l'aperçu se met à jour en direct.",
+  "onboarding.restartCancel": "Retour au calendrier, sans rien changer"
 }

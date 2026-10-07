@@ -145,6 +145,12 @@ class TestWelcome:
 
 
 class TestSequence:
+    @pytest.fixture(autouse=True)
+    def _no_holiday_reminders(self, monkeypatch):
+        """La séquence est testée seule : un rappel de vacances réel (ex. Toussaint
+        à moins de 10 jours) prendrait sinon le seul e-mail autorisé du jour."""
+        monkeypatch.setattr(lifecycle, "run_holidays", lambda db, now, today: {})
+
     def test_j1_when_no_rule_then_once(self, client, auth_headers, db_session, sent, events):
         _, user = auth_headers()
         age_user(db_session, user["id"], 1)
@@ -203,8 +209,19 @@ class TestSequence:
         sent.clear()
         assert lifecycle.run(db_session)["j3_invite"] == 0
 
-    def test_j7_free_mentions_premium_softly(self, client, auth_headers, db_session, sent, events):
+    def test_j7_solo_pushes_the_invitation(self, client, auth_headers, db_session, sent, events):
         _, user, _ = solo_household(client, auth_headers)
+        age_user(db_session, user["id"], 7)
+        sent.clear()
+        assert lifecycle.run(db_session)["j7_value"] == 1
+        mail = sent[0]
+        assert "seul·e à le voir" in mail["subject"]
+        assert "Inviter l'autre parent" in mail["html"] and "/settings#invite" in mail["html"]
+        assert "Découvrir Premium" not in mail["html"]
+        assert any(props(e) == {"kind": "j7_value", "solo": True} for e in events if e[1] == "lifecycle_email_sent")
+
+    def test_j7_free_mentions_premium_softly(self, client, auth_headers, db_session, sent, events):
+        _, user, _, _ = two_parent_household(client, auth_headers, db_session)
         age_user(db_session, user["id"], 7)
         sent.clear()
         assert lifecycle.run(db_session)["j7_value"] == 1
@@ -215,7 +232,7 @@ class TestSequence:
         assert any(props(e) == {"kind": "j7_value", "premium": False} for e in events if e[1] == "lifecycle_email_sent")
 
     def test_j7_premium_copy(self, client, auth_headers, db_session, sent):
-        _, user, _ = solo_household(client, auth_headers)
+        _, user, _, _ = two_parent_household(client, auth_headers, db_session)
         make_premium(db_session, user["id"])
         age_user(db_session, user["id"], 7)
         sent.clear()

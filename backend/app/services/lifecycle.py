@@ -7,7 +7,7 @@
   - J1 (âge 1–3 j) : aucune règle de garde → « Il ne manque que votre règle de garde » ;
   - J3 (âge 3–7 j) : foyer encore solo → conseils pour inviter l'autre parent ;
   - J7 (âge 7–10 j) : règle posée → synchro d'agenda + échanges (mention Premium
-    douce si le foyer est gratuit) ;
+    douce si le foyer est gratuit) ; foyer encore solo → l'invitation de l'autre parent ;
   - rappel ~10 jours avant chaque période de vacances scolaires (FR : zone
     officielle ; US : congés saisis), calculé par le même moteur que l'app.
 
@@ -233,6 +233,9 @@ def _sequence_email(db: Session, user: User, kind: str) -> tuple[tpl.Email, dict
     if kind == J7_VALUE:
         if not _has_rule(db, hid):
             return None
+        if len(_real_members(db, hid)) < 2:
+            # Foyer encore solo : les échanges n'ont de sens qu'à deux → invitation.
+            return tpl.solo_value_email(user.locale, unsub), {"kind": kind, "solo": True}, hid
         premium = household_has_premium(db, hid)
         return tpl.value_email(premium, user.locale, unsub), {"kind": kind, "premium": premium}, hid
     return None

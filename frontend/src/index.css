@@ -581,6 +581,40 @@ label {
   color: var(--ink-soft);
 }
 
+.rule-brush {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.rule-brush-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 6px 12px;
+  border: 1.5px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 0.85rem;
+  font-weight: 600;
+  box-shadow: none;
+}
+
+.rule-brush-option.active {
+  border-color: var(--pine);
+  background: var(--pine-soft);
+  color: var(--pine);
+}
+
+.rule-brush-option .dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
 .rule-preview-week { margin-top: 10px; }
 
 .rule-preview-label {
@@ -2103,3 +2137,34 @@ button.consent-btn {
 .feedback-count { text-align: right; margin: 2px 0 8px; }
 .feedback-trap { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
 .feedback-done p { margin: 4px 0 16px; }
+
+/* Suppression du compte : raison du départ */
+fieldset.departure {
+  border: 0;
+  padding: 0;
+  margin: 12px 0 0;
+  min-width: 0;
+}
+
+fieldset.departure legend {
+  padding: 0;
+  margin-bottom: 8px;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+fieldset.departure .choice { padding-block: 10px; }
+
+/* Invitation de l'autre parent : bénéfices (onboarding) et encadré du calendrier */
+.invite-benefits {
+  margin: 0 0 14px;
+  padding-left: 20px;
+  display: grid;
+  gap: 6px;
+  font-size: 0.92rem;
+}
+
+.callout-invite {
+  border-style: solid;
+  background: var(--pine-soft);
+}

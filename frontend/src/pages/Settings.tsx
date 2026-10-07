@@ -11,6 +11,7 @@ import ChangeRequests from '../components/ChangeRequests'
 import ColorPicker from '../components/ColorPicker'
 import Icon from '../components/Icon'
 import InviteShare from '../components/InviteShare'
+import Modal from '../components/Modal'
 import RuleForm from '../components/RuleForm'
 import Spinner from '../components/Spinner'
 import type { RuleFormValue } from '../components/RuleForm'
@@ -341,6 +342,10 @@ export default function SettingsPage() {
             savedMessage={rulesMessage}
             onSubmit={saveRules}
           />
+          <p className="hint" style={{ marginTop: 14 }}>
+            {t('settings.restartSetupHint')}{' '}
+            <Link to="/onboarding?restart=1">{t('settings.restartSetup')}</Link>
+          </p>
         </div>
 
         <div className="card">
@@ -542,19 +547,39 @@ function HelpCard() {
   )
 }
 
+const DEPARTURE_REASONS = ['not_my_situation', 'start_over', 'other_parent', 'price', 'just_testing', 'other'] as const
+type DepartureReason = (typeof DEPARTURE_REASONS)[number]
+
 function DangerZone() {
   const { t } = useTranslation()
+  const [open, setOpen] = useState(false)
+
+  return (
+    <div className="card danger-card">
+      <h2>{t('settings.dangerTitle')}</h2>
+      <p className="hint">{t('settings.deleteHint')}</p>
+      <button className="danger" onClick={() => setOpen(true)}>{t('settings.deleteAccount')}</button>
+      {open && <DeleteAccountDialog onClose={() => setOpen(false)} />}
+    </div>
+  )
+}
+
+/** Suppression du compte : on demande (sans l'imposer) pourquoi le parent part,
+ *  et on propose de recommencer la configuration quand c'est ce qu'il cherche. */
+function DeleteAccountDialog({ onClose }: { onClose: () => void }) {
+  const { t } = useTranslation()
   const { logout } = useAuth()
+  const navigate = useNavigate()
+  const [reason, setReason] = useState<DepartureReason | null>(null)
+  const [comment, setComment] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [confirm, confirmNode] = useConfirm()
 
   async function remove() {
-    const ok = await confirm({ title: t('settings.deleteAccount'), body: t('settings.deleteConfirm'), confirmLabel: t('settings.deleteAccount'), danger: true })
-    if (!ok) return
     setBusy(true)
+    setError(null)
     try {
-      await api.deleteAccount()
+      await api.deleteAccount({ reason, comment: comment.trim() })
       logout()
     } catch {
       setBusy(false)
@@ -563,13 +588,47 @@ function DangerZone() {
   }
 
   return (
-    <div className="card danger-card">
-      <h2>{t('settings.dangerTitle')}</h2>
-      <p className="hint">{t('settings.deleteHint')}</p>
+    <Modal title={t('settings.deleteAccount')} onClose={onClose}>
+      <p className="hint" style={{ marginTop: 0 }}>{t('settings.deleteConfirm')}</p>
+      <fieldset className="departure">
+        <legend>{t('settings.departureQuestion')}</legend>
+        <div className="choice-list">
+          {DEPARTURE_REASONS.map((r) => (
+            <label key={r} className={`choice ${reason === r ? 'selected' : ''}`}>
+              <input type="radio" name="departure" checked={reason === r} onChange={() => setReason(r)} />
+              <span>{t(`settings.departure_${r}`)}</span>
+            </label>
+          ))}
+        </div>
+      </fieldset>
+      {reason === 'start_over' ? (
+        <div className="info-banner">
+          <p style={{ margin: 0 }}>{t('settings.departureStartOverHint')}</p>
+          <button type="button" style={{ marginTop: 10 }} onClick={() => navigate('/onboarding?restart=1')}>
+            {t('settings.restartSetup')}
+          </button>
+        </div>
+      ) : (
+        <>
+          <label htmlFor="departure-comment">{t('settings.departureCommentLabel')}</label>
+          <textarea
+            id="departure-comment"
+            rows={3}
+            maxLength={500}
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            placeholder={t('settings.departureCommentPlaceholder')}
+          />
+        </>
+      )}
       {error && <div className="error">{error}</div>}
-      <button className="danger" disabled={busy} onClick={remove}>{t('settings.deleteAccount')}</button>
-      {confirmNode}
-    </div>
+      <div className="actions" style={{ marginTop: 18 }}>
+        <button className="secondary" type="button" onClick={onClose} disabled={busy}>{t('common.cancel')}</button>
+        <button className="danger" type="button" onClick={remove} disabled={busy}>
+          {busy ? t('settings.deleting') : t('settings.deleteAccount')}
+        </button>
+      </div>
+    </Modal>
   )
 }
 

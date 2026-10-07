@@ -59,5 +59,18 @@
   "settings.logoutAllConfirm": "Sign out everywhere",
   "settings.setPassword": "Set a password",
   "settings.setPasswordHint": "You sign in with Google — add a password if you'd like.",
-  "settings.setPasswordIntro": "Your account uses Google sign-in. A password also lets you sign in with your email."
+  "settings.setPasswordIntro": "Your account uses Google sign-in. A password also lets you sign in with your email.",
+  "settings.departureQuestion": "Why are you leaving? (optional)",
+  "settings.departure_not_my_situation": "The calendar doesn't match my situation",
+  "settings.departure_start_over": "I wanted to start the setup over",
+  "settings.departure_other_parent": "The other parent won't use it",
+  "settings.departure_price": "Too expensive / too many paid features",
+  "settings.departure_just_testing": "I was just trying the app",
+  "settings.departure_other": "Something else",
+  "settings.departureStartOverHint": "No need to delete your account: you can redo the custody schedule step by step. Children and household can also be edited in settings.",
+  "settings.departureCommentLabel": "A word to help us improve Alternly? (optional)",
+  "settings.departureCommentPlaceholder": "What was missing, what didn't work…",
+  "settings.deleting": "Deleting…",
+  "settings.restartSetup": "Start the setup over",
+  "settings.restartSetupHint": "Prefer to be guided step by step?"
 }
