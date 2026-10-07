@@ -192,7 +192,8 @@ export const api = {
     analytics_consent?: boolean
   }) =>
     request<User>('/auth/me', { method: 'PATCH', body: JSON.stringify(data) }),
-  deleteAccount: () => request<void>('/auth/me', { method: 'DELETE' }),
+  deleteAccount: (data?: { reason: string | null; comment: string }) =>
+    request<void>('/auth/me', { method: 'DELETE', body: data ? JSON.stringify(data) : undefined }),
 
   createHousehold: (data: { name: string; school_zone?: string; country?: Country }) =>
     request<Household>('/households', { method: 'POST', body: JSON.stringify(data) }),

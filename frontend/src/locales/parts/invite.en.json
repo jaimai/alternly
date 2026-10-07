@@ -29,8 +29,11 @@
   "invite.modalEyebrow": "Invite your co-parent",
   "invite.modalTitle": "Share the calendar in one tap",
   "invite.stepTitle": "Invite your co-parent",
-  "invite.stepBody": "The calendar really shines when you both see it: same schedule, swaps proposed and accepted in the app. It's free for them.",
-  "invite.stepContinue": "Continue",
-  "invite.stepLater": "Later",
-  "invite.close": "Close"
+  "invite.stepBody": "The calendar really pays off when you both see it. Send them the link now, it takes ten seconds:",
+  "invite.stepContinue": "Sent, continue",
+  "invite.stepLater": "I'll invite them later",
+  "invite.close": "Close",
+  "invite.benefitDays": "They see their days ahead, without having to ask you.",
+  "invite.benefitSwaps": "Day swaps are proposed and accepted in the app, with a clear history.",
+  "invite.benefitFree": "Nothing to set up and free for them: the calendar is already filled in."
 }

@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
-import { mondayOf, sideOn } from '../custodyPreview'
+import { mondayOf, sideOn, weekday } from '../custodyPreview'
 import type { Side } from '../custodyPreview'
 import { addDays, parseIso, todayIso } from '../dates'
+import { useFormat } from '../format'
 import { isSolo } from '../members'
 import type { CustodyRule, Member, Pattern, VacationRule } from '../types'
 
@@ -51,6 +52,7 @@ export default function RuleForm({
   onSubmit,
 }: Props) {
   const { t } = useTranslation()
+  const fmt = useFormat()
   const [pattern, setPattern] = useState<Pattern>(initialCustody?.pattern ?? 'alternate_weeks')
   const [startDate, setStartDate] = useState(initialCustody?.start_date ?? todayIso())
   const [referenceParent, setReferenceParent] = useState<number>(initialCustody?.reference_parent_id ?? myId)
@@ -63,6 +65,10 @@ export default function RuleForm({
   const [evenParent, setEvenParent] = useState<number>(
     initialVacation?.even_year_first_half_parent_id ?? myId,
   )
+
+  // Grille personnalisée : on « peint » les jours avec le parent choisi (un second
+  // toucher sur le même jour ne le renvoie plus à l'autre parent).
+  const [brush, setBrush] = useState<Side>('other')
 
   const [lastSubmitted, setLastSubmitted] = useState<string | null>(null)
 
@@ -137,8 +143,24 @@ export default function RuleForm({
     return ((n % 14) + 14) % 14
   }
 
-  function toggleCustom(i: number) {
-    setCustomWeeks((weeks) => weeks.map((v, j) => (j === i ? (v === 'ref' ? 'other' : 'ref') : v)))
+  function paintCustom(i: number) {
+    setCustomWeeks((weeks) => weeks.map((v, j) => (j === i ? brush : v)))
+  }
+
+  // Question posée pour le parent de référence : concrète et datée selon le rythme.
+  function referenceQuestion(): string {
+    switch (pattern) {
+      case 'alternate_weeks': {
+        const offset = (((weekday(startDate) - handoverDay) % 7) + 7) % 7
+        return t('rules.refQuestionAlternate', { date: fmt.dayLong(addDays(startDate, -offset)) })
+      }
+      case 'two_two_three':
+        return t('rules.refQuestionTwoTwoThree', { date: fmt.dayLong(mondayOf(startDate)) })
+      case 'every_other_weekend':
+        return t('rules.refQuestionWeekend', { date: fmt.dayLong(addDays(mondayOf(startDate), 5)) })
+      default:
+        return t('rules.referenceParentLabel')
+    }
   }
 
   return (
@@ -174,9 +196,7 @@ export default function RuleForm({
           <input id="start" type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} required />
         </div>
         <div>
-          <label htmlFor="refparent">
-            {pattern === 'every_other_weekend' ? t('rules.weekendParentLabel') : t('rules.referenceParentLabel')}
-          </label>
+          <label htmlFor="refparent">{referenceQuestion()}</label>
           <select id="refparent" value={referenceParent} onChange={(e) => setReferenceParent(Number(e.target.value))}>
             {members.map((m) => (
               <option key={m.id} value={m.id}>
@@ -186,6 +206,7 @@ export default function RuleForm({
           </select>
         </div>
       </div>
+      {pattern === 'every_other_weekend' && <p className="hint">{t('rules.weekendResidenceHint')}</p>}
 
       {pattern === 'alternate_weeks' && (
         <div className="row">
@@ -218,7 +239,26 @@ export default function RuleForm({
             ))}
           </span>
         </div>
-        {pattern === 'custom' && <p className="hint">{t('rules.customHint')}</p>}
+        {pattern === 'custom' && (
+          <>
+            <p className="hint">{t('rules.customHint')}</p>
+            <div className="rule-brush" role="radiogroup" aria-label={t('rules.customBrushLabel')}>
+              {(['ref', 'other'] as Side[]).map((side) => (
+                <button
+                  key={side}
+                  type="button"
+                  role="radio"
+                  aria-checked={brush === side}
+                  className={`rule-brush-option${brush === side ? ' active' : ''}`}
+                  onClick={() => setBrush(side)}
+                >
+                  <span className="dot" style={{ background: sideColor(side) }} />
+                  {sideName(side)}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
         {previewWeeks.map((week, w) => (
           <div key={w} className="rule-preview-week">
             <span className="rule-preview-label">{w === 0 ? t('rules.previewThisWeek') : t('rules.previewNextWeek')}</span>
@@ -243,7 +283,7 @@ export default function RuleForm({
                     type="button"
                     className="rule-preview-day editable"
                     style={{ background: sideColor(side) }}
-                    onClick={() => toggleCustom(customIndex(day))}
+                    onClick={() => paintCustom(customIndex(day))}
                     title={title}
                     aria-label={title}
                   >

@@ -1,16 +1,20 @@
 import hashlib
+import html
 import secrets
 from datetime import timedelta
+from typing import Literal
 
-from fastapi import APIRouter, BackgroundTasks, Depends, Header, HTTPException, Response
+from fastapi import APIRouter, BackgroundTasks, Body, Depends, Header, HTTPException, Response
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel, Field
 from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
 from ..auth import create_token, get_current_user, hash_password, verify_password
+from ..config import settings
 from ..db import get_db
-from ..models import PasswordResetToken, User, utcnow
+from ..models import Feedback, PasswordResetToken, User, utcnow
 from ..ratelimit import HOUR, MINUTE, rate_limit
 from ..schemas import (
     ChangePasswordIn,
@@ -262,8 +266,29 @@ def export_me(user: User = Depends(get_current_user), db: Session = Depends(get_
     )
 
 
+DEPARTURE_REASONS = {
+    "not_my_situation": "Le calendrier ne correspond pas à ma situation",
+    "start_over": "Je voulais recommencer la configuration",
+    "other_parent": "L'autre parent ne l'utilisera pas",
+    "price": "Trop cher / fonctionnalités payantes",
+    "just_testing": "Je testais l'application",
+    "other": "Autre raison",
+}
+
+
+class DeleteAccountIn(BaseModel):
+    """Raison du départ (facultative) : aide à comprendre pourquoi un compte est supprimé."""
+    reason: Literal["not_my_situation", "start_over", "other_parent", "price", "just_testing", "other"] | None = None
+    comment: str = Field(default="", max_length=500)
+
+
 @router.delete("/me", status_code=204)
-def delete_me(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def delete_me(
+    background: BackgroundTasks,
+    data: DeleteAccountIn | None = Body(default=None),
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     """Supprime le compte et les données personnelles (droit à l'effacement)."""
     # Résilie au mieux l'abonnement Paddle pour ne plus facturer un compte supprimé.
     if user.paddle_subscription_id:
@@ -271,9 +296,36 @@ def delete_me(user: User = Depends(get_current_user), db: Session = Depends(get_
             paddle_api.cancel_subscription(user.paddle_subscription_id)
         except paddle_api.PaddleUnavailable:
             pass
-    analytics.capture_for_user(user, "account_deleted", {"had_subscription": bool(user.paddle_subscription_id)})
+    reason = data.reason if data else None
+    comment = (data.comment.strip() if data else "")[:500]
+    analytics.capture_for_user(
+        user,
+        "account_deleted",
+        {
+            "had_subscription": bool(user.paddle_subscription_id),
+            "reason": reason or "none",
+            "has_comment": bool(comment),
+            "account_age_days": (utcnow() - user.created_at).days if user.created_at else None,
+        },
+    )
+    locale = user.locale or "fr"
     account.delete_account(db, user)
+    if reason or comment:
+        # Gardé de façon anonyme (sans e-mail ni identifiant) pour comprendre les départs.
+        db.add(Feedback(
+            kind="departure", source="account_deleted", reply_email="", locale=locale,
+            message=f"{DEPARTURE_REASONS.get(reason or '', 'Raison non précisée')}\n\n{comment}".strip(),
+        ))
     db.commit()
+    if (reason or comment) and settings.feedback_email:
+        body = (
+            f"<p><b>Raison :</b> {html.escape(DEPARTURE_REASONS.get(reason or '', 'non précisée'))}</p>"
+            + (f"<p><b>Commentaire :</b><br>{html.escape(comment).replace(chr(10), '<br>')}</p>" if comment else "")
+            + f"<p style=\"color:#5d6b63;font-size:13px\">Compte supprimé (langue : {locale}). Aucune donnée personnelle conservée.</p>"
+        )
+        background.add_task(
+            email_service.send_email, settings.feedback_email, "[Alternly][Départ] Compte supprimé", body
+        )
 
 
 @router.patch("/me", response_model=UserOut)

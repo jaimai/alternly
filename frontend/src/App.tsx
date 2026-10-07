@@ -3,6 +3,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Analytics } from '@vercel/analytics/react'
 import { RedirectIfAuthed, RequireAuth } from './auth'
+import { getToken } from './api'
 import AnalyticsBridge from './components/AnalyticsBridge'
 import ConsentBanner from './components/ConsentBanner'
 import PremiumGate from './components/PremiumGate'
@@ -10,7 +11,11 @@ import Spinner from './components/Spinner'
 
 // Routes chargées à la demande : le bundle initial ne contient plus FullCalendar,
 // les pages premium ni les réglages.
-const CalendarPage = lazy(() => import('./pages/Calendar'))
+const loadCalendarPage = () => import('./pages/Calendar')
+const CalendarPage = lazy(loadCalendarPage)
+// Parent déjà connecté qui ouvre l'app : le code du calendrier se charge pendant
+// la vérification de la session plutôt qu'après.
+if (getToken() && window.location.pathname.startsWith('/app')) void loadCalendarPage()
 const ExpensesPage = lazy(() => import('./pages/Expenses'))
 const FeedbackPage = lazy(() => import('./pages/Feedback'))
 const ForgotPasswordPage = lazy(() => import('./pages/ForgotPassword'))

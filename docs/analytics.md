@@ -150,6 +150,7 @@ consentement). PostHog renseigne aussi `$initial_utm_*` sur la personne après c
 | `custody_rule_set` | S | règle de garde appliquée (fait autorité ; pas émis pour une demande en attente d'accord) | `pattern`, `first` |
 | `child_added` | C | enfant ajouté | `has_birthdate` |
 | `invite_created` | C | lien d'invitation généré | — |
+| `invite_prompt_clicked` | C | clic sur « Inviter l'autre parent » dans l'encadré du calendrier (foyer solo) | `source` |
 | `invite_link_created` | S | lien d'invitation généré (fait autorité) | — |
 | `invite_shared` | C | partage de l'invitation | `channel` (native, whatsapp, sms, email, copy, qr, alternly_email), `source` (settings, onboarding, calendar) |
 | `invite_message_edited` | C | message pré-rédigé modifié (1 fois par écran) | `source` |
@@ -167,7 +168,7 @@ consentement). PostHog renseigne aussi `$initial_utm_*` sur la personne après c
 | `password_reset_completed` | S | réinitialisation effectuée | — |
 | `password_changed` | C | changement / définition | `first_password` |
 | `data_exported` | C | export RGPD | — |
-| `account_deleted` | S | suppression de compte | `had_subscription` |
+| `account_deleted` | S | suppression de compte | `had_subscription`, `reason` (not_my_situation, start_over, other_parent, price, just_testing, other, none), `has_comment`, `account_age_days` — le commentaire libre part seulement par e-mail à l'équipe et en base `feedback` (kind `departure`), sans identifiant |
 | `language_changed` | C | langue changée dans les réglages | `from`, `to`, `source` |
 
 ### Calendrier & coparentalité

@@ -16,5 +16,8 @@
   "onboarding.childrenHeading": "Your children",
   "onboarding.firstNameLabel": "First name",
   "onboarding.add": "Add",
-  "onboarding.generateCalendar": "Generate my calendar"
+  "onboarding.generateCalendar": "Generate my calendar",
+  "onboarding.restartTitle": "Let's redo your custody schedule",
+  "onboarding.restartSubtitle": "Your household and children are kept: adjust the schedule step by step, the preview updates live.",
+  "onboarding.restartCancel": "Back to the calendar, no changes"
 }

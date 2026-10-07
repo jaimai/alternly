@@ -59,5 +59,18 @@
   "settings.logoutAllConfirm": "Tout déconnecter",
   "settings.setPassword": "Définir un mot de passe",
   "settings.setPasswordHint": "Vous vous connectez avec Google : ajoutez un mot de passe si vous le souhaitez.",
-  "settings.setPasswordIntro": "Votre compte utilise la connexion avec Google. Un mot de passe vous permettra aussi de vous connecter avec votre e-mail."
+  "settings.setPasswordIntro": "Votre compte utilise la connexion avec Google. Un mot de passe vous permettra aussi de vous connecter avec votre e-mail.",
+  "settings.departureQuestion": "Pourquoi partez-vous ? (facultatif)",
+  "settings.departure_not_my_situation": "Le calendrier ne correspond pas à ma situation",
+  "settings.departure_start_over": "Je voulais recommencer la configuration",
+  "settings.departure_other_parent": "L'autre parent ne l'utilisera pas",
+  "settings.departure_price": "C'est trop cher / trop de fonctions payantes",
+  "settings.departure_just_testing": "Je testais l'application",
+  "settings.departure_other": "Autre raison",
+  "settings.departureStartOverHint": "Pas besoin de supprimer votre compte : vous pouvez reprendre la règle de garde pas à pas. Les enfants et le foyer se modifient aussi dans les réglages.",
+  "settings.departureCommentLabel": "Un mot pour nous aider à améliorer Alternly ? (facultatif)",
+  "settings.departureCommentPlaceholder": "Ce qui manquait, ce qui ne marchait pas…",
+  "settings.deleting": "Suppression…",
+  "settings.restartSetup": "Recommencer la configuration",
+  "settings.restartSetupHint": "Vous préférez être guidé·e pas à pas ?"
 }

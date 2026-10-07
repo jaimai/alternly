@@ -99,3 +99,42 @@ class TestDeleteAccount:
         headers, user = auth_headers()
         assert client.delete("/api/auth/me", headers=headers).status_code == 204
         assert db_session.get(User, user["id"]) is None
+
+
+class TestDepartureReason:
+    def test_reason_is_kept_anonymously_and_emailed(self, client, auth_headers, db_session, monkeypatch):
+        from app.config import settings
+        from app.models import Feedback
+        from app.services import analytics
+        from app.services import email as email_service
+
+        mails, events = [], []
+        monkeypatch.setattr(settings, "feedback_email", "equipe@test.fr")
+        monkeypatch.setattr(email_service, "send_email", lambda to, subject, html, reply_to=None: mails.append((to, subject, html)) or True)
+        monkeypatch.setattr(analytics, "capture_for_user", lambda user, event, props=None, **kw: events.append((event, props)))
+        headers, user = auth_headers()
+        resp = client.request(
+            "DELETE", "/api/auth/me", headers=headers,
+            json={"reason": "start_over", "comment": "Je me suis trompé de rythme"},
+        )
+        assert resp.status_code == 204
+        fb = db_session.scalar(select(Feedback).where(Feedback.kind == "departure"))
+        assert fb is not None and fb.user_id is None and fb.reply_email == ""
+        assert "recommencer la configuration" in fb.message and "trompé de rythme" in fb.message
+        assert mails and mails[0][0] == "equipe@test.fr" and "Départ" in mails[0][1]
+        assert user["email"] not in mails[0][2]
+        (event, props), = [e for e in events if e[0] == "account_deleted"]
+        assert props["reason"] == "start_over" and props["has_comment"] is True
+        assert "comment" not in props
+
+    def test_without_reason_nothing_is_stored(self, client, auth_headers, db_session):
+        from app.models import Feedback
+
+        headers, _ = auth_headers()
+        assert client.delete("/api/auth/me", headers=headers).status_code == 204
+        assert db_session.scalar(select(Feedback).where(Feedback.kind == "departure")) is None
+
+    def test_unknown_reason_rejected(self, client, auth_headers):
+        headers, _ = auth_headers()
+        resp = client.request("DELETE", "/api/auth/me", headers=headers, json={"reason": "bof"})
+        assert resp.status_code == 422

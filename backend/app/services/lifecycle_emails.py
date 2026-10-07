@@ -452,6 +452,50 @@ def value_email(premium: bool, locale: str | None, unsub_url: str) -> Email:
     )
 
 
+def solo_value_email(locale: str | None, unsub_url: str) -> Email:
+    """J7 d'un foyer encore solo : les échanges de jours n'ont de sens qu'à deux,
+    on remet donc l'invitation de l'autre parent au centre."""
+    lang = _lang(locale)
+    if lang == "en":
+        return _render(
+            lang,
+            "Your calendar is ready, but only you can see it",
+            "Your calendar is ready, but only you can see it",
+            [
+                "Your custody schedule is set up, school breaks included. For now, though, "
+                "you're the only one who sees it.",
+                _list([
+                    "<strong>Your co-parent sees their days ahead</strong>, without asking you.",
+                    "<strong>Day swaps happen in the app</strong>: proposed, accepted, done, "
+                    "with a clear history instead of scattered messages.",
+                    "<strong>Nothing to set up for them</strong>: the calendar is already "
+                    "filled in, and it's free for them.",
+                ]),
+                "Sharing takes ten seconds: WhatsApp, text, email or a QR code.",
+            ],
+            [("Invite my co-parent", "/settings#invite"), ("Open the calendar", "/app")], unsub_url,
+        )
+    return _render(
+        lang,
+        "Votre calendrier est prêt, mais vous êtes seul·e à le voir",
+        "Votre calendrier est prêt, mais vous êtes seul·e à le voir",
+        [
+            "Votre rythme de garde est en place, vacances scolaires comprises. Pour l'instant, "
+            "vous êtes toutefois le seul parent à le voir.",
+            _list([
+                "<strong>L'autre parent voit ses jours à l'avance</strong>, sans avoir à vous "
+                "les demander.",
+                "<strong>Les échanges de jours se font dans l'app</strong> : proposés, acceptés, "
+                "c'est fait, avec un historique clair plutôt que des messages éparpillés.",
+                "<strong>Rien à configurer pour lui ou elle</strong> : le calendrier est déjà "
+                "rempli, et c'est gratuit pour l'autre parent.",
+            ]),
+            "Le partage prend dix secondes : WhatsApp, SMS, e-mail ou QR code.",
+        ],
+        [("Inviter l'autre parent", "/settings#invite"), ("Ouvrir le calendrier", "/app")], unsub_url,
+    )
+
+
 # ---------------------------------------------------------------- offre de bienvenue
 
 

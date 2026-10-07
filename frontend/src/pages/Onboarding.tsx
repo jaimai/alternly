@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { api, ApiError } from '../api'
 import { track } from '../analytics'
@@ -16,6 +16,9 @@ export default function OnboardingPage() {
   const { t, i18n } = useTranslation()
   const { user, billing, refreshHousehold, refreshBilling } = useAuth()
   const navigate = useNavigate()
+  // « Recommencer la configuration » (réglages) : reprend la règle de garde pas à pas.
+  const [params] = useSearchParams()
+  const restart = params.get('restart') === '1'
   const [step, setStep] = useState(0)
   const [household, setHousehold] = useState<Household | null>(null)
   const [name, setName] = useState('')
@@ -39,7 +42,7 @@ export default function OnboardingPage() {
       .myHousehold()
       .then((h) => {
         setHousehold(h)
-        if (h.custody_rule) navigate('/app', { replace: true })
+        if (h.custody_rule && !restart) navigate('/app', { replace: true })
         else setStep(2) // foyer déjà créé : reste la règle de garde
       })
       .catch((err) => {
@@ -48,7 +51,7 @@ export default function OnboardingPage() {
         }
       })
       .finally(() => setLoading(false))
-  }, [navigate])
+  }, [navigate, restart])
 
   async function createHousehold() {
     setBusy(true)
@@ -96,6 +99,11 @@ export default function OnboardingPage() {
       await api.setCustodyRule(household.id, value.custody)
       await api.setVacationRule(household.id, value.vacation)
       await refreshHousehold()  // met à jour le cache avant d'entrer dans l'app
+      if (restart) {
+        track(EV.custodyRuleSaved, { pattern: value.custody.pattern, source: 'restart' })
+        navigate('/app', { replace: true })
+        return
+      }
       track(EV.onboardingStepCompleted, { step: 'rules', pattern: value.custody.pattern })
       track(EV.onboardingCompleted, {
         country: household.country,
@@ -140,8 +148,8 @@ export default function OnboardingPage() {
     <div className="auth-page" style={{ maxWidth: 520 }}>
       <div className="brand">
         <div className="wordmark small">altern<span>ly</span></div>
-        <h1>{t('onboarding.welcomeTitle')}</h1>
-        <p>{t('onboarding.welcomeSubtitle')}</p>
+        <h1>{restart ? t('onboarding.restartTitle') : t('onboarding.welcomeTitle')}</h1>
+        <p>{restart ? t('onboarding.restartSubtitle') : t('onboarding.welcomeSubtitle')}</p>
       </div>
       <div className="step-dots">
         {[0, 1, 2, 3].map((i) => (
@@ -254,6 +262,13 @@ export default function OnboardingPage() {
             busy={busy}
             onSubmit={saveRules}
           />
+          {restart && (
+            <p style={{ textAlign: 'center', margin: '10px 0 0' }}>
+              <button className="link" type="button" onClick={() => navigate('/app', { replace: true })}>
+                {t('onboarding.restartCancel')}
+              </button>
+            </p>
+          )}
         </div>
       )}
 
@@ -261,13 +276,18 @@ export default function OnboardingPage() {
         <div className="card">
           <h2>{t('invite.stepTitle')}</h2>
           <p style={{ color: 'var(--ink-soft)', marginTop: 0 }}>{t('invite.stepBody')}</p>
+          <ul className="invite-benefits">
+            <li>{t('invite.benefitDays')}</li>
+            <li>{t('invite.benefitSwaps')}</li>
+            <li>{t('invite.benefitFree')}</li>
+          </ul>
           <InviteShare household={household} source="onboarding" />
-          <div className="row" style={{ marginTop: 16 }}>
-            <button className="secondary" onClick={() => finishInvite(true)}>
-              {t('invite.stepLater')}
-            </button>
-            <button onClick={() => finishInvite(false)}>{t('invite.stepContinue')}</button>
-          </div>
+          <p style={{ marginTop: 16 }}>
+            <button onClick={() => finishInvite(false)} style={{ width: '100%' }}>{t('invite.stepContinue')}</button>
+          </p>
+          <p style={{ textAlign: 'center', margin: '6px 0 0' }}>
+            <button className="link" onClick={() => finishInvite(true)}>{t('invite.stepLater')}</button>
+          </p>
         </div>
       )}
     </div>

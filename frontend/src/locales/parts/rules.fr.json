@@ -9,7 +9,6 @@
   "rules.patternCustomTitle": "Personnalisé",
   "rules.patternCustomDesc": "Définissez jour par jour un cycle de deux semaines.",
   "rules.startDateLabel": "Date de départ du rythme",
-  "rules.weekendParentLabel": "Parent qui a les week-ends",
   "rules.referenceParentLabel": "Qui a l’enfant au départ ?",
   "rules.handoverDayLabel": "Jour de changement",
   "rules.handoverTimeLabel": "Heure de passage",
@@ -38,12 +37,17 @@
   "rules.weekdayShortFri": "V",
   "rules.weekdayShortSat": "S",
   "rules.weekdayShortSun": "D",
-  "rules.customHint": "Touchez un jour pour le donner à l’autre parent. Le cycle se répète toutes les deux semaines.",
+  "rules.customHint": "Choisissez un parent, puis touchez les jours où l’enfant est chez lui. Le cycle se répète toutes les deux semaines.",
   "rules.previewTitle": "Aperçu",
   "rules.previewThisWeek": "Cette semaine",
   "rules.previewNextWeek": "Semaine prochaine",
   "rules.previewDayTitle": "{{day}} {{date}} : {{parent}}",
   "rules.otherParent": "L’autre parent",
   "rules.upToDate": "Règles à jour",
-  "rules.seeCalendar": "Voir le calendrier →"
+  "rules.seeCalendar": "Voir le calendrier →",
+  "rules.refQuestionAlternate": "Qui a l’enfant la semaine qui commence le {{date}} ?",
+  "rules.refQuestionTwoTwoThree": "Qui a l’enfant le {{date}} ?",
+  "rules.refQuestionWeekend": "Qui accueille l’enfant le week-end du {{date}} ?",
+  "rules.weekendResidenceHint": "Le reste du temps, l’enfant vit chez l’autre parent. Les week-ends s’alternent ensuite automatiquement.",
+  "rules.customBrushLabel": "Parent à placer sur les jours touchés"
 }

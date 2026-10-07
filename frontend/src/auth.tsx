@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Navigate } from 'react-router-dom'
-import { invalidateAllCalendars } from './calendarCache'
+import { invalidateAllCalendars, prefetchCurrentMonth } from './calendarCache'
 import { api, ApiError, getToken, setToken } from './api'
 import { resetIdentity } from './analytics'
 import Spinner from './components/Spinner'
@@ -32,6 +32,18 @@ const AuthContext = createContext<AuthState>({
   logout: () => {},
 })
 
+// Session déjà ouverte au chargement de la page : le foyer et l'abonnement sont
+// demandés en même temps que le compte (au lieu d'attendre la réponse de /me),
+// ce qui fait gagner un aller-retour réseau avant l'affichage du calendrier.
+let bootHousehold: Promise<Household> | null = null
+let bootBilling: Promise<BillingStatus> | null = null
+if (getToken()) {
+  bootHousehold = api.myHousehold()
+  bootBilling = api.billingStatus()
+  bootHousehold.catch(() => {})
+  bootBilling.catch(() => {})
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [billing, setBilling] = useState<BillingStatus | null>(null)
@@ -40,7 +52,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   const refreshBilling = useCallback(() => {
-    api.billingStatus().then(setBilling).catch(() => {})
+    const pending = bootBilling ?? api.billingStatus()
+    bootBilling = null
+    pending.then(setBilling).catch(() => {})
   }, [])
 
   // Le foyer est chargé une seule fois et partagé : la navigation entre les
@@ -49,7 +63,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Le foyer a pu changer (règles, zone, membres) : le calendrier en cache aussi.
     invalidateAllCalendars()
     try {
-      setHousehold(await api.myHousehold())
+      const pending = bootHousehold ?? api.myHousehold()
+      bootHousehold = null
+      const h = await pending
+      // Le mois en cours est demandé tout de suite, sans attendre l'affichage du calendrier.
+      if (h.custody_rule) prefetchCurrentMonth(h.id)
+      setHousehold(h)
     } catch (err) {
       if (err instanceof ApiError && err.status === 404) setHousehold(null)
     } finally {
