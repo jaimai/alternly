@@ -149,6 +149,8 @@ consentement). PostHog renseigne aussi `$initial_utm_*` sur la personne après c
 | `onboarding_completed` | C | règles de garde enregistrées | `country`, `children_count`, `pattern` |
 | `custody_rule_set` | S | règle de garde appliquée (fait autorité ; pas émis pour une demande en attente d'accord) | `pattern`, `first` |
 | `child_added` | C | enfant ajouté | `has_birthdate` |
+| `rule_wizard_step` | C | étape de la règle de garde validée à l'inscription | `step` (pattern, who, check, vacations), `pattern` |
+| `rule_day_adjusted` | C | jour touché dans l'aperçu de l'inscription : un rythme standard devient personnalisé | `from_pattern` |
 | `invite_created` | C | lien d'invitation généré | — |
 | `invite_prompt_clicked` | C | clic sur « Inviter l'autre parent » dans l'encadré du calendrier (foyer solo) | `source` |
 | `invite_link_created` | S | lien d'invitation généré (fait autorité) | — |

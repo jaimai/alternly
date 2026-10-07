@@ -7,7 +7,7 @@ import { EV } from '../analyticsEvents'
 import { useAuth } from '../auth'
 import Paywall from '../components/Paywall'
 import Spinner from '../components/Spinner'
-import RuleForm from '../components/RuleForm'
+import RuleWizard from '../components/RuleWizard'
 import type { RuleFormValue } from '../components/RuleForm'
 import type { Country, Household } from '../types'
 
@@ -147,11 +147,12 @@ export default function OnboardingPage() {
         <h1>{restart ? t('onboarding.restartTitle') : t('onboarding.welcomeTitle')}</h1>
         <p>{restart ? t('onboarding.restartSubtitle') : t('onboarding.welcomeSubtitle')}</p>
       </div>
-      <div className="step-dots">
+      {/* À l'étape de la règle, l'assistant affiche sa propre progression (1/4…4/4). */}
+      {step !== 2 && <div className="step-dots">
         {[0, 1, 2].map((i) => (
           <span key={i} className={i <= step ? 'active' : ''} />
         ))}
-      </div>
+      </div>}
       {error && <div className="error">{error}</div>}
 
       {step === 0 && (
@@ -249,12 +250,12 @@ export default function OnboardingPage() {
 
       {step === 2 && household && user && (
         <div className="card">
-          <RuleForm
+          <RuleWizard
             members={household.members}
             myId={user.id}
+            childNames={household.children.map((c) => c.first_name)}
             initialCustody={household.custody_rule}
             initialVacation={household.vacation_rule}
-            submitLabel={t('onboarding.generateCalendar')}
             busy={busy}
             onSubmit={saveRules}
           />
