@@ -2155,15 +2155,7 @@ fieldset.departure legend {
 
 fieldset.departure .choice { padding-block: 10px; }
 
-/* Invitation de l'autre parent : bénéfices (onboarding) et encadré du calendrier */
-.invite-benefits {
-  margin: 0 0 14px;
-  padding-left: 20px;
-  display: grid;
-  gap: 6px;
-  font-size: 0.92rem;
-}
-
+/* Invitation de l'autre parent : encadré du calendrier (foyer solo) */
 .callout-invite {
   border-style: solid;
   background: var(--pine-soft);
