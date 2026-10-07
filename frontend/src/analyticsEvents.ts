@@ -39,6 +39,8 @@ export const EV = {
   changeRequestRefused: 'change_request_refused', // kind
   changeRequestWithdrawn: 'change_request_withdrawn', // kind
   custodyRuleSaved: 'custody_rule_saved', // pattern, pending, source
+  ruleWizardStep: 'rule_wizard_step', // step (pattern|who|check|vacations), pattern — inscription
+  ruleDayAdjusted: 'rule_day_adjusted', // from_pattern — jour touché dans l'aperçu (passe en personnalisé)
   calendarNavigated: 'calendar_navigated', // direction (limité à 1 / 10 s)
   historyViewed: 'history_viewed',
   feedbackOpened: 'feedback_opened', // source (fab, settings) ; l'envoi est compté côté serveur (feedback_sent)

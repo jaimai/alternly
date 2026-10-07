@@ -5,10 +5,9 @@ import { api, ApiError } from '../api'
 import { track } from '../analytics'
 import { EV } from '../analyticsEvents'
 import { useAuth } from '../auth'
-import InviteShare from '../components/InviteShare'
 import Paywall from '../components/Paywall'
 import Spinner from '../components/Spinner'
-import RuleForm from '../components/RuleForm'
+import RuleWizard from '../components/RuleWizard'
 import type { RuleFormValue } from '../components/RuleForm'
 import type { Country, Household } from '../types'
 
@@ -110,8 +109,12 @@ export default function OnboardingPage() {
         children_count: household.children.length,
         pattern: value.custody.pattern,
       })
-      // Étape d'invitation de l'autre parent (le levier d'activation n° 1).
-      setStep(3)
+      // L'invitation de l'autre parent n'est plus une étape de l'inscription : les
+      // nouveaux inscrits quittaient l'app dès qu'elle s'affichait, sans avoir vu
+      // leur calendrier. Elle est proposée sur le calendrier, dans les réglages et
+      // par e-mail (J3, J7). Freemium : l'abonnement (skippable) reste proposé ici.
+      if (billing && !billing.access) setStep(3)
+      else navigate('/app', { replace: true })
     } catch (err) {
       setError(err instanceof Error ? err.message : t('onboarding.errorGeneric'))
     } finally {
@@ -119,16 +122,9 @@ export default function OnboardingPage() {
     }
   }
 
-  function finishInvite(skipped: boolean) {
-    track(EV.onboardingStepCompleted, { step: 'invite', skipped })
-    // Freemium : on propose l'abonnement (skippable) à la fin de l'inscription.
-    if (billing && !billing.access) setStep(4)
-    else navigate('/app', { replace: true })
-  }
-
   if (loading) return <Spinner />
 
-  if (step === 4 && user) {
+  if (step === 3 && user) {
     return (
       <Paywall
         user={user}
@@ -151,11 +147,12 @@ export default function OnboardingPage() {
         <h1>{restart ? t('onboarding.restartTitle') : t('onboarding.welcomeTitle')}</h1>
         <p>{restart ? t('onboarding.restartSubtitle') : t('onboarding.welcomeSubtitle')}</p>
       </div>
-      <div className="step-dots">
-        {[0, 1, 2, 3].map((i) => (
+      {/* À l'étape de la règle, l'assistant affiche sa propre progression (1/4…4/4). */}
+      {step !== 2 && <div className="step-dots">
+        {[0, 1, 2].map((i) => (
           <span key={i} className={i <= step ? 'active' : ''} />
         ))}
-      </div>
+      </div>}
       {error && <div className="error">{error}</div>}
 
       {step === 0 && (
@@ -253,12 +250,12 @@ export default function OnboardingPage() {
 
       {step === 2 && household && user && (
         <div className="card">
-          <RuleForm
+          <RuleWizard
             members={household.members}
             myId={user.id}
+            childNames={household.children.map((c) => c.first_name)}
             initialCustody={household.custody_rule}
             initialVacation={household.vacation_rule}
-            submitLabel={t('onboarding.generateCalendar')}
             busy={busy}
             onSubmit={saveRules}
           />
@@ -272,24 +269,6 @@ export default function OnboardingPage() {
         </div>
       )}
 
-      {step === 3 && household && (
-        <div className="card">
-          <h2>{t('invite.stepTitle')}</h2>
-          <p style={{ color: 'var(--ink-soft)', marginTop: 0 }}>{t('invite.stepBody')}</p>
-          <ul className="invite-benefits">
-            <li>{t('invite.benefitDays')}</li>
-            <li>{t('invite.benefitSwaps')}</li>
-            <li>{t('invite.benefitFree')}</li>
-          </ul>
-          <InviteShare household={household} source="onboarding" />
-          <p style={{ marginTop: 16 }}>
-            <button onClick={() => finishInvite(false)} style={{ width: '100%' }}>{t('invite.stepContinue')}</button>
-          </p>
-          <p style={{ textAlign: 'center', margin: '6px 0 0' }}>
-            <button className="link" onClick={() => finishInvite(true)}>{t('invite.stepLater')}</button>
-          </p>
-        </div>
-      )}
     </div>
   )
 }

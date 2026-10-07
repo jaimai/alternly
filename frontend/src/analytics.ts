@@ -149,7 +149,16 @@ function load(): Promise<PostHog | null> {
           // Replay : seulement après consentement, saisies et zones sensibles masquées.
           disable_session_recording: consent !== 'granted',
           session_recording: {
-            maskAllInputs: true,
+            // Toutes les saisies masquées… sauf les menus déroulants (pays, zone,
+            // rythme, parent) : masqués, le lecteur de replay en affichait une option
+            // au hasard (« États-Unis » avec les zones françaises). Les noms visibles
+            // restent couverts par .ph-mask.
+            maskAllInputs: false,
+            maskInputOptions: {
+              password: true, email: true, text: true, textarea: true, search: true, tel: true, url: true,
+              number: true, date: true, 'datetime-local': true, month: true, week: true, time: true,
+              color: true, range: true, select: false,
+            },
             maskTextSelector: '.ph-mask',
             blockSelector: '.ph-no-capture',
           },
