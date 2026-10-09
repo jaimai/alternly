@@ -2,6 +2,7 @@
 import { useMutation } from '@tanstack/react-query'
 import { router, useLocalSearchParams } from 'expo-router'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { View } from 'react-native'
 import { BackButton } from '@/components/BackButton'
 import { Body, Button, ErrorBanner, Field, Screen, Title } from '@/components/ui'
@@ -11,6 +12,7 @@ import { useAuth } from '@/lib/auth'
 const MIN_PASSWORD = 8
 
 export default function ResetPassword() {
+  const { t } = useTranslation()
   const { token = '' } = useLocalSearchParams<{ token?: string }>()
   const { signIn } = useAuth()
   const [password, setPassword] = useState('')
@@ -23,22 +25,22 @@ export default function ResetPassword() {
     },
   })
 
-  const passwordError = password.length > 0 && password.length < MIN_PASSWORD ? `${MIN_PASSWORD} caractères minimum` : null
+  const passwordError = password.length > 0 && password.length < MIN_PASSWORD ? t('auth.minChars', { min: MIN_PASSWORD }) : null
   const back = () => (router.canGoBack() ? router.back() : router.replace('/'))
 
   return (
     <Screen edges={['top', 'bottom']}>
       <BackButton onPress={back} />
       <View style={{ gap: 6 }}>
-        <Title>Nouveau mot de passe</Title>
-        <Body muted>Il remplace l’ancien sur l’app et sur le web. Vos autres appareils seront déconnectés.</Body>
+        <Title>{t('auth.reset.title')}</Title>
+        <Body muted>{t('auth.reset.subtitle')}</Body>
       </View>
 
       {token ? (
         <>
           <ErrorBanner message={reset.error?.message} />
           <Field
-            label={`Nouveau mot de passe (${MIN_PASSWORD} caractères min.)`}
+            label={t('auth.reset.password', { min: MIN_PASSWORD })}
             value={password}
             onChangeText={setPassword}
             secureTextEntry
@@ -49,14 +51,14 @@ export default function ResetPassword() {
             onSubmitEditing={() => password.length >= MIN_PASSWORD && reset.mutate()}
           />
           <Button
-            title="Enregistrer"
+            title={t('common.save')}
             onPress={() => reset.mutate()}
             loading={reset.isPending}
             disabled={password.length < MIN_PASSWORD}
           />
         </>
       ) : (
-        <ErrorBanner message="Lien incomplet. Rouvrez le lien reçu par e-mail, ou demandez-en un nouveau." />
+        <ErrorBanner message={t('auth.reset.incompleteLink')} />
       )}
     </Screen>
   )

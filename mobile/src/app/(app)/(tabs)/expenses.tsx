@@ -1,6 +1,7 @@
 // Dépenses partagées : solde, dépenses en cours par mois, remboursées, remboursements.
 // Mêmes règles que frontend/src/pages/Expenses.tsx ; fonction Premium (402 sinon).
 import { router } from 'expo-router'
+import { useTranslation } from 'react-i18next'
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Icon } from '@/components/Icon'
@@ -14,6 +15,7 @@ import { colors, fonts, radius } from '@/lib/theme'
 import type { Expense, Household, Settlement } from '@/lib/types'
 
 export default function Expenses() {
+  const { t } = useTranslation()
   const household = useHousehold().data ?? undefined
   const meId = useMe().data?.id
   const { expenses, settlements, balance, locked } = useExpenses(household?.id)
@@ -27,8 +29,8 @@ export default function Expenses() {
     body = (
       <ScrollView contentContainerStyle={s.content}>
         <Paywall
-          title="Les dépenses, avec Premium"
-          intro="Notez ce que vous avancez pour les enfants : Alternly tient le solde à jour pour vous deux. Un seul abonnement suffit pour les deux parents."
+          title={t('expenses.tab.paywallTitle')}
+          intro={t('expenses.tab.paywallIntro')}
         />
       </ScrollView>
     )
@@ -36,7 +38,7 @@ export default function Expenses() {
   else if (expenses.isError || balance.isError || settlements.isError) {
     // Sans le solde, « Comptes à jour » serait faux : on le dit plutôt que d'afficher 0.
     const failed = expenses.error ?? balance.error ?? settlements.error
-    body = <ErrorState message={failed?.message ?? 'Une erreur est survenue.'} onRetry={refetch} />
+    body = <ErrorState message={failed?.message ?? t('common.errorGeneric')} onRetry={refetch} />
   }
   else {
     body = (
@@ -52,11 +54,11 @@ export default function Expenses() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.paper }} edges={['top']}>
       <View style={s.header}>
-        <Text accessibilityRole="header" style={s.title}>Dépenses</Text>
+        <Text accessibilityRole="header" style={s.title}>{t('expenses.tab.title')}</Text>
         {!locked && household ? (
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Ajouter une dépense"
+            accessibilityLabel={t('expenses.tab.add')}
             onPress={() => router.push('/expense/edit')}
             style={s.add}
           >
@@ -76,6 +78,7 @@ function Content({ household, meId, expenses, settlements, balance }: {
   settlements: Settlement[]
   balance: Parameters<typeof balanceLabel>[0]
 }) {
+  const { t } = useTranslation()
   const money = (c: number) => formatMoney(c, household.currency)
   const name = (id: number) => household.members.find((m) => m.id === id)?.display_name ?? '?'
   const { months, settled } = groupExpenses(expenses)
@@ -88,19 +91,19 @@ function Content({ household, meId, expenses, settlements, balance }: {
       <Card>
         <Text style={s.balance}>{balanceLabel(balance, household.members, meId, household.currency)}</Text>
         <View style={{ flexDirection: 'row', gap: 10 }}>
-          <Stat label="On me doit" value={money(owedToMe)} tone={owedToMe > 0 ? 'credit' : 'zero'} />
-          <Stat label="Je dois" value={money(iOwe)} tone={iOwe > 0 ? 'debit' : 'zero'} />
+          <Stat label={t('expenses.tab.owedToMe')} value={money(owedToMe)} tone={owedToMe > 0 ? 'credit' : 'zero'} />
+          <Stat label={t('expenses.tab.iOwe')} value={money(iOwe)} tone={iOwe > 0 ? 'debit' : 'zero'} />
         </View>
-        <Body muted style={{ fontSize: 13 }}>Sur les dépenses en cours (hors remboursées et contestées).</Body>
-        <Button title="Enregistrer un remboursement" variant="secondary" onPress={() => router.push('/expense/settle')} />
+        <Body muted style={{ fontSize: 13 }}>{t('expenses.tab.balanceNote')}</Body>
+        <Button title={t('expenses.tab.recordSettlement')} variant="secondary" onPress={() => router.push('/expense/settle')} />
       </Card>
 
       {partner?.is_placeholder ? (
         <Card>
           <Body style={{ fontSize: 14 }}>
-            {`${partner.display_name} n’a pas encore de compte. Vous pouvez déjà lui attribuer des dépenses : elles seront à son nom dès qu’il ou elle rejoindra le foyer.`}
+            {t('expenses.tab.placeholderPartner', { name: partner.display_name })}
           </Body>
-          <Button title="Lui donner un prénom" variant="secondary" onPress={() => router.push('/settings/household')} />
+          <Button title={t('expenses.tab.namePartner')} variant="secondary" onPress={() => router.push('/settings/household')} />
         </Card>
       ) : null}
 
@@ -109,12 +112,9 @@ function Content({ household, meId, expenses, settlements, balance }: {
           <View style={s.emptyIcon}>
             <Icon name="receipt" color={colors.pine} />
           </View>
-          <Text style={s.emptyTitle}>Aucune dépense pour l’instant</Text>
-          <Body muted style={{ textAlign: 'center' }}>
-            Cantine, lunettes, licence de foot… Notez ce que vous avancez pour les enfants : Alternly tient le solde à jour pour
-            vous deux.
-          </Body>
-          <Button title="Ajouter la première dépense" onPress={() => router.push('/expense/edit')} style={{ alignSelf: 'stretch' }} />
+          <Text style={s.emptyTitle}>{t('expenses.tab.emptyTitle')}</Text>
+          <Body muted style={{ textAlign: 'center' }}>{t('expenses.tab.emptyBody')}</Body>
+          <Button title={t('expenses.tab.addFirst')} onPress={() => router.push('/expense/edit')} style={{ alignSelf: 'stretch' }} />
         </Card>
       ) : null}
 
@@ -129,7 +129,7 @@ function Content({ household, meId, expenses, settlements, balance }: {
 
       {settled.length > 0 ? (
         <View style={{ gap: 8 }}>
-          <SectionLabel>{`Remboursées (${settled.length})`}</SectionLabel>
+          <SectionLabel>{t('expenses.tab.settledSection', { count: settled.length })}</SectionLabel>
           <Card style={s.list}>
             {settled.map((e, i) => <ExpenseRow key={e.id} e={e} first={i === 0} household={household} name={name} money={money} />)}
           </Card>
@@ -138,7 +138,7 @@ function Content({ household, meId, expenses, settlements, balance }: {
 
       {settlements.length > 0 ? (
         <View style={{ gap: 8 }}>
-          <SectionLabel>Remboursements</SectionLabel>
+          <SectionLabel>{t('expenses.tab.settlements')}</SectionLabel>
           <Card style={s.list}>
             {settlements.map((st, i) => (
               <Pressable
@@ -168,14 +168,15 @@ function ExpenseRow({ e, first, household, name, money }: {
   name: (id: number) => string
   money: (c: number) => string
 }) {
+  const { t } = useTranslation()
   const child = household.children.find((c) => c.id === e.child_id)?.first_name
   const color = household.members.find((m) => m.id === e.paid_by)?.color ?? colors.line
   const hint = [
     formatShort(e.date),
     categoryLabel(e.category),
     child,
-    `payé par ${name(e.paid_by)}`,
-    e.payer_percent !== 50 ? `partage ${e.payer_percent}/${100 - e.payer_percent}` : null,
+    t('expenses.tab.paidBy', { name: name(e.paid_by) }),
+    e.payer_percent !== 50 ? t('expenses.tab.split', { payer: e.payer_percent, other: 100 - e.payer_percent }) : null,
   ].filter(Boolean).join(' · ')
   return (
     <Pressable
@@ -187,8 +188,8 @@ function ExpenseRow({ e, first, household, name, money }: {
       <View style={{ flex: 1, gap: 2 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
           <Text style={[s.rowTitle, e.settled_at ? { color: colors.inkSoft } : null]} numberOfLines={1}>{e.label}</Text>
-          {e.status === 'disputed' ? <Tag label="Contestée" bg={colors.dangerSoft} fg={colors.danger} /> : null}
-          {e.settled_at ? <Tag label="Remboursée" bg={colors.pineSoft} fg={colors.pine} /> : null}
+          {e.status === 'disputed' ? <Tag label={t('expenses.status.disputed')} bg={colors.dangerSoft} fg={colors.danger} /> : null}
+          {e.settled_at ? <Tag label={t('expenses.status.settled')} bg={colors.pineSoft} fg={colors.pine} /> : null}
         </View>
         <Text style={s.rowHint} numberOfLines={2}>{hint}</Text>
       </View>

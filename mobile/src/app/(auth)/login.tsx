@@ -1,6 +1,7 @@
 import { useMutation } from '@tanstack/react-query'
 import { Link } from 'expo-router'
 import { useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Text, View, type TextInput } from 'react-native'
 import { BackButton } from '@/components/BackButton'
 import { SocialSignIn } from '@/components/SocialSignIn'
@@ -11,6 +12,7 @@ import { googleAvailable } from '@/lib/socialAuth'
 import { colors, fonts } from '@/lib/theme'
 
 export default function Login() {
+  const { t } = useTranslation()
   const { signIn } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -28,8 +30,8 @@ export default function Login() {
     <Screen edges={['top', 'bottom']}>
       <BackButton />
       <View style={{ gap: 6 }}>
-        <Title>Bon retour</Title>
-        <Body muted>Le même compte que sur alternly.com : votre foyer et vos échanges sont déjà là.</Body>
+        <Title>{t('auth.login.title')}</Title>
+        <Body muted>{t('auth.login.subtitle')}</Body>
       </View>
 
       <SocialSignIn mode="login" />
@@ -37,7 +39,7 @@ export default function Login() {
       <ErrorBanner message={login.error?.message} />
 
       <Field
-        label="E-mail"
+        label={t('auth.email')}
         value={email}
         onChangeText={setEmail}
         autoCapitalize="none"
@@ -49,7 +51,7 @@ export default function Login() {
       />
       <Field
         ref={passwordRef}
-        label="Mot de passe"
+        label={t('auth.login.password')}
         value={password}
         onChangeText={setPassword}
         secureTextEntry={!showPassword}
@@ -64,25 +66,24 @@ export default function Login() {
           onPress={() => setShowPassword((v) => !v)}
           style={{ fontFamily: fonts.bodySemiBold, fontSize: 14, color: colors.pine, paddingVertical: 8 }}
         >
-          {showPassword ? 'Masquer' : 'Afficher'} le mot de passe
+          {showPassword ? t('auth.login.hidePassword') : t('auth.login.showPassword')}
         </Text>
         <Link href="/forgot-password" style={{ fontFamily: fonts.bodySemiBold, fontSize: 14, color: colors.pine, paddingVertical: 8 }}>
-          Mot de passe oublié ?
+          {t('auth.login.forgot')}
         </Link>
       </View>
 
-      <Button title="Se connecter" onPress={() => login.mutate()} loading={login.isPending} disabled={!canSubmit} />
+      <Button title={t('auth.login.submit')} onPress={() => login.mutate()} loading={login.isPending} disabled={!canSubmit} />
 
       {googleAvailable() ? null : (
         <Body muted style={{ textAlign: 'center', fontSize: 14 }}>
-          Compte créé avec Google sur alternly.com ? Définissez un mot de passe via « Mot de passe oublié »,
-          puis connectez-vous ici.
+          {t('auth.login.googleHint')}
         </Body>
       )}
       <Body muted style={{ textAlign: 'center' }}>
-        Pas encore de compte ?{' '}
+        {t('auth.login.noAccount')}{' '}
         <Link href="/register" style={{ fontFamily: fonts.bodySemiBold, color: colors.pine }}>
-          Créer un compte
+          {t('auth.createAccount')}
         </Link>
       </Body>
     </Screen>

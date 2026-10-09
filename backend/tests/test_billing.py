@@ -128,6 +128,7 @@ class TestPremiumEnforcement:
     def test_free_user_blocked_on_ical_regenerate(self, client, auth_headers):
         headers, user = auth_headers()
         assert client.post("/api/ical/regenerate", headers=headers).status_code == 402
+        assert client.get("/api/ical/link", headers=headers).status_code == 402
 
 
 class TestHouseholdPremium:

@@ -1,4 +1,5 @@
 import { router } from 'expo-router'
+import { useTranslation } from 'react-i18next'
 import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { BackButton } from '@/components/BackButton'
@@ -18,6 +19,7 @@ const AREA: Record<NotificationArea, { icon: IconName; bg: string; fg: string; h
 }
 
 export default function Notifications() {
+  const { t } = useTranslation()
   const notifications = useNotifications()
   const markRead = useMarkRead()
   const unreadIds = notifications.data?.filter((n) => n.read_at === null).map((n) => n.id) ?? []
@@ -32,14 +34,14 @@ export default function Notifications() {
       <View style={s.header}>
         <BackButton />
         <Text accessibilityRole="header" style={s.title}>
-          Notifications
+          {t('notifications.center.title')}
         </Text>
       </View>
       {unreadIds.length > 0 ? (
         <View style={s.toolbar}>
-          <Text style={s.count}>{unreadIds.length} non lue{unreadIds.length > 1 ? 's' : ''}</Text>
+          <Text style={s.count}>{t('notifications.center.unread', { count: unreadIds.length })}</Text>
           <Text accessibilityRole="button" onPress={() => markRead.mutate(unreadIds)} style={s.markAll}>
-            Tout marquer comme lu
+            {t('notifications.center.markAll')}
           </Text>
         </View>
       ) : null}
@@ -56,14 +58,14 @@ export default function Notifications() {
           refreshControl={
             <RefreshControl refreshing={notifications.isRefetching} onRefresh={() => notifications.refetch()} tintColor={colors.pine} />
           }
-          ListEmptyComponent={<Text style={s.empty}>Aucune notification pour l’instant.</Text>}
+          ListEmptyComponent={<Text style={s.empty}>{t('notifications.center.empty')}</Text>}
           renderItem={({ item }) => {
             const area = AREA[notificationArea(item.type)]
             const unread = item.read_at === null
             return (
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel={`${unread ? 'Non lue. ' : ''}${notificationMessage(item)}`}
+                accessibilityLabel={unread ? t('notifications.center.itemUnread', { message: notificationMessage(item) }) : notificationMessage(item)}
                 onPress={() => open(item)}
                 style={({ pressed }) => [s.item, unread && s.itemUnread, pressed && { opacity: 0.8 }]}
               >

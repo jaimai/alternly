@@ -1,5 +1,6 @@
 import { useMutation } from '@tanstack/react-query'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { View } from 'react-native'
 import { BackButton } from '@/components/BackButton'
 import { Icon } from '@/components/Icon'
@@ -8,6 +9,7 @@ import { api } from '@/lib/api'
 import { colors, fonts } from '@/lib/theme'
 
 export default function ForgotPassword() {
+  const { t } = useTranslation()
   const [email, setEmail] = useState('')
   const forgot = useMutation({ mutationFn: () => api.forgotPassword(email.trim()) })
 
@@ -15,8 +17,8 @@ export default function ForgotPassword() {
     <Screen edges={['top', 'bottom']}>
       <BackButton />
       <View style={{ gap: 6 }}>
-        <Title>Mot de passe oublié</Title>
-        <Body muted>Indiquez votre e-mail : nous vous envoyons un lien valable une heure.</Body>
+        <Title>{t('auth.forgot.title')}</Title>
+        <Body muted>{t('auth.forgot.subtitle')}</Body>
       </View>
 
       <ErrorBanner message={forgot.error?.message} />
@@ -27,16 +29,14 @@ export default function ForgotPassword() {
             <Icon name="mail" size={20} color="#fff" strokeWidth={2} />
           </View>
           <View style={{ flex: 1, gap: 4 }}>
-            <Body style={{ fontFamily: fonts.bodySemiBold }}>Vérifiez votre boîte mail</Body>
-            <Body style={{ fontSize: 14 }}>
-              Si un compte existe pour {email.trim()}, vous allez recevoir un lien pour choisir un nouveau mot de passe.
-            </Body>
+            <Body style={{ fontFamily: fonts.bodySemiBold }}>{t('auth.forgot.sentTitle')}</Body>
+            <Body style={{ fontSize: 14 }}>{t('auth.forgot.sentBody', { email: email.trim() })}</Body>
           </View>
         </Card>
       ) : (
         <>
           <Field
-            label="E-mail"
+            label={t('auth.email')}
             value={email}
             onChangeText={setEmail}
             autoCapitalize="none"
@@ -45,7 +45,7 @@ export default function ForgotPassword() {
             textContentType="emailAddress"
           />
           <Button
-            title="Envoyer le lien"
+            title={t('auth.forgot.submit')}
             onPress={() => forgot.mutate()}
             loading={forgot.isPending}
             disabled={email.trim().length < 4}

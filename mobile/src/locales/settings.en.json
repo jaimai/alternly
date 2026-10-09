@@ -1,0 +1,192 @@
+{
+  "title": "Settings",
+  "householdSection": "Household",
+  "notRegistered": "not signed up yet",
+  "childrenRow": "Children, zone, other parent",
+  "custodyRow": "Custody and holidays",
+  "specialDaysRow": "Holidays & special days",
+  "specialDaysActive_one": "{{count}} on",
+  "specialDaysActive_other": "{{count}} on",
+  "pattern": {
+    "alternate_weeks": "Week on / week off",
+    "every_other_weekend": "Every other weekend",
+    "two_two_three": "2-2-3",
+    "custom": "Custom schedule"
+  },
+  "appSection": "App",
+  "premiumActive": "Active",
+  "premiumDiscover": "Learn more",
+  "notificationsRow": "Notifications",
+  "accountRow": "Account and password",
+  "calendarSyncRow": "Sync my calendar",
+  "historyRow": "Household history",
+  "signOut": {
+    "title": "Sign out?",
+    "body": "You can sign back in with the same account.",
+    "action": "Sign out"
+  },
+  "profile": {
+    "title": "My profile",
+    "firstName": "First name",
+    "color": "My color on the calendar",
+    "colorTaken": "{{color}} (the other parent’s color)",
+    "colorTakenHint": "The other parent’s color isn’t offered, so you’re easy to tell apart.",
+    "language": "Language"
+  },
+  "changeRequests": {
+    "title": "Change requests",
+    "error": "Couldn’t do that. Please try again.",
+    "mine": "Your request · pending",
+    "theirs": "{{name}} asks for your approval",
+    "withdraw": "Withdraw",
+    "refuse": "Decline",
+    "accept": "Accept",
+    "pending": "Request sent: the other parent must accept it before it takes effect."
+  },
+  "household": {
+    "title": "Household",
+    "zoneUpdated": "Zone updated.",
+    "partnerSaved": "Name saved.",
+    "removeChildTitle": "Remove {{name}} from the household?",
+    "removeChildBody": "Their name will be removed from the household for both parents. You can add them again later.",
+    "removeChildAction": "Remove",
+    "removeChildA11y": "Remove {{name}}",
+    "children": "Children",
+    "noChildren": "No children yet.",
+    "addChild": "Add a child",
+    "firstNamePlaceholder": "First name",
+    "partnerIntro": "No account yet: you can already assign expenses to them. They’ll find everything when they join the household.",
+    "partnerName": "Their first name",
+    "partnerPlaceholder": "e.g. Sam",
+    "schoolZone": "School zone",
+    "zones": {
+      "A": {
+        "label": "Zone A",
+        "hint": "Besançon, Bordeaux, Clermont, Dijon, Grenoble, Limoges, Lyon, Poitiers"
+      },
+      "B": {
+        "label": "Zone B",
+        "hint": "Aix-Marseille, Amiens, Lille, Nancy-Metz, Nantes, Nice, Normandie, Orléans-Tours, Reims, Rennes, Strasbourg"
+      },
+      "C": {
+        "label": "Zone C",
+        "hint": "Créteil, Montpellier, Paris, Toulouse, Versailles"
+      }
+    },
+    "breaks": {
+      "title": "School breaks",
+      "intro": "There’s no national school calendar in the US: add your district’s breaks (Thanksgiving, winter, spring, summer…). They follow your holiday sharing rule.",
+      "none": "No breaks yet.",
+      "removeTitle": "Delete “{{label}}”?",
+      "removeBody": "The calendar goes back to the usual schedule on these dates.",
+      "removeA11y": "Delete {{label}}",
+      "name": "Break name",
+      "namePlaceholder": "e.g. Winter break",
+      "start": "Start",
+      "end": "End",
+      "add": "Add break"
+    }
+  },
+  "specialDays": {
+    "title": "Holidays & special days",
+    "intro": "These days override the usual schedule and holiday sharing.",
+    "auto": "Automatic",
+    "always": "Always {{name}}",
+    "evenYears": "{{name}} in even years",
+    "kinds": {
+      "christmas_eve": "Christmas Eve (Dec 24)",
+      "christmas_day": "Christmas Day (Dec 25)",
+      "new_years_day": "New Year’s Day (Jan 1)",
+      "mothers_day": "Mother’s Day",
+      "fathers_day": "Father’s Day",
+      "thanksgiving": "Thanksgiving",
+      "halloween": "Halloween",
+      "independence_day": "Independence Day (July 4)"
+    }
+  },
+  "account": {
+    "title": "Account",
+    "signedInAs": "Signed in as {{email}}",
+    "password": {
+      "change": "Change password",
+      "set": "Set a password",
+      "setHint": "So you can also sign in with your email, in addition to Apple or Google.",
+      "done": "Password saved. Your other devices have been signed out.",
+      "current": "Current password",
+      "new": "New password ({{min}} characters min.)",
+      "tooShort": "{{min}} characters minimum"
+    },
+    "data": {
+      "title": "My data and sessions",
+      "export": "Export my data",
+      "shareTitle": "My Alternly data",
+      "exportHint": "Profile, household, calendar, expenses and board, in a JSON file.",
+      "logoutAll": "Sign out of all devices",
+      "logoutAllHint": "If a phone was lost, or if someone knows your password.",
+      "logoutAllTitle": "Sign out of all devices?",
+      "logoutAllBody": "Including this phone: you’ll need to sign in again everywhere.",
+      "logoutAllAction": "Sign out everywhere"
+    },
+    "delete": {
+      "title": "Delete my account",
+      "body": "Your personal data is permanently erased. If you’re the only parent in the household, the whole household and its history are deleted. A subscription bought through the App Store or Google Play must be canceled in the store: deleting your account doesn’t stop it.",
+      "why": "Why are you leaving? (optional)",
+      "startOver": "No need to delete your account: you can redo the custody rule step by step in Settings › Custody and holidays, and the children in Settings › Children and zone.",
+      "commentPlaceholder": "A few words to help us improve Alternly? (optional)",
+      "commentA11y": "Comment",
+      "failed": "Deletion failed. Please try again.",
+      "confirm": "Delete permanently",
+      "confirmTitle": "Permanently delete your account?",
+      "confirmBody": "Your personal data will be erased. This can’t be undone.",
+      "reasons": {
+        "not_my_situation": "The calendar doesn’t fit my situation",
+        "start_over": "I wanted to start the setup over",
+        "other_parent": "The other parent won’t use it",
+        "price": "It’s too expensive / too many paid features",
+        "just_testing": "I was just trying the app",
+        "other": "Other reason"
+      }
+    }
+  },
+  "feedback": {
+    "title": "Contact us",
+    "intro": "A problem, an idea, a question: we read everything and reply to your account’s email.",
+    "thanks": "Thanks! Your message was received.",
+    "messageA11y": "Message",
+    "kinds": {
+      "problem": "A problem",
+      "idea": "An idea",
+      "question": "A question"
+    },
+    "placeholders": {
+      "problem": "What’s not working, on which screen, and what you expected…",
+      "idea": "What’s missing, or what would make your life easier…",
+      "question": "Your question…"
+    }
+  },
+  "calendarSync": {
+    "paywallTitle": "Your custody schedule in your calendar",
+    "paywallIntro": "Days with the children and handoffs show up in Calendar or Google Calendar, updated automatically. One subscription covers both parents.",
+    "title": "Sync my calendar",
+    "intro": "Days with the children and handoffs are added to your usual calendar, and update on their own when the schedule changes.",
+    "addApple": "Add to Calendar (iPhone)",
+    "addGoogle": "Add to Google Calendar",
+    "share": "Share the link",
+    "tipsTitle": "Good to know",
+    "tipGoogle": "Google Calendar: sign in to the right Google account, then confirm “Add”. Updates can take a few hours on Google’s side.",
+    "tipOther": "Other calendar app: add a “calendar by URL” (or “subscription”) with the shared link.",
+    "private": "This link is private: anyone who has it can see the custody schedule.",
+    "newLink": "Create a new link",
+    "newLinkDone": "New link created: subscribe your calendars again.",
+    "regenerateTitle": "Create a new link?",
+    "regenerateBody": "The old link stops working: calendars already subscribed will no longer update. Useful if the link was shared by mistake.",
+    "regenerateAction": "New link"
+  },
+  "history": {
+    "title": "Household history",
+    "intro": "Every change, timestamped and unalterable. Visible to both parents.",
+    "empty": "Nothing yet. Changes to rules, swaps, expenses and messages will show up here.",
+    "system": "System",
+    "more": "Show more"
+  }
+}

@@ -4,6 +4,7 @@
 import { useMutation } from '@tanstack/react-query'
 import * as AppleAuthentication from 'expo-apple-authentication'
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, Linking, Pressable, StyleSheet, Text, View } from 'react-native'
 import Svg, { Path } from 'react-native-svg'
 import { useAuth } from '@/lib/auth'
@@ -14,6 +15,7 @@ import type { TokenResponse } from '@/lib/types'
 import { Body, Button, ErrorBanner } from './ui'
 
 export function SocialSignIn({ mode }: { mode: 'login' | 'register' }) {
+  const { t } = useTranslation()
   const { signIn } = useAuth()
   const [nativeApple, setNativeApple] = useState(false)
 
@@ -55,11 +57,11 @@ export function SocialSignIn({ mode }: { mode: 'login' | 'register' }) {
           style={({ pressed }) => [s.apple, (pressed || login.isPending) && { opacity: 0.8 }]}
         >
           {login.isPending && login.variables === 'apple' ? <ActivityIndicator color="#fff" /> : <AppleLogo />}
-          <Text style={s.appleText}>Continuer avec Apple</Text>
+          <Text style={s.appleText}>{t('auth.social.continueApple')}</Text>
         </Pressable>
       )}
       <Button
-        title="Continuer avec Google"
+        title={t('auth.social.continueGoogle')}
         variant="secondary"
         icon={<GoogleLogo />}
         loading={login.isPending && login.variables === 'google'}
@@ -68,20 +70,20 @@ export function SocialSignIn({ mode }: { mode: 'login' | 'register' }) {
       />
       {mode === 'register' ? (
         <Body muted style={{ fontSize: 13, textAlign: 'center' }}>
-          En continuant avec Apple ou Google, vous acceptez les{' '}
+          {t('auth.social.consentPrefix')}{' '}
           <Text style={{ color: colors.pine, textDecorationLine: 'underline' }} onPress={() => Linking.openURL(`${WEB_URL}/terms`)}>
-            conditions d’utilisation
+            {t('auth.register.terms')}
           </Text>{' '}
-          et la{' '}
+          {t('auth.register.and')}{' '}
           <Text style={{ color: colors.pine, textDecorationLine: 'underline' }} onPress={() => Linking.openURL(`${WEB_URL}/privacy`)}>
-            politique de confidentialité
+            {t('auth.register.privacy')}
           </Text>
-          .
+          {t('auth.register.consentSuffix')}
         </Body>
       ) : null}
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 4 }}>
         <View style={{ flex: 1, height: 1, backgroundColor: colors.line }} />
-        <Text style={{ fontFamily: fonts.bodySemiBold, fontSize: 13, color: colors.inkSoft }}>ou par e-mail</Text>
+        <Text style={{ fontFamily: fonts.bodySemiBold, fontSize: 13, color: colors.inkSoft }}>{t('auth.social.orEmail')}</Text>
         <View style={{ flex: 1, height: 1, backgroundColor: colors.line }} />
       </View>
     </View>

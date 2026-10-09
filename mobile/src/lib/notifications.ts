@@ -2,65 +2,65 @@
 // (frontend/src/components/NotificationBell.tsx, clés common.notif* de fr.json).
 import { formatRange } from './dates'
 import type { Notification } from './types'
+import { intlLocale, t } from './i18n'
 
 function money(cents: string | undefined): string {
   const n = Number(cents)
   if (!Number.isFinite(n)) return ''
-  return (n / 100).toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })
+  return (n / 100).toLocaleString(intlLocale(), { style: 'currency', currency: 'EUR' })
 }
 
 export function notificationMessage(n: Notification): string {
   const p = n.payload ?? {}
   const range = p.date_start ? formatRange(p.date_start, p.date_end ?? p.date_start) : ''
+  const m = (key: string, values?: Record<string, string | undefined>) => t(`notifications.messages.${key}`, values)
   switch (n.type) {
     case 'exchange_proposed':
-      return p.note
-        ? `Nouvel échange proposé (${range}) — « ${p.note} » — à accepter ou refuser`
-        : `Nouvel échange proposé (${range}) — à accepter ou refuser`
+      return p.note ? m('exchangeProposedNote', { range, note: p.note }) : m('exchangeProposed', { range })
     case 'exchange_accepted':
-      return `Votre proposition d'échange a été acceptée (${range})`
+      return m('exchangeAccepted', { range })
     case 'exchange_refused':
-      return `Votre proposition d'échange a été refusée (${range})`
+      return m('exchangeRefused', { range })
     case 'exchange_withdrawn':
-      return `Une proposition d'échange a été retirée (${range})`
+      return m('exchangeWithdrawn', { range })
     case 'exception_deleted':
-      return `Échange de garde annulé (${range})`
+      return m('exceptionDeleted', { range })
     case 'rule_changed':
-      return 'Les règles de garde ont été modifiées'
+      return m('ruleChanged')
     case 'invite_reminder':
-      return "L'autre parent n'a pas encore rejoint le calendrier. Renvoyez-lui l'invitation."
+      return m('inviteReminder')
     case 'parent_joined':
-      return `${p.display_name} a rejoint le foyer`
+      return m('parentJoined', { name: p.display_name })
     case 'parent_left':
-      return `${p.display_name} a supprimé son compte`
+      return m('parentLeft', { name: p.display_name })
     case 'expense_added':
-      return `Nouvelle dépense « ${p.label} » (${money(p.amount_cents)})`
+      return m('expenseAdded', { label: p.label, amount: money(p.amount_cents) })
     case 'expense_updated':
-      return `La dépense « ${p.label} » a été modifiée (${money(p.amount_cents)})`
+      return m('expenseUpdated', { label: p.label, amount: money(p.amount_cents) })
     case 'expense_disputed':
-      return `Votre dépense « ${p.label} » a été contestée`
+      return m('expenseDisputed', { label: p.label })
     case 'expense_resolved':
-      return `La contestation sur « ${p.label} » a été levée`
+      return m('expenseResolved', { label: p.label })
     case 'expense_settled':
-      return `« ${p.label} » a été marquée remboursée`
+      return m('expenseSettled', { label: p.label })
     case 'settlement_recorded':
-      return `Remboursement enregistré (${money(p.amount_cents)})`
+      return m('settlementRecorded', { amount: money(p.amount_cents) })
     case 'change_requested':
-      return `Demande de changement à valider : ${p.summary}`
+      return m('changeRequested', { summary: p.summary })
     case 'change_accepted':
-      return `Votre demande a été acceptée : ${p.summary}`
+      return m('changeAccepted', { summary: p.summary })
     case 'change_refused':
-      return `Votre demande a été refusée : ${p.summary}`
+      return m('changeRefused', { summary: p.summary })
     case 'payment_failed':
-      return 'Le paiement de votre abonnement a échoué : mettez à jour votre moyen de paiement'
+      return m('paymentFailed')
     case 'wall_post_added':
-      return `Nouveau sur le tableau : « ${p.body} »`
+      return m('wallPostAdded', { body: p.body })
     case 'wall_reply_added':
-      return `Nouvelle réponse : « ${p.body} »`
+      return m('wallReplyAdded', { body: p.body })
     case 'wall_task_assigned':
-      return `Une tâche vous a été assignée : « ${p.body} »`
+      return m('wallTaskAssigned', { body: p.body })
     default:
-      return 'Nouvelle activité dans votre foyer'
+      return m('fallback')
   }
 }
 

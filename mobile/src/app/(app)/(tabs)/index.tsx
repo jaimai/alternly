@@ -1,4 +1,5 @@
 import { router } from 'expo-router'
+import { Trans, useTranslation } from 'react-i18next'
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { CalendarNotices } from '@/components/CalendarNotices'
@@ -12,8 +13,10 @@ import { addDays, daysBetween, formatLong, formatRange, formatShort, parseIso, t
 import { useMe, useNotifications, useUpcoming } from '@/lib/queries'
 import { colors, fonts, radius, tint } from '@/lib/theme'
 import type { CalendarResponse, Household } from '@/lib/types'
+import { intlLocale } from '@/lib/i18n'
 
 export default function Home() {
+  const { t } = useTranslation()
   const me = useMe()
   const { household, calendar } = useUpcoming()
   const unread = useNotifications().data?.filter((n) => n.read_at === null).length ?? 0
@@ -25,12 +28,12 @@ export default function Home() {
         <View style={{ flex: 1 }}>
           <Text style={s.eyebrow}>{capitalize(formatLong(today))}</Text>
           <Text accessibilityRole="header" style={s.hello}>
-            Bonjour {me.data?.display_name ?? ''}
+            {t('calendar.home.hello', { name: me.data?.display_name ?? '' })}
           </Text>
         </View>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={unread > 0 ? `Notifications, ${unread} non lues` : 'Notifications'}
+          accessibilityLabel={unread > 0 ? t('calendar.home.bellUnread', { n: unread }) : t('calendar.home.bell')}
           onPress={() => router.push('/notifications')}
           style={s.bell}
         >
@@ -66,6 +69,7 @@ export default function Home() {
 }
 
 function Content({ cal, household, meId, today }: { cal: CalendarResponse; household: Household; meId?: number; today: string }) {
+  const { t } = useTranslation()
   const status = todayStatus(cal, today)
   const holder = memberById(cal.members, status.today?.parent_id)
   const who = (id?: number) => whoName(cal.members, id, meId)
@@ -75,7 +79,7 @@ function Content({ cal, household, meId, today }: { cal: CalendarResponse; house
   const byDate = new Map(cal.days.map((d) => [d.date, d]))
   const vacation = cal.school_holidays.find((p) => p.end >= today)
   const holiday = cal.public_holidays.find((h) => h.date >= today)
-  const tasks = cal.tasks.filter((t) => t.due_date >= today && (t.assigned_to === null || t.assigned_to === meId)).slice(0, 2)
+  const tasks = cal.tasks.filter((task) => task.due_date >= today && (task.assigned_to === null || task.assigned_to === meId)).slice(0, 2)
 
   return (
     <>
@@ -84,7 +88,7 @@ function Content({ cal, household, meId, today }: { cal: CalendarResponse; house
           <>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
               <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: holder?.color ?? '#9fd0b8' }} />
-              <Text style={s.statusEyebrow}>En ce moment</Text>
+              <Text style={s.statusEyebrow}>{t('calendar.home.now')}</Text>
             </View>
             <Text style={s.statusTitle}>
               {statusLead(kids)} {who(status.today.parent_id)}
@@ -93,17 +97,24 @@ function Content({ cal, household, meId, today }: { cal: CalendarResponse; house
               <View style={s.next}>
                 <Icon name="swap" color="#fff" />
                 <Text style={s.nextText}>
-                  Prochain passage chez <Text style={{ fontFamily: fonts.bodyBold }}>{who(status.next.to)}</Text>{' '}
-                  {formatLong(status.next.date)}
-                  {status.next.time ? ` vers ${status.next.time.slice(0, 5)}` : ''} · {relativeDays(daysBetween(today, status.next.date))}
+                  <Trans
+                    i18nKey={status.next.time ? 'calendar.home.nextHandoverAt' : 'calendar.home.nextHandover'}
+                    values={{
+                      name: who(status.next.to),
+                      date: formatLong(status.next.date),
+                      time: status.next.time?.slice(0, 5),
+                      when: relativeDays(daysBetween(today, status.next.date)),
+                    }}
+                    components={{ b: <Text style={{ fontFamily: fonts.bodyBold }} /> }}
+                  />
                 </Text>
               </View>
             ) : (
-              <Text style={s.nextText}>Pas de changement de foyer prévu dans les prochains mois.</Text>
+              <Text style={s.nextText}>{t('calendar.home.noChange')}</Text>
             )}
           </>
         ) : (
-          <Text style={s.statusTitle}>Le calendrier ne couvre pas encore aujourd’hui.</Text>
+          <Text style={s.statusTitle}>{t('calendar.home.notCovered')}</Text>
         )}
       </View>
 
@@ -125,9 +136,9 @@ function Content({ cal, household, meId, today }: { cal: CalendarResponse; house
             <Icon name="swap" color="#fff" size={20} />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={s.todoTitle}>Échange à valider</Text>
+            <Text style={s.todoTitle}>{t('calendar.home.toAnswerTitle')}</Text>
             <Text style={s.todoText}>
-              {formatRange(e.date_start, e.date_end)} chez {who(e.proposed_parent_id)}
+              {t('calendar.home.toAnswerText', { range: formatRange(e.date_start, e.date_end), name: who(e.proposed_parent_id) })}
             </Text>
           </View>
           <Icon name="chevron" color={colors.inkSoft} size={20} />
@@ -136,9 +147,9 @@ function Content({ cal, household, meId, today }: { cal: CalendarResponse; house
 
       <Card>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-          <SectionLabel>7 prochains jours</SectionLabel>
+          <SectionLabel>{t('calendar.home.next7')}</SectionLabel>
           <Text accessibilityRole="link" onPress={() => router.navigate('/calendar')} style={s.link}>
-            Voir le mois
+            {t('calendar.home.seeMonth')}
           </Text>
         </View>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
@@ -151,9 +162,13 @@ function Content({ cal, household, meId, today }: { cal: CalendarResponse; house
                 key={d}
                 style={{ alignItems: 'center', gap: 4 }}
                 accessible
-                accessibilityLabel={`${formatLong(d)} : ${day ? `chez ${who(day.parent_id)}` : 'inconnu'}`}
+                accessibilityLabel={
+                  day
+                    ? t('calendar.home.dayWith', { date: formatLong(d), name: who(day.parent_id) })
+                    : t('calendar.home.dayUnknown', { date: formatLong(d) })
+                }
               >
-                <Text style={s.weekLabel}>{parseIso(d).toLocaleDateString('fr-FR', { weekday: 'short' })}</Text>
+                <Text style={s.weekLabel}>{parseIso(d).toLocaleDateString(intlLocale(), { weekday: 'short' })}</Text>
                 <View style={[s.weekCell, { backgroundColor: tint(color, 0.3) }, isToday && s.weekToday]}>
                   <Text style={s.weekNum}>{parseIso(d).getDate()}</Text>
                   <View style={[s.weekStrip, { backgroundColor: color }]} />
@@ -166,7 +181,7 @@ function Content({ cal, household, meId, today }: { cal: CalendarResponse; house
           {cal.members.map((m) => (
             <View key={m.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
               <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: m.color }} />
-              <Text style={s.legend}>{m.id === meId ? 'Vous' : m.display_name}</Text>
+              <Text style={s.legend}>{m.id === meId ? t('common.youTitle') : m.display_name}</Text>
             </View>
           ))}
         </View>
@@ -174,19 +189,28 @@ function Content({ cal, household, meId, today }: { cal: CalendarResponse; house
 
       {vacation || holiday || tasks.length > 0 ? (
         <Card>
-          <SectionLabel>À venir</SectionLabel>
+          <SectionLabel>{t('calendar.home.upcoming')}</SectionLabel>
           {vacation ? (
             <Upcoming
               title={vacation.label}
-              detail={vacation.start <= today ? `En cours, jusqu'au ${formatShort(vacation.end)}` : `${formatShort(vacation.start)} → ${formatShort(vacation.end)}`}
-              when={vacation.start <= today ? 'en cours' : relativeDays(daysBetween(today, vacation.start))}
+              detail={
+                vacation.start <= today
+                  ? t('calendar.home.vacationUntil', { date: formatShort(vacation.end) })
+                  : `${formatShort(vacation.start)} → ${formatShort(vacation.end)}`
+              }
+              when={vacation.start <= today ? t('calendar.home.ongoing') : relativeDays(daysBetween(today, vacation.start))}
             />
           ) : null}
-          {tasks.map((t) => (
-            <Upcoming key={t.id} title={t.body} detail="Tâche du tableau" when={relativeDays(daysBetween(today, t.due_date))} />
+          {tasks.map((task) => (
+            <Upcoming
+              key={task.id}
+              title={task.body}
+              detail={t('calendar.home.boardTask')}
+              when={relativeDays(daysBetween(today, task.due_date))}
+            />
           ))}
           {holiday ? (
-            <Upcoming title={holiday.label} detail="Jour férié" when={relativeDays(daysBetween(today, holiday.date))} />
+            <Upcoming title={holiday.label} detail={t('calendar.home.publicHoliday')} when={relativeDays(daysBetween(today, holiday.date))} />
           ) : null}
         </Card>
       ) : null}
@@ -207,14 +231,13 @@ function Upcoming({ title, detail, when }: { title: string; detail: string; when
 }
 
 function NoRule() {
+  const { t } = useTranslation()
   return (
     <View style={{ padding: 20, gap: 14 }}>
       <Card>
-        <Body style={{ fontFamily: fonts.bodySemiBold }}>Aucun rythme de garde défini</Body>
-        <Body muted>
-          Choisissez votre rythme (semaine/semaine, 2-2-3…) : le calendrier apparaîtra ici automatiquement.
-        </Body>
-        <Button title="Choisir le rythme" onPress={() => router.push('/settings/rules')} />
+        <Body style={{ fontFamily: fonts.bodySemiBold }}>{t('calendar.home.noRuleTitle')}</Body>
+        <Body muted>{t('calendar.home.noRuleBody')}</Body>
+        <Button title={t('calendar.home.noRuleButton')} onPress={() => router.push('/settings/rules')} />
       </Card>
     </View>
   )

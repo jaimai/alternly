@@ -1,18 +1,17 @@
 // Dépenses partagées : catégories, montants, solde (mêmes règles que frontend/src/pages/Expenses.tsx).
 // Le solde est calculé par le backend (/balance) ; ici, seulement la mise en forme.
 import type { Balance, Expense, ExpenseCategory, Member } from './types'
+import { intlLocale, t } from './i18n'
 
-export const CATEGORIES: { value: ExpenseCategory; label: string }[] = [
-  { value: 'sante', label: 'Santé' },
-  { value: 'ecole', label: 'École' },
-  { value: 'activites', label: 'Activités' },
-  { value: 'vetements', label: 'Vêtements' },
-  { value: 'cantine', label: 'Cantine' },
-  { value: 'autre', label: 'Autre' },
-]
+const CATEGORY_VALUES: ExpenseCategory[] = ['sante', 'ecole', 'activites', 'vetements', 'cantine', 'autre']
+
+/** Catégories avec leur libellé dans la langue courante. */
+export function categories(): { value: ExpenseCategory; label: string }[] {
+  return CATEGORY_VALUES.map((value) => ({ value, label: t(`expenses.categories.${value}`) }))
+}
 
 export function categoryLabel(value: string): string {
-  return CATEGORIES.find((c) => c.value === value)?.label ?? 'Autre'
+  return categories().find((c) => c.value === value)?.label ?? t('expenses.categories.autre')
 }
 
 /**
@@ -32,17 +31,17 @@ export function amountInput(cents: number): string {
 }
 
 export function formatMoney(cents: number, currency: string): string {
-  return new Intl.NumberFormat('fr-FR', { style: 'currency', currency }).format(cents / 100)
+  return new Intl.NumberFormat(intlLocale(), { style: 'currency', currency }).format(cents / 100)
 }
 
 /** Phrase du solde, du point de vue du parent connecté. */
 export function balanceLabel(balance: Balance | undefined, members: Member[], meId: number | undefined, currency: string): string {
-  if (!balance || balance.amount_cents === 0) return 'Comptes à jour'
+  if (!balance || balance.amount_cents === 0) return t('expenses.balance.settled')
   const name = (id: number | null) => members.find((m) => m.id === id)?.display_name ?? '?'
   const amount = formatMoney(balance.amount_cents, currency)
-  if (balance.debtor_id === meId) return `Vous devez ${amount} à ${name(balance.creditor_id)}`
-  if (balance.creditor_id === meId) return `${name(balance.debtor_id)} vous doit ${amount}`
-  return `${name(balance.debtor_id)} doit ${amount} à ${name(balance.creditor_id)}`
+  if (balance.debtor_id === meId) return t('expenses.balance.youOwe', { amount, name: name(balance.creditor_id) })
+  if (balance.creditor_id === meId) return t('expenses.balance.owesYou', { amount, name: name(balance.debtor_id) })
+  return t('expenses.balance.owes', { amount, debtor: name(balance.debtor_id), creditor: name(balance.creditor_id) })
 }
 
 const byDateDesc = (a: Expense, b: Expense) => b.date.localeCompare(a.date) || b.id - a.id
@@ -66,8 +65,8 @@ export function groupExpenses(expenses: Expense[]): { months: { month: string; i
  */
 export function sharePresets(payerIsMe: boolean, otherName: string): { value: number; label: string }[] {
   return [
-    { value: 50, label: '50 / 50' },
-    { value: payerIsMe ? 100 : 0, label: 'À ma charge' },
-    { value: payerIsMe ? 0 : 100, label: `À la charge de ${otherName}` },
+    { value: 50, label: t('expenses.share.half') },
+    { value: payerIsMe ? 100 : 0, label: t('expenses.share.mine') },
+    { value: payerIsMe ? 0 : 100, label: t('expenses.share.theirs', { name: otherName }) },
   ]
 }

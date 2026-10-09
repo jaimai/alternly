@@ -12,9 +12,11 @@ import type {
   DepartureReason,
   Expense,
   ExpenseInput,
+  HistoryEntry,
   Household,
   Invitation,
   InvitationPreview,
+  Locale,
   Notification,
   PendingChange,
   PushPrefs,
@@ -28,6 +30,7 @@ import type {
   WallPost,
   WallReply,
 } from './types'
+import { appLanguage, t } from './i18n'
 import { hasPendingInvite } from './pendingInvite'
 
 export const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://web-production-d1aa3.up.railway.app/api'
@@ -112,11 +115,11 @@ async function request<T>(path: string, options: { method?: string; body?: unkno
       body: options.body === undefined ? undefined : JSON.stringify(options.body),
     })
   } catch {
-    throw new ApiError(0, 'Connexion impossible. Vérifiez votre réseau.')
+    throw new ApiError(0, t('common.network'))
   }
   if (resp.status === 401 && !path.startsWith('/auth/')) {
     onUnauthorized?.()
-    throw new ApiError(401, 'Session expirée, reconnectez-vous.')
+    throw new ApiError(401, t('common.sessionExpired'))
   }
   if (!resp.ok) {
     let body: unknown = null
@@ -127,7 +130,7 @@ async function request<T>(path: string, options: { method?: string; body?: unkno
     }
     const detail = body && typeof body === 'object' ? (body as { detail?: unknown }).detail : undefined
     const data = detail && typeof detail === 'object' && !Array.isArray(detail) ? (detail as Record<string, unknown>) : undefined
-    throw new ApiError(resp.status, errorDetail(body, 'Une erreur est survenue.'), data)
+    throw new ApiError(resp.status, errorDetail(body, t('common.errorGeneric')), data)
   }
   if (resp.status === 204) return undefined as T
   return resp.json() as Promise<T>
@@ -137,13 +140,13 @@ export const api = {
   login: (email: string, password: string) =>
     request<TokenResponse>('/auth/login', { method: 'POST', body: { email, password } }),
   register: (data: { email: string; password: string; display_name: string; color: string }) =>
-    request<TokenResponse>('/auth/register', { method: 'POST', body: { ...data, locale: 'fr', via_invite: hasPendingInvite() } }),
+    request<TokenResponse>('/auth/register', { method: 'POST', body: { ...data, locale: appLanguage(), via_invite: hasPendingInvite() } }),
   googleLogin: (credential: string) =>
-    request<TokenResponse>('/auth/google', { method: 'POST', body: { credential, locale: 'fr', via_invite: hasPendingInvite() } }),
+    request<TokenResponse>('/auth/google', { method: 'POST', body: { credential, locale: appLanguage(), via_invite: hasPendingInvite() } }),
   appleLogin: (identity_token: string, nonce: string, given_name?: string) =>
     request<TokenResponse>('/auth/apple', {
       method: 'POST',
-      body: { identity_token, nonce, given_name, locale: 'fr', via_invite: hasPendingInvite() },
+      body: { identity_token, nonce, given_name, locale: appLanguage(), via_invite: hasPendingInvite() },
     }),
   resetPassword: (token: string, password: string) =>
     request<TokenResponse>('/auth/password/reset', { method: 'POST', body: { token, password } }),
@@ -156,7 +159,7 @@ export const api = {
   billingStatus: () => request<BillingStatus>('/billing/status'),
   /** Relit l'état des achats chez RevenueCat puis renvoie le statut à jour. */
   storeSync: () => request<BillingStatus>('/billing/store-sync', { method: 'POST' }),
-  updateMe: (data: { display_name?: string; color?: string; email_opt_in?: boolean }) =>
+  updateMe: (data: { display_name?: string; color?: string; email_opt_in?: boolean; locale?: Locale }) =>
     request<User>('/auth/me', { method: 'PATCH', body: data }),
   /** Révoque les autres sessions : renvoie un nouveau jeton pour ce téléphone. */
   changePassword: (current_password: string, new_password: string) =>
@@ -166,7 +169,7 @@ export const api = {
   /** Export RGPD : profil, foyer, calendrier, dépenses, tableau (JSON). */
   exportData: () => request<unknown>('/auth/me/export'),
   sendFeedback: (data: { kind: 'problem' | 'idea' | 'question'; message: string; page: string }) =>
-    request<unknown>('/feedback', { method: 'POST', body: { ...data, source: 'settings', locale: 'fr' } }),
+    request<unknown>('/feedback', { method: 'POST', body: { ...data, source: 'settings', locale: appLanguage() } }),
   deleteAccount: (reason: DepartureReason | null, comment: string) =>
     request<void>('/auth/me', { method: 'DELETE', body: { reason, comment } }),
 
@@ -214,6 +217,11 @@ export const api = {
     request<PendingChange | undefined>(`/households/${householdId}/children/${childId}`, { method: 'DELETE' }),
   updateHousehold: (householdId: number, data: { name?: string; school_zone?: 'A' | 'B' | 'C' }) =>
     request<Household>(`/households/${householdId}`, { method: 'PATCH', body: data }),
+  history: (householdId: number, beforeId?: number) =>
+    request<HistoryEntry[]>(`/households/${householdId}/history?limit=50${beforeId ? `&before_id=${beforeId}` : ''}`),
+  // Flux d'agenda privé (Premium) : lire le lien ne le change pas ; régénérer coupe l'ancien.
+  icalLink: () => request<{ ical_token: string }>('/ical/link'),
+  regenerateIcal: () => request<{ ical_token: string }>('/ical/regenerate', { method: 'POST' }),
   changeRequests: (householdId: number) =>
     request<ChangeRequest[]>(`/households/${householdId}/change-requests?status=pending`),
   answerChange: (householdId: number, id: number, action: 'accept' | 'refuse' | 'withdraw') =>
@@ -238,7 +246,7 @@ export const api = {
     request<unknown>(`/households/${householdId}/partner`, { method: 'PATCH', body: { display_name } }),
   /** Invitation envoyée par e-mail par Alternly. */
   emailInvitation: (householdId: number, email: string) =>
-    request<Invitation>(`/households/${householdId}/invitations/email`, { method: 'POST', body: { email, locale: 'fr' } }),
+    request<Invitation>(`/households/${householdId}/invitations/email`, { method: 'POST', body: { email, locale: appLanguage() } }),
   createException: (
     householdId: number,
     data: { date_start: string; date_end: string; parent_id: number; note: string; replaces_id?: number },

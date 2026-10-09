@@ -1,9 +1,10 @@
 // Jours de fête : ils passent outre le rythme habituel et le partage des vacances.
 // Avec deux parents, chaque modification part en demande.
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { StyleSheet, Switch, Text, View } from 'react-native'
 import { BackButton } from '@/components/BackButton'
-import { PENDING_MESSAGE } from '@/components/ChangeRequests'
+import { pendingMessage } from '@/components/ChangeRequests'
 import { Chips } from '@/components/form'
 import { Body, Card, ErrorBanner, Loading, Screen, Title } from '@/components/ui'
 import { api, isPendingChange } from '@/lib/api'
@@ -11,23 +12,13 @@ import { useHousehold, useHouseholdAction } from '@/lib/queries'
 import { colors, fonts } from '@/lib/theme'
 import type { SpecialDayKind, SpecialDayRule } from '@/lib/types'
 
-const LABEL: Record<SpecialDayKind, string> = {
-  christmas_eve: 'Réveillon de Noël (24 déc.)',
-  christmas_day: 'Jour de Noël (25 déc.)',
-  new_years_day: 'Jour de l’An (1er janv.)',
-  mothers_day: 'Fête des mères',
-  fathers_day: 'Fête des pères',
-  thanksgiving: 'Thanksgiving',
-  halloween: 'Halloween',
-  independence_day: 'Fête nationale américaine (4 juillet)',
-}
-
 export default function SpecialDays() {
+  const { t } = useTranslation()
   const household = useHousehold().data
   const [notice, setNotice] = useState<string | null>(null)
   const save = useHouseholdAction(
     (rules: SpecialDayRule[]) => api.setSpecialDayRules(household!.id, rules),
-    (r) => setNotice(isPendingChange(r) ? PENDING_MESSAGE : null),
+    (r) => setNotice(isPendingChange(r) ? pendingMessage() : null),
   )
 
   if (!household) return <Loading />
@@ -43,8 +34,8 @@ export default function SpecialDays() {
   return (
     <Screen edges={['top', 'bottom']}>
       <BackButton />
-      <Title>Jours de fête</Title>
-      <Body muted>Ces jours passent outre le rythme habituel et le partage des vacances.</Body>
+      <Title>{t('settings.specialDays.title')}</Title>
+      <Body muted>{t('settings.specialDays.intro')}</Body>
       <ErrorBanner message={save.error?.message} />
       {notice ? (
         <Card style={{ backgroundColor: colors.pineSoft, borderColor: colors.pineSoft }}>
@@ -54,19 +45,20 @@ export default function SpecialDays() {
 
       {household.special_day_rules.map((r) => {
         const christmas = r.kind === 'christmas_eve' || r.kind === 'christmas_day'
+        const label = t(`settings.specialDays.kinds.${r.kind}`)
         const options = [
-          { value: 'auto', label: 'Automatique' },
-          ...household.members.map((m) => ({ value: `fixed:${m.id}`, label: `Toujours ${m.display_name}`, dot: m.color })),
+          { value: 'auto', label: t('settings.specialDays.auto') },
+          ...household.members.map((m) => ({ value: `fixed:${m.id}`, label: t('settings.specialDays.always', { name: m.display_name }), dot: m.color })),
           ...(christmas
-            ? household.members.map((m) => ({ value: `alternate:${m.id}`, label: `${m.display_name} les années paires`, dot: m.color }))
+            ? household.members.map((m) => ({ value: `alternate:${m.id}`, label: t('settings.specialDays.evenYears', { name: m.display_name }), dot: m.color }))
             : []),
         ]
         return (
           <Card key={r.kind}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-              <Text style={s.label}>{LABEL[r.kind]}</Text>
+              <Text style={s.label}>{label}</Text>
               <Switch
-                accessibilityLabel={LABEL[r.kind]}
+                accessibilityLabel={label}
                 value={r.enabled}
                 disabled={save.isPending}
                 onValueChange={(enabled) => update(r.kind, { enabled })}

@@ -1,0 +1,96 @@
+{
+  "categories": {
+    "sante": "Santé",
+    "ecole": "École",
+    "activites": "Activités",
+    "vetements": "Vêtements",
+    "cantine": "Cantine",
+    "autre": "Autre"
+  },
+  "balance": {
+    "settled": "Comptes à jour",
+    "youOwe": "Vous devez {{amount}} à {{name}}",
+    "owesYou": "{{name}} vous doit {{amount}}",
+    "owes": "{{debtor}} doit {{amount}} à {{creditor}}"
+  },
+  "share": {
+    "half": "50 / 50",
+    "mine": "À ma charge",
+    "theirs": "À la charge de {{name}}"
+  },
+  "fields": {
+    "amount": "Montant ({{symbol}})",
+    "amountPlaceholder": "24,50",
+    "date": "Date",
+    "category": "Catégorie",
+    "child": "Enfant",
+    "paidBy": "Payé par",
+    "split": "Répartition"
+  },
+  "status": {
+    "disputed": "Contestée",
+    "settled": "Remboursée"
+  },
+  "tab": {
+    "title": "Dépenses",
+    "add": "Ajouter une dépense",
+    "paywallTitle": "Les dépenses, avec Premium",
+    "paywallIntro": "Notez ce que vous avancez pour les enfants : Alternly tient le solde à jour pour vous deux. Un seul abonnement suffit pour les deux parents.",
+    "owedToMe": "On me doit",
+    "iOwe": "Je dois",
+    "balanceNote": "Sur les dépenses en cours (hors remboursées et contestées).",
+    "recordSettlement": "Enregistrer un remboursement",
+    "placeholderPartner": "{{name}} n’a pas encore de compte. Vous pouvez déjà lui attribuer des dépenses : elles seront à son nom dès qu’il ou elle rejoindra le foyer.",
+    "namePartner": "Lui donner un prénom",
+    "emptyTitle": "Aucune dépense pour l’instant",
+    "emptyBody": "Cantine, lunettes, licence de foot… Notez ce que vous avancez pour les enfants : Alternly tient le solde à jour pour vous deux.",
+    "addFirst": "Ajouter la première dépense",
+    "settledSection": "Remboursées ({{count}})",
+    "settlements": "Remboursements",
+    "paidBy": "payé par {{name}}",
+    "split": "partage {{payer}}/{{other}}"
+  },
+  "detail": {
+    "notFoundTitle": "Dépense introuvable",
+    "notFoundBody": "Elle a peut-être été supprimée par l’autre parent.",
+    "deleteTitle": "Supprimer cette dépense ?",
+    "deleteBody": "« {{label}} » ({{amount}}) sera retirée du solde.",
+    "splitValue": "{{payer}} % payeur · {{other}} % autre parent",
+    "payerShare": "Part de {{name}} : {{amount}}",
+    "disputeReason": "Motif de la contestation",
+    "quoted": "« {{text}} »",
+    "disputeTitle": "Contester la dépense",
+    "disputeBody": "Elle reste visible mais sort du solde. L’autre parent est prévenu et peut la corriger.",
+    "disputePlaceholder": "ex. montant différent du ticket, dépense non convenue…",
+    "disputeReasonLabel": "Motif",
+    "dispute": "Contester",
+    "markSettled": "Marquer remboursée",
+    "unsettle": "Annuler le remboursement",
+    "resolve": "Lever la contestation",
+    "edit": "Modifier"
+  },
+  "form": {
+    "titleEdit": "Modifier la dépense",
+    "titleNew": "Nouvelle dépense",
+    "label": "Libellé",
+    "labelPlaceholder": "ex. lunettes de Léo",
+    "splitOther": "Autre",
+    "splitSummary": "Payeur {{payer}} % · autre parent {{other}} %",
+    "disputeStillOpen": "La contestation reste en cours : l’autre parent est prévenu de la modification et peut la lever.",
+    "payerShare": "Part du payeur : {{value}} %",
+    "percent": "{{value}} %",
+    "decrease": "Diminuer de 5 %",
+    "increase": "Augmenter de 5 %"
+  },
+  "settle": {
+    "title": "Remboursement",
+    "intro": "Un virement ou des espèces entre vous : le solde en tient compte.",
+    "who": "Qui rembourse ?",
+    "note": "Note (facultatif)",
+    "notePlaceholder": "ex. virement",
+    "notFound": "Remboursement introuvable",
+    "deleteTitle": "Supprimer ce remboursement ?",
+    "deleteBody": "Le solde sera recalculé sans lui.",
+    "onlyAuthor": "Seul le parent qui l’a enregistré peut le supprimer."
+  }
+}

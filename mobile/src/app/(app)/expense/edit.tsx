@@ -1,18 +1,20 @@
 // Ajouter une dépense, ou la modifier (?id=…). Mêmes champs que le formulaire du web.
 import { router, useLocalSearchParams } from 'expo-router'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Pressable, Text, View } from 'react-native'
 import { BackButton } from '@/components/BackButton'
 import { Chips, DateField } from '@/components/form'
 import { Body, Button, ErrorBanner, Field, Loading, Screen, Title } from '@/components/ui'
 import { api } from '@/lib/api'
 import { todayIso } from '@/lib/dates'
-import { CATEGORIES, amountInput, parseAmount, sharePresets } from '@/lib/expenses'
+import { amountInput, categories, parseAmount, sharePresets } from '@/lib/expenses'
 import { useExpenseAction, useExpenses, useHousehold, useMe } from '@/lib/queries'
 import { colors, fonts } from '@/lib/theme'
 import type { Expense, ExpenseCategory, Household } from '@/lib/types'
 
 export default function EditExpense() {
+  const { t } = useTranslation()
   const { id } = useLocalSearchParams<{ id?: string }>()
   const household = useHousehold().data ?? undefined
   const meId = useMe().data?.id
@@ -25,8 +27,8 @@ export default function EditExpense() {
     return (
       <Screen edges={['top', 'bottom']}>
         <BackButton />
-        <Title>Dépense introuvable</Title>
-        <Body muted>Elle a peut-être été supprimée par l’autre parent.</Body>
+        <Title>{t('expenses.detail.notFoundTitle')}</Title>
+        <Body muted>{t('expenses.detail.notFoundBody')}</Body>
       </Screen>
     )
   }
@@ -34,6 +36,7 @@ export default function EditExpense() {
 }
 
 function Form({ household, meId, initial }: { household: Household; meId: number; initial?: Expense }) {
+  const { t } = useTranslation()
   const [amount, setAmount] = useState(initial ? amountInput(initial.amount_cents) : '')
   const [label, setLabel] = useState(initial?.label ?? '')
   const [date, setDate] = useState(initial?.date ?? todayIso())
@@ -45,7 +48,7 @@ function Form({ household, meId, initial }: { household: Household; meId: number
 
   const cents = parseAmount(amount)
   const other = household.members.find((m) => m.id !== meId)
-  const presets = sharePresets(paidBy === meId, other?.display_name ?? 'l’autre parent')
+  const presets = sharePresets(paidBy === meId, other?.display_name ?? t('common.otherParent'))
   const symbol = household.currency === 'USD' ? '$' : '€'
 
   const save = useExpenseAction(
@@ -73,40 +76,40 @@ function Form({ household, meId, initial }: { household: Household; meId: number
   return (
     <Screen edges={['top', 'bottom']}>
       <BackButton />
-      <Title>{initial ? 'Modifier la dépense' : 'Nouvelle dépense'}</Title>
+      <Title>{initial ? t('expenses.form.titleEdit') : t('expenses.form.titleNew')}</Title>
 
       <ErrorBanner message={save.error?.message} />
 
       <View style={{ flexDirection: 'row', gap: 12 }}>
         <View style={{ flex: 1 }}>
-          <Field label={`Montant (${symbol})`} value={amount} onChangeText={setAmount} keyboardType="decimal-pad" placeholder="24,50" />
+          <Field label={t('expenses.fields.amount', { symbol })} value={amount} onChangeText={setAmount} keyboardType="decimal-pad" placeholder={t('expenses.fields.amountPlaceholder')} />
         </View>
-        <DateField label="Date" value={date} onChange={setDate} />
+        <DateField label={t('expenses.fields.date')} value={date} onChange={setDate} />
       </View>
-      <Field label="Libellé" value={label} onChangeText={setLabel} placeholder="ex. lunettes de Léo" maxLength={120} />
+      <Field label={t('expenses.form.label')} value={label} onChangeText={setLabel} placeholder={t('expenses.form.labelPlaceholder')} maxLength={120} />
 
-      <Chips label="Catégorie" options={CATEGORIES} value={category} onChange={setCategory} />
+      <Chips label={t('expenses.fields.category')} options={categories()} value={category} onChange={setCategory} />
 
       {household.children.length > 0 ? (
         <Chips
-          label="Enfant"
-          options={[{ value: 0, label: 'Tous' }, ...household.children.map((c) => ({ value: c.id, label: c.first_name }))]}
+          label={t('expenses.fields.child')}
+          options={[{ value: 0, label: t('common.everyone') }, ...household.children.map((c) => ({ value: c.id, label: c.first_name }))]}
           value={childId}
           onChange={setChildId}
         />
       ) : null}
 
       <Chips
-        label="Payé par"
-        options={household.members.map((m) => ({ value: m.id, label: m.id === meId ? `${m.display_name} (vous)` : m.display_name, dot: m.color }))}
+        label={t('expenses.fields.paidBy')}
+        options={household.members.map((m) => ({ value: m.id, label: m.id === meId ? t('common.youSuffix', { name: m.display_name }) : m.display_name, dot: m.color }))}
         value={paidBy}
         onChange={changePayer}
       />
 
       <View style={{ gap: 8 }}>
         <Chips
-          label="Répartition"
-          options={[...presets, { value: -1, label: 'Autre' }]}
+          label={t('expenses.fields.split')}
+          options={[...presets, { value: -1, label: t('expenses.form.splitOther') }]}
           value={custom ? -1 : payerPercent}
           onChange={(v) => {
             if (v === -1) return setCustom(true)
@@ -115,17 +118,15 @@ function Form({ household, meId, initial }: { household: Household; meId: number
           }}
         />
         {custom ? <Stepper value={payerPercent} onChange={setPayerPercent} /> : null}
-        <Body muted style={{ fontSize: 13 }}>{`Payeur ${payerPercent} % · autre parent ${100 - payerPercent} %`}</Body>
+        <Body muted style={{ fontSize: 13 }}>{t('expenses.form.splitSummary', { payer: payerPercent, other: 100 - payerPercent })}</Body>
       </View>
 
       {initial?.status === 'disputed' ? (
-        <Body muted style={{ fontSize: 13 }}>
-          La contestation reste en cours : l’autre parent est prévenu de la modification et peut la lever.
-        </Body>
+        <Body muted style={{ fontSize: 13 }}>{t('expenses.form.disputeStillOpen')}</Body>
       ) : null}
 
       <Button
-        title={initial ? 'Enregistrer' : 'Ajouter'}
+        title={initial ? t('common.save') : t('common.add')}
         onPress={() => save.mutate()}
         loading={save.isPending}
         disabled={!cents || !label.trim()}
@@ -136,12 +137,13 @@ function Form({ household, meId, initial }: { household: Household; meId: number
 
 /** Part du payeur, par pas de 5 %. */
 function Stepper({ value, onChange }: { value: number; onChange: (v: number) => void }) {
+  const { t } = useTranslation()
   const step = (d: number) => onChange(Math.min(100, Math.max(0, value + d)))
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }} accessibilityLabel={`Part du payeur : ${value} %`}>
-      <StepButton label="−" a11y="Diminuer de 5 %" onPress={() => step(-5)} disabled={value <= 0} />
-      <Text style={{ flex: 1, textAlign: 'center', fontFamily: fonts.bodyBold, fontSize: 18, color: colors.ink }}>{`${value} %`}</Text>
-      <StepButton label="+" a11y="Augmenter de 5 %" onPress={() => step(5)} disabled={value >= 100} />
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }} accessibilityLabel={t('expenses.form.payerShare', { value })}>
+      <StepButton label="−" a11y={t('expenses.form.decrease')} onPress={() => step(-5)} disabled={value <= 0} />
+      <Text style={{ flex: 1, textAlign: 'center', fontFamily: fonts.bodyBold, fontSize: 18, color: colors.ink }}>{t('expenses.form.percent', { value })}</Text>
+      <StepButton label="+" a11y={t('expenses.form.increase')} onPress={() => step(5)} disabled={value >= 100} />
     </View>
   )
 }
