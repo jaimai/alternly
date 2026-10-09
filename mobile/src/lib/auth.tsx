@@ -3,6 +3,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { ApiError, api, loadToken, saveToken, setUnauthorizedHandler } from './api'
 import { forgetPurchaser } from './purchases'
 import { unregisterPush } from './push'
+import { setErrorUser } from './sentry'
 import { forgetGoogleAccount } from './socialAuth'
 import type { TokenResponse, User } from './types'
 
@@ -73,6 +74,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       cancelled = true
     }
   }, [signOut])
+
+  useEffect(() => setErrorUser(user?.id ?? null), [user?.id])
 
   const value = useMemo(() => ({ status, user, signIn, signOut }), [status, user, signIn, signOut])
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

@@ -78,6 +78,13 @@ aucun des deux canaux ne propose un second abonnement (conception :
 Paywall : dernière étape de l'onboarding (« Continuer avec la version gratuite » pour passer),
 onglets Dépenses et Tableau sans abonnement, et Réglages › Alternly Premium.
 
+## Suivi des plantages (Sentry)
+
+Actif seulement si `EXPO_PUBLIC_SENTRY_DSN` est défini (projet Sentry « React Native »).
+Aucune donnée personnelle : l'id du compte, jamais l'e-mail. Un écran qui plante affiche
+« Réessayer » et remonte l'erreur. Pour des traces lisibles, définir aussi `SENTRY_ORG`,
+`SENTRY_PROJECT` et le secret EAS `SENTRY_AUTH_TOKEN` : les source maps partent au build.
+
 ## Liens profonds
 
 `https://alternly.com/join/<jeton>` (invitation) et `/reset-password?token=…` s'ouvrent dans
