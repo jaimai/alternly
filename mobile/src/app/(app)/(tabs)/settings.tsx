@@ -1,19 +1,30 @@
+// Réglages : profil, demandes de changement, foyer (enfants, zone, garde, jours de fête),
+// notifications, compte. Chaque rubrique s'ouvre dans son écran (app/(app)/settings/…).
 import Constants from 'expo-constants'
-import { router } from 'expo-router'
+import { router, type Href } from 'expo-router'
 import { Alert, Linking, Pressable, StyleSheet, Text, View } from 'react-native'
+import { ChangeRequests } from '@/components/ChangeRequests'
 import { Icon } from '@/components/Icon'
 import { InviteCard } from '@/components/InviteCard'
-import { Avatar, Card, Screen, SectionLabel, Title } from '@/components/ui'
+import { Avatar, Screen, SectionLabel, Title } from '@/components/ui'
 import { useAuth } from '@/lib/auth'
-import { isSolo } from '@/lib/custody'
 import { WEB_URL } from '@/lib/colors'
-import { useHousehold, useMe } from '@/lib/queries'
+import { isSolo } from '@/lib/custody'
+import { useBilling, useHousehold, useMe } from '@/lib/queries'
 import { colors, fonts } from '@/lib/theme'
+
+const PATTERN_LABEL: Record<string, string> = {
+  alternate_weeks: 'Semaine / semaine',
+  every_other_weekend: 'Un week-end sur deux',
+  two_two_three: '2-2-3',
+  custom: 'Organisation personnalisée',
+}
 
 export default function Settings() {
   const { signOut } = useAuth()
   const me = useMe().data
   const household = useHousehold().data
+  const billing = useBilling().data
 
   const confirmSignOut = () =>
     Alert.alert('Se déconnecter ?', 'Vous pourrez vous reconnecter avec le même compte.', [
@@ -21,19 +32,25 @@ export default function Settings() {
       { text: 'Se déconnecter', style: 'destructive', onPress: () => void signOut() },
     ])
 
+  const solo = household ? isSolo(household.members) : true
+  const enabledDays = household?.special_day_rules.filter((r) => r.enabled).length ?? 0
+
   return (
     <Screen>
       <Title>Réglages</Title>
 
       {me ? (
-        <Card style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+        <Pressable accessibilityRole="button" onPress={() => router.push('/settings/profile')} style={[s.group, s.row, { borderBottomWidth: 0 }]}>
           <Avatar name={me.display_name} color={me.color} size={44} />
           <View style={{ flex: 1 }}>
             <Text style={s.strong}>{me.display_name}</Text>
             <Text style={s.muted}>{me.email}</Text>
           </View>
-        </Card>
+          <Icon name="chevron" size={18} color={colors.inkSoft} />
+        </Pressable>
       ) : null}
+
+      {household && !solo ? <ChangeRequests household={household} meId={me?.id} /> : null}
 
       {household ? (
         <View style={{ gap: 8 }}>
@@ -46,47 +63,40 @@ export default function Settings() {
                 {m.is_placeholder ? <Text style={s.muted}>pas encore inscrit·e</Text> : null}
               </View>
             ))}
-            <View style={s.row}>
-              <Text style={[s.strong, { flex: 1 }]}>Enfants</Text>
-              <Text style={s.muted}>{household.children.map((c) => c.first_name).join(', ') || '—'}</Text>
-            </View>
-            {household.country === 'FR' ? (
-              <View style={s.row}>
-                <Text style={[s.strong, { flex: 1 }]}>Zone scolaire</Text>
-                <Text style={s.muted}>Zone {household.school_zone}</Text>
-              </View>
-            ) : null}
+            <NavRow
+              label="Enfants et zone scolaire"
+              value={household.children.map((c) => c.first_name).join(', ') || '—'}
+              href="/settings/household"
+            />
+            <NavRow
+              label="Garde et vacances"
+              value={household.custody_rule ? PATTERN_LABEL[household.custody_rule.pattern] : '—'}
+              href="/settings/rules"
+            />
+            <NavRow label="Jours de fête" value={enabledDays ? `${enabledDays} actif${enabledDays > 1 ? 's' : ''}` : 'Aucun'} href="/settings/special-days" />
           </View>
         </View>
       ) : null}
 
-      {household && isSolo(household.members) ? (
+      {household && solo ? (
         <InviteCard householdId={household.id} childNames={household.children.map((c) => c.first_name)} />
       ) : null}
 
       <View style={{ gap: 8 }}>
         <SectionLabel>Application</SectionLabel>
         <View style={s.group}>
-          <Pressable accessibilityRole="button" onPress={() => router.push('/notification-settings')} style={s.row}>
-            <Icon name="bell" color={colors.ink} />
-            <Text style={[s.strong, { flex: 1 }]}>Notifications</Text>
-            <Icon name="chevron" size={18} color={colors.inkSoft} />
+          <NavRow label="Alternly Premium" value={billing ? (billing.access ? 'Actif' : 'Découvrir') : undefined} href="/premium" />
+          <NavRow label="Notifications" icon="bell" href="/notification-settings" />
+          <NavRow label="Compte et mot de passe" icon="settings" href="/settings/account" />
+          <Pressable accessibilityRole="link" onPress={() => Linking.openURL(`${WEB_URL}/history`)} style={s.row}>
+            <Text style={[s.strong, { flex: 1 }]}>Historique des changements</Text>
+            <Text style={s.muted}>sur le web</Text>
           </Pressable>
         </View>
       </View>
 
-      <View style={{ gap: 8 }}>
-        <SectionLabel>Sur le web</SectionLabel>
-        <View style={s.group}>
-          <LinkRow label="Règles de garde et vacances" path="/settings" />
-          <LinkRow label="Abonnement" path="/settings" />
-          <LinkRow label="Historique des changements" path="/history" />
-        </View>
-        <Text style={s.muted}>Ces réglages arrivent dans l’app au fil des prochaines versions.</Text>
-      </View>
-
       <View style={s.group}>
-        <Pressable accessibilityRole="button" onPress={confirmSignOut} style={s.row}>
+        <Pressable accessibilityRole="button" onPress={confirmSignOut} style={[s.row, { borderBottomWidth: 0 }]}>
           <Icon name="logout" color={colors.danger} />
           <Text style={[s.strong, { color: colors.danger }]}>Se déconnecter</Text>
         </Pressable>
@@ -97,10 +107,12 @@ export default function Settings() {
   )
 }
 
-function LinkRow({ label, path }: { label: string; path: string }) {
+function NavRow({ label, value, icon, href }: { label: string; value?: string; icon?: 'bell' | 'settings'; href: Href }) {
   return (
-    <Pressable accessibilityRole="link" onPress={() => Linking.openURL(`${WEB_URL}${path}`)} style={s.row}>
+    <Pressable accessibilityRole="button" onPress={() => router.push(href)} style={({ pressed }) => [s.row, pressed && { backgroundColor: colors.paperDeep }]}>
+      {icon ? <Icon name={icon} color={colors.ink} /> : null}
       <Text style={[s.strong, { flex: 1 }]}>{label}</Text>
+      {value ? <Text style={[s.muted, { maxWidth: 150 }]} numberOfLines={1}>{value}</Text> : null}
       <Icon name="chevron" size={18} color={colors.inkSoft} />
     </Pressable>
   )
@@ -109,7 +121,7 @@ function LinkRow({ label, path }: { label: string; path: string }) {
 const s = StyleSheet.create({
   group: { backgroundColor: colors.surface, borderRadius: 16, borderWidth: 1, borderColor: colors.line, overflow: 'hidden' },
   row: {
-    flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 52, paddingHorizontal: 14,
+    flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 52, paddingHorizontal: 14, paddingVertical: 10,
     borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.line,
   },
   strong: { fontFamily: fonts.bodySemiBold, fontSize: 15, color: colors.ink },

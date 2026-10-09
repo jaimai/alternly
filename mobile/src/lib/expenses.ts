@@ -15,10 +15,15 @@ export function categoryLabel(value: string): string {
   return CATEGORIES.find((c) => c.value === value)?.label ?? 'Autre'
 }
 
-/** « 24,50 » / « 24.50 » / « 1 200 » → centimes ; NaN ou ≤ 0 → null. */
+/**
+ * « 24,50 » / « 24.50 » / « 1 200 » → centimes. Vide, zéro ou format ambigu (« 1,200.50 »,
+ * « 12abc ») → null : mieux vaut refuser que d'enregistrer un montant faux.
+ */
 export function parseAmount(input: string): number | null {
-  const cents = Math.round(parseFloat(input.replace(/[\s  ]/g, '').replace(',', '.')) * 100)
-  return Number.isFinite(cents) && cents > 0 ? cents : null
+  const compact = input.replace(/[\s  ]/g, '')
+  if (!/^\d+([.,]\d{1,2})?$/.test(compact)) return null
+  const cents = Math.round(parseFloat(compact.replace(',', '.')) * 100)
+  return cents > 0 ? cents : null
 }
 
 /** Centimes → « 24,50 » pour pré-remplir le champ montant. */

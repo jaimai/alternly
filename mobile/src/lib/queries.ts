@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ApiError, api } from './api'
 import { useAuth } from './auth'
 import { todayIso } from './dates'
-import type { PushPrefs } from './types'
+import type { BillingStatus, PushPrefs } from './types'
 
 export const keys = {
   me: ['me'] as const,
@@ -12,6 +12,8 @@ export const keys = {
   pushPrefs: ['pushPrefs'] as const,
   expenses: ['expenses'] as const,
   wall: ['wall'] as const,
+  changeRequests: ['changeRequests'] as const,
+  billing: ['billing'] as const,
 }
 
 /** Profil : celui de la connexion d'abord, puis rafraîchi depuis l'API. */
@@ -153,4 +155,63 @@ export function useWall(householdId: number | undefined) {
 /** Action sur un post ou une réponse, puis rafraîchit le tableau. */
 export function useWallAction<V = void, R = unknown>(fn: (v: V) => Promise<R>, onSuccess?: (r: R) => void) {
   return useRefreshingMutation(keys.wall, fn, onSuccess)
+}
+
+/** Demandes de changement en attente (foyer à deux parents réels). */
+export function useChangeRequests(householdId: number | undefined, enabled = true) {
+  const hid = householdId ?? 0
+  return useQuery({
+    queryKey: [...keys.changeRequests, hid],
+    queryFn: () => api.changeRequests(hid),
+    enabled: enabled && householdId !== undefined,
+  })
+}
+
+/**
+ * Réglage du foyer modifié : rafraîchit foyer, demandes de changement et calendrier
+ * (une règle acceptée change la garde).
+ */
+export function useHouseholdAction<V = void, R = unknown>(fn: (v: V) => Promise<R>, onSuccess?: (r: R) => void) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: fn,
+    onSuccess: async (r) => {
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: keys.household }),
+        qc.invalidateQueries({ queryKey: keys.changeRequests }),
+        qc.invalidateQueries({ queryKey: ['calendar'] }),
+      ])
+      onSuccess?.(r)
+    },
+  })
+}
+
+/** Profil modifié : met à jour le cache sans attendre un rechargement. */
+export function useUpdateMe(onSuccess?: () => void) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: api.updateMe,
+    onSuccess: (user) => {
+      qc.setQueryData(keys.me, user)
+      void qc.invalidateQueries({ queryKey: keys.household }) // couleur et prénom visibles dans le foyer
+      onSuccess?.()
+    },
+  })
+}
+
+/** Statut Premium du foyer (Paddle ou store), calculé par le backend. */
+export function useBilling() {
+  return useQuery({ queryKey: keys.billing, queryFn: api.billingStatus })
+}
+
+/** Achat ou restauration : enregistre le nouveau statut et recharge les écrans Premium. */
+export function useBillingAction<V = void>(fn: (v: V) => Promise<BillingStatus>) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: fn,
+    onSuccess: async (status) => {
+      qc.setQueryData(keys.billing, status)
+      await Promise.all([qc.invalidateQueries({ queryKey: keys.expenses }), qc.invalidateQueries({ queryKey: keys.wall })])
+    },
+  })
 }

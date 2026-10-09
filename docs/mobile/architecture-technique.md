@@ -301,7 +301,9 @@ fixée par profil via `EXPO_PUBLIC_API_URL`.
   `https://appleid.apple.com/auth/keys`, audience = bundle id), puis même logique de
   rattachement / création que Google. Apple peut masquer l'e-mail (relais
   `privaterelay.appleid.com`) : le rattachement se fait alors sur le `sub` Apple (nouvelle
-  colonne `apple_sub`).
+  colonne `apple_sub`). Le jeton est lié à un nonce : l'app envoie à Apple le SHA-256
+  d'une valeur aléatoire et la valeur brute au backend, qui vérifie la claim `nonce`. Un
+  jeton intercepté (retour `alternly://` capté par une autre app sur Android) est inutilisable.
 - `DELETE /api/auth/me` existe déjà : Apple exige la suppression de compte depuis l'app,
   il suffit de l'exposer dans Réglages.
 

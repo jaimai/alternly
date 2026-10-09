@@ -20,6 +20,16 @@ export default function EditExpense() {
 
   if (!household || meId === undefined || (id && expenses.isPending)) return <Loading />
   const initial = id ? expenses.data?.find((e) => e.id === Number(id)) : undefined
+  if (id && !initial) {
+    // Jamais de repli sur « Nouvelle dépense » : enregistrer créerait un doublon.
+    return (
+      <Screen edges={['top', 'bottom']}>
+        <BackButton />
+        <Title>Dépense introuvable</Title>
+        <Body muted>Elle a peut-être été supprimée par l’autre parent.</Body>
+      </Screen>
+    )
+  }
   return <Form key={id ?? 'new'} household={household} meId={meId} initial={initial} />
 }
 
@@ -109,7 +119,9 @@ function Form({ household, meId, initial }: { household: Household; meId: number
       </View>
 
       {initial?.status === 'disputed' ? (
-        <Body muted style={{ fontSize: 13 }}>Enregistrer une modification lève la contestation en cours.</Body>
+        <Body muted style={{ fontSize: 13 }}>
+          La contestation reste en cours : l’autre parent est prévenu de la modification et peut la lever.
+        </Body>
       ) : null}
 
       <Button

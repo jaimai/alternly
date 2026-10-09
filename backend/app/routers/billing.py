@@ -1,4 +1,6 @@
-"""Abonnement Paddle : statut d'accès + réception des webhooks."""
+"""Abonnement : Paddle (web) et achats intégrés via RevenueCat (mobile) — statut d'accès + webhooks."""
+import hmac
+
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
@@ -8,10 +10,10 @@ from ..auth import get_current_user
 from ..config import settings
 from ..db import get_db
 from ..deps import household_members, user_has_premium
-from ..models import HouseholdMember, PaddleEvent, User, utcnow
+from ..models import HouseholdMember, PaddleEvent, RevenueCatEvent, User, utcnow
 from ..ratelimit import HOUR, rate_limit
 from ..schemas import ChangePlanIn
-from ..services import analytics, audit, billing, paddle_api
+from ..services import analytics, audit, billing, paddle_api, store_billing
 
 router = APIRouter(prefix="/api/billing", tags=["billing"])
 
@@ -50,9 +52,26 @@ def billing_plans():
     return billing.plans()
 
 
+def _premium_source(db: Session, user: User) -> tuple[str | None, bool]:
+    """Canal qui donne l'accès Premium au foyer (paddle / app_store / play_store) et s'il
+    s'agit de l'abonnement de ce parent. Sert à éviter un double abonnement."""
+    member = db.scalar(select(HouseholdMember).where(HouseholdMember.user_id == user.id))
+    users = [user] if member is None else [db.get(User, m.user_id) for m in household_members(db, member.household_id)]
+    now = utcnow()
+    # Ses propres abonnements d'abord : c'est ce qu'il peut gérer lui-même.
+    for u in sorted((u for u in users if u is not None), key=lambda u: u.id != user.id):
+        if billing.has_access(u.subscription_status, u.trial_ends_at, u.subscription_ends_at, now) and u.paddle_subscription_id:
+            return "paddle", u.id == user.id
+        store = store_billing.active_store(db, u.id, now)
+        if store:
+            return store, u.id == user.id
+    return None, False
+
+
 @router.get("/status")
 def billing_status(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     now = utcnow()
+    source, mine = _premium_source(db, user)
     return {
         "status": user.subscription_status,
         # Accès premium au niveau du foyer : un membre abonné débloque tout le foyer.
@@ -60,7 +79,83 @@ def billing_status(user: User = Depends(get_current_user), db: Session = Depends
         "trial_days_left": billing.trial_days_left(user.subscription_status, user.trial_ends_at, now),
         "trial_ends_at": user.trial_ends_at.isoformat() if user.trial_ends_at else None,
         "subscription_ends_at": user.subscription_ends_at.isoformat() if user.subscription_ends_at else None,
+        # Canal de l'abonnement du foyer, pour ne jamais proposer un second abonnement :
+        # paddle (géré sur alternly.com) | app_store | play_store (géré dans le store) | None.
+        "source": source,
+        "is_payer": mine,
+        "manage_url": store_billing.MANAGE_URLS.get(source or ""),
     }
+
+
+@router.post("/store-sync", dependencies=[Depends(rate_limit("store_sync", 20, HOUR))])
+def store_sync(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Après un achat ou « Restaurer les achats » : relit l'état chez RevenueCat (un
+    webhook a pu se perdre ou arriver après l'app), puis renvoie le statut à jour."""
+    try:
+        store_billing.sync_user(db, user)
+        db.commit()
+    except Exception:  # RevenueCat injoignable : le webhook prendra le relais
+        db.rollback()
+    return billing_status(user, db)
+
+
+@router.post("/revenuecat-webhook")
+async def revenuecat_webhook(request: Request, authorization: str | None = Header(default=None), db: Session = Depends(get_db)):
+    """Événements d'abonnement App Store / Google Play relayés par RevenueCat."""
+    secret = settings.revenuecat_webhook_secret
+    if not secret:
+        raise HTTPException(status_code=503, detail="Webhook RevenueCat non configuré")
+    if authorization is None or not hmac.compare_digest(authorization.encode(), secret.encode()):
+        raise HTTPException(status_code=403, detail="Autorisation invalide")
+
+    try:
+        body = await request.json()
+    except ValueError:
+        body = None
+    event = body.get("event") if isinstance(body, dict) else None
+    if not isinstance(event, dict):
+        raise HTTPException(status_code=400, detail="Événement invalide")
+    event_id = event.get("id")
+    if event_id and db.get(RevenueCatEvent, event_id) is not None:
+        return {"ok": True, "duplicate": True}
+
+    user = store_billing.find_user(db, event)
+    if event.get("type") == "TRANSFER":
+        # « Restaurer les achats » depuis un autre compte : l'abonnement change de compte.
+        _transfer(db, event)
+    elif user is not None:
+        before = store_billing.active_store(db, user.id)
+        sub = store_billing.apply_event(db, user, event)
+        if sub is not None:
+            db.flush()
+            after = store_billing.active_store(db, user.id)
+            if (before is None) != (after is None):
+                _journal(db, user, "subscription.status", {"source": sub.source, "after": sub.status})
+    if event_id:
+        db.add(RevenueCatEvent(id=event_id, event_type=event.get("type", "")))
+    try:
+        db.commit()
+    except IntegrityError:  # même événement traité en parallèle
+        db.rollback()
+    return {"ok": True}
+
+
+def _transfer(db: Session, event: dict) -> None:
+    """L'ancien compte perd l'accès tout de suite, le nouveau est relu chez RevenueCat."""
+    at = store_billing._ms(event.get("event_timestamp_ms")) or utcnow()
+    for ids, action in ((event.get("transferred_from"), "from"), (event.get("transferred_to"), "to")):
+        for uid in ids or []:
+            target = store_billing.find_user(db, {"app_user_id": uid})
+            if target is None:
+                continue
+            if action == "from":
+                for sub in store_billing.expire_user(db, target, at):
+                    _journal(db, target, "subscription.status", {"source": sub.source, "after": "transferred"})
+            else:
+                try:
+                    store_billing.sync_user(db, target)
+                except Exception:  # RevenueCat injoignable : la resynchronisation au lancement rattrapera
+                    pass
 
 
 @router.get("/subscription")

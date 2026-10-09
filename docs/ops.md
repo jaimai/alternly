@@ -59,6 +59,10 @@ Toutes lues par `backend/app/config.py` (insensibles à la casse).
 | `POSTHOG_HOST` | `https://eu.i.posthog.com` | Ingestion PostHog côté serveur. |
 | `POSTHOG_SERVER_LOGS` | `false` | Envoie les logs WARNING+ en événements `server_log` (30/min max). |
 | `PADDLE_WEBHOOK_SECRET` | vide | Secret de signature des webhooks (*Notifications → destination*). Vide → webhook refusé (403). |
+| `REVENUECAT_WEBHOOK_SECRET` | vide | Achats intégrés : valeur exacte de l'en-tête `Authorization` du webhook RevenueCat (`/api/billing/revenuecat-webhook`). Vide → webhook refusé (503). |
+| `REVENUECAT_API_KEY` | vide | Clé secrète RevenueCat (`sk_…`) : resynchronisation après achat et « Restaurer les achats » (`/api/billing/store-sync`). Vide → seul le webhook alimente l'accès. |
+| `REVENUECAT_ENTITLEMENT` | `premium` | Entitlement RevenueCat qui donne Premium ; les autres produits du projet sont ignorés. |
+| `REVENUECAT_ALLOW_SANDBOX` | `false` | Achats de test (TestFlight, testeurs Play, gratuits) pris en compte. `true` seulement sur un backend de recette, jamais en production. |
 | `PADDLE_API_KEY` | vide | Appels serveur (détail, résiliation, changement d'offre). Vide → gestion d'abonnement indisponible (502/`plan: null`). |
 | `PADDLE_ENV` | `sandbox` | `sandbox` ou `production` (base de l'API Paddle). |
 | `PADDLE_PRICE_ANNUAL` / `PADDLE_PRICE_MONTHLY` | vide | `price_id` des offres. **Source de vérité** : servis à l'app et à la landing par `GET /api/billing/plans` (le mensuel n'est proposé que si `PADDLE_PRICE_MONTHLY` est renseigné ; plus de repli silencieux sur l'annuel). |
