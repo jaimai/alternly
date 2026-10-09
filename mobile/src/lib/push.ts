@@ -1,7 +1,7 @@
 // Notifications push : permission, jeton Expo envoyé au backend (POST /api/devices),
 // affichage au premier plan et ouverture du bon écran au toucher.
 // Le backend envoie un push pour chaque notification in-app (backend/app/services/push.py).
-import Constants from 'expo-constants'
+import Constants, { ExecutionEnvironment } from 'expo-constants'
 import * as Device from 'expo-device'
 import * as Notifications from 'expo-notifications'
 import * as SecureStore from 'expo-secure-store'
@@ -20,7 +20,9 @@ function projectId(): string | undefined {
 
 /** Push possible ici ? (pas sur le web ni le simulateur, et projet EAS configuré) */
 export function pushAvailable(): boolean {
-  return Platform.OS !== 'web' && Device.isDevice && !!projectId()
+  // Expo Go ne reçoit plus les push distants sur Android : il faut un build de développement.
+  const expoGoAndroid = Platform.OS === 'android' && Constants.executionEnvironment === ExecutionEnvironment.StoreClient
+  return Platform.OS !== 'web' && Device.isDevice && !expoGoAndroid && !!projectId()
 }
 
 // Au premier plan : bannière + son, comme en arrière-plan.
