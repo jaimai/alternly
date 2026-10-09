@@ -226,7 +226,7 @@
   "expenses.disputeTitle": "Contester la dépense",
   "expenses.edit": "Modifier",
   "expenses.editExpense": "Modifier la dépense",
-  "expenses.editLiftsDispute": "Enregistrer une modification lève la contestation en cours.",
+  "expenses.editLiftsDispute": "La contestation reste en cours : l’autre parent est prévenu de la modification et peut la lever.",
   "expenses.emptyBody": "Cantine, lunettes, licence de foot… Note ce que tu avances pour les enfants : Alternly tient le solde à jour pour vous deux.",
   "expenses.emptyState": "Aucune dépense pour l'instant.",
   "expenses.emptyTitle": "Aucune dépense pour l'instant",

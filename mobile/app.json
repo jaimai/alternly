@@ -15,8 +15,6 @@
       "supportsTablet": false,
       "usesAppleSignIn": true,
       "associatedDomains": [
-        "applinks:alternly.com",
-        "applinks:alternly.com",
         "applinks:alternly.com"
       ],
       "infoPlist": {
@@ -33,26 +31,6 @@
       },
       "predictiveBackGestureEnabled": false,
       "intentFilters": [
-        {
-          "action": "VIEW",
-          "autoVerify": true,
-          "data": [
-            {
-              "scheme": "https",
-              "host": "alternly.com",
-              "pathPrefix": "/join/"
-            },
-            {
-              "scheme": "https",
-              "host": "alternly.com",
-              "path": "/reset-password"
-            }
-          ],
-          "category": [
-            "BROWSABLE",
-            "DEFAULT"
-          ]
-        },
         {
           "action": "VIEW",
           "autoVerify": true,

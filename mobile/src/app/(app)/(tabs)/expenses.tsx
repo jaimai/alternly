@@ -24,7 +24,11 @@ export default function Expenses() {
   let body
   if (!household || expenses.isPending || balance.isPending) body = <Loading />
   else if (locked) body = <PremiumLocked icon="wallet" what="Dépenses partagées, solde et remboursements" />
-  else if (expenses.isError) body = <ErrorState message={expenses.error.message} onRetry={refetch} />
+  else if (expenses.isError || balance.isError || settlements.isError) {
+    // Sans le solde, « Comptes à jour » serait faux : on le dit plutôt que d'afficher 0.
+    const failed = expenses.error ?? balance.error ?? settlements.error
+    body = <ErrorState message={failed?.message ?? 'Une erreur est survenue.'} onRetry={refetch} />
+  }
   else {
     body = (
       <ScrollView

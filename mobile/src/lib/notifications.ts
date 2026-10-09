@@ -70,6 +70,8 @@ export type NotificationArea = 'calendar' | 'expenses' | 'wall' | 'settings'
 export function notificationArea(type: string): NotificationArea {
   if (type.startsWith('expense_') || type.startsWith('settlement_')) return 'expenses'
   if (type.startsWith('wall_')) return 'wall'
+  // Les demandes de changement (règles, jours spéciaux) se valident dans les Réglages.
+  if (type.startsWith('change_')) return 'settings'
   if (type === 'invite_reminder' || type === 'parent_joined' || type === 'parent_left' || type === 'payment_failed') {
     return 'settings'
   }
