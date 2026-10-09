@@ -127,6 +127,9 @@ Proposition :
   sur le web ou sur mobile débloque l'autre.
 - Un abonné web voit son Premium reconnu dans l'app (bouton « Restaurer » pour les achats
   store). Pas de lien vers le paiement web dans l'app iOS.
+- Résilier d'un côté coupe l'accès des deux côtés à la fin de la période payée ; le web et
+  l'app masquent le paiement quand le foyer est déjà abonné par l'autre canal (pas de double
+  abonnement). Conception détaillée : `architecture-technique.md` §7.3.
 - Commission store : 15 % (programme Small Business) à intégrer au prix mobile.
 
 ## 7. Plan de livraison indicatif
