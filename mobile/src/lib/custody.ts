@@ -34,10 +34,17 @@ export function memberById(members: Member[], id: number | undefined): Member | 
   return members.find((m) => m.id === id)
 }
 
-/** « Vous » pour soi, sinon le prénom de l'autre parent. */
+/** « Vous » pour soi, sinon le prénom de l'autre parent (« L’autre parent » tant qu'il n'est pas inscrit). */
 export function parentLabel(members: Member[], id: number | undefined, meId: number | undefined): string {
-  if (id !== undefined && id === meId) return 'Vous'
-  return memberById(members, id)?.display_name ?? "L'autre parent"
+  const name = whoName(members, id, meId)
+  return name.charAt(0).toUpperCase() + name.slice(1)
+}
+
+/** Même chose en milieu de phrase : « chez vous », « chez Julie », « chez l’autre parent ». */
+export function whoName(members: Member[], id: number | undefined, meId: number | undefined): string {
+  if (id !== undefined && id === meId) return 'vous'
+  const m = memberById(members, id)
+  return !m || m.is_placeholder ? 'l’autre parent' : m.display_name
 }
 
 /** Période de vacances scolaires qui contient `date`, s'il y en a une. */
@@ -76,4 +83,9 @@ export function relativeDays(n: number): string {
   if (n <= 0) return "aujourd'hui"
   if (n === 1) return 'demain'
   return `dans ${n} jours`
+}
+
+/** Vrai tant que l'autre parent n'a pas rejoint le foyer (seul un « placeholder »). */
+export function isSolo(members: Member[]): boolean {
+  return members.filter((m) => !m.is_placeholder).length < 2
 }

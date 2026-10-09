@@ -2,10 +2,11 @@ import { router } from 'expo-router'
 import { Linking, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Icon } from '@/components/Icon'
+import { InviteCard } from '@/components/InviteCard'
 import { Body, Button, Card, ErrorState, Loading, SectionLabel } from '@/components/ui'
 import { ApiError } from '@/lib/api'
 import { WEB_URL } from '@/lib/colors'
-import { exchangesToAnswer, memberById, relativeDays, statusLead, todayStatus } from '@/lib/custody'
+import { exchangesToAnswer, isSolo, memberById, relativeDays, statusLead, todayStatus, whoName } from '@/lib/custody'
 import { addDays, daysBetween, formatLong, formatRange, formatShort, parseIso, todayIso } from '@/lib/dates'
 import { useMe, useNotifications, useUpcoming } from '@/lib/queries'
 import { colors, fonts, radius, tint } from '@/lib/theme'
@@ -66,7 +67,7 @@ export default function Home() {
 function Content({ cal, household, meId, today }: { cal: CalendarResponse; household: Household; meId?: number; today: string }) {
   const status = todayStatus(cal, today)
   const holder = memberById(cal.members, status.today?.parent_id)
-  const who = (id?: number) => (id === meId ? 'vous' : memberById(cal.members, id)?.display_name ?? "l'autre parent")
+  const who = (id?: number) => whoName(cal.members, id, meId)
   const kids = household.children.map((c) => c.first_name)
   const toAnswer = exchangesToAnswer(cal, meId)
   const week = Array.from({ length: 7 }, (_, i) => addDays(today, i))
@@ -104,6 +105,10 @@ function Content({ cal, household, meId, today }: { cal: CalendarResponse; house
           <Text style={s.statusTitle}>Le calendrier ne couvre pas encore aujourd’hui.</Text>
         )}
       </View>
+
+      {isSolo(household.members) ? (
+        <InviteCard householdId={household.id} childNames={household.children.map((c) => c.first_name)} />
+      ) : null}
 
       {toAnswer.map((e) => (
         <Pressable

@@ -3,7 +3,17 @@
 import Constants from 'expo-constants'
 import * as SecureStore from 'expo-secure-store'
 import { Platform } from 'react-native'
-import type { CalendarResponse, Household, Notification, TokenResponse, User } from './types'
+import type {
+  CalendarResponse,
+  CustodyRule,
+  Household,
+  Invitation,
+  Notification,
+  ScheduleException,
+  TokenResponse,
+  User,
+  VacationRule,
+} from './types'
 
 export const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://web-production-d1aa3.up.railway.app/api'
 
@@ -108,8 +118,27 @@ export const api = {
   me: () => request<User>('/auth/me'),
 
   myHousehold: () => request<Household>('/households/mine'),
+  createHousehold: (data: { name: string; country: 'FR' | 'US'; school_zone: 'A' | 'B' | 'C' }) =>
+    request<Household>('/households', { method: 'POST', body: data }),
+  addChild: (householdId: number, first_name: string) =>
+    request<unknown>(`/households/${householdId}/children`, { method: 'POST', body: { first_name } }),
+  setCustodyRule: (householdId: number, rule: CustodyRule) =>
+    request<unknown>(`/households/${householdId}/custody-rule`, { method: 'PUT', body: rule }),
+  setVacationRule: (householdId: number, rule: VacationRule) =>
+    request<unknown>(`/households/${householdId}/vacation-rule`, { method: 'PUT', body: rule }),
+  currentInvitation: (householdId: number) =>
+    request<{ invitation: Invitation | null; last_expired: boolean }>(`/households/${householdId}/invitations/current`),
+  createInvitation: (householdId: number) =>
+    request<Invitation>(`/households/${householdId}/invitations`, { method: 'POST' }),
   calendar: (householdId: number, start: string, end: string) =>
     request<CalendarResponse>(`/households/${householdId}/calendar?start=${start}&end=${end}`),
+  exceptions: (householdId: number) => request<ScheduleException[]>(`/households/${householdId}/exceptions`),
+  createException: (
+    householdId: number,
+    data: { date_start: string; date_end: string; parent_id: number; note: string; replaces_id?: number },
+  ) => request<ScheduleException>(`/households/${householdId}/exceptions`, { method: 'POST', body: data }),
+  withdrawExchange: (householdId: number, id: number) =>
+    request<unknown>(`/households/${householdId}/exceptions/${id}/withdraw`, { method: 'POST' }),
   acceptExchange: (householdId: number, id: number) =>
     request<unknown>(`/households/${householdId}/exceptions/${id}/accept`, { method: 'POST', body: { response_note: '' } }),
   refuseExchange: (householdId: number, id: number) =>

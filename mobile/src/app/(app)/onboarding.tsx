@@ -1,0 +1,209 @@
+// Premier lancement (ou foyer sans règle de garde) : foyer → enfants → rythme.
+// Mêmes appels API que frontend/src/pages/Onboarding.tsx. L'invitation de l'autre
+// parent n'est pas une étape (comme sur le web) : elle est proposée sur l'accueil.
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useState } from 'react'
+import { Pressable, StyleSheet, Text, View } from 'react-native'
+import { Progress, Segmented } from '@/components/form'
+import { Icon } from '@/components/Icon'
+import { RuleWizard, type RuleValue } from '@/components/RuleWizard'
+import { Body, Button, ErrorBanner, Field, Loading, Screen, Title } from '@/components/ui'
+import { api } from '@/lib/api'
+import { useAuth } from '@/lib/auth'
+import { keys, useHousehold, useMe } from '@/lib/queries'
+import { colors, fonts } from '@/lib/theme'
+
+const TOTAL_STEPS = 6 // foyer, enfants, puis les 4 étapes du rythme
+const ZONES = [
+  { value: 'A' as const, label: 'Zone A', cities: 'Lyon, Bordeaux, Grenoble…' },
+  { value: 'B' as const, label: 'Zone B', cities: 'Lille, Nantes, Marseille…' },
+  { value: 'C' as const, label: 'Zone C', cities: 'Paris, Toulouse, Montpellier…' },
+]
+
+export default function Onboarding() {
+  const qc = useQueryClient()
+  const { signOut } = useAuth()
+  const me = useMe().data
+  const household = useHousehold()
+  const h = household.data ?? null
+  // Foyer déjà créé (onboarding interrompu) : on reprend là où il en était.
+  const [step, setStep] = useState<0 | 1 | 2>(h === null ? 0 : h.children.length === 0 ? 1 : 2)
+
+  const [name, setName] = useState('')
+  const [country, setCountry] = useState<'FR' | 'US'>(me?.locale === 'en' ? 'US' : 'FR')
+  const [zone, setZone] = useState<'A' | 'B' | 'C'>('A')
+  const [childName, setChildName] = useState('')
+  const [children, setChildren] = useState<string[]>([])
+
+  const createHousehold = useMutation({
+    mutationFn: () =>
+      api.createHousehold({ name: name.trim() || `Foyer de ${me?.display_name ?? ''}`.trim(), country, school_zone: zone }),
+    onSuccess: (created) => {
+      qc.setQueryData(keys.household, created)
+      setStep(1)
+    },
+  })
+
+  const saveChildren = useMutation({
+    mutationFn: async () => {
+      for (const first_name of children) await api.addChild(h!.id, first_name)
+      return api.myHousehold()
+    },
+    onSuccess: (fresh) => {
+      qc.setQueryData(keys.household, fresh)
+      setStep(2)
+    },
+  })
+
+  const saveRules = useMutation({
+    mutationFn: async (value: RuleValue) => {
+      await api.setCustodyRule(h!.id, value.custody)
+      await api.setVacationRule(h!.id, value.vacation)
+    },
+    // Le foyer a maintenant une règle : la garde de (app)/_layout bascule vers l'accueil.
+    onSuccess: () => qc.invalidateQueries({ queryKey: keys.household }),
+  })
+
+  const addChild = () => {
+    const n = childName.trim()
+    if (!n) return
+    setChildren([...children, n])
+    setChildName('')
+  }
+
+  if (!me || household.isPending) return <Loading />
+
+  const error = createHousehold.error?.message ?? saveChildren.error?.message ?? saveRules.error?.message
+
+  return (
+    <Screen edges={['top', 'bottom']}>
+      {step < 2 ? <Progress step={step + 1} total={TOTAL_STEPS} /> : null}
+      <ErrorBanner message={error} />
+
+      {step === 0 && (
+        <>
+          <View style={{ gap: 6 }}>
+            <Title>Bienvenue !</Title>
+            <Body muted>Configurons votre calendrier : le foyer, les enfants, puis le rythme de garde.</Body>
+          </View>
+          <Field
+            label="Nom du foyer (facultatif)"
+            value={name}
+            onChangeText={setName}
+            placeholder={`Foyer de ${me.display_name}`}
+          />
+          <Segmented
+            label="Pays"
+            value={country}
+            onChange={setCountry}
+            options={[{ value: 'FR', label: 'France' }, { value: 'US', label: 'États-Unis' }]}
+          />
+          {country === 'FR' ? (
+            <View style={{ gap: 8 }}>
+              <Text style={s.label}>Zone scolaire</Text>
+              <View style={{ flexDirection: 'row', gap: 8 }} accessibilityRole="radiogroup">
+                {ZONES.map((z) => {
+                  const selected = zone === z.value
+                  return (
+                    <Pressable
+                      key={z.value}
+                      accessibilityRole="radio"
+                      accessibilityState={{ selected }}
+                      accessibilityLabel={`${z.label} : ${z.cities}`}
+                      onPress={() => setZone(z.value)}
+                      style={[s.zone, selected && s.zoneOn]}
+                    >
+                      <Text style={[s.zoneTitle, selected && { color: colors.pine }]}>{z.label}</Text>
+                      <Text style={s.zoneCities} numberOfLines={2}>{z.cities}</Text>
+                    </Pressable>
+                  )
+                })}
+              </View>
+            </View>
+          ) : (
+            <Body muted style={{ fontSize: 14 }}>
+              Vous ajouterez les congés scolaires de votre district dans les réglages (pas de calendrier national aux
+              États-Unis).
+            </Body>
+          )}
+          <Button title="Continuer" onPress={() => createHousehold.mutate()} loading={createHousehold.isPending} />
+        </>
+      )}
+
+      {step === 1 && (
+        <>
+          <View style={{ gap: 6 }}>
+            <Title>Vos enfants</Title>
+            <Body muted>Le prénom suffit. Pas de nom de famille ni d’école : nous gardons le minimum.</Body>
+          </View>
+          {children.map((c, i) => (
+            <View key={`${c}-${i}`} style={s.child}>
+              <Text style={s.childName}>{c}</Text>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`Retirer ${c}`}
+                onPress={() => setChildren(children.filter((_, j) => j !== i))}
+                style={s.remove}
+              >
+                <Icon name="close" size={18} color={colors.inkSoft} />
+              </Pressable>
+            </View>
+          ))}
+          <View style={{ flexDirection: 'row', gap: 8, alignItems: 'flex-end' }}>
+            <View style={{ flex: 1 }}>
+              <Field
+                label={children.length === 0 ? 'Prénom' : 'Ajouter un autre enfant'}
+                value={childName}
+                onChangeText={setChildName}
+                onSubmitEditing={addChild}
+                returnKeyType="done"
+                autoCapitalize="words"
+              />
+            </View>
+            <Button title="Ajouter" variant="secondary" onPress={addChild} disabled={!childName.trim()} />
+          </View>
+          <Button
+            title="Continuer"
+            onPress={() => saveChildren.mutate()}
+            loading={saveChildren.isPending}
+            disabled={children.length === 0}
+          />
+        </>
+      )}
+
+      {step === 2 && h && (
+        <RuleWizard
+          members={h.members}
+          myId={me.id}
+          childNames={h.children.map((c) => c.first_name)}
+          busy={saveRules.isPending}
+          stepOffset={2}
+          stepTotal={TOTAL_STEPS}
+          onSubmit={(value) => saveRules.mutate(value)}
+        />
+      )}
+
+      <Text accessibilityRole="button" onPress={() => void signOut()} style={s.signOut}>
+        Se déconnecter
+      </Text>
+    </Screen>
+  )
+}
+
+const s = StyleSheet.create({
+  label: { fontFamily: fonts.bodySemiBold, fontSize: 13, color: colors.inkSoft },
+  zone: {
+    flex: 1, minHeight: 64, borderRadius: 14, borderWidth: 1, borderColor: colors.line,
+    backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center', padding: 8, gap: 2,
+  },
+  zoneOn: { borderWidth: 2, borderColor: colors.pine, backgroundColor: colors.pineSoft },
+  zoneTitle: { fontFamily: fonts.bodySemiBold, fontSize: 15, color: colors.ink },
+  zoneCities: { fontFamily: fonts.body, fontSize: 11, color: colors.inkSoft, textAlign: 'center' },
+  child: {
+    flexDirection: 'row', alignItems: 'center', minHeight: 56, paddingLeft: 14, paddingRight: 6,
+    backgroundColor: colors.surface, borderRadius: 14, borderWidth: 1, borderColor: colors.line,
+  },
+  childName: { flex: 1, fontFamily: fonts.bodySemiBold, fontSize: 15, color: colors.ink },
+  remove: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  signOut: { textAlign: 'center', fontFamily: fonts.bodySemiBold, fontSize: 14, color: colors.inkSoft, paddingVertical: 12 },
+})
