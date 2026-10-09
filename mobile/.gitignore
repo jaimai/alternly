@@ -39,3 +39,8 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# Builds locaux (eas build --local) : jamais dans le dépôt.
+*.ipa
+*.apk
+*.aab
