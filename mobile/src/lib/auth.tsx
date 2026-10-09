@@ -2,6 +2,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { ApiError, api, loadToken, saveToken, setUnauthorizedHandler } from './api'
 import { unregisterPush } from './push'
+import { forgetGoogleAccount } from './socialAuth'
 import type { TokenResponse, User } from './types'
 
 type Status = 'loading' | 'signedOut' | 'signedIn'
@@ -23,6 +24,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = useCallback(async () => {
     // Avant d'oublier le jeton : ce téléphone ne doit plus recevoir les push du compte.
     await unregisterPush().catch(() => {})
+    await forgetGoogleAccount().catch(() => {})
     await saveToken(null)
     queryClient.clear()
     setUser(null)

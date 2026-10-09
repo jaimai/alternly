@@ -13,7 +13,7 @@ export interface User {
   onboarding_seen: boolean
   locale: Locale
   has_password?: boolean
-  auth_method?: 'email' | 'google'
+  auth_method?: 'email' | 'google' | 'apple'
   created_at?: string | null
 }
 
@@ -121,4 +121,10 @@ export interface PushPrefs {
   expenses: boolean
   wall: boolean
   household: boolean
+}
+
+export interface InvitationPreview {
+  household_name: string
+  invited_by_name: string
+  already_member: boolean
 }

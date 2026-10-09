@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Linking, Pressable, Text, View } from 'react-native'
 import { BackButton } from '@/components/BackButton'
 import { Icon } from '@/components/Icon'
+import { SocialSignIn } from '@/components/SocialSignIn'
 import { Body, Button, ErrorBanner, Field, Screen, Title } from '@/components/ui'
 import { api } from '@/lib/api'
 import { useAuth } from '@/lib/auth'
@@ -35,6 +36,8 @@ export default function Register() {
         <Title>Créer un compte</Title>
         <Body muted>Gratuit. Valable sur l’app et sur le web.</Body>
       </View>
+
+      <SocialSignIn mode="register" />
 
       <ErrorBanner message={register.error?.message} />
 

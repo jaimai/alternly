@@ -22,6 +22,13 @@ class Settings(BaseSettings):
     # Connexion « Continuer avec Google » : ID client OAuth (type Application Web).
     # Vide → fonctionnalité désactivée. Pas de secret : on vérifie seulement le jeton d'identité.
     google_client_id: str = ""
+    # ID clients OAuth Google de l'app mobile (iOS, Android), séparés par des virgules :
+    # leurs jetons d'identité sont acceptés en plus de ceux de google_client_id.
+    google_mobile_client_ids: str = ""
+    # « Se connecter avec Apple » : audiences acceptées (identifiant de bundle iOS),
+    # séparées par des virgules. Ajouter host.exp.Exponent pour tester dans Expo Go.
+    # Vide → désactivé. Pas de secret : on vérifie seulement le jeton d'identité.
+    apple_client_ids: str = "com.alternly.app"
     public_site_url: str = "http://localhost:8000"
     # Origines autorisées à appeler l'API (CORS), séparées par des virgules.
     cors_origins: str = "http://localhost:5173"

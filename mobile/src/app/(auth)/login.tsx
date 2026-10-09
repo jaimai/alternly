@@ -3,6 +3,7 @@ import { Link } from 'expo-router'
 import { useRef, useState } from 'react'
 import { Text, View, type TextInput } from 'react-native'
 import { BackButton } from '@/components/BackButton'
+import { SocialSignIn } from '@/components/SocialSignIn'
 import { Body, Button, ErrorBanner, Field, Screen, Title } from '@/components/ui'
 import { api } from '@/lib/api'
 import { useAuth } from '@/lib/auth'
@@ -29,6 +30,8 @@ export default function Login() {
         <Title>Bon retour</Title>
         <Body muted>Le même compte que sur alternly.com : votre foyer et vos échanges sont déjà là.</Body>
       </View>
+
+      <SocialSignIn mode="login" />
 
       <ErrorBanner message={login.error?.message} />
 
@@ -69,10 +72,6 @@ export default function Login() {
 
       <Button title="Se connecter" onPress={() => login.mutate()} loading={login.isPending} disabled={!canSubmit} />
 
-      <Body muted style={{ textAlign: 'center', fontSize: 14 }}>
-        Compte créé avec Google ? La connexion Google arrive bientôt dans l’app. En attendant, définissez un
-        mot de passe via « Mot de passe oublié ».
-      </Body>
       <Body muted style={{ textAlign: 'center' }}>
         Pas encore de compte ?{' '}
         <Link href="/register" style={{ fontFamily: fonts.bodySemiBold, color: colors.pine }}>

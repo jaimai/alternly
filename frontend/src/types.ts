@@ -10,7 +10,7 @@ export interface User {
   locale: Locale
   /** Faux pour un compte créé via Google sans mot de passe défini. */
   has_password?: boolean
-  auth_method?: 'email' | 'google'
+  auth_method?: 'email' | 'google' | 'apple'
   /** Consentement à la mesure d'audience (null = jamais répondu). */
   analytics_consent?: boolean | null
   created_at?: string | null

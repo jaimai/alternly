@@ -17,6 +17,7 @@ from ..db import get_db
 from ..models import DeviceToken, Feedback, PasswordResetToken, User, utcnow
 from ..ratelimit import HOUR, MINUTE, rate_limit
 from ..schemas import (
+    AppleLoginIn,
     ChangePasswordIn,
     ForgotPasswordIn,
     GoogleLoginIn,
@@ -27,7 +28,7 @@ from ..schemas import (
     UserOut,
     UserUpdate,
 )
-from ..services import account, analytics, google_auth, lifecycle, paddle_api
+from ..services import account, analytics, apple_auth, google_auth, lifecycle, paddle_api
 from ..services import email as email_service
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
@@ -122,8 +123,57 @@ def login(data: UserLogin, db: Session = Depends(get_db)):
     return _token_response(user)
 
 
-# Couleur par défaut d'un compte créé via Google (première couleur de la palette de l'app).
-GOOGLE_DEFAULT_COLOR = "#2f6b57"
+# Couleur par défaut d'un compte créé via Google ou Apple (première couleur de la palette de l'app).
+SOCIAL_DEFAULT_COLOR = "#2f6b57"
+
+
+def _social_login(
+    db: Session,
+    background: BackgroundTasks,
+    *,
+    provider: Literal["google", "apple"],
+    sub: str,
+    email: str,
+    display_name: str,
+    locale: str,
+    analytics_consent: bool | None,
+    via_invite: bool,
+) -> Token:
+    """Connecte, relie (même e-mail vérifié) ou crée le compte d'un fournisseur d'identité."""
+    sub_column = User.google_sub if provider == "google" else User.apple_sub
+    user = db.scalar(select(User).where(sub_column == sub))
+    created = False
+    if user is None:
+        if not email:
+            raise HTTPException(status_code=401, detail="Adresse e-mail manquante")
+        user = db.scalar(select(User).where(User.email == email))
+        if user is not None and not user.is_placeholder:
+            # Compte existant avec le même e-mail (vérifié par le fournisseur) : on le relie.
+            setattr(user, f"{provider}_sub", sub)
+        else:
+            user = User(
+                email=email,
+                password_hash="",  # pas de mot de passe : défini plus tard si besoin
+                display_name=(display_name or email.split("@")[0])[:50],
+                color=SOCIAL_DEFAULT_COLOR,
+                subscription_status="free",
+                locale=locale,
+                analytics_consent=analytics_consent,
+                **{f"{provider}_sub": sub},
+            )
+            db.add(user)
+            created = True
+    elif user.is_placeholder:
+        raise HTTPException(status_code=401, detail="Compte indisponible")
+    db.commit()
+    db.refresh(user)
+    if created:
+        analytics.capture_for_user(
+            user, "user_signed_up", {"method": provider, "via_invite": via_invite, "locale": user.locale}
+        )
+        if not via_invite:
+            lifecycle.queue_welcome(db, user, background)
+    return _token_response(user)
 
 
 @router.post(
@@ -146,39 +196,51 @@ def google_login(
     if not identity.email_verified:
         # Sans e-mail vérifié par Google, relier un compte existant permettrait de l'usurper.
         raise HTTPException(status_code=401, detail="Adresse e-mail Google non vérifiée")
+    google_locale = "en" if (identity.locale or "").lower().startswith("en") else None
+    return _social_login(
+        db,
+        background,
+        provider="google",
+        sub=identity.sub,
+        email=identity.email,
+        display_name=identity.given_name or identity.name,
+        locale=data.locale or google_locale or _detect_locale(accept_language),
+        analytics_consent=data.analytics_consent,
+        via_invite=data.via_invite,
+    )
 
-    user = db.scalar(select(User).where(User.google_sub == identity.sub))
-    created = False
-    if user is None:
-        user = db.scalar(select(User).where(User.email == identity.email))
-        if user is not None and not user.is_placeholder:
-            # Compte existant avec le même e-mail (vérifié par Google) : on le relie.
-            user.google_sub = identity.sub
-        else:
-            google_locale = "en" if (identity.locale or "").lower().startswith("en") else None
-            user = User(
-                email=identity.email,
-                password_hash="",  # pas de mot de passe : défini plus tard si besoin
-                display_name=(identity.given_name or identity.name or identity.email.split("@")[0])[:50],
-                color=GOOGLE_DEFAULT_COLOR,
-                subscription_status="free",
-                locale=data.locale or google_locale or _detect_locale(accept_language),
-                google_sub=identity.sub,
-                analytics_consent=data.analytics_consent,
-            )
-            db.add(user)
-            created = True
-    elif user.is_placeholder:
-        raise HTTPException(status_code=401, detail="Compte indisponible")
-    db.commit()
-    db.refresh(user)
-    if created:
-        analytics.capture_for_user(
-            user, "user_signed_up", {"method": "google", "via_invite": data.via_invite, "locale": user.locale}
-        )
-        if not data.via_invite:
-            lifecycle.queue_welcome(db, user, background)
-    return _token_response(user)
+
+@router.post(
+    "/apple",
+    response_model=Token,
+    dependencies=[Depends(rate_limit("apple", 20, MINUTE))],
+)
+def apple_login(
+    data: AppleLoginIn,
+    background: BackgroundTasks,
+    db: Session = Depends(get_db),
+    accept_language: str | None = Header(default=None),
+):
+    """« Se connecter avec Apple » (iPhone) : connecte, relie ou crée le compte à partir du jeton d'identité."""
+    try:
+        identity = apple_auth.verify_identity_token(data.identity_token)
+    except apple_auth.AppleAuthError as exc:
+        status = 503 if "configurée" in str(exc) else 401
+        raise HTTPException(status_code=status, detail=str(exc))
+    if identity.email and not identity.email_verified:
+        # Même règle que Google : jamais de liaison sur un e-mail non vérifié.
+        raise HTTPException(status_code=401, detail="Adresse e-mail Apple non vérifiée")
+    return _social_login(
+        db,
+        background,
+        provider="apple",
+        sub=identity.sub,
+        email=identity.email,
+        display_name=(data.given_name or "").strip(),
+        locale=data.locale or _detect_locale(accept_language),
+        analytics_consent=data.analytics_consent,
+        via_invite=data.via_invite,
+    )
 
 
 @router.post(
@@ -234,7 +296,7 @@ def reset_password(data: ResetPasswordIn, db: Session = Depends(get_db)):
     dependencies=[Depends(rate_limit("password_change", 10, HOUR))],
 )
 def change_password(data: ChangePasswordIn, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    # Compte Google sans mot de passe : première définition, sans mot de passe actuel.
+    # Compte Google / Apple sans mot de passe : première définition, sans mot de passe actuel.
     if user.has_password and not verify_password(data.current_password, user.password_hash):
         raise HTTPException(status_code=400, detail="Mot de passe actuel incorrect")
     user.password_hash = hash_password(data.new_password)

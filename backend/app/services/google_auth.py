@@ -1,8 +1,8 @@
 """Vérification des jetons d'identité « Continuer avec Google » (Google Identity Services).
 
-Le navigateur obtient un jeton d'identité (JWT RS256 signé par Google) et nous
-l'envoie. On vérifie localement signature, audience (notre ID client), émetteur
-et expiration avec les clés publiques de Google, mises en cache.
+Le navigateur (ou l'app mobile) obtient un jeton d'identité (JWT RS256 signé par
+Google) et nous l'envoie. On vérifie localement signature, audience (nos ID clients),
+émetteur et expiration avec les clés publiques de Google, mises en cache.
 """
 from dataclasses import dataclass
 
@@ -31,9 +31,16 @@ class GoogleIdentity:
     locale: str | None
 
 
+def _audiences() -> list[str]:
+    """ID client web, puis ceux de l'app mobile (iOS, Android)."""
+    ids = [settings.google_client_id, *settings.google_mobile_client_ids.split(",")]
+    return [i.strip() for i in ids if i.strip()]
+
+
 def verify_credential(credential: str) -> GoogleIdentity:
     """Vérifie le jeton et renvoie l'identité Google ; lève GoogleAuthError sinon."""
-    if not settings.google_client_id:
+    audiences = _audiences()
+    if not audiences:
         raise GoogleAuthError("Connexion Google non configurée")
     try:
         signing_key = _jwks_client.get_signing_key_from_jwt(credential)
@@ -41,7 +48,7 @@ def verify_credential(credential: str) -> GoogleIdentity:
             credential,
             signing_key.key,
             algorithms=["RS256"],
-            audience=settings.google_client_id,
+            audience=audiences,
             options={"require": ["exp", "iat", "iss", "sub", "aud"]},
             leeway=30,
         )

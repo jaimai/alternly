@@ -31,6 +31,7 @@ _ADD_COLUMNS: dict[str, dict[str, str]] = {
         "locale": "VARCHAR",
         "token_version": "INTEGER",
         "google_sub": "VARCHAR",
+        "apple_sub": "VARCHAR",
         "analytics_consent": "BOOLEAN",
         "invite_nudge_sent_at": "TIMESTAMP",
         "push_prefs": "JSON",
@@ -120,3 +121,4 @@ def run_migrations(engine: Engine) -> None:
         if "users" in existing_tables:
             # Un compte Google ne peut être relié qu'à un seul compte Alternly.
             conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS ix_users_google_sub ON users (google_sub)"))
+            conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS ix_users_apple_sub ON users (apple_sub)"))

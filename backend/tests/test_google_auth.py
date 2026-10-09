@@ -143,3 +143,11 @@ def test_deleted_account_unlinks_google(client, db_session):
     again = client.post("/api/auth/google", json={"credential": credential()})
     assert again.status_code == 200
     assert again.json()["user"]["has_password"] is False
+
+
+def test_accepts_mobile_client_ids(client, monkeypatch):
+    # App mobile : jetons émis pour les ID clients iOS / Android, en plus de l'ID web.
+    monkeypatch.setattr(settings, "google_mobile_client_ids", "ios.apps.googleusercontent.com, android.apps.googleusercontent.com")
+    for aud in ("ios.apps.googleusercontent.com", "android.apps.googleusercontent.com", CLIENT_ID):
+        assert client.post("/api/auth/google", json={"credential": credential(aud=aud)}).status_code == 200
+    assert client.post("/api/auth/google", json={"credential": credential(aud="autre.apps.googleusercontent.com")}).status_code == 401

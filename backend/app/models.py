@@ -39,6 +39,8 @@ class User(Base):
     token_version: Mapped[int] = mapped_column(Integer, default=0)
     # Identifiant Google (claim « sub ») quand le compte est relié à Google.
     google_sub: Mapped[str | None] = mapped_column(String, nullable=True, unique=True, index=True)
+    # Identifiant Apple (claim « sub ») quand le compte est relié à « Se connecter avec Apple ».
+    apple_sub: Mapped[str | None] = mapped_column(String, nullable=True, unique=True, index=True)
     # Abonnement Paddle. status : trialing | active | past_due | canceled | none.
     subscription_status: Mapped[str] = mapped_column(String, default="trialing")
     trial_ends_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
@@ -56,13 +58,17 @@ class User(Base):
 
     @property
     def has_password(self) -> bool:
-        """Faux pour un compte créé via Google qui n'a jamais défini de mot de passe."""
+        """Faux pour un compte créé via Google ou Apple qui n'a jamais défini de mot de passe."""
         return bool(self.password_hash)
 
     @property
     def auth_method(self) -> str:
-        """« google » pour un compte sans mot de passe relié à Google, sinon « email »."""
-        return "google" if self.google_sub and not self.password_hash else "email"
+        """« google » / « apple » pour un compte sans mot de passe relié à ce fournisseur, sinon « email »."""
+        if self.password_hash:
+            return "email"
+        if self.google_sub:
+            return "google"
+        return "apple" if self.apple_sub else "email"
 
 
 class Household(Base):
