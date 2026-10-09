@@ -10,7 +10,7 @@ Architecture de production (mono-domaine `alternly.com`) :
 | Paiement | Paddle Billing (Merchant of Record) | abonnement Premium, webhooks `subscription.*` |
 | E-mails | Resend | mot de passe oublié, échanges, boucle d'invitation, cycle de vie (bienvenue, rappels de vacances) — voir « E-mails » |
 | Erreurs | Sentry (optionnel) | exceptions backend, expurgées |
-| Cron | GitHub Actions (`.github/workflows/cron.yml`) | rappels d'échange, relances d'invitation, e-mails de cycle de vie (quotidien) |
+| Cron | GitHub Actions (`.github/workflows/cron.yml`, `push-reminders.yml`) | rappels d'échange, relances d'invitation, e-mails de cycle de vie (quotidien, matin) ; rappels de passation en push (quotidien, soir) |
 | CI | GitHub Actions (`.github/workflows/ci.yml`) | pytest backend, traductions fusionnées, lint + build frontend |
 
 Points d'attention :
@@ -47,7 +47,8 @@ Toutes lues par `backend/app/config.py` (insensibles à la casse).
 | `CORS_ORIGINS` | `http://localhost:5173` | Origines autorisées, séparées par des virgules (`https://alternly.com`, + domaines de preview Vercel si besoin). |
 | `RESEND_API_KEY` | vide | Vide → aucun e-mail envoyé (no-op journalisé, adresse masquée). |
 | `EMAIL_FROM` | `Alternly <alternly@xn--hn-vrab.com>` | Expéditeur ; domaine vérifié chez Resend (`hōnō.com`, forme ASCII ; un domaine accentué est converti automatiquement). |
-| `CRON_SECRET` | vide | Protège les endpoints `POST /api/cron/*` (`exchange-reminders`, `invite-reminders`, `lifecycle` ; en-tête `X-Cron-Key`, comparaison à temps constant). Vide → endpoint désactivé (403). |
+| `CRON_SECRET` | vide | Protège les endpoints `POST /api/cron/*` (`exchange-reminders`, `invite-reminders`, `lifecycle`, `handover-reminders` ; en-tête `X-Cron-Key`, comparaison à temps constant). Vide → endpoint désactivé (403). |
+| `PUSH_API_URL` | `https://exp.host/--/api/v2/push/send` | Service Expo qui relaie les notifications push de l'app mobile vers APNs / FCM. À ne changer que pour viser un faux service en recette. |
 | `FEEDBACK_EMAIL` | vide | Boîte qui reçoit les signalements « Signaler un problème / Une idée » (`POST /api/feedback`, Reply-To = e-mail de l'utilisateur). Vide → signalements seulement enregistrés en base (table `feedback`). |
 | `RATE_LIMIT_ENABLED` | `true` | Coupe la limitation de débit (à ne faire qu'en cas d'incident). |
 | `SENTRY_DSN` | vide | Active Sentry si renseigné. |
@@ -196,6 +197,9 @@ Secrets du dépôt (*Settings → Secrets and variables → Actions*) :
 
 Déclenchement manuel : onglet *Actions → Cron → Run workflow*. Attention : GitHub
 désactive les workflows planifiés après 60 jours sans activité sur le dépôt.
+
+
+`.github/workflows/push-reminders.yml` tourne chaque soir à 17:07 UTC (`POST /api/cron/handover-reminders`, mêmes secrets) : push la veille d'un changement de parent aux téléphones inscrits. Idempotent (`email_log`), relançable à la main (*Run workflow*).
 
 ## E-mails
 

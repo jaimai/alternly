@@ -1,6 +1,7 @@
 import { router } from 'expo-router'
 import { Linking, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { EnablePushCard } from '@/components/EnablePushCard'
 import { Icon } from '@/components/Icon'
 import { InviteCard } from '@/components/InviteCard'
 import { Body, Button, Card, ErrorState, Loading, SectionLabel } from '@/components/ui'
@@ -105,6 +106,8 @@ function Content({ cal, household, meId, today }: { cal: CalendarResponse; house
           <Text style={s.statusTitle}>Le calendrier ne couvre pas encore aujourd’hui.</Text>
         )}
       </View>
+
+      <EnablePushCard />
 
       {isSolo(household.members) ? (
         <InviteCard householdId={household.id} childNames={household.children.map((c) => c.first_name)} />

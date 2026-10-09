@@ -266,37 +266,32 @@ fixée par profil via `EXPO_PUBLIC_API_URL`.
 
 ## 7. Ajouts backend
 
-### 7.1 Notifications push
+### 7.1 Notifications push (en place)
 
-```python
-# models.py
-class DeviceToken(Base):
-    __tablename__ = "device_tokens"
-    __table_args__ = (UniqueConstraint("token"),)
-    id: Mapped[int] = mapped_column(primary_key=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
-    token: Mapped[str] = mapped_column(String)          # ExponentPushToken[…]
-    platform: Mapped[str] = mapped_column(String)       # ios | android
-    app_version: Mapped[str | None] = mapped_column(String, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
-    last_seen_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
-```
-
-- `routers/devices.py` : `POST /api/devices` (upsert sur `token`, réattribué à
-  l'utilisateur courant si le téléphone change de compte), `DELETE /api/devices/{token}`
-  (déconnexion).
-- `services/push.py` : `send_push(db, user_id, type_, payload)` → envoie par lots à
-  `https://exp.host/--/api/v2/push/send` (httpx), supprime les jetons en
-  `DeviceNotRegistered`. Titre et texte rendus dans la langue de l'utilisateur, à partir des
-  mêmes libellés que la cloche web.
-- `deps.notify()` : garde l'insert actuel et programme l'envoi push **après le commit**
-  (BackgroundTasks), filtré par les préférences de l'utilisateur. Les routes existantes
-  n'ont pas à changer.
-- Préférences : colonne JSON `push_prefs` sur `users` (catégorie → booléen), exposée par
-  `PATCH /api/auth/me`.
-- Nouveau cron `POST /api/cron/handover-reminders` (rappel la veille d'un changement de
-  parent), ajouté à `cron.yml`.
-- `logout-all` supprime aussi les `device_tokens` de l'utilisateur.
+- **Appareils** : table `device_tokens` (jeton Expo unique, plateforme, version de l'app).
+  `POST /api/devices` inscrit le téléphone (un jeton déjà connu est rattaché au compte
+  courant : téléphone passé sur un autre compte), `DELETE /api/devices/{token}` à la
+  déconnexion de l'app. `logout-all` et la suppression de compte effacent les appareils.
+- **Envoi** (`services/push.py`) : `deps.notify()` crée la notification in-app comme avant
+  et prépare le push (destinataire, préférences, texte dans sa langue, mêmes libellés que la
+  cloche du web). Les messages attendent le **commit** de la session (événements
+  SQLAlchemy `after_commit` / `after_rollback`) : jamais de push pour une action annulée,
+  et aucune des ~25 routes qui appellent `notify()` n'a changé. L'envoi part dans un fil à
+  part (pas de latence ajoutée), par lots de 100 vers le service Expo ; les jetons
+  `DeviceNotRegistered` sont supprimés. Une panne d'Expo n'affecte jamais la requête.
+- **Données du push** : `type`, et `id` / `date_start` selon le cas : l'app ouvre la
+  réponse à l'échange, ou la zone concernée.
+- **Préférences** : `GET/PUT /api/devices/prefs`, cinq catégories (passation, échanges et
+  demandes, dépenses, tableau, foyer), colonne JSON `users.push_prefs` (vide = tout activé).
+- **Rappel de passation** : `POST /api/cron/handover-reminders`, lancé chaque soir à
+  17:07 UTC par `.github/workflows/push-reminders.yml`. Si le parent change le lendemain,
+  chaque parent reçoit « Demain, Léa et Hugo arrivent chez vous / partent chez Julie
+  (vers 18:00) » (heure seulement si le changement vient du rythme habituel). Push seul ;
+  idempotent via `email_log` (`push:handover:<date>`).
+- `PUSH_API_URL` (défaut : service Expo) permet de viser un faux service en recette.
+- **Tous les push sont gratuits** pour l'instant (comme les notifications in-app) ; les
+  rappels par e-mail restent Premium. À trancher si le rappel de passation doit devenir
+  un avantage Premium.
 
 ### 7.2 Connexion
 
@@ -430,7 +425,7 @@ installée, le web sinon.
        `eas.json`, premier build `development`.
 4. [ ] Écran de connexion e-mail branché sur l'API de staging → premier build TestFlight
        (fin du spike).
-5. [ ] Backend : `device_tokens` + push, Google multi-audience, Apple Sign-In,
+5. [x] Backend : `device_tokens` + push. [ ] Google multi-audience, Apple Sign-In,
        `/api/app/config`.
 6. [ ] `.github/workflows/mobile.yml` (aperçus de PR, `preview`, tags de release).
 7. [ ] Liens profonds (`.well-known/*`), puis RevenueCat + webhook.

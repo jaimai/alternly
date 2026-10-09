@@ -48,6 +48,8 @@ class User(Base):
     subscription_ends_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     paddle_customer_id: Mapped[str | None] = mapped_column(String, nullable=True)
     paddle_subscription_id: Mapped[str | None] = mapped_column(String, nullable=True, index=True)
+    # Notifications push par catégorie ({"exchanges": false, …}) ; None = tout activé.
+    push_prefs: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     # Consentement à la mesure d'audience (PostHog) : None = pas encore répondu,
     # True = accepté (événements rattachés au compte), False = refusé (anonyme).
     analytics_consent: Mapped[bool | None] = mapped_column(Boolean, nullable=True, default=None)
@@ -258,6 +260,19 @@ class Notification(Base):
     payload: Mapped[dict] = mapped_column(JSON, default=dict)
     read_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+
+class DeviceToken(Base):
+    """Téléphone qui reçoit les notifications push (jeton Expo, relayé vers APNs / FCM)."""
+    __tablename__ = "device_tokens"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    token: Mapped[str] = mapped_column(String, unique=True)  # ExponentPushToken[…]
+    platform: Mapped[str] = mapped_column(String)  # ios | android
+    app_version: Mapped[str | None] = mapped_column(String, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    last_seen_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
 
 class EmailLog(Base):

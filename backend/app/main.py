@@ -14,7 +14,10 @@ from . import models  # noqa: F401 — enregistre les tables
 from .config import settings
 from .db import Base, engine, get_db
 from .migrations import run_migrations
-from .services import analytics
+from .services import analytics, push
+
+# Push mobile envoyés après chaque commit réussi (toutes les sessions SQLAlchemy).
+push.install_session_hooks(Session)
 
 # Segments d'URL portant un secret (flux iCal, invitation).
 _SECRET_PATH = re.compile(r"(/api/(?:ical|invitations)/)[^/?#]+")
@@ -70,6 +73,7 @@ from .routers import billing as billing_router
 from .routers import change_requests as change_requests_router
 from .routers import children as children_router
 from .routers import cron as cron_router
+from .routers import devices as devices_router
 from .routers import email_prefs as email_prefs_router
 from .routers import expenses as expenses_router
 from .routers import history as history_router
@@ -138,6 +142,7 @@ app.include_router(rules_router.router)
 app.include_router(calendar_router.router)
 app.include_router(ical_router.router)
 app.include_router(notifications_router.router)
+app.include_router(devices_router.router)
 app.include_router(cron_router.router)
 app.include_router(email_prefs_router.router)
 app.include_router(expenses_router.router)
