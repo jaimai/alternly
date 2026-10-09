@@ -5,17 +5,21 @@ import * as SecureStore from 'expo-secure-store'
 import { Platform } from 'react-native'
 import type {
   Balance,
+  ChangeRequest,
   CalendarResponse,
   CustodyRule,
+  DepartureReason,
   Expense,
   ExpenseInput,
   Household,
   Invitation,
   InvitationPreview,
   Notification,
+  PendingChange,
   PushPrefs,
   ScheduleException,
   Settlement,
+  SpecialDayRule,
   TokenResponse,
   User,
   VacationRule,
@@ -59,6 +63,11 @@ export async function saveToken(value: string | null): Promise<void> {
 /** Appelé quand l'API rejette le jeton (expiré, révoqué) : l'app se déconnecte. */
 export function setUnauthorizedHandler(handler: (() => void) | null) {
   onUnauthorized = handler
+}
+
+/** Vrai si la réponse est un changement en attente d'accord (HTTP 202). */
+export function isPendingChange(x: unknown): x is PendingChange {
+  return typeof x === 'object' && x !== null && 'change_request' in x
 }
 
 export class ApiError extends Error {
@@ -142,6 +151,13 @@ export const api = {
   forgotPassword: (email: string) =>
     request<{ ok: boolean }>('/auth/password/forgot', { method: 'POST', body: { email } }),
   me: () => request<User>('/auth/me'),
+  updateMe: (data: { display_name?: string; color?: string; email_opt_in?: boolean }) =>
+    request<User>('/auth/me', { method: 'PATCH', body: data }),
+  /** Révoque les autres sessions : renvoie un nouveau jeton pour ce téléphone. */
+  changePassword: (current_password: string, new_password: string) =>
+    request<TokenResponse>('/auth/password/change', { method: 'POST', body: { current_password, new_password } }),
+  deleteAccount: (reason: DepartureReason | null, comment: string) =>
+    request<void>('/auth/me', { method: 'DELETE', body: { reason, comment } }),
 
   myHousehold: () => request<Household>('/households/mine'),
   // Dépenses (Premium : 402 sinon).
@@ -175,10 +191,22 @@ export const api = {
     request<Household>('/households', { method: 'POST', body: data }),
   addChild: (householdId: number, first_name: string) =>
     request<unknown>(`/households/${householdId}/children`, { method: 'POST', body: { first_name } }),
+  // Avec deux parents réels, les changements sensibles renvoient 202 {"change_request": …}
+  // (en attente d'accord) : tester avec isPendingChange().
   setCustodyRule: (householdId: number, rule: CustodyRule) =>
-    request<unknown>(`/households/${householdId}/custody-rule`, { method: 'PUT', body: rule }),
+    request<CustodyRule | PendingChange>(`/households/${householdId}/custody-rule`, { method: 'PUT', body: rule }),
   setVacationRule: (householdId: number, rule: VacationRule) =>
-    request<unknown>(`/households/${householdId}/vacation-rule`, { method: 'PUT', body: rule }),
+    request<VacationRule | PendingChange>(`/households/${householdId}/vacation-rule`, { method: 'PUT', body: rule }),
+  setSpecialDayRules: (householdId: number, rules: SpecialDayRule[]) =>
+    request<SpecialDayRule[] | PendingChange>(`/households/${householdId}/special-day-rules`, { method: 'PUT', body: rules }),
+  deleteChild: (householdId: number, childId: number) =>
+    request<PendingChange | undefined>(`/households/${householdId}/children/${childId}`, { method: 'DELETE' }),
+  updateHousehold: (householdId: number, data: { name?: string; school_zone?: 'A' | 'B' | 'C' }) =>
+    request<Household>(`/households/${householdId}`, { method: 'PATCH', body: data }),
+  changeRequests: (householdId: number) =>
+    request<ChangeRequest[]>(`/households/${householdId}/change-requests?status=pending`),
+  answerChange: (householdId: number, id: number, action: 'accept' | 'refuse' | 'withdraw') =>
+    request<ChangeRequest>(`/households/${householdId}/change-requests/${id}/${action}`, { method: 'POST' }),
   currentInvitation: (householdId: number) =>
     request<{ invitation: Invitation | null; last_expired: boolean }>(`/households/${householdId}/invitations/current`),
   createInvitation: (householdId: number) =>

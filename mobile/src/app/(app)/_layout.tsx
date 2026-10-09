@@ -37,6 +37,11 @@ export default function AppLayout() {
           <Stack.Screen name="expense/settle" options={{ presentation: 'modal' }} />
           <Stack.Screen name="wall/[id]" />
           <Stack.Screen name="wall/new" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="settings/profile" />
+          <Stack.Screen name="settings/household" />
+          <Stack.Screen name="settings/rules" />
+          <Stack.Screen name="settings/special-days" />
+          <Stack.Screen name="settings/account" />
         </Stack.Protected>
       </Stack>
     </>

@@ -91,6 +91,7 @@ src/app/            routes Expo Router (1 fichier = 1 écran)
   (app)/exchange/   new (proposer / contre-proposer), [id] (répondre)
   (app)/expense/    [id] (détail, actions), edit (ajouter / modifier), settle (remboursement)
   (app)/wall/       [id] (post et réponses), new (info, tâche, question)
+  (app)/settings/   profile, household (enfants, zone), rules, special-days, account
   (app)/…           notifications, notification-settings (préférences push)
 src/components/     briques d'interface (charte « papier chaleureux »)
 src/lib/            client API, session, requêtes, dates, logique calendrier (+ tests)
@@ -110,6 +111,8 @@ accueil (qui a les enfants, prochain passage, échanges à valider, 7 prochains 
 détail du jour ; **dépenses partagées** (solde, ajout / modification, contestation,
 remboursements ; Premium) ; **tableau** (infos, tâches, questions, réponses ; Premium) ;
 **proposer un échange**, le retirer, accepter / refuser / **contre-proposer** ;
-notifications in-app ; réglages en lecture, déconnexion.
+notifications in-app ; **réglages modifiables** (profil, enfants, zone, garde et vacances,
+jours de fête, demandes de changement à accepter, mot de passe, suppression du compte),
+déconnexion.
 
-À venir : réglages modifiables (règles, enfants), achats intégrés.
+À venir : achats intégrés, synchronisation d'agenda (iCal), historique des changements.
