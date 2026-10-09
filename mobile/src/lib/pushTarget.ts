@@ -2,7 +2,7 @@
 import { notificationArea } from './notifications'
 
 export type PushTarget =
-  | { pathname: '/exchange/[id]' | '/expense/[id]'; params: { id: string } }
+  | { pathname: '/exchange/[id]' | '/expense/[id]' | '/wall/[id]'; params: { id: string } }
   | { pathname: '/calendar' | '/expenses' | '/wall' | '/settings' | '/notifications' }
 
 export function pushTarget(data: Record<string, unknown> | undefined): PushTarget {
@@ -14,6 +14,9 @@ export function pushTarget(data: Record<string, unknown> | undefined): PushTarge
   if (type.startsWith('expense_') && type !== 'expense_deleted' && data?.id !== undefined) {
     return { pathname: '/expense/[id]', params: { id: String(data.id) } }
   }
+  // Post du tableau (nouveau, tâche assignée) ou réponse à un post.
+  const postId = type === 'wall_reply_added' ? data?.post_id : type.startsWith('wall_') ? data?.id : undefined
+  if (postId !== undefined) return { pathname: '/wall/[id]', params: { id: String(postId) } }
   if (type === 'handover_reminder') return { pathname: '/calendar' }
   if (!type) return { pathname: '/notifications' }
   const area = notificationArea(type)

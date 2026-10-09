@@ -19,6 +19,8 @@ import type {
   TokenResponse,
   User,
   VacationRule,
+  WallPost,
+  WallReply,
 } from './types'
 import { hasPendingInvite } from './pendingInvite'
 
@@ -159,6 +161,16 @@ export const api = {
   createSettlement: (hid: number, data: Omit<Settlement, 'id' | 'created_by'>) =>
     request<Settlement>(`/households/${hid}/settlements`, { method: 'POST', body: data }),
   deleteSettlement: (hid: number, id: number) => request<void>(`/households/${hid}/settlements/${id}`, { method: 'DELETE' }),
+  // Tableau entre parents (Premium : 402 sinon).
+  wall: (hid: number) => request<WallPost[]>(`/households/${hid}/wall`),
+  createPost: (hid: number, data: Pick<WallPost, 'kind' | 'body' | 'child_id' | 'due_date' | 'assigned_to'>) =>
+    request<WallPost>(`/households/${hid}/wall`, { method: 'POST', body: data }),
+  deletePost: (hid: number, id: number) => request<void>(`/households/${hid}/wall/${id}`, { method: 'DELETE' }),
+  completePost: (hid: number, id: number) => request<WallPost>(`/households/${hid}/wall/${id}/complete`, { method: 'POST' }),
+  reopenPost: (hid: number, id: number) => request<WallPost>(`/households/${hid}/wall/${id}/reopen`, { method: 'POST' }),
+  replyToPost: (hid: number, id: number, body: string) =>
+    request<WallReply>(`/households/${hid}/wall/${id}/replies`, { method: 'POST', body: { body } }),
+  deleteReply: (hid: number, id: number) => request<void>(`/households/${hid}/replies/${id}`, { method: 'DELETE' }),
   createHousehold: (data: { name: string; country: 'FR' | 'US'; school_zone: 'A' | 'B' | 'C' }) =>
     request<Household>('/households', { method: 'POST', body: data }),
   addChild: (householdId: number, first_name: string) =>

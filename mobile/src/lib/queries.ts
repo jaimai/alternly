@@ -11,6 +11,7 @@ export const keys = {
   notifications: ['notifications'] as const,
   pushPrefs: ['pushPrefs'] as const,
   expenses: ['expenses'] as const,
+  wall: ['wall'] as const,
 }
 
 /** Profil : celui de la connexion d'abord, puis rafraîchi depuis l'API. */
@@ -124,14 +125,32 @@ export function useExpenses(householdId: number | undefined) {
   return { expenses, settlements, balance, locked }
 }
 
-/** Action sur une dépense ou un remboursement, puis rafraîchit liste et solde. */
-export function useExpenseAction<V = void, R = unknown>(fn: (v: V) => Promise<R>, onSuccess?: (r: R) => void) {
+/** Mutation qui rafraîchit ensuite les requêtes sous `queryKey`. */
+function useRefreshingMutation<V, R>(queryKey: readonly unknown[], fn: (v: V) => Promise<R>, onSuccess?: (r: R) => void) {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: fn,
     onSuccess: async (r) => {
-      await qc.invalidateQueries({ queryKey: keys.expenses })
+      await qc.invalidateQueries({ queryKey })
       onSuccess?.(r)
     },
   })
+}
+
+/** Action sur une dépense ou un remboursement, puis rafraîchit liste et solde. */
+export function useExpenseAction<V = void, R = unknown>(fn: (v: V) => Promise<R>, onSuccess?: (r: R) => void) {
+  return useRefreshingMutation(keys.expenses, fn, onSuccess)
+}
+
+/** Posts du tableau, avec leurs réponses. `locked` : pas d'abonnement Premium (402). */
+export function useWall(householdId: number | undefined) {
+  const hid = householdId ?? 0
+  const wall = useQuery({ queryKey: [...keys.wall, hid], queryFn: () => api.wall(hid), enabled: householdId !== undefined })
+  const locked = wall.error instanceof ApiError && wall.error.status === 402
+  return { wall, locked }
+}
+
+/** Action sur un post ou une réponse, puis rafraîchit le tableau. */
+export function useWallAction<V = void, R = unknown>(fn: (v: V) => Promise<R>, onSuccess?: (r: R) => void) {
+  return useRefreshingMutation(keys.wall, fn, onSuccess)
 }

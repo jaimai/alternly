@@ -84,6 +84,7 @@ src/app/            routes Expo Router (1 fichier = 1 écran)
   (app)/(tabs)/     Accueil, Calendrier, Tableau, Dépenses, Réglages
   (app)/exchange/   new (proposer / contre-proposer), [id] (répondre)
   (app)/expense/    [id] (détail, actions), edit (ajouter / modifier), settle (remboursement)
+  (app)/wall/       [id] (post et réponses), new (info, tâche, question)
   (app)/…           notifications, notification-settings (préférences push)
 src/components/     briques d'interface (charte « papier chaleureux »)
 src/lib/            client API, session, requêtes, dates, logique calendrier (+ tests)
@@ -101,8 +102,8 @@ accueil (qui a les enfants, prochain passage, échanges à valider, 7 prochains 
 (rejoindre un foyer, nouveau mot de passe) ; **notifications push**
 (permission, préférences par catégorie, ouverture du bon écran) ; calendrier mensuel avec
 détail du jour ; **dépenses partagées** (solde, ajout / modification, contestation,
-remboursements ; Premium) ; **proposer un échange**, le retirer, accepter / refuser / **contre-proposer** ;
+remboursements ; Premium) ; **tableau** (infos, tâches, questions, réponses ; Premium) ;
+**proposer un échange**, le retirer, accepter / refuser / **contre-proposer** ;
 notifications in-app ; réglages en lecture, déconnexion.
 
-À venir : Tableau natif,
-réglages modifiables (règles, enfants), achats intégrés. En attendant, ces écrans renvoient vers alternly.com.
+À venir : réglages modifiables (règles, enfants), achats intégrés.

@@ -4,6 +4,7 @@ import { router } from 'expo-router'
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Icon } from '@/components/Icon'
+import { PremiumLocked } from '@/components/PremiumLocked'
 import { Tag } from '@/components/Tag'
 import { Body, Button, Card, ErrorState, Loading, SectionLabel } from '@/components/ui'
 import { formatMonth, formatShort } from '@/lib/dates'
@@ -22,7 +23,7 @@ export default function Expenses() {
 
   let body
   if (!household || expenses.isPending || balance.isPending) body = <Loading />
-  else if (locked) body = <PremiumLocked />
+  else if (locked) body = <PremiumLocked icon="wallet" what="Dépenses partagées, solde et remboursements" />
   else if (expenses.isError) body = <ErrorState message={expenses.error.message} onRetry={refetch} />
   else {
     body = (
@@ -188,22 +189,6 @@ function Stat({ label, value, tone }: { label: string; value: string; tone: 'cre
     <View style={{ flex: 1, backgroundColor: bg, borderRadius: radius.md, padding: 12, gap: 2 }}>
       <Text style={{ fontFamily: fonts.bodySemiBold, fontSize: 12, color: fg }}>{label}</Text>
       <Text style={{ fontFamily: fonts.bodyBold, fontSize: 18, color: fg }}>{value}</Text>
-    </View>
-  )
-}
-
-// Pas de lien d'achat vers le web : interdit par Apple tant que l'achat intégré n'existe pas.
-function PremiumLocked() {
-  return (
-    <View style={[s.content, { flexGrow: 1, justifyContent: 'center' }]}>
-      <View style={s.emptyIcon}>
-        <Icon name="wallet" color={colors.pine} />
-      </View>
-      <Text style={s.emptyTitle}>Une fonction Premium</Text>
-      <Body muted>
-        Les dépenses partagées (solde, remboursements, contestations) font partie d’Alternly Premium. Si votre foyer est abonné,
-        elles apparaissent ici automatiquement, pour les deux parents.
-      </Body>
     </View>
   )
 }

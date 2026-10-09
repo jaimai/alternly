@@ -35,6 +35,8 @@ export default function AppLayout() {
           <Stack.Screen name="expense/[id]" />
           <Stack.Screen name="expense/edit" options={{ presentation: 'modal' }} />
           <Stack.Screen name="expense/settle" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="wall/[id]" />
+          <Stack.Screen name="wall/new" options={{ presentation: 'modal' }} />
         </Stack.Protected>
       </Stack>
     </>
