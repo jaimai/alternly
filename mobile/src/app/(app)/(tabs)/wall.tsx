@@ -6,7 +6,7 @@ import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, Vie
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Chips } from '@/components/form'
 import { Icon } from '@/components/Icon'
-import { PremiumLocked } from '@/components/PremiumLocked'
+import { Paywall } from '@/components/Paywall'
 import { WallPostCard } from '@/components/WallPostCard'
 import { Body, ErrorState, Loading } from '@/components/ui'
 import { useHousehold, useWall } from '@/lib/queries'
@@ -19,7 +19,16 @@ export default function Wall() {
   const { wall, locked } = useWall(household?.id)
 
   let body
-  if (locked) body = <PremiumLocked icon="wall" what="Infos, tâches et questions entre parents" />
+  if (locked) {
+    body = (
+      <ScrollView contentContainerStyle={s.content}>
+        <Paywall
+          title="Le tableau, avec Premium"
+          intro="Infos, tâches et questions entre parents, au même endroit, sans passer par les textos. Un seul abonnement suffit pour les deux parents."
+        />
+      </ScrollView>
+    )
+  }
   else if (wall.isError) body = <ErrorState message={wall.error.message} onRetry={() => wall.refetch()} />
   else if (!household || !wall.data) body = <Loading />
   else {

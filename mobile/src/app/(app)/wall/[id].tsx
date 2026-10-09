@@ -3,7 +3,7 @@ import { router, useLocalSearchParams } from 'expo-router'
 import { useState } from 'react'
 import { Alert, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native'
 import { BackButton } from '@/components/BackButton'
-import { PremiumLocked } from '@/components/PremiumLocked'
+import { Paywall } from '@/components/Paywall'
 import { WallPostCard } from '@/components/WallPostCard'
 import { Body, Button, ErrorBanner, ErrorState, Loading, Screen, SectionLabel, Title } from '@/components/ui'
 import { api } from '@/lib/api'
@@ -31,7 +31,7 @@ export default function WallPostScreen() {
       <Screen edges={['top', 'bottom']}>
         <BackButton />
         {locked ? (
-          <PremiumLocked icon="wall" what="Le tableau partagé" />
+          <Paywall title="Le tableau, avec Premium" />
         ) : (
           <ErrorState message={wall.error.message} onRetry={() => wall.refetch()} />
         )}

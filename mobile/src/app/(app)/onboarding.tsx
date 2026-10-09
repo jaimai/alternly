@@ -1,19 +1,23 @@
-// Premier lancement (ou foyer sans règle de garde) : foyer → enfants → rythme.
-// Mêmes appels API que frontend/src/pages/Onboarding.tsx. L'invitation de l'autre
-// parent n'est pas une étape (comme sur le web) : elle est proposée sur l'accueil.
+// Premier lancement (ou foyer sans règle de garde) : foyer → enfants → rythme →
+// notifications → Premium (facultatif). Mêmes appels API que frontend/src/pages/Onboarding.tsx.
+// L'invitation de l'autre parent n'est pas une étape (comme sur le web) : elle est
+// proposée sur l'accueil.
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { Progress, Segmented } from '@/components/form'
 import { Icon } from '@/components/Icon'
+import { Paywall } from '@/components/Paywall'
 import { RuleWizard, type RuleValue } from '@/components/RuleWizard'
-import { Body, Button, ErrorBanner, Field, Loading, Screen, Title } from '@/components/ui'
+import { Body, Button, Card, ErrorBanner, Field, Loading, Screen, Title } from '@/components/ui'
 import { api } from '@/lib/api'
 import { useAuth } from '@/lib/auth'
+import { iapAvailable } from '@/lib/purchases'
+import { enablePush, pushStatus } from '@/lib/push'
 import { keys, useHousehold, useMe } from '@/lib/queries'
 import { colors, fonts } from '@/lib/theme'
 
-const TOTAL_STEPS = 6 // foyer, enfants, puis les 4 étapes du rythme
+const TOTAL_STEPS = 8 // foyer, enfants, les 4 étapes du rythme, notifications, Premium
 const ZONES = [
   { value: 'A' as const, label: 'Zone A', cities: 'Lyon, Bordeaux, Grenoble…' },
   { value: 'B' as const, label: 'Zone B', cities: 'Lille, Nantes, Marseille…' },
@@ -27,7 +31,8 @@ export default function Onboarding() {
   const household = useHousehold()
   const h = household.data ?? null
   // Foyer déjà créé (onboarding interrompu) : on reprend là où il en était.
-  const [step, setStep] = useState<0 | 1 | 2>(h === null ? 0 : h.children.length === 0 ? 1 : 2)
+  // 3 (notifications) et 4 (Premium) suivent l'enregistrement du rythme.
+  const [step, setStep] = useState<0 | 1 | 2 | 3 | 4>(h === null ? 0 : h.children.length === 0 ? 1 : 2)
 
   const [name, setName] = useState('')
   const [country, setCountry] = useState<'FR' | 'US'>(me?.locale === 'en' ? 'US' : 'FR')
@@ -55,13 +60,30 @@ export default function Onboarding() {
     },
   })
 
+  // Fin de l'onboarding : le foyer rechargé a une règle, la garde de (app)/_layout
+  // bascule vers l'accueil. Retardé jusqu'après les étapes notifications et Premium.
+  const finish = () => qc.invalidateQueries({ queryKey: keys.household })
+
+  // Premium proposé seulement si l'achat est possible ici et le foyer pas déjà abonné.
+  async function afterNotifications() {
+    const offer = iapAvailable() && !(await api.billingStatus().catch(() => null))?.access
+    if (offer) setStep(4)
+    else await finish()
+  }
+
   const saveRules = useMutation({
     mutationFn: async (value: RuleValue) => {
       await api.setCustodyRule(h!.id, value.custody)
       await api.setVacationRule(h!.id, value.vacation)
+      // Demande système proposée seulement si elle n'a jamais été posée (une seule fois possible).
+      return (await pushStatus().catch(() => 'unavailable')) === 'undetermined'
     },
-    // Le foyer a maintenant une règle : la garde de (app)/_layout bascule vers l'accueil.
-    onSuccess: () => qc.invalidateQueries({ queryKey: keys.household }),
+    onSuccess: (askPush) => (askPush ? setStep(3) : afterNotifications()),
+  })
+
+  const activatePush = useMutation({
+    mutationFn: enablePush,
+    onSettled: () => afterNotifications(),
   })
 
   const addChild = () => {
@@ -78,6 +100,8 @@ export default function Onboarding() {
   return (
     <Screen edges={['top', 'bottom']}>
       {step < 2 ? <Progress step={step + 1} total={TOTAL_STEPS} /> : null}
+      {step === 3 ? <Progress step={TOTAL_STEPS - 1} total={TOTAL_STEPS} /> : null}
+      {step === 4 ? <Progress step={TOTAL_STEPS} total={TOTAL_STEPS} /> : null}
       <ErrorBanner message={error} />
 
       {step === 0 && (
@@ -183,9 +207,48 @@ export default function Onboarding() {
         />
       )}
 
-      <Text accessibilityRole="button" onPress={() => void signOut()} style={s.signOut}>
-        Se déconnecter
-      </Text>
+      {step === 3 && (
+        <>
+          <View style={s.bell}>
+            <Icon name="bell" size={30} color={colors.pine} />
+          </View>
+          <View style={{ gap: 6 }}>
+            <Title>Ne ratez plus une passation</Title>
+            <Body muted>Activez les notifications : Alternly vous prévient au bon moment, sans que vous ayez à ouvrir l’app.</Body>
+          </View>
+          <Card>
+            {[
+              'Rappel la veille de chaque passation',
+              'Échange proposé par l’autre parent, à valider',
+              'Nouvelle dépense ou message sur le tableau',
+            ].map((t) => (
+              <View key={t} style={{ flexDirection: 'row', gap: 10, alignItems: 'flex-start' }}>
+                <Icon name="check" size={18} color={colors.pine} strokeWidth={2.4} />
+                <Body style={{ flex: 1, fontSize: 15 }}>{t}</Body>
+              </View>
+            ))}
+          </Card>
+          <Body muted style={{ fontSize: 13 }}>Vous choisissez ensuite quoi recevoir dans Réglages › Notifications.</Body>
+          <Button title="Activer les notifications" onPress={() => activatePush.mutate()} loading={activatePush.isPending} />
+          <Button title="Plus tard" variant="ghost" onPress={() => void afterNotifications()} disabled={activatePush.isPending} />
+        </>
+      )}
+
+      {step === 4 && (
+        <Paywall
+          title="Votre calendrier est prêt"
+          intro="Allez plus loin avec Premium : dépenses partagées et tableau entre parents. Un seul abonnement suffit pour vous deux."
+          onPurchased={() => void finish()}
+          onSkip={() => void finish()}
+          skipLabel="Continuer avec la version gratuite"
+        />
+      )}
+
+      {step < 3 ? (
+        <Text accessibilityRole="button" onPress={() => void signOut()} style={s.signOut}>
+          Se déconnecter
+        </Text>
+      ) : null}
     </Screen>
   )
 }
@@ -205,5 +268,6 @@ const s = StyleSheet.create({
   },
   childName: { flex: 1, fontFamily: fonts.bodySemiBold, fontSize: 15, color: colors.ink },
   remove: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  bell: { width: 64, height: 64, borderRadius: 20, backgroundColor: colors.pineSoft, alignItems: 'center', justifyContent: 'center' },
   signOut: { textAlign: 'center', fontFamily: fonts.bodySemiBold, fontSize: 14, color: colors.inkSoft, paddingVertical: 12 },
 })
