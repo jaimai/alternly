@@ -75,10 +75,15 @@ class TestIcalEndpoint:
         assert "BEGIN:VEVENT" in resp.text
         assert "Chez Camille" in resp.text or "Chez Dominique" in resp.text
 
+        # lecture du lien (app mobile) : le même jeton, toujours valable
+        assert client.get("/api/ical/link", headers=headers1).json()["ical_token"] == token
+        assert client.get(f"/api/ical/{token}.ics").status_code == 200
+
         # régénération : l'ancien lien meurt
         new = client.post("/api/ical/regenerate", headers=headers1).json()["ical_token"]
         assert client.get(f"/api/ical/{token}.ics").status_code == 404
         assert client.get(f"/api/ical/{new}.ics").status_code == 200
+        assert client.get("/api/ical/link", headers=headers1).json()["ical_token"] == new
 
 
 class TestNotifications:

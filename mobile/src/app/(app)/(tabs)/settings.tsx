@@ -2,13 +2,12 @@
 // notifications, compte. Chaque rubrique s'ouvre dans son écran (app/(app)/settings/…).
 import Constants from 'expo-constants'
 import { router, type Href } from 'expo-router'
-import { Alert, Linking, Pressable, StyleSheet, Text, View } from 'react-native'
+import { Alert, Pressable, StyleSheet, Text, View } from 'react-native'
 import { ChangeRequests } from '@/components/ChangeRequests'
 import { Icon } from '@/components/Icon'
 import { InviteCard } from '@/components/InviteCard'
 import { Avatar, Screen, SectionLabel, Title } from '@/components/ui'
 import { useAuth } from '@/lib/auth'
-import { WEB_URL } from '@/lib/colors'
 import { isSolo } from '@/lib/custody'
 import { useBilling, useHousehold, useMe } from '@/lib/queries'
 import { colors, fonts } from '@/lib/theme'
@@ -88,10 +87,8 @@ export default function Settings() {
           <NavRow label="Alternly Premium" value={billing ? (billing.access ? 'Actif' : 'Découvrir') : undefined} href="/premium" />
           <NavRow label="Notifications" icon="bell" href="/notification-settings" />
           <NavRow label="Compte et mot de passe" icon="settings" href="/settings/account" />
-          <Pressable accessibilityRole="link" onPress={() => Linking.openURL(`${WEB_URL}/history`)} style={s.row}>
-            <Text style={[s.strong, { flex: 1 }]}>Historique des changements</Text>
-            <Text style={s.muted}>sur le web</Text>
-          </Pressable>
+          <NavRow label="Synchroniser mon agenda" icon="calendar" href="/settings/calendar-sync" />
+          <NavRow label="Historique du foyer" href="/settings/history" />
         </View>
       </View>
 
@@ -107,7 +104,7 @@ export default function Settings() {
   )
 }
 
-function NavRow({ label, value, icon, href }: { label: string; value?: string; icon?: 'bell' | 'settings'; href: Href }) {
+function NavRow({ label, value, icon, href }: { label: string; value?: string; icon?: 'bell' | 'settings' | 'calendar'; href: Href }) {
   return (
     <Pressable accessibilityRole="button" onPress={() => router.push(href)} style={({ pressed }) => [s.row, pressed && { backgroundColor: colors.paperDeep }]}>
       {icon ? <Icon name={icon} color={colors.ink} /> : null}
