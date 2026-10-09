@@ -4,7 +4,7 @@ import json
 import secrets
 from datetime import timedelta
 from typing import Literal
-from urllib.parse import unquote, urlencode
+from urllib.parse import unquote, urlencode, urlsplit
 
 from fastapi import APIRouter, BackgroundTasks, Body, Depends, Form, Header, HTTPException, Response
 from fastapi.encoders import jsonable_encoder
@@ -245,9 +245,11 @@ def apple_login(
     )
 
 
-# Retours autorisés après la page web d'Apple : l'app installée (alternly://) ou Expo Go
-# en développement (exp://). Jamais une adresse web : le jeton ne doit pas en sortir.
-APPLE_RETURN_SCHEMES = ("alternly://", "exp://", "exps://")
+# Retour autorisé après la page web d'Apple : l'app installée (alternly://), jamais une
+# adresse web. Expo Go (exp://) seulement si APPLE_ALLOW_EXPO_GO, en développement.
+def _apple_return_allowed(url: str) -> bool:
+    scheme = urlsplit(url).scheme.lower()
+    return scheme == "alternly" or (settings.apple_allow_expo_go and scheme in ("exp", "exps"))
 
 
 @router.post("/apple/callback", dependencies=[Depends(rate_limit("apple_callback", 30, MINUTE))])
@@ -264,7 +266,7 @@ def apple_web_callback(
     """
     nonce, _, encoded = state.partition(".")
     return_url = unquote(encoded)
-    if not nonce or not return_url.startswith(APPLE_RETURN_SCHEMES):
+    if not nonce or not _apple_return_allowed(return_url):
         raise HTTPException(status_code=400, detail="Retour non autorisé")
     params = {"state": nonce}
     if error or not id_token:

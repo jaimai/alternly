@@ -3,6 +3,7 @@
 // renvoie notre propre jeton, comme une connexion e-mail. Même compte que sur le web.
 import * as AppleAuthentication from 'expo-apple-authentication'
 import Constants, { ExecutionEnvironment } from 'expo-constants'
+import * as Crypto from 'expo-crypto'
 import * as Linking from 'expo-linking'
 import * as WebBrowser from 'expo-web-browser'
 import { Platform } from 'react-native'
@@ -121,7 +122,7 @@ async function signInWithAppleWeb(): Promise<TokenResponse> {
 }
 
 function randomHex(bytes: number): string {
-  return Array.from({ length: bytes }, () => Math.floor(Math.random() * 256).toString(16).padStart(2, '0')).join('')
+  return Array.from(Crypto.getRandomBytes(bytes), (b) => b.toString(16).padStart(2, '0')).join('')
 }
 
 /** À la déconnexion : la prochaine connexion Google redemandera quel compte utiliser. */

@@ -143,7 +143,8 @@ def test_web_callback_redirects_token_to_app(client):
     assert "state=abc123" in location and f"id_token={token}" in location and "given_name=Camille" in location
 
 
-def test_web_callback_keeps_expo_go_query(client):
+def test_web_callback_keeps_expo_go_query(client, monkeypatch):
+    monkeypatch.setattr(settings, "apple_allow_expo_go", True)
     r = client.post(
         "/api/auth/apple/callback",
         data={"state": "n1.exp%3A%2F%2F192.168.1.2%3A8081%2F--%2Fapple-callback", "error": "user_cancelled_authorize"},
@@ -153,7 +154,15 @@ def test_web_callback_keeps_expo_go_query(client):
     assert r.headers["location"] == "exp://192.168.1.2:8081/--/apple-callback?state=n1&error=user_cancelled_authorize"
 
 
-@pytest.mark.parametrize("state", ["", "abc", "abc.https%3A%2F%2Fevil.example.com", ".alternly%3A%2F%2Fx"])
+@pytest.mark.parametrize(
+    "state",
+    [
+        "", "abc", "abc.https%3A%2F%2Fevil.example.com", ".alternly%3A%2F%2Fx",
+        # Expo Go refusé hors développement : un serveur exp:// tiers recevrait le jeton.
+        "abc.exp%3A%2F%2Fevil.example.com%2F--%2Fapple-callback",
+        "abc.alternly-evil%3A%2F%2Fx",
+    ],
+)
 def test_web_callback_refuses_other_destinations(client, state):
     r = client.post("/api/auth/apple/callback", data={"state": state, "id_token": identity_token()}, follow_redirects=False)
     assert r.status_code == 400

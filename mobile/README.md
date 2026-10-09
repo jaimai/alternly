@@ -43,10 +43,11 @@ existant si l'adresse est la même. Un bouton non configuré explique pourquoi a
 - **Apple sur iPhone** (natif) : marche dans Expo Go si le backend accepte
   `host.exp.Exponent` (`APPLE_CLIENT_IDS=com.alternly.app,host.exp.Exponent`). En build,
   activer « Sign in with Apple » sur l'App ID `com.alternly.app` (EAS le fait au build).
-- **Apple sur Android** (page web d'Apple, marche aussi dans Expo Go) : chez Apple, créer
+- **Apple sur Android** (page web d'Apple) : chez Apple, créer
   un **Services ID** (ex. `com.alternly.app.signin`), activer « Sign in with Apple », domaine
   de l'API et Return URL `<API>/api/auth/apple/callback`. Puis `APPLE_SERVICES_ID` côté
-  backend et `EXPO_PUBLIC_APPLE_SERVICES_ID` côté app (même valeur).
+  backend et `EXPO_PUBLIC_APPLE_SERVICES_ID` côté app (même valeur). Pour tester dans Expo Go,
+  `APPLE_ALLOW_EXPO_GO=true` sur un backend de développement uniquement (jamais en production).
 - **Google** : build de développement obligatoire (module natif absent d'Expo Go : le
   bouton le dit). Dans Google Cloud Console, créer un ID client **iOS** (bundle
   `com.alternly.app`) et un ID client **Android** (package `com.alternly.app` + empreinte

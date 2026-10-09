@@ -33,6 +33,9 @@ class Settings(BaseSettings):
     # (ex. com.alternly.app.signin), avec pour Return URL <API>/api/auth/apple/callback.
     # Ajouté aux audiences acceptées. Vide → connexion Apple indisponible sur Android.
     apple_services_id: str = ""
+    # Développement seulement : accepter le retour vers Expo Go (exp://…) après la page web
+    # d'Apple. Jamais en production : n'importe quel serveur exp:// recevrait le jeton.
+    apple_allow_expo_go: bool = False
     public_site_url: str = "http://localhost:8000"
     # Origines autorisées à appeler l'API (CORS), séparées par des virgules.
     cors_origins: str = "http://localhost:5173"
