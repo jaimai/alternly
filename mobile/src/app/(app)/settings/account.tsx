@@ -1,6 +1,8 @@
 // Compte : mot de passe (ou un premier mot de passe pour un compte Apple / Google) et
 // suppression du compte, exigée dans l'app par l'App Store.
 import { useMutation } from '@tanstack/react-query'
+import { File, Paths } from 'expo-file-system'
+import * as Sharing from 'expo-sharing'
 import { useState } from 'react'
 import { Alert, Text, TextInput, View } from 'react-native'
 import { BackButton } from '@/components/BackButton'
@@ -32,6 +34,7 @@ export default function Account() {
       <Title>Compte</Title>
       <Body muted>{`Connecté·e avec ${me.email}`}</Body>
       <PasswordSection hasPassword={me.has_password !== false} />
+      <DataSection />
       <DeleteSection />
     </Screen>
   )
@@ -88,6 +91,39 @@ function PasswordSection({ hasPassword }: { hasPassword: boolean }) {
         loading={change.isPending}
         disabled={next.length < MIN_PASSWORD || (hasPassword && !current)}
       />
+    </View>
+  )
+}
+
+/** Export RGPD (fichier JSON partagé) et déconnexion de tous les appareils. */
+function DataSection() {
+  const { signOut } = useAuth()
+  const exportData = useMutation({
+    mutationFn: async () => {
+      const data = await api.exportData()
+      const file = new File(Paths.cache, `alternly-export-${new Date().toISOString().slice(0, 10)}.json`)
+      file.create({ overwrite: true })
+      file.write(JSON.stringify(data, null, 2))
+      await Sharing.shareAsync(file.uri, { mimeType: 'application/json', dialogTitle: 'Mes données Alternly' })
+    },
+  })
+  const logoutAll = useMutation({ mutationFn: api.logoutAll, onSuccess: () => signOut() })
+
+  function confirmLogoutAll() {
+    Alert.alert('Déconnecter tous les appareils ?', 'Y compris ce téléphone : il faudra vous reconnecter partout.', [
+      { text: 'Annuler', style: 'cancel' },
+      { text: 'Tout déconnecter', style: 'destructive', onPress: () => logoutAll.mutate() },
+    ])
+  }
+
+  return (
+    <View style={{ gap: 10 }}>
+      <SectionLabel>Mes données et sessions</SectionLabel>
+      <ErrorBanner message={exportData.error?.message ?? logoutAll.error?.message} />
+      <Button title="Exporter mes données" variant="secondary" onPress={() => exportData.mutate()} loading={exportData.isPending} />
+      <Body muted style={{ fontSize: 13 }}>Profil, foyer, calendrier, dépenses et tableau, dans un fichier JSON.</Body>
+      <Button title="Déconnecter tous les appareils" variant="secondary" onPress={confirmLogoutAll} loading={logoutAll.isPending} />
+      <Body muted style={{ fontSize: 13 }}>Si un téléphone a été perdu, ou si quelqu’un connaît votre mot de passe.</Body>
     </View>
   )
 }
