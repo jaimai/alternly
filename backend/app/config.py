@@ -66,6 +66,11 @@ class Settings(BaseSettings):
     revenuecat_webhook_secret: str = ""
     # Clé API secrète RevenueCat (sk_…) : resynchronisation à la demande. Vide → désactivée.
     revenuecat_api_key: str = ""
+    # Entitlement RevenueCat qui donne Premium : tout autre produit du projet est ignoré.
+    revenuecat_entitlement: str = "premium"
+    # Achats de test (TestFlight, testeurs Play) : gratuits, donc jamais Premium en production.
+    # true seulement sur un backend de recette.
+    revenuecat_allow_sandbox: bool = False
     paddle_env: str = "sandbox"  # sandbox | production → base de l'API Paddle
     paddle_price_annual: str = ""   # price_id de l'offre annuelle
     paddle_price_monthly: str = ""  # price_id de l'offre mensuelle

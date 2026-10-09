@@ -108,13 +108,22 @@ async def revenuecat_webhook(request: Request, authorization: str | None = Heade
     if authorization is None or not hmac.compare_digest(authorization.encode(), secret.encode()):
         raise HTTPException(status_code=403, detail="Autorisation invalide")
 
-    event = (await request.json()).get("event") or {}
+    try:
+        body = await request.json()
+    except ValueError:
+        body = None
+    event = body.get("event") if isinstance(body, dict) else None
+    if not isinstance(event, dict):
+        raise HTTPException(status_code=400, detail="Événement invalide")
     event_id = event.get("id")
     if event_id and db.get(RevenueCatEvent, event_id) is not None:
         return {"ok": True, "duplicate": True}
 
     user = store_billing.find_user(db, event)
-    if user is not None:
+    if event.get("type") == "TRANSFER":
+        # « Restaurer les achats » depuis un autre compte : l'abonnement change de compte.
+        _transfer(db, event)
+    elif user is not None:
         before = store_billing.active_store(db, user.id)
         sub = store_billing.apply_event(db, user, event)
         if sub is not None:
@@ -129,6 +138,24 @@ async def revenuecat_webhook(request: Request, authorization: str | None = Heade
     except IntegrityError:  # même événement traité en parallèle
         db.rollback()
     return {"ok": True}
+
+
+def _transfer(db: Session, event: dict) -> None:
+    """L'ancien compte perd l'accès tout de suite, le nouveau est relu chez RevenueCat."""
+    at = store_billing._ms(event.get("event_timestamp_ms")) or utcnow()
+    for ids, action in ((event.get("transferred_from"), "from"), (event.get("transferred_to"), "to")):
+        for uid in ids or []:
+            target = store_billing.find_user(db, {"app_user_id": uid})
+            if target is None:
+                continue
+            if action == "from":
+                for sub in store_billing.expire_user(db, target, at):
+                    _journal(db, target, "subscription.status", {"source": sub.source, "after": "transferred"})
+            else:
+                try:
+                    store_billing.sync_user(db, target)
+                except Exception:  # RevenueCat injoignable : la resynchronisation au lancement rattrapera
+                    pass
 
 
 @router.get("/subscription")

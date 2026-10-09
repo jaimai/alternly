@@ -34,6 +34,8 @@ def send(client, user_id, etype, *, event_id=None, store="APP_STORE", at=None, e
         "event_timestamp_ms": at,
         "expiration_at_ms": at + expires_in_days * DAY_MS,
         "period_type": "NORMAL",
+        "entitlement_ids": ["premium"],
+        "environment": "PRODUCTION",
         **extra,
     }
     return client.post("/api/billing/revenuecat-webhook", json={"event": event}, headers={"Authorization": SECRET})
@@ -128,7 +130,10 @@ def test_store_sync_reads_revenuecat(client, auth_headers, monkeypatch):
     monkeypatch.setattr(
         store_billing,
         "fetch_subscriber",
-        lambda app_user_id: {"subscriptions": {"premium_monthly": {"store": "APP_STORE", "expires_date": future, "period_type": "normal"}}},
+        lambda app_user_id: {
+            "entitlements": {"premium": {"product_identifier": "premium_monthly", "expires_date": future}},
+            "subscriptions": {"premium_monthly": {"store": "APP_STORE", "expires_date": future, "period_type": "normal"}},
+        },
     )
     s = client.post("/api/billing/store-sync", headers=headers).json()
     assert s["access"] is True and s["source"] == "app_store"
@@ -150,3 +155,56 @@ def test_account_deletion_removes_store_rows(client, auth_headers, db_session):
     send(client, user["id"], "INITIAL_PURCHASE")
     assert client.delete("/api/auth/me", headers=headers).status_code == 204
     assert db_session.query(StoreSubscription).count() == 0
+
+
+def test_sandbox_purchase_never_grants_premium_in_production(client, auth_headers, monkeypatch):
+    headers, user = auth_headers()
+    send(client, user["id"], "INITIAL_PURCHASE", environment="SANDBOX")
+    assert status(client, headers)["access"] is False
+    monkeypatch.setattr(settings, "revenuecat_allow_sandbox", True)  # backend de recette
+    send(client, user["id"], "INITIAL_PURCHASE", environment="SANDBOX", event_id="evt-sandbox-2")
+    assert status(client, headers)["access"] is True
+
+
+def test_product_outside_premium_entitlement_is_ignored(client, auth_headers):
+    headers, user = auth_headers()
+    send(client, user["id"], "INITIAL_PURCHASE", entitlement_ids=["autre"], expiration_at_ms=None)
+    assert status(client, headers)["access"] is False
+
+
+def test_transfer_moves_access_to_the_new_account(client, auth_headers, monkeypatch):
+    headers_a, user_a = auth_headers()
+    headers_b, user_b = auth_headers("parent2@test.fr", "Julie")
+    t0 = now_ms()
+    send(client, user_a["id"], "INITIAL_PURCHASE", at=t0)
+    monkeypatch.setattr(settings, "revenuecat_api_key", "sk_test")
+    future = (utcnow() + timedelta(days=30)).isoformat() + "Z"
+    monkeypatch.setattr(
+        store_billing,
+        "fetch_subscriber",
+        lambda uid: {
+            "entitlements": {"premium": {"product_identifier": "premium_annual"}},
+            "subscriptions": {"premium_annual": {"store": "APP_STORE", "expires_date": future}},
+        } if uid == str(user_b["id"]) else {},
+    )
+    r = send(
+        client, user_b["id"], "TRANSFER", at=t0 + 1000, store=None,
+        transferred_from=[str(user_a["id"])], transferred_to=[str(user_b["id"])], entitlement_ids=None,
+    )
+    assert r.status_code == 200
+    assert status(client, headers_a)["access"] is False
+    assert status(client, headers_b)["access"] is True
+
+
+def test_store_sync_expires_a_subscription_no_longer_on_the_account(client, auth_headers, monkeypatch):
+    headers, user = auth_headers()
+    send(client, user["id"], "INITIAL_PURCHASE")
+    monkeypatch.setattr(settings, "revenuecat_api_key", "sk_test")
+    monkeypatch.setattr(store_billing, "fetch_subscriber", lambda uid: {"entitlements": {}, "subscriptions": {}})
+    assert client.post("/api/billing/store-sync", headers=headers).json()["access"] is False
+
+
+@pytest.mark.parametrize("body", [[], {"event": "x"}, {"other": 1}])
+def test_malformed_webhook_body_is_rejected(client, body):
+    r = client.post("/api/billing/revenuecat-webhook", json=body, headers={"Authorization": SECRET})
+    assert r.status_code == 400
