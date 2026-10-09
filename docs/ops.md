@@ -15,6 +15,14 @@ Architecture de production (mono-domaine `alternly.com`) :
 
 Points d'attention :
 
+- **Monorepo, déploiements filtrés par chemins** (voir `docs/mobile/architecture-technique.md`) :
+  Railway ne redéploie que si `backend/`, `content/`, `Dockerfile`, `.dockerignore` ou
+  `railway.json` changent (`build.watchPatterns`) ; Vercel saute le build si `frontend/`
+  n'a pas changé depuis le dernier déploiement réussi (`ignoreCommand` →
+  `frontend/scripts/vercel-ignore.sh`) ; la CI ne lance que les jobs des zones modifiées.
+  Un commit qui ne touche que `docs/` ne déploie donc rien. Pour forcer un déploiement :
+  *Redeploy* dans Railway ou Vercel.
+
 - `frontend/vercel.json` contient l'URL Railway en dur (`web-production-….up.railway.app`) :
   à mettre à jour si le service Railway change de domaine.
 - Le backend tourne avec **un seul worker uvicorn** : la limitation de débit
