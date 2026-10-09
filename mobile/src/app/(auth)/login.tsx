@@ -7,6 +7,7 @@ import { SocialSignIn } from '@/components/SocialSignIn'
 import { Body, Button, ErrorBanner, Field, Screen, Title } from '@/components/ui'
 import { api } from '@/lib/api'
 import { useAuth } from '@/lib/auth'
+import { googleAvailable } from '@/lib/socialAuth'
 import { colors, fonts } from '@/lib/theme'
 
 export default function Login() {
@@ -72,6 +73,12 @@ export default function Login() {
 
       <Button title="Se connecter" onPress={() => login.mutate()} loading={login.isPending} disabled={!canSubmit} />
 
+      {googleAvailable() ? null : (
+        <Body muted style={{ textAlign: 'center', fontSize: 14 }}>
+          Compte créé avec Google sur alternly.com ? Définissez un mot de passe via « Mot de passe oublié »,
+          puis connectez-vous ici.
+        </Body>
+      )}
       <Body muted style={{ textAlign: 'center' }}>
         Pas encore de compte ?{' '}
         <Link href="/register" style={{ fontFamily: fonts.bodySemiBold, color: colors.pine }}>

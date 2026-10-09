@@ -25,11 +25,14 @@ export interface RuleValue {
   vacation: VacationRule
 }
 
-export function RuleWizard({ members, myId, childNames, busy, stepOffset, stepTotal, onSubmit }: {
+export function RuleWizard({ members, myId, childNames, busy, stepOffset, stepTotal, initial, submitLabel, onSubmit }: {
   members: Member[]
   myId: number
   childNames: string[]
   busy?: boolean
+  /** Règles actuelles (réglages) : le parcours part de là au lieu des valeurs par défaut. */
+  initial?: { custody: CustodyRule | null; vacation: VacationRule | null }
+  submitLabel?: string
   /** Position dans le parcours global (barre de progression de l'onboarding). */
   stepOffset: number
   stepTotal: number
@@ -38,15 +41,17 @@ export function RuleWizard({ members, myId, childNames, busy, stepOffset, stepTo
   const me = members.find((m) => m.id === myId)
   const other = members.find((m) => m.id !== myId)
   const [step, setStep] = useState(0)
-  const [pattern, setPattern] = useState<Pattern>('alternate_weeks')
-  const [startDate, setStartDate] = useState(todayIso())
+  const c = initial?.custody
+  const v = initial?.vacation
+  const [pattern, setPattern] = useState<Pattern>(c?.pattern ?? 'alternate_weeks')
+  const [startDate, setStartDate] = useState(c?.start_date ?? todayIso())
   const [showDate, setShowDate] = useState(false)
-  const [referenceParent, setReferenceParent] = useState(myId)
-  const [handoverDay, setHandoverDay] = useState(0)
-  const [handoverTime, setHandoverTime] = useState('18:00')
-  const [customWeeks, setCustomWeeks] = useState<Side[]>(DEFAULT_CUSTOM)
-  const [vacMode, setVacMode] = useState<'split_half' | 'alternate_full'>('split_half')
-  const [evenParent, setEvenParent] = useState(myId)
+  const [referenceParent, setReferenceParent] = useState(c?.reference_parent_id ?? myId)
+  const [handoverDay, setHandoverDay] = useState(c?.handover_day ?? 0)
+  const [handoverTime, setHandoverTime] = useState(c?.handover_time ?? '18:00')
+  const [customWeeks, setCustomWeeks] = useState<Side[]>((c?.custom_weeks as Side[] | null) ?? DEFAULT_CUSTOM)
+  const [vacMode, setVacMode] = useState<'split_half' | 'alternate_full'>(v?.mode ?? 'split_half')
+  const [evenParent, setEvenParent] = useState(v?.even_year_first_half_parent_id ?? myId)
   const [adjust, setAdjust] = useState<{ day: string; before: { pattern: Pattern; customWeeks: Side[] } } | null>(null)
 
   const kids = childNames.length === 1 ? childNames[0] : childNames.length > 1 ? 'les enfants' : 'l’enfant'
@@ -356,7 +361,7 @@ export function RuleWizard({ members, myId, childNames, busy, stepOffset, stepTo
           disabled={step === 1 && pattern === 'alternate_weeks' && !timeValid}
         />
       ) : (
-        <Button title="Générer le calendrier" onPress={submit} loading={busy} />
+        <Button title={submitLabel ?? 'Générer le calendrier'} onPress={submit} loading={busy} />
       )}
     </View>
   )

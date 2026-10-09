@@ -72,5 +72,8 @@
   "settings.departureCommentPlaceholder": "What was missing, what didn't work…",
   "settings.deleting": "Deleting…",
   "settings.restartSetup": "Start the setup over",
-  "settings.restartSetupHint": "Prefer to be guided step by step?"
+  "settings.restartSetupHint": "Prefer to be guided step by step?",
+  "settings.subStoreManaged": "Subscribed in the app ({{store}}). Manage or cancel it in the store, not here.",
+  "settings.subStoreManagedOther": "Your household is subscribed through the other parent's app ({{store}}).",
+  "settings.subStoreManage": "Manage in {{store}}"
 }

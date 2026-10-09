@@ -32,6 +32,10 @@ async function load(): Promise<string | null> {
   return current
 }
 
+// Lu dès le lancement : après un redémarrage, l'inscription peut avoir lieu sans repasser
+// par l'écran d'invitation, et hasPendingInvite() doit déjà répondre juste.
+load().catch(() => {})
+
 export function usePendingInvite() {
   const qc = useQueryClient()
   const query = useQuery({ queryKey: QUERY_KEY, queryFn: load, staleTime: Infinity })

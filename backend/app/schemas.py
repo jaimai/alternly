@@ -80,6 +80,8 @@ class GoogleLoginIn(BaseModel):
 class AppleLoginIn(BaseModel):
     # Jeton d'identité (JWT) renvoyé par « Se connecter avec Apple » sur l'iPhone.
     identity_token: str = Field(min_length=20, max_length=4096)
+    # Nonce brut : l'app a envoyé son SHA-256 à Apple, qui l'a inscrit dans le jeton.
+    nonce: str = Field(min_length=16, max_length=128)
     # Prénom : Apple ne le transmet qu'à la toute première autorisation, et hors du jeton.
     given_name: str | None = Field(default=None, max_length=50)
     locale: Literal["fr", "en"] | None = None

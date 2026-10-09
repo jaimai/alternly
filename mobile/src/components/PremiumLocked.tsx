@@ -1,11 +1,13 @@
+import { router } from 'expo-router'
 import { Text, View } from 'react-native'
+import { iapAvailable } from '@/lib/purchases'
 import { colors, fonts } from '@/lib/theme'
 import { Icon, type IconName } from './Icon'
-import { Body } from './ui'
+import { Body, Button } from './ui'
 
 /**
- * Onglet Premium sans abonnement (402). Pas de lien d'achat vers le web : interdit par
- * Apple tant que l'achat intégré n'existe pas.
+ * Onglet Premium sans abonnement (402) : renvoie vers l'achat intégré. Jamais vers le
+ * paiement web (règles Apple).
  */
 export function PremiumLocked({ icon, what }: { icon: IconName; what: string }) {
   return (
@@ -18,6 +20,7 @@ export function PremiumLocked({ icon, what }: { icon: IconName; what: string }) 
         {what} : c’est inclus dans Alternly Premium. Si votre foyer est abonné, tout apparaît ici automatiquement, pour les
         deux parents.
       </Body>
+      {iapAvailable() ? <Button title="Découvrir Premium" onPress={() => router.push('/premium')} /> : null}
     </View>
   )
 }

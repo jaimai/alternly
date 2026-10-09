@@ -306,6 +306,39 @@ class PasswordResetToken(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
 
+class StoreSubscription(Base):
+    """Abonnement acheté dans l'app (App Store / Google Play, via RevenueCat).
+
+    Séparé des colonnes Paddle de `User` : un événement d'un canal n'écrase jamais
+    l'autre. Une ligne par parent et par store ; le foyer est Premium si au moins une
+    source (Paddle ou store) d'un de ses parents donne accès.
+    """
+    __tablename__ = "store_subscriptions"
+    __table_args__ = (UniqueConstraint("user_id", "source", name="uq_store_subscription_user_source"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    source: Mapped[str] = mapped_column(String)  # app_store | play_store
+    # active | trialing | grace | canceled | expired
+    status: Mapped[str] = mapped_column(String, default="expired")
+    # Fin de la période payée (ou de la période de grâce) : accès conservé jusque-là.
+    ends_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    product_id: Mapped[str] = mapped_column(String, default="")
+    external_id: Mapped[str] = mapped_column(String, default="")  # original_transaction_id
+    # Horodatage du dernier événement appliqué : un événement plus ancien est ignoré.
+    last_event_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+
+class RevenueCatEvent(Base):
+    """Événements webhook RevenueCat déjà traités (idempotence : RevenueCat réessaie)."""
+    __tablename__ = "revenuecat_events"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True)
+    event_type: Mapped[str] = mapped_column(String, default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+
 class PaddleEvent(Base):
     """Événements webhook Paddle déjà traités : idempotence (Paddle réessaie) et
     ordre (un événement plus ancien que le dernier traité pour le même
