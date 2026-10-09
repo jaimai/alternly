@@ -9,9 +9,41 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+  pull-requests: read # dorny/paths-filter liste les fichiers de la PR via l'API
+
 jobs:
+  # Monorepo : chaque job ne tourne que si sa zone a changé. On filtre au niveau des
+  # jobs (et non via `on.paths`) : un job sauté compte comme réussi pour les checks
+  # obligatoires, un workflow non déclenché resterait « en attente ».
+  changes:
+    name: Zones modifiées
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+              - 'content/**'
+              - 'Dockerfile'
+              - 'railway.json'
+              - '.github/workflows/ci.yml'
+            frontend:
+              - 'frontend/**'
+              - 'packages/shared/**'
+              - '.github/workflows/ci.yml'
+
   backend:
     name: Backend (pytest)
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -28,6 +60,8 @@ jobs:
 
   frontend:
     name: Frontend (lint + build)
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:

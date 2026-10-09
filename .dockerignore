@@ -14,3 +14,7 @@ docs
 **/*.md
 # Les articles du blog sont embarqués dans l'image.
 !content/**/*.md
+
+# Autres applications du monorepo : jamais dans l'image backend.
+mobile
+packages

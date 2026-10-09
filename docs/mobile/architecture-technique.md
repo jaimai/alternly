@@ -52,9 +52,8 @@ dans `frontend/` ou `backend/` ne relance pas de build mobile.
 | `packages/shared/**` (phase 2) | — | ✅ | — | ✅ | ✅ |
 | `docs/**`, `*.md` | — | — | — | — | — |
 
-Aujourd'hui, **aucun de ces filtres n'existe** : Railway et Vercel redéploient à chaque
-push sur `main`, et la CI lance backend + frontend à chaque fois. Il faut donc poser les
-filtres **avant** le premier commit dans `mobile/`.
+Les filtres Railway, Vercel et CI (backend / frontend) sont en place. Le job CI `mobile`
+et le workflow `mobile.yml` seront ajoutés avec le premier commit de `mobile/`.
 
 ### 3.1 Railway — `watchPatterns`
 
@@ -349,7 +348,7 @@ installée, le web sinon.
 
 ## 10. Checklist de démarrage
 
-1. [ ] PR « isolation des pipelines » : `watchPatterns` Railway, `ignoreCommand` Vercel,
+1. [x] PR « isolation des pipelines » : `watchPatterns` Railway, `ignoreCommand` Vercel,
        `ci.yml` filtré, `.dockerignore`. La merger **avant** tout code mobile, puis
        vérifier sur un commit qui ne touche que `docs/` que ni Railway ni Vercel ne
        redéploient.
