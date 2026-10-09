@@ -175,6 +175,23 @@ def tools_index():
     return RedirectResponse(TOOL_PATH, status_code=302)
 
 
+def _quick_answer(db: Session, vacances: str) -> dict | None:
+    """Résultat « moitié / moitié » quand la période a les mêmes dates dans les trois
+    zones, sinon None (la zone est alors nécessaire). Jamais d'erreur : en cas de
+    données indisponibles, la page garde simplement le formulaire."""
+    try:
+        period, year = vacances.rsplit("-", 1)
+        results = [
+            vacation_tool.vacation_split(db, zone, period, int(year), "split_half", "A")
+            for zone in vacation_tool.ZONES
+        ]
+    except (ValueError, PublicDataUnavailable, vacation_tool.PeriodNotPublished):
+        return None
+    if len({(r["period"]["start"], r["period"]["end"]) for r in results}) != 1:
+        return None
+    return {**results[0], "value": vacances}
+
+
 @router.get(TOOL_PATH, response_class=HTMLResponse, include_in_schema=False)
 def tool_vacation_split(request: Request, db: Session = Depends(get_db)):
     """Outil SSR : fonctionne sans JS (formulaire GET), amélioré par outil-vacances.js."""
@@ -195,8 +212,14 @@ def tool_vacation_split(request: Request, db: Session = Depends(get_db)):
         except vacation_tool.PeriodNotPublished:
             error = ("Les dates officielles de ces vacances ne sont pas encore publiées "
                      "pour cette zone. Choisissez une autre période.")
-    elif "vacances" in request.query_params and not form["zone"]:
-        error = "Choisissez la zone scolaire de l'école de l'enfant (A, B ou C)."
+    quick = None
+    if not submitted and "vacances" in request.query_params:
+        # Arrivée depuis une annonce ou un lien (?vacances=… sans zone) : si les dates
+        # sont communes aux trois zones (Toussaint, Noël, été), la réponse s'affiche
+        # tout de suite, avec la règle la plus courante (moitié / moitié).
+        quick = _quick_answer(db, form["vacances"])
+        if quick is None and not form["zone"]:
+            error = "Choisissez la zone scolaire de l'école de l'enfant (A, B ou C)."
     return templates.TemplateResponse(
         request,
         "outil_vacances.html",
@@ -204,6 +227,7 @@ def tool_vacation_split(request: Request, db: Session = Depends(get_db)):
             "form": form,
             "options": vacation_tool.period_options(),
             "result": result,
+            "quick": quick,
             "error": error,
             "zones": ZONE_ACADEMIES,
             "faq": TOOL_FAQ,
