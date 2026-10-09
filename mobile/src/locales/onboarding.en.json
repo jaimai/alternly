@@ -1,1 +1,104 @@
-{}
+{
+  "household": {
+    "title": "Welcome!",
+    "intro": "Let’s set up your calendar: your household, your kids, then your custody schedule.",
+    "nameLabel": "Household name (optional)",
+    "defaultName": "{{name}}’s household",
+    "country": "Country",
+    "countryFR": "France",
+    "countryUS": "United States",
+    "schoolZone": "School zone",
+    "zone": "Zone {{zone}}",
+    "zoneA11y": "{{zone}}: {{cities}}",
+    "zoneCitiesA": "Lyon, Bordeaux, Grenoble…",
+    "zoneCitiesB": "Lille, Nantes, Marseille…",
+    "zoneCitiesC": "Paris, Toulouse, Montpellier…",
+    "usHolidays": "You’ll add your school district’s holidays in Settings (there’s no national school calendar in the US)."
+  },
+  "children": {
+    "title": "Your kids",
+    "intro": "A first name is enough. No last name or school: we keep only what we need.",
+    "remove": "Remove {{name}}",
+    "firstName": "First name",
+    "addAnother": "Add another child"
+  },
+  "notifications": {
+    "title": "Never miss a handover",
+    "intro": "Turn on notifications: Alternly reminds you at the right time, without you having to open the app.",
+    "itemHandover": "A reminder the day before each handover",
+    "itemSwap": "Swap requests from the other parent to review",
+    "itemActivity": "New expenses or messages on the board",
+    "footer": "You can then choose what you receive in Settings › Notifications.",
+    "enable": "Turn on notifications"
+  },
+  "paywall": {
+    "title": "Your calendar is ready",
+    "intro": "Go further with Premium: shared expenses and a board between parents. One subscription covers you both.",
+    "skip": "Continue with the free version"
+  },
+  "signOut": "Sign out",
+  "wizard": {
+    "progress": "Your schedule · {{step}}/4",
+    "kidsMany": "the kids",
+    "kidsUnknown": "your child",
+    "patterns": {
+      "alternateWeeksTitle": "Week on / week off",
+      "alternateWeeksDesc": "One week with each parent, with a fixed handover day.",
+      "everyOtherWeekendTitle": "Every other weekend",
+      "everyOtherWeekendDesc": "Your child lives with one parent; the other has them every other weekend.",
+      "twoTwoThreeTitle": "2-2-3",
+      "twoTwoThreeDesc": "2 days each, then 3 days. Often chosen for little ones.",
+      "customTitle": "Something else",
+      "customDesc": "You place the days yourself over two weeks."
+    },
+    "patternTitle": "How does custody work today?",
+    "patternIntro": "Pick the closest match to your arrangement. You’ll fine-tune it day by day right after.",
+    "whoWeek": "Who has {{kids}} the week starting {{date}}?",
+    "whoWeekend": "Who has {{kids}} the weekend of {{date}}?",
+    "whoDay": "Who has {{kids}} on {{date}}?",
+    "weekendRest_one": "The rest of the time, {{kids}} lives with the other parent. Weekends then alternate on their own.",
+    "weekendRest_other": "The rest of the time, {{kids}} live with the other parent. Weekends then alternate on their own.",
+    "me": "Me",
+    "notInvited": "not invited yet",
+    "handoverDay": "Handover day",
+    "handoverTime": "Handover time",
+    "handoverTimeA11y": "Handover time (HH:MM)",
+    "timeFormat": "Expected format: 18:00",
+    "preview": "Preview",
+    "live": "updates live",
+    "weekOf": "Week of {{date}}",
+    "dayLabel": "{{day}} {{date}}: {{name}}",
+    "dayTapHint": "{{label}}. Tap to switch parent",
+    "startDate": "Start date",
+    "wrongWeek": "Not the right starting week?",
+    "pickDate": "Pick another date",
+    "checkTitle": "Does this match your arrangement?",
+    "checkIntro": "A day doesn’t fit? Tap it to give it to the other parent. The cycle then repeats every two weeks.",
+    "movedDay": "{{date}} now goes to {{name}}.",
+    "nowCustom": "Your schedule is now “custom”.",
+    "vacationTitle": "And during school holidays?",
+    "splitHalfTitle": "Half each",
+    "splitHalfDesc": "Each break is split in two. The order flips every year.",
+    "alternateFullTitle": "All holidays, every other year",
+    "alternateFullDesc": "The whole break with one parent, then with the other the following year.",
+    "firstHalfQuestion": "This year ({{year}}), who has the first half?",
+    "fullQuestion": "This year ({{year}}), who has the holidays?",
+    "exampleSplitMe": "Example: for the next holidays, you have the first half and the other parent the second. Next year, it’s the other way around.",
+    "exampleSplitOther": "Example: for the next holidays, the other parent has the first half and you the second. Next year, it’s the other way around.",
+    "exampleFullMe": "Example: this year, the holidays are with you; next year, with the other parent.",
+    "exampleFullOther": "Example: this year, the holidays are with the other parent; next year, with you.",
+    "confirm": "Looks good, continue",
+    "generate": "Generate the calendar"
+  },
+  "rules": {
+    "saved": "Rules saved: the calendar is up to date.",
+    "title": "Custody and holidays",
+    "backToSettings": "Back to settings",
+    "submit": "Save rules"
+  },
+  "form": {
+    "step": "Step {{step}} of {{total}}",
+    "prevMonth": "Previous month",
+    "nextMonth": "Next month"
+  }
+}

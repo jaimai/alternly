@@ -4,6 +4,7 @@
 // proposée sur l'accueil.
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { Progress, Segmented } from '@/components/form'
 import { Icon } from '@/components/Icon'
@@ -18,13 +19,13 @@ import { keys, useHousehold, useMe } from '@/lib/queries'
 import { colors, fonts } from '@/lib/theme'
 
 const TOTAL_STEPS = 8 // foyer, enfants, les 4 étapes du rythme, notifications, Premium
-const ZONES = [
-  { value: 'A' as const, label: 'Zone A', cities: 'Lyon, Bordeaux, Grenoble…' },
-  { value: 'B' as const, label: 'Zone B', cities: 'Lille, Nantes, Marseille…' },
-  { value: 'C' as const, label: 'Zone C', cities: 'Paris, Toulouse, Montpellier…' },
-]
+// Villes traduites au rendu : onboarding.household.zoneCities<zone>.
+const ZONES = ['A', 'B', 'C'] as const
+// Avantages des notifications (onboarding.notifications.<clé>).
+const PUSH_ITEMS = ['itemHandover', 'itemSwap', 'itemActivity'] as const
 
 export default function Onboarding() {
+  const { t } = useTranslation()
   const qc = useQueryClient()
   const { signOut } = useAuth()
   const me = useMe().data
@@ -42,7 +43,7 @@ export default function Onboarding() {
 
   const createHousehold = useMutation({
     mutationFn: () =>
-      api.createHousehold({ name: name.trim() || `Foyer de ${me?.display_name ?? ''}`.trim(), country, school_zone: zone }),
+      api.createHousehold({ name: name.trim() || t('onboarding.household.defaultName', { name: me?.display_name ?? '' }).trim(), country, school_zone: zone }),
     onSuccess: (created) => {
       qc.setQueryData(keys.household, created)
       setStep(1)
@@ -107,38 +108,43 @@ export default function Onboarding() {
       {step === 0 && (
         <>
           <View style={{ gap: 6 }}>
-            <Title>Bienvenue !</Title>
-            <Body muted>Configurons votre calendrier : le foyer, les enfants, puis le rythme de garde.</Body>
+            <Title>{t('onboarding.household.title')}</Title>
+            <Body muted>{t('onboarding.household.intro')}</Body>
           </View>
           <Field
-            label="Nom du foyer (facultatif)"
+            label={t('onboarding.household.nameLabel')}
             value={name}
             onChangeText={setName}
-            placeholder={`Foyer de ${me.display_name}`}
+            placeholder={t('onboarding.household.defaultName', { name: me.display_name })}
           />
           <Segmented
-            label="Pays"
+            label={t('onboarding.household.country')}
             value={country}
             onChange={setCountry}
-            options={[{ value: 'FR', label: 'France' }, { value: 'US', label: 'États-Unis' }]}
+            options={[
+              { value: 'FR', label: t('onboarding.household.countryFR') },
+              { value: 'US', label: t('onboarding.household.countryUS') },
+            ]}
           />
           {country === 'FR' ? (
             <View style={{ gap: 8 }}>
-              <Text style={s.label}>Zone scolaire</Text>
+              <Text style={s.label}>{t('onboarding.household.schoolZone')}</Text>
               <View style={{ flexDirection: 'row', gap: 8 }} accessibilityRole="radiogroup">
                 {ZONES.map((z) => {
-                  const selected = zone === z.value
+                  const selected = zone === z
+                  const label = t('onboarding.household.zone', { zone: z })
+                  const cities = t(`onboarding.household.zoneCities${z}`)
                   return (
                     <Pressable
-                      key={z.value}
+                      key={z}
                       accessibilityRole="radio"
                       accessibilityState={{ selected }}
-                      accessibilityLabel={`${z.label} : ${z.cities}`}
-                      onPress={() => setZone(z.value)}
+                      accessibilityLabel={t('onboarding.household.zoneA11y', { zone: label, cities })}
+                      onPress={() => setZone(z)}
                       style={[s.zone, selected && s.zoneOn]}
                     >
-                      <Text style={[s.zoneTitle, selected && { color: colors.pine }]}>{z.label}</Text>
-                      <Text style={s.zoneCities} numberOfLines={2}>{z.cities}</Text>
+                      <Text style={[s.zoneTitle, selected && { color: colors.pine }]}>{label}</Text>
+                      <Text style={s.zoneCities} numberOfLines={2}>{cities}</Text>
                     </Pressable>
                   )
                 })}
@@ -146,26 +152,25 @@ export default function Onboarding() {
             </View>
           ) : (
             <Body muted style={{ fontSize: 14 }}>
-              Vous ajouterez les congés scolaires de votre district dans les réglages (pas de calendrier national aux
-              États-Unis).
+              {t('onboarding.household.usHolidays')}
             </Body>
           )}
-          <Button title="Continuer" onPress={() => createHousehold.mutate()} loading={createHousehold.isPending} />
+          <Button title={t('common.continue')} onPress={() => createHousehold.mutate()} loading={createHousehold.isPending} />
         </>
       )}
 
       {step === 1 && (
         <>
           <View style={{ gap: 6 }}>
-            <Title>Vos enfants</Title>
-            <Body muted>Le prénom suffit. Pas de nom de famille ni d’école : nous gardons le minimum.</Body>
+            <Title>{t('onboarding.children.title')}</Title>
+            <Body muted>{t('onboarding.children.intro')}</Body>
           </View>
           {children.map((c, i) => (
             <View key={`${c}-${i}`} style={s.child}>
               <Text style={s.childName}>{c}</Text>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel={`Retirer ${c}`}
+                accessibilityLabel={t('onboarding.children.remove', { name: c })}
                 onPress={() => setChildren(children.filter((_, j) => j !== i))}
                 style={s.remove}
               >
@@ -176,7 +181,7 @@ export default function Onboarding() {
           <View style={{ flexDirection: 'row', gap: 8, alignItems: 'flex-end' }}>
             <View style={{ flex: 1 }}>
               <Field
-                label={children.length === 0 ? 'Prénom' : 'Ajouter un autre enfant'}
+                label={children.length === 0 ? t('onboarding.children.firstName') : t('onboarding.children.addAnother')}
                 value={childName}
                 onChangeText={setChildName}
                 onSubmitEditing={addChild}
@@ -184,10 +189,10 @@ export default function Onboarding() {
                 autoCapitalize="words"
               />
             </View>
-            <Button title="Ajouter" variant="secondary" onPress={addChild} disabled={!childName.trim()} />
+            <Button title={t('common.add')} variant="secondary" onPress={addChild} disabled={!childName.trim()} />
           </View>
           <Button
-            title="Continuer"
+            title={t('common.continue')}
             onPress={() => saveChildren.mutate()}
             loading={saveChildren.isPending}
             disabled={children.length === 0}
@@ -213,40 +218,36 @@ export default function Onboarding() {
             <Icon name="bell" size={30} color={colors.pine} />
           </View>
           <View style={{ gap: 6 }}>
-            <Title>Ne ratez plus une passation</Title>
-            <Body muted>Activez les notifications : Alternly vous prévient au bon moment, sans que vous ayez à ouvrir l’app.</Body>
+            <Title>{t('onboarding.notifications.title')}</Title>
+            <Body muted>{t('onboarding.notifications.intro')}</Body>
           </View>
           <Card>
-            {[
-              'Rappel la veille de chaque passation',
-              'Échange proposé par l’autre parent, à valider',
-              'Nouvelle dépense ou message sur le tableau',
-            ].map((t) => (
-              <View key={t} style={{ flexDirection: 'row', gap: 10, alignItems: 'flex-start' }}>
+            {PUSH_ITEMS.map((item) => (
+              <View key={item} style={{ flexDirection: 'row', gap: 10, alignItems: 'flex-start' }}>
                 <Icon name="check" size={18} color={colors.pine} strokeWidth={2.4} />
-                <Body style={{ flex: 1, fontSize: 15 }}>{t}</Body>
+                <Body style={{ flex: 1, fontSize: 15 }}>{t(`onboarding.notifications.${item}`)}</Body>
               </View>
             ))}
           </Card>
-          <Body muted style={{ fontSize: 13 }}>Vous choisissez ensuite quoi recevoir dans Réglages › Notifications.</Body>
-          <Button title="Activer les notifications" onPress={() => activatePush.mutate()} loading={activatePush.isPending} />
-          <Button title="Plus tard" variant="ghost" onPress={() => void afterNotifications()} disabled={activatePush.isPending} />
+          <Body muted style={{ fontSize: 13 }}>{t('onboarding.notifications.footer')}</Body>
+          <Button title={t('onboarding.notifications.enable')} onPress={() => activatePush.mutate()} loading={activatePush.isPending} />
+          <Button title={t('common.later')} variant="ghost" onPress={() => void afterNotifications()} disabled={activatePush.isPending} />
         </>
       )}
 
       {step === 4 && (
         <Paywall
-          title="Votre calendrier est prêt"
-          intro="Allez plus loin avec Premium : dépenses partagées et tableau entre parents. Un seul abonnement suffit pour vous deux."
+          title={t('onboarding.paywall.title')}
+          intro={t('onboarding.paywall.intro')}
           onPurchased={() => void finish()}
           onSkip={() => void finish()}
-          skipLabel="Continuer avec la version gratuite"
+          skipLabel={t('onboarding.paywall.skip')}
         />
       )}
 
       {step < 3 ? (
         <Text accessibilityRole="button" onPress={() => void signOut()} style={s.signOut}>
-          Se déconnecter
+          {t('onboarding.signOut')}
         </Text>
       ) : null}
     </Screen>

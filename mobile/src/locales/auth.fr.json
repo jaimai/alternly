@@ -1,1 +1,86 @@
-{}
+{
+  "email": "E-mail",
+  "minChars": "{{min}} caractères minimum",
+  "createAccount": "Créer un compte",
+  "haveAccount": "J'ai déjà un compte",
+  "welcome": {
+    "tagline": "Le calendrier de garde partagée, clair pour les deux parents.",
+    "previewTitle": "Une semaine type",
+    "previewA11y": "Du lundi au vendredi chez vous, passation vendredi soir, week-end chez l'autre parent",
+    "otherParent": "L'autre parent",
+    "sameAccount": "Le même compte que sur alternly.com",
+    "days": {
+      "mon": "L",
+      "tue": "M",
+      "wed": "M",
+      "thu": "J",
+      "fri": "V",
+      "sat": "S",
+      "sun": "D"
+    }
+  },
+  "login": {
+    "title": "Bon retour",
+    "subtitle": "Le même compte que sur alternly.com : votre foyer et vos échanges sont déjà là.",
+    "password": "Mot de passe",
+    "showPassword": "Afficher le mot de passe",
+    "hidePassword": "Masquer le mot de passe",
+    "forgot": "Mot de passe oublié ?",
+    "submit": "Se connecter",
+    "googleHint": "Compte créé avec Google sur alternly.com ? Définissez un mot de passe via « Mot de passe oublié », puis connectez-vous ici.",
+    "noAccount": "Pas encore de compte ?"
+  },
+  "register": {
+    "subtitle": "Gratuit. Valable sur l’app et sur le web.",
+    "firstName": "Votre prénom",
+    "password": "Mot de passe ({{min}} caractères min.)",
+    "colorLabel": "Votre couleur dans le calendrier",
+    "consentPrefix": "J’accepte les",
+    "terms": "conditions d’utilisation",
+    "and": "et la",
+    "privacy": "politique de confidentialité",
+    "consentSuffix": ".",
+    "submit": "Créer mon compte",
+    "alreadyRegistered": "Déjà inscrit·e ?",
+    "signIn": "Se connecter"
+  },
+  "forgot": {
+    "title": "Mot de passe oublié",
+    "subtitle": "Indiquez votre e-mail : nous vous envoyons un lien valable une heure.",
+    "sentTitle": "Vérifiez votre boîte mail",
+    "sentBody": "Si un compte existe pour {{email}}, vous allez recevoir un lien pour choisir un nouveau mot de passe.",
+    "submit": "Envoyer le lien"
+  },
+  "reset": {
+    "title": "Nouveau mot de passe",
+    "subtitle": "Il remplace l’ancien sur l’app et sur le web. Vos autres appareils seront déconnectés.",
+    "password": "Nouveau mot de passe ({{min}} caractères min.)",
+    "incompleteLink": "Lien incomplet. Rouvrez le lien reçu par e-mail, ou demandez-en un nouveau."
+  },
+  "join": {
+    "invalidTitle": "Lien plus valable",
+    "askNewLink": "Demandez un nouveau lien à l’autre parent depuis son application.",
+    "openCalendar": "Ouvrir mon calendrier",
+    "title": "Invitation",
+    "invite": "<b>{{inviter}}</b> vous invite à rejoindre le foyer <b>{{household}}</b> sur Alternly : le calendrier de garde, les vacances et les échanges, partagés entre vous deux.",
+    "accept": "Rejoindre le foyer",
+    "signedOutHint": "Créez votre compte gratuit (ou connectez-vous) : vous rejoindrez le foyer juste après.",
+    "notFound": "Cette invitation est introuvable. Vérifiez le lien reçu.",
+    "used": "Cette invitation a déjà été utilisée. Si c’était vous, connectez-vous pour retrouver le foyer.",
+    "expiredWithName": "Cette invitation a expiré. Demandez-en une nouvelle à {{name}}.",
+    "expired": "Cette invitation a expiré."
+  },
+  "social": {
+    "continueApple": "Continuer avec Apple",
+    "continueGoogle": "Continuer avec Google",
+    "consentPrefix": "En continuant avec Apple ou Google, vous acceptez les",
+    "orEmail": "ou par e-mail",
+    "googleExpoGo": "La connexion Google fonctionne dans l’app installée, pas dans Expo Go.",
+    "googleNotConfigured": "La connexion Google n’est pas encore configurée.",
+    "playServicesUnavailable": "Les services Google Play ne sont pas disponibles sur ce téléphone.",
+    "googleNoIdentity": "Google n’a pas confirmé votre identité. Réessayez.",
+    "appleNoIdentity": "Apple n’a pas confirmé votre identité. Réessayez.",
+    "appleNotConfigured": "La connexion Apple n’est pas encore configurée sur ce téléphone.",
+    "appleUnexpected": "Réponse d’Apple inattendue. Réessayez."
+  }
+}

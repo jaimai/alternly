@@ -1,1 +1,86 @@
-{}
+{
+  "email": "Email",
+  "minChars": "At least {{min}} characters",
+  "createAccount": "Create an account",
+  "haveAccount": "I already have an account",
+  "welcome": {
+    "tagline": "The shared custody calendar, clear for both parents.",
+    "previewTitle": "A typical week",
+    "previewA11y": "Monday to Friday with you, handover Friday evening, weekend with the other parent",
+    "otherParent": "Other parent",
+    "sameAccount": "Same account as on alternly.com",
+    "days": {
+      "mon": "M",
+      "tue": "T",
+      "wed": "W",
+      "thu": "T",
+      "fri": "F",
+      "sat": "S",
+      "sun": "S"
+    }
+  },
+  "login": {
+    "title": "Welcome back",
+    "subtitle": "Same account as on alternly.com: your household and swaps are already here.",
+    "password": "Password",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "forgot": "Forgot password?",
+    "submit": "Sign in",
+    "googleHint": "Signed up with Google on alternly.com? Set a password with “Forgot password”, then sign in here.",
+    "noAccount": "Don’t have an account?"
+  },
+  "register": {
+    "subtitle": "Free. Works in the app and on the web.",
+    "firstName": "Your first name",
+    "password": "Password (at least {{min}} characters)",
+    "colorLabel": "Your color on the calendar",
+    "consentPrefix": "I agree to the",
+    "terms": "Terms of Use",
+    "and": "and the",
+    "privacy": "Privacy Policy",
+    "consentSuffix": ".",
+    "submit": "Create my account",
+    "alreadyRegistered": "Already have an account?",
+    "signIn": "Sign in"
+  },
+  "forgot": {
+    "title": "Forgot password",
+    "subtitle": "Enter your email and we’ll send you a link that’s valid for one hour.",
+    "sentTitle": "Check your inbox",
+    "sentBody": "If an account exists for {{email}}, you’ll get a link to choose a new password.",
+    "submit": "Send link"
+  },
+  "reset": {
+    "title": "New password",
+    "subtitle": "It replaces your old one in the app and on the web. Your other devices will be signed out.",
+    "password": "New password (at least {{min}} characters)",
+    "incompleteLink": "Incomplete link. Open the link from your email again, or request a new one."
+  },
+  "join": {
+    "invalidTitle": "Link no longer valid",
+    "askNewLink": "Ask the other parent to send you a new link from their app.",
+    "openCalendar": "Open my calendar",
+    "title": "Invitation",
+    "invite": "<b>{{inviter}}</b> invited you to join the household <b>{{household}}</b> on Alternly: the custody calendar, vacations, and swaps, shared between the two of you.",
+    "accept": "Join household",
+    "signedOutHint": "Create your free account (or sign in): you’ll join the household right after.",
+    "notFound": "This invitation can’t be found. Check the link you received.",
+    "used": "This invitation has already been used. If it was you, sign in to get back to the household.",
+    "expiredWithName": "This invitation has expired. Ask {{name}} for a new one.",
+    "expired": "This invitation has expired."
+  },
+  "social": {
+    "continueApple": "Continue with Apple",
+    "continueGoogle": "Continue with Google",
+    "consentPrefix": "By continuing with Apple or Google, you agree to the",
+    "orEmail": "or with email",
+    "googleExpoGo": "Google sign-in works in the installed app, not in Expo Go.",
+    "googleNotConfigured": "Google sign-in isn’t set up yet.",
+    "playServicesUnavailable": "Google Play services aren’t available on this phone.",
+    "googleNoIdentity": "Google didn’t confirm your identity. Please try again.",
+    "appleNoIdentity": "Apple didn’t confirm your identity. Please try again.",
+    "appleNotConfigured": "Apple sign-in isn’t set up on this phone yet.",
+    "appleUnexpected": "Unexpected response from Apple. Please try again."
+  }
+}

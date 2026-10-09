@@ -1,1 +1,104 @@
-{}
+{
+  "household": {
+    "title": "Bienvenue !",
+    "intro": "Configurons votre calendrier : le foyer, les enfants, puis le rythme de garde.",
+    "nameLabel": "Nom du foyer (facultatif)",
+    "defaultName": "Foyer de {{name}}",
+    "country": "Pays",
+    "countryFR": "France",
+    "countryUS": "États-Unis",
+    "schoolZone": "Zone scolaire",
+    "zone": "Zone {{zone}}",
+    "zoneA11y": "{{zone}} : {{cities}}",
+    "zoneCitiesA": "Lyon, Bordeaux, Grenoble…",
+    "zoneCitiesB": "Lille, Nantes, Marseille…",
+    "zoneCitiesC": "Paris, Toulouse, Montpellier…",
+    "usHolidays": "Vous ajouterez les congés scolaires de votre district dans les réglages (pas de calendrier national aux États-Unis)."
+  },
+  "children": {
+    "title": "Vos enfants",
+    "intro": "Le prénom suffit. Pas de nom de famille ni d’école : nous gardons le minimum.",
+    "remove": "Retirer {{name}}",
+    "firstName": "Prénom",
+    "addAnother": "Ajouter un autre enfant"
+  },
+  "notifications": {
+    "title": "Ne ratez plus une passation",
+    "intro": "Activez les notifications : Alternly vous prévient au bon moment, sans que vous ayez à ouvrir l’app.",
+    "itemHandover": "Rappel la veille de chaque passation",
+    "itemSwap": "Échange proposé par l’autre parent, à valider",
+    "itemActivity": "Nouvelle dépense ou message sur le tableau",
+    "footer": "Vous choisissez ensuite quoi recevoir dans Réglages › Notifications.",
+    "enable": "Activer les notifications"
+  },
+  "paywall": {
+    "title": "Votre calendrier est prêt",
+    "intro": "Allez plus loin avec Premium : dépenses partagées et tableau entre parents. Un seul abonnement suffit pour vous deux.",
+    "skip": "Continuer avec la version gratuite"
+  },
+  "signOut": "Se déconnecter",
+  "wizard": {
+    "progress": "Votre rythme · {{step}}/4",
+    "kidsMany": "les enfants",
+    "kidsUnknown": "l’enfant",
+    "patterns": {
+      "alternateWeeksTitle": "Semaine / semaine",
+      "alternateWeeksDesc": "Une semaine chez chacun, avec un jour de passage fixe.",
+      "everyOtherWeekendTitle": "Un week-end sur deux",
+      "everyOtherWeekendDesc": "L’enfant vit chez un parent ; l’autre l’accueille un week-end sur deux.",
+      "twoTwoThreeTitle": "2-2-3",
+      "twoTwoThreeDesc": "2 jours chacun, puis 3 jours. Souvent choisi pour les tout-petits.",
+      "customTitle": "Autre organisation",
+      "customDesc": "Vous placez vous-même les jours sur deux semaines."
+    },
+    "patternTitle": "Comment se passe la garde aujourd’hui ?",
+    "patternIntro": "Choisissez ce qui ressemble le plus à votre organisation. Vous ajusterez jour par jour juste après.",
+    "whoWeek": "Qui a {{kids}} la semaine qui commence le {{date}} ?",
+    "whoWeekend": "Qui accueille {{kids}} le week-end du {{date}} ?",
+    "whoDay": "Qui a {{kids}} le {{date}} ?",
+    "weekendRest_one": "Le reste du temps, {{kids}} vit chez l’autre parent. Les week-ends s’alternent ensuite tout seuls.",
+    "weekendRest_other": "Le reste du temps, {{kids}} vivent chez l’autre parent. Les week-ends s’alternent ensuite tout seuls.",
+    "me": "Moi",
+    "notInvited": "pas encore invité",
+    "handoverDay": "Jour de passage",
+    "handoverTime": "Heure de passage",
+    "handoverTimeA11y": "Heure de passage (HH:MM)",
+    "timeFormat": "Format attendu : 18:00",
+    "preview": "Aperçu",
+    "live": "mis à jour en direct",
+    "weekOf": "Semaine du {{date}}",
+    "dayLabel": "{{day}} {{date}} : {{name}}",
+    "dayTapHint": "{{label}}. Toucher pour changer de parent",
+    "startDate": "Date de départ",
+    "wrongWeek": "Ce n’est pas la bonne semaine de départ ?",
+    "pickDate": "Choisir une autre date",
+    "checkTitle": "Ça correspond à votre organisation ?",
+    "checkIntro": "Un jour ne colle pas ? Touchez-le pour le donner à l’autre parent. Le cycle se répète ensuite toutes les deux semaines.",
+    "movedDay": "Le {{date}} passe chez {{name}}.",
+    "nowCustom": "Votre rythme devient « personnalisé ».",
+    "vacationTitle": "Et pendant les vacances scolaires ?",
+    "splitHalfTitle": "Moitié chacun",
+    "splitHalfDesc": "Chaque période est coupée en deux. L’ordre s’inverse chaque année.",
+    "alternateFullTitle": "Toutes les vacances, une année sur deux",
+    "alternateFullDesc": "Toute la période chez un parent, puis chez l’autre l’année suivante.",
+    "firstHalfQuestion": "Cette année ({{year}}), qui a la première moitié ?",
+    "fullQuestion": "Cette année ({{year}}), qui a les vacances ?",
+    "exampleSplitMe": "Exemple : aux prochaines vacances, vous avez la première moitié, l’autre parent la seconde. L’an prochain, c’est l’inverse.",
+    "exampleSplitOther": "Exemple : aux prochaines vacances, l’autre parent a la première moitié, vous la seconde. L’an prochain, c’est l’inverse.",
+    "exampleFullMe": "Exemple : cette année, les vacances sont chez vous ; l’an prochain, chez l’autre parent.",
+    "exampleFullOther": "Exemple : cette année, les vacances sont chez l’autre parent ; l’an prochain, chez vous.",
+    "confirm": "C’est bon, continuer",
+    "generate": "Générer le calendrier"
+  },
+  "rules": {
+    "saved": "Règles enregistrées : le calendrier est à jour.",
+    "title": "Garde et vacances",
+    "backToSettings": "Retour aux réglages",
+    "submit": "Enregistrer les règles"
+  },
+  "form": {
+    "step": "Étape {{step}} sur {{total}}",
+    "prevMonth": "Mois précédent",
+    "nextMonth": "Mois suivant"
+  }
+}

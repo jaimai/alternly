@@ -30,5 +30,13 @@
   "crash": {
     "title": "Oops, something went wrong",
     "body": "The team has been notified. Your data is safe."
+  },
+  "colors": {
+    "pine": "Pine",
+    "terracotta": "Terracotta",
+    "slate": "Slate",
+    "mustard": "Mustard",
+    "plum": "Plum",
+    "lagoon": "Lagoon"
   }
 }

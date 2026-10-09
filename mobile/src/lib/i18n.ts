@@ -2,7 +2,7 @@
 // connecté, celle du compte (qui décide aussi de la langue des push et des e-mails).
 // Composants : useTranslation() de react-i18next ; code hors React : t() exporté ici.
 import { getLocales } from 'expo-localization'
-import i18n from 'i18next'
+import i18n, { changeLanguage, t as translate } from 'i18next'
 import { initReactI18next } from 'react-i18next'
 import { resources } from '@/locales'
 import type { Locale } from './types'
@@ -17,6 +17,7 @@ function deviceLanguage(): Locale {
   }
 }
 
+// eslint-disable-next-line import/no-named-as-default-member -- use() de l'instance, pas un hook React
 void i18n.use(initReactI18next).init({
   resources,
   lng: deviceLanguage(),
@@ -25,7 +26,7 @@ void i18n.use(initReactI18next).init({
   returnNull: false,
 })
 
-export const t = i18n.t.bind(i18n)
+export const t = translate
 
 export function appLanguage(): Locale {
   return i18n.language === 'en' ? 'en' : 'fr'
@@ -37,7 +38,7 @@ export function intlLocale(): string {
 }
 
 export function setAppLanguage(lang: Locale): Promise<unknown> {
-  return i18n.changeLanguage(lang)
+  return changeLanguage(lang)
 }
 
 export default i18n

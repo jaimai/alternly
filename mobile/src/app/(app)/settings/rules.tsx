@@ -2,8 +2,9 @@
 // parents, la modification part en demande et s'applique quand l'autre l'accepte.
 import { router } from 'expo-router'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { BackButton } from '@/components/BackButton'
-import { PENDING_MESSAGE } from '@/components/ChangeRequests'
+import { pendingMessage } from '@/components/ChangeRequests'
 import { RuleWizard, type RuleValue } from '@/components/RuleWizard'
 import { Body, Button, Card, ErrorBanner, Loading, Screen, Title } from '@/components/ui'
 import { api, isPendingChange } from '@/lib/api'
@@ -11,6 +12,7 @@ import { useHousehold, useHouseholdAction, useMe } from '@/lib/queries'
 import { colors } from '@/lib/theme'
 
 export default function RulesSettings() {
+  const { t } = useTranslation()
   const household = useHousehold().data
   const meId = useMe().data?.id
   const [result, setResult] = useState<string | null>(null)
@@ -21,7 +23,7 @@ export default function RulesSettings() {
       const vacation = await api.setVacationRule(household!.id, value.vacation)
       return isPendingChange(custody) || isPendingChange(vacation)
     },
-    (pending) => setResult(pending ? PENDING_MESSAGE : 'Règles enregistrées : le calendrier est à jour.'),
+    (pending) => setResult(pending ? pendingMessage() : t('onboarding.rules.saved')),
   )
 
   if (!household || meId === undefined) return <Loading />
@@ -29,11 +31,11 @@ export default function RulesSettings() {
   if (result) {
     return (
       <Screen edges={['top', 'bottom']}>
-        <Title>Garde et vacances</Title>
+        <Title>{t('onboarding.rules.title')}</Title>
         <Card style={{ backgroundColor: colors.pineSoft, borderColor: colors.pineSoft }}>
           <Body>{result}</Body>
         </Card>
-        <Button title="Retour aux réglages" onPress={() => router.back()} />
+        <Button title={t('onboarding.rules.backToSettings')} onPress={() => router.back()} />
       </Screen>
     )
   }
@@ -50,7 +52,7 @@ export default function RulesSettings() {
         stepOffset={0}
         stepTotal={4}
         busy={save.isPending}
-        submitLabel="Enregistrer les règles"
+        submitLabel={t('onboarding.rules.submit')}
         onSubmit={(v) => save.mutate(v)}
       />
     </Screen>

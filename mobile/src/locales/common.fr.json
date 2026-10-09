@@ -22,7 +22,7 @@
   "terms": "Conditions d’utilisation",
   "privacy": "Politique de confidentialité",
   "ago": {
-    "now": "à l’instant",
+    "now": "à l'instant",
     "minutes": "il y a {{count}} min",
     "hours": "il y a {{count}} h",
     "yesterday": "hier"
@@ -30,5 +30,13 @@
   "crash": {
     "title": "Oups, un souci d’affichage",
     "body": "L’équipe est prévenue. Vos données ne sont pas touchées."
+  },
+  "colors": {
+    "pine": "Sapin",
+    "terracotta": "Terracotta",
+    "slate": "Ardoise",
+    "mustard": "Moutarde",
+    "plum": "Prune",
+    "lagoon": "Lagon"
   }
 }

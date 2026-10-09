@@ -2,6 +2,7 @@
 // fonction Premium (402 sinon).
 import { router } from 'expo-router'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Chips } from '@/components/form'
@@ -15,6 +16,7 @@ import type { Household, WallPost } from '@/lib/types'
 import { filterWall, openCounts, type WallSegment } from '@/lib/wall'
 
 export default function Wall() {
+  const { t } = useTranslation()
   const household = useHousehold().data ?? undefined
   const { wall, locked } = useWall(household?.id)
 
@@ -23,8 +25,8 @@ export default function Wall() {
     body = (
       <ScrollView contentContainerStyle={s.content}>
         <Paywall
-          title="Le tableau, avec Premium"
-          intro="Infos, tâches et questions entre parents, au même endroit, sans passer par les textos. Un seul abonnement suffit pour les deux parents."
+          title={t('wall.tab.paywallTitle')}
+          intro={t('wall.tab.paywallIntro')}
         />
       </ScrollView>
     )
@@ -46,9 +48,9 @@ export default function Wall() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.paper }} edges={['top']}>
       <View style={s.header}>
-        <Text accessibilityRole="header" style={s.title}>Tableau</Text>
+        <Text accessibilityRole="header" style={s.title}>{t('wall.tab.title')}</Text>
         {!locked && household ? (
-          <Pressable accessibilityRole="button" accessibilityLabel="Nouveau post" onPress={() => router.push('/wall/new')} style={s.add}>
+          <Pressable accessibilityRole="button" accessibilityLabel={t('wall.tab.newPost')} onPress={() => router.push('/wall/new')} style={s.add}>
             <Icon name="plus" color="#fff" strokeWidth={2.4} />
           </Pressable>
         ) : null}
@@ -58,14 +60,8 @@ export default function Wall() {
   )
 }
 
-const EMPTY: Record<WallSegment, string> = {
-  todo: 'Rien à faire : tout est à jour.',
-  questions: 'Aucune question en attente.',
-  infos: 'Rien ici pour l’instant.',
-  all: 'Rien ici pour l’instant.',
-}
-
 function Content({ household, posts }: { household: Household; posts: WallPost[] }) {
+  const { t } = useTranslation()
   const [segment, setSegment] = useState<WallSegment>('todo')
   const [query, setQuery] = useState('')
   const [showDone, setShowDone] = useState(false)
@@ -78,10 +74,10 @@ function Content({ household, posts }: { household: Household; posts: WallPost[]
     <>
       <Chips
         options={[
-          { value: 'todo' as const, label: withCount('À faire', counts.todo) },
-          { value: 'questions' as const, label: withCount('Questions', counts.questions) },
-          { value: 'infos' as const, label: 'Infos' },
-          { value: 'all' as const, label: 'Tout' },
+          { value: 'todo' as const, label: withCount(t('wall.tab.segments.todo'), counts.todo) },
+          { value: 'questions' as const, label: withCount(t('wall.tab.segments.questions'), counts.questions) },
+          { value: 'infos' as const, label: t('wall.tab.segments.infos') },
+          { value: 'all' as const, label: t('wall.tab.segments.all') },
         ]}
         value={segment}
         onChange={(v) => {
@@ -92,16 +88,16 @@ function Content({ household, posts }: { household: Household; posts: WallPost[]
       <TextInput
         value={query}
         onChangeText={setQuery}
-        placeholder="Rechercher dans le tableau…"
+        placeholder={t('wall.tab.searchPlaceholder')}
         placeholderTextColor={colors.inkSoft}
-        accessibilityLabel="Rechercher"
+        accessibilityLabel={t('wall.tab.searchLabel')}
         returnKeyType="search"
         clearButtonMode="while-editing"
         style={s.search}
       />
 
       {open.length === 0 && done.length === 0 ? (
-        <Body muted>{query.trim() ? 'Aucun résultat pour cette recherche.' : EMPTY[segment]}</Body>
+        <Body muted>{query.trim() ? t('wall.tab.noResults') : t(`wall.tab.empty.${segment}`)}</Body>
       ) : null}
       {open.map((p) => <WallPostCard key={p.id} post={p} household={household} />)}
 
@@ -109,7 +105,7 @@ function Content({ household, posts }: { household: Household; posts: WallPost[]
         <>
           <Pressable accessibilityRole="button" accessibilityState={{ expanded: showDone }} onPress={() => setShowDone((v) => !v)} style={s.doneToggle}>
             <Text style={s.doneText}>
-              {`${showDone ? '▾' : '▸'} ${done.length} ${segment === 'todo' ? 'terminée' : 'résolue'}${done.length > 1 ? 's' : ''}`}
+              {`${showDone ? '▾' : '▸'} ${t(segment === 'todo' ? 'wall.tab.doneCount' : 'wall.tab.resolvedCount', { count: done.length })}`}
             </Text>
           </Pressable>
           {showDone ? done.map((p) => <WallPostCard key={p.id} post={p} household={household} />) : null}

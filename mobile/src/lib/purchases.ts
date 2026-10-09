@@ -5,6 +5,7 @@
 import { Platform } from 'react-native'
 import Purchases, { PURCHASES_ERROR_CODE, type PurchasesPackage } from 'react-native-purchases'
 import { api } from './api'
+import { t } from './i18n'
 import type { BillingStatus } from './types'
 
 // Clés publiques RevenueCat (une par store), pas des secrets.
@@ -58,7 +59,7 @@ export async function purchase(pkg: PurchasesPackage): Promise<BillingStatus> {
   } catch (e) {
     if ((e as { userCancelled?: boolean })?.userCancelled) throw new PurchaseCancelled()
     if ((e as { code?: string })?.code === PURCHASES_ERROR_CODE.PAYMENT_PENDING_ERROR) {
-      throw new Error('Paiement en attente de validation : Premium s’activera dès qu’il sera confirmé.')
+      throw new Error(t('premium.paymentPending'))
     }
     throw e
   }

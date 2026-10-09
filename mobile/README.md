@@ -102,6 +102,15 @@ Deux fichiers à servir par Vercel sous `frontend/public/.well-known/`, avec l'e
   (Team ID : developer.apple.com › Membership) ;
 - `assetlinks.json` : empreinte SHA-256 du certificat de signature Android (`eas credentials`).
 
+## Langues (français, anglais)
+
+i18next (`src/lib/i18n.ts`) : la langue du téléphone au lancement, puis celle du compte
+(Réglages › Mon profil › Langue), qui décide aussi de la langue des push et des e-mails.
+Textes dans `src/locales/<domaine>.{fr,en}.json` (mêmes clés dans les deux fichiers),
+dates et montants via `intlLocale()`. Composants : `useTranslation()` ; code hors React :
+`t()` de `@/lib/i18n`, appelé au moment de l'affichage (jamais au chargement du module).
+Les tests tournent en français.
+
 ## Vérifications (identiques à la CI)
 
 ```bash

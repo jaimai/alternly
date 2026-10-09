@@ -1,9 +1,13 @@
 // Tableau entre parents : filtres et tri (mêmes règles que frontend/src/pages/Wall.tsx).
+import { t } from './i18n'
 import type { WallKind, WallPost } from './types'
 
 export type WallSegment = 'todo' | 'questions' | 'infos' | 'all'
 
-export const KIND_LABEL: Record<WallKind, string> = { message: 'Info', task: 'Tâche', question: 'Question' }
+/** Libellé du type de post dans la langue courante. */
+export function kindLabel(kind: WallKind): string {
+  return t(`wall.kinds.${kind}`)
+}
 
 const SEGMENT_KIND: Record<Exclude<WallSegment, 'all'>, WallKind> = { todo: 'task', questions: 'question', infos: 'message' }
 

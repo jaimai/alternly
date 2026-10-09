@@ -1,1 +1,48 @@
-{}
+{
+  "intro": "Un seul abonnement suffit pour les deux parents.",
+  "features": {
+    "expenses": "Dépenses partagées : solde, remboursements, contestations",
+    "wall": "Tableau entre parents : infos, tâches, questions",
+    "reminders": "Rappels par e-mail des échanges à valider",
+    "calendar": "Synchronisation avec votre agenda"
+  },
+  "noRestore": "Aucun abonnement à restaurer pour ce compte.",
+  "iapUnavailable": "Les achats intégrés ne sont pas disponibles sur cet appareil.",
+  "offersUnavailable": "Offres indisponibles pour le moment.",
+  "subscribe": "S’abonner",
+  "restore": "Restaurer mes achats",
+  "legal": "Renouvellement automatique à la fin de chaque période, sauf résiliation au moins 24 h avant, dans les réglages de votre compte {{store}}. Le paiement est prélevé par le store.",
+  "privacy": "Confidentialité",
+  "annual": "Annuel",
+  "monthly": "Mensuel",
+  "freeTrial": "Essai gratuit",
+  "launchOffer": "Offre de lancement à {{price}}",
+  "introOffer": "{{offer}} : {{duration}}",
+  "perYear": "{{price}} / an",
+  "perMonth": "{{price}} / mois",
+  "units": {
+    "DAY_one": "{{count}} jour",
+    "DAY_other": "{{count}} jours",
+    "WEEK_one": "{{count}} semaine",
+    "WEEK_other": "{{count}} semaines",
+    "MONTH_one": "{{count}} mois",
+    "MONTH_other": "{{count}} mois",
+    "YEAR_one": "{{count}} an",
+    "YEAR_other": "{{count}} ans",
+    "PERIOD_one": "{{count}} période",
+    "PERIOD_other": "{{count}} périodes"
+  },
+  "paymentPending": "Paiement en attente de validation : Premium s’activera dès qu’il sera confirmé.",
+  "subscribed": {
+    "title": "Votre foyer est Premium",
+    "all": "Toutes les fonctions sont débloquées pour les deux parents.",
+    "viaPartner": "Grâce à l’abonnement de l’autre parent : toutes les fonctions sont débloquées pour vous deux.",
+    "store": "Abonnement souscrit dans {{store}}. Il se gère et se résilie dans le store.",
+    "paddle": "Abonnement souscrit sur le site alternly.com : il se gère sur le site, depuis un navigateur.",
+    "manage": "Gérer mon abonnement",
+    "storeNames": {
+      "app_store": "l’App Store",
+      "play_store": "Google Play"
+    }
+  }
+}

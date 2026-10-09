@@ -4,6 +4,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { router, useLocalSearchParams } from 'expo-router'
 import { useEffect } from 'react'
+import { Trans, useTranslation } from 'react-i18next'
 import { View } from 'react-native'
 import { BackButton } from '@/components/BackButton'
 import { Body, Button, Card, ErrorBanner, ErrorState, Loading, Screen, Title } from '@/components/ui'
@@ -11,9 +12,11 @@ import { ApiError, api } from '@/lib/api'
 import { useAuth } from '@/lib/auth'
 import { usePendingInvite } from '@/lib/pendingInvite'
 import { keys } from '@/lib/queries'
+import { t as translate } from '@/lib/i18n'
 import { fonts } from '@/lib/theme'
 
 export default function Join() {
+  const { t } = useTranslation()
   const { token } = useLocalSearchParams<{ token: string }>()
   const { status } = useAuth()
   const signedIn = status === 'signedIn'
@@ -65,14 +68,14 @@ export default function Join() {
     return (
       <Screen edges={['top', 'bottom']}>
         <BackButton onPress={leave} />
-        <Title>Lien plus valable</Title>
+        <Title>{t('auth.join.invalidTitle')}</Title>
         <Card>
           <Body>{invalid.message}</Body>
           {invalid.code !== 'used' ? (
-            <Body muted style={{ fontSize: 14 }}>Demandez un nouveau lien à l’autre parent depuis son application.</Body>
+            <Body muted style={{ fontSize: 14 }}>{t('auth.join.askNewLink')}</Body>
           ) : null}
         </Card>
-        <Button title={signedIn ? 'Ouvrir mon calendrier' : 'Retour'} variant="secondary" onPress={leave} />
+        <Button title={signedIn ? t('auth.join.openCalendar') : t('common.back')} variant="secondary" onPress={leave} />
       </Screen>
     )
   }
@@ -87,11 +90,13 @@ export default function Join() {
     <Screen edges={['top', 'bottom']}>
       <BackButton onPress={leave} />
       <View style={{ gap: 6 }}>
-        <Title>Invitation</Title>
+        <Title>{t('auth.join.title')}</Title>
         <Body>
-          <Body style={{ fontFamily: fonts.bodySemiBold }}>{invite.invited_by_name}</Body> vous invite à rejoindre le foyer{' '}
-          <Body style={{ fontFamily: fonts.bodySemiBold }}>{invite.household_name}</Body> sur Alternly : le calendrier de garde,
-          les vacances et les échanges, partagés entre vous deux.
+          <Trans
+            i18nKey="auth.join.invite"
+            values={{ inviter: invite.invited_by_name, household: invite.household_name }}
+            components={{ b: <Body style={{ fontFamily: fonts.bodySemiBold }} /> }}
+          />
         </Body>
       </View>
 
@@ -99,14 +104,14 @@ export default function Join() {
 
       {signedIn ? (
         <>
-          <Button title="Rejoindre le foyer" onPress={() => accept.mutate()} loading={accept.isPending} />
-          <Button title="Plus tard" variant="ghost" onPress={leave} disabled={accept.isPending} />
+          <Button title={t('auth.join.accept')} onPress={() => accept.mutate()} loading={accept.isPending} />
+          <Button title={t('common.later')} variant="ghost" onPress={leave} disabled={accept.isPending} />
         </>
       ) : (
         <>
-          <Body muted>Créez votre compte gratuit (ou connectez-vous) : vous rejoindrez le foyer juste après.</Body>
-          <Button title="Créer un compte" onPress={() => router.push('/register')} />
-          <Button title="J'ai déjà un compte" variant="secondary" onPress={() => router.push('/login')} />
+          <Body muted>{t('auth.join.signedOutHint')}</Body>
+          <Button title={t('auth.createAccount')} onPress={() => router.push('/register')} />
+          <Button title={t('auth.haveAccount')} variant="secondary" onPress={() => router.push('/login')} />
         </>
       )}
     </Screen>
@@ -115,14 +120,14 @@ export default function Join() {
 
 function invalidState(error: unknown): { code: 'expired' | 'used' | 'unknown'; message: string } | null {
   if (!(error instanceof ApiError)) return null
-  if (error.status === 404) return { code: 'unknown', message: 'Cette invitation est introuvable. Vérifiez le lien reçu.' }
+  if (error.status === 404) return { code: 'unknown', message: translate('auth.join.notFound') }
   if (error.status !== 410) return null
   if (error.data?.code === 'used') {
-    return { code: 'used', message: 'Cette invitation a déjà été utilisée. Si c’était vous, connectez-vous pour retrouver le foyer.' }
+    return { code: 'used', message: translate('auth.join.used') }
   }
   const inviter = typeof error.data?.inviter_first_name === 'string' ? error.data.inviter_first_name : ''
   return {
     code: 'expired',
-    message: inviter ? `Cette invitation a expiré. Demandez-en une nouvelle à ${inviter}.` : 'Cette invitation a expiré.',
+    message: inviter ? translate('auth.join.expiredWithName', { name: inviter }) : translate('auth.join.expired'),
   }
 }

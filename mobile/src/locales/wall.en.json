@@ -1,1 +1,71 @@
-{}
+{
+  "kinds": {
+    "message": "Info",
+    "task": "Task",
+    "question": "Question"
+  },
+  "card": {
+    "overdue": "Overdue",
+    "dueOn": "due {{date}}",
+    "assignedTo": "for {{name}}",
+    "reopen": "Reopen",
+    "markDone": "Mark as done",
+    "markResolved": "Mark as resolved",
+    "replies_one": "{{count}} reply",
+    "replies_other": "{{count}} replies"
+  },
+  "tab": {
+    "title": "Board",
+    "newPost": "New post",
+    "paywallTitle": "The board, with Premium",
+    "paywallIntro": "Info, tasks and questions between parents, all in one place, no more texting back and forth. One subscription covers both parents.",
+    "segments": {
+      "todo": "To do",
+      "questions": "Questions",
+      "infos": "Info",
+      "all": "All"
+    },
+    "empty": {
+      "todo": "Nothing to do: you’re all caught up.",
+      "questions": "No pending questions.",
+      "infos": "Nothing here yet.",
+      "all": "Nothing here yet."
+    },
+    "searchPlaceholder": "Search the board…",
+    "searchLabel": "Search",
+    "noResults": "No results for this search.",
+    "doneCount_one": "{{count}} done",
+    "doneCount_other": "{{count}} done",
+    "resolvedCount_one": "{{count}} resolved",
+    "resolvedCount_other": "{{count}} resolved"
+  },
+  "detail": {
+    "notFoundTitle": "Post not found",
+    "notFoundBody": "Its author may have deleted it.",
+    "deletePostTitle": "Delete this post?",
+    "deletePostBody": "It will be removed from the board for both parents, along with its replies.",
+    "deleteReplyTitle": "Delete this reply?",
+    "replies": "Replies",
+    "longPressHint": "Long press to delete",
+    "replyPlaceholder": "Reply…",
+    "replyLabel": "Your reply",
+    "deletePost": "Delete post"
+  },
+  "new": {
+    "type": "Type",
+    "placeholders": {
+      "message": "Some info to share…",
+      "task": "What needs to be done…",
+      "question": "Your question for the other parent…"
+    },
+    "messageLabel": "Message",
+    "child": "Child",
+    "for": "For",
+    "either": "Either parent",
+    "due": "Due date",
+    "noDue": "None",
+    "pickDate": "Pick a date",
+    "date": "Date",
+    "publish": "Post"
+  }
+}

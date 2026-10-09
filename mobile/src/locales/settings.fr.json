@@ -1,1 +1,192 @@
-{}
+{
+  "title": "Réglages",
+  "householdSection": "Foyer",
+  "notRegistered": "pas encore inscrit·e",
+  "childrenRow": "Enfants, zone, autre parent",
+  "custodyRow": "Garde et vacances",
+  "specialDaysRow": "Jours de fête",
+  "specialDaysActive_one": "{{count}} actif",
+  "specialDaysActive_other": "{{count}} actifs",
+  "pattern": {
+    "alternate_weeks": "Semaine / semaine",
+    "every_other_weekend": "Un week-end sur deux",
+    "two_two_three": "2-2-3",
+    "custom": "Organisation personnalisée"
+  },
+  "appSection": "Application",
+  "premiumActive": "Actif",
+  "premiumDiscover": "Découvrir",
+  "notificationsRow": "Notifications",
+  "accountRow": "Compte et mot de passe",
+  "calendarSyncRow": "Synchroniser mon agenda",
+  "historyRow": "Historique du foyer",
+  "signOut": {
+    "title": "Se déconnecter ?",
+    "body": "Vous pourrez vous reconnecter avec le même compte.",
+    "action": "Se déconnecter"
+  },
+  "profile": {
+    "title": "Mon profil",
+    "firstName": "Prénom",
+    "color": "Ma couleur sur le calendrier",
+    "colorTaken": "{{color}} (couleur de l’autre parent)",
+    "colorTakenHint": "La couleur de l’autre parent n’est pas proposée, pour bien vous distinguer.",
+    "language": "Langue"
+  },
+  "changeRequests": {
+    "title": "Demandes de changement",
+    "error": "Action impossible. Réessayez.",
+    "mine": "Votre demande · en attente",
+    "theirs": "{{name}} demande votre accord",
+    "withdraw": "Retirer",
+    "refuse": "Refuser",
+    "accept": "Accepter",
+    "pending": "Demande envoyée : l’autre parent doit l’accepter avant qu’elle s’applique."
+  },
+  "household": {
+    "title": "Foyer",
+    "zoneUpdated": "Zone mise à jour.",
+    "partnerSaved": "Prénom enregistré.",
+    "removeChildTitle": "Retirer {{name}} du foyer ?",
+    "removeChildBody": "Son prénom disparaît du foyer pour les deux parents. Vous pourrez l’ajouter de nouveau plus tard.",
+    "removeChildAction": "Retirer",
+    "removeChildA11y": "Retirer {{name}}",
+    "children": "Enfants",
+    "noChildren": "Aucun enfant pour l’instant.",
+    "addChild": "Ajouter un enfant",
+    "firstNamePlaceholder": "Prénom",
+    "partnerIntro": "Pas encore de compte : vous pouvez déjà lui attribuer des dépenses. Il ou elle retrouvera tout en rejoignant le foyer.",
+    "partnerName": "Son prénom",
+    "partnerPlaceholder": "ex. Camille",
+    "schoolZone": "Zone scolaire",
+    "zones": {
+      "A": {
+        "label": "Zone A",
+        "hint": "Besançon, Bordeaux, Clermont, Dijon, Grenoble, Limoges, Lyon, Poitiers"
+      },
+      "B": {
+        "label": "Zone B",
+        "hint": "Aix-Marseille, Amiens, Lille, Nancy-Metz, Nantes, Nice, Normandie, Orléans-Tours, Reims, Rennes, Strasbourg"
+      },
+      "C": {
+        "label": "Zone C",
+        "hint": "Créteil, Montpellier, Paris, Toulouse, Versailles"
+      }
+    },
+    "breaks": {
+      "title": "Congés scolaires",
+      "intro": "Pas de calendrier national aux États-Unis : ajoutez les congés de votre district (Thanksgiving, hiver, printemps, été…). Ils suivent la règle de partage des vacances.",
+      "none": "Aucun congé pour l’instant.",
+      "removeTitle": "Supprimer « {{label}} » ?",
+      "removeBody": "Le calendrier reprend le rythme habituel sur ces dates.",
+      "removeA11y": "Supprimer {{label}}",
+      "name": "Nom du congé",
+      "namePlaceholder": "ex. Winter break",
+      "start": "Début",
+      "end": "Fin",
+      "add": "Ajouter le congé"
+    }
+  },
+  "specialDays": {
+    "title": "Jours de fête",
+    "intro": "Ces jours passent outre le rythme habituel et le partage des vacances.",
+    "auto": "Automatique",
+    "always": "Toujours {{name}}",
+    "evenYears": "{{name}} les années paires",
+    "kinds": {
+      "christmas_eve": "Réveillon de Noël (24 déc.)",
+      "christmas_day": "Jour de Noël (25 déc.)",
+      "new_years_day": "Jour de l’An (1er janv.)",
+      "mothers_day": "Fête des mères",
+      "fathers_day": "Fête des pères",
+      "thanksgiving": "Thanksgiving",
+      "halloween": "Halloween",
+      "independence_day": "Fête nationale américaine (4 juillet)"
+    }
+  },
+  "account": {
+    "title": "Compte",
+    "signedInAs": "Connecté·e avec {{email}}",
+    "password": {
+      "change": "Changer de mot de passe",
+      "set": "Définir un mot de passe",
+      "setHint": "Pour vous connecter aussi avec votre e-mail, en plus d’Apple ou Google.",
+      "done": "Mot de passe enregistré. Vos autres appareils ont été déconnectés.",
+      "current": "Mot de passe actuel",
+      "new": "Nouveau mot de passe ({{min}} caractères min.)",
+      "tooShort": "{{min}} caractères minimum"
+    },
+    "data": {
+      "title": "Mes données et sessions",
+      "export": "Exporter mes données",
+      "shareTitle": "Mes données Alternly",
+      "exportHint": "Profil, foyer, calendrier, dépenses et tableau, dans un fichier JSON.",
+      "logoutAll": "Déconnecter tous les appareils",
+      "logoutAllHint": "Si un téléphone a été perdu, ou si quelqu’un connaît votre mot de passe.",
+      "logoutAllTitle": "Déconnecter tous les appareils ?",
+      "logoutAllBody": "Y compris ce téléphone : il faudra vous reconnecter partout.",
+      "logoutAllAction": "Tout déconnecter"
+    },
+    "delete": {
+      "title": "Supprimer mon compte",
+      "body": "Vos données personnelles sont effacées définitivement. Si vous êtes le seul parent du foyer, tout le foyer et son historique sont supprimés. Un abonnement pris dans l’App Store ou Google Play se résilie dans le store : la suppression du compte ne l’arrête pas.",
+      "why": "Pourquoi partez-vous ? (facultatif)",
+      "startOver": "Pas besoin de supprimer votre compte : la règle de garde se reprend pas à pas dans Réglages › Garde et vacances, et les enfants dans Réglages › Enfants et zone.",
+      "commentPlaceholder": "Un mot pour nous aider à améliorer Alternly ? (facultatif)",
+      "commentA11y": "Commentaire",
+      "failed": "La suppression a échoué. Réessayez.",
+      "confirm": "Supprimer définitivement",
+      "confirmTitle": "Supprimer définitivement votre compte ?",
+      "confirmBody": "Vos données personnelles seront effacées. Cette action est irréversible.",
+      "reasons": {
+        "not_my_situation": "Le calendrier ne correspond pas à ma situation",
+        "start_over": "Je voulais recommencer la configuration",
+        "other_parent": "L’autre parent ne l’utilisera pas",
+        "price": "C’est trop cher / trop de fonctions payantes",
+        "just_testing": "Je testais l’application",
+        "other": "Autre raison"
+      }
+    }
+  },
+  "feedback": {
+    "title": "Nous écrire",
+    "intro": "Un problème, une idée, une question : nous lisons tout, et répondons à l’e-mail de votre compte.",
+    "thanks": "Merci ! Votre message est bien arrivé.",
+    "messageA11y": "Message",
+    "kinds": {
+      "problem": "Un problème",
+      "idea": "Une idée",
+      "question": "Une question"
+    },
+    "placeholders": {
+      "problem": "Ce qui ne marche pas, sur quel écran, et ce que vous attendiez…",
+      "idea": "Ce qui vous manque, ou ce qui vous simplifierait la vie…",
+      "question": "Votre question…"
+    }
+  },
+  "calendarSync": {
+    "paywallTitle": "Votre garde dans votre agenda",
+    "paywallIntro": "Les jours avec les enfants et les passations apparaissent dans Calendrier ou Google Agenda, à jour automatiquement. Un seul abonnement suffit pour les deux parents.",
+    "title": "Synchroniser mon agenda",
+    "intro": "Les jours avec les enfants et les passations s’ajoutent à votre agenda habituel, et se mettent à jour tout seuls quand le planning change.",
+    "addApple": "Ajouter à Calendrier (iPhone)",
+    "addGoogle": "Ajouter à Google Agenda",
+    "share": "Partager le lien",
+    "tipsTitle": "Bon à savoir",
+    "tipGoogle": "Google Agenda : connectez-vous au compte Google voulu, puis validez « Ajouter ». Les mises à jour peuvent prendre quelques heures chez Google.",
+    "tipOther": "Autre application d’agenda : ajoutez un « calendrier par URL » (ou « abonnement ») avec le lien partagé.",
+    "private": "Ce lien est privé : toute personne qui l’a peut voir le planning de garde.",
+    "newLink": "Créer un nouveau lien",
+    "newLinkDone": "Nouveau lien créé : abonnez de nouveau vos agendas.",
+    "regenerateTitle": "Créer un nouveau lien ?",
+    "regenerateBody": "L’ancien lien cesse de fonctionner : les agendas déjà abonnés ne seront plus mis à jour. Utile si le lien a été partagé par erreur.",
+    "regenerateAction": "Nouveau lien"
+  },
+  "history": {
+    "title": "Historique du foyer",
+    "intro": "Toutes les modifications, horodatées et non modifiables. Visible par les deux parents.",
+    "empty": "Rien pour l’instant. Les changements de règles, échanges, dépenses et messages apparaîtront ici.",
+    "system": "Système",
+    "more": "Voir plus"
+  }
+}

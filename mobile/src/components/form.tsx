@@ -1,11 +1,12 @@
 // Contrôles de formulaire : segments, pastilles, cartes de choix, progression, sélecteur de date.
 import { useState, type ReactNode } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native'
 import { addMonths, formatLong, formatMonth, monthGrid, monthStart, parseIso } from '@/lib/dates'
+import { intlLocale } from '@/lib/i18n'
 import { colors, fonts, radius } from '@/lib/theme'
 import { Icon } from './Icon'
 import { Button } from './ui'
-import { intlLocale } from '@/lib/i18n'
 
 export function Segmented<T extends string | number>({ options, value, onChange, label }: {
   options: { value: T; label: string; dot?: string }[]
@@ -95,8 +96,9 @@ export function ChoiceCard({ title, description, selected, onPress, aside }: {
 }
 
 export function Progress({ step, total, label }: { step: number; total: number; label?: string }) {
+  const { t } = useTranslation()
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }} accessibilityLabel={label ?? `Étape ${step} sur ${total}`}>
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }} accessibilityLabel={label ?? t('onboarding.form.step', { step, total })}>
       <View style={{ flex: 1, flexDirection: 'row', gap: 6 }}>
         {Array.from({ length: total }, (_, i) => (
           <View key={i} style={{ flex: 1, height: 5, borderRadius: 3, backgroundColor: i < step ? colors.pine : colors.line }} />
@@ -114,6 +116,7 @@ export function DateField({ label, value, onChange, min }: {
   onChange: (iso: string) => void
   min?: string
 }) {
+  const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const [month, setMonth] = useState(monthStart(value))
   const grid = monthGrid(month)
@@ -137,17 +140,17 @@ export function DateField({ label, value, onChange, min }: {
       </Pressable>
 
       <Modal visible={open} transparent animationType="slide" onRequestClose={() => setOpen(false)}>
-        <Pressable style={s.backdrop} accessibilityLabel="Fermer" onPress={() => setOpen(false)} />
+        <Pressable style={s.backdrop} accessibilityLabel={t('common.close')} onPress={() => setOpen(false)} />
         <View style={s.sheet}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <Text style={s.sheetTitle}>{capitalize(formatMonth(month))}</Text>
-            <NavButton icon="back" label="Mois précédent" onPress={() => setMonth(addMonths(month, -1))} />
-            <NavButton icon="chevron" label="Mois suivant" onPress={() => setMonth(addMonths(month, 1))} />
+            <NavButton icon="back" label={t('onboarding.form.prevMonth')} onPress={() => setMonth(addMonths(month, -1))} />
+            <NavButton icon="chevron" label={t('onboarding.form.nextMonth')} onPress={() => setMonth(addMonths(month, 1))} />
           </View>
           <View style={s.grid}>
-            {['L', 'M', 'M', 'J', 'V', 'S', 'D'].map((d, i) => (
-              <Text key={i} style={s.weekday}>
-                {d}
+            {grid.slice(0, 7).map((d) => (
+              <Text key={`dow-${d}`} style={s.weekday}>
+                {parseIso(d).toLocaleDateString(intlLocale(), { weekday: 'narrow' })}
               </Text>
             ))}
             {grid.map((d) => {
@@ -173,7 +176,7 @@ export function DateField({ label, value, onChange, min }: {
               )
             })}
           </View>
-          <Button title="Fermer" variant="secondary" onPress={() => setOpen(false)} />
+          <Button title={t('common.close')} variant="secondary" onPress={() => setOpen(false)} />
         </View>
       </Modal>
     </View>

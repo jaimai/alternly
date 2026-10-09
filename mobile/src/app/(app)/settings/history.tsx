@@ -1,6 +1,7 @@
 // Historique du foyer : toutes les modifications, horodatées et non modifiables,
 // visibles par les deux parents (qui a changé quoi, et quand).
 import { useInfiniteQuery } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import { StyleSheet, Text, View } from 'react-native'
 import { BackButton } from '@/components/BackButton'
 import { Avatar, Body, Button, ErrorState, Loading, Screen, SectionLabel, Title } from '@/components/ui'
@@ -14,6 +15,7 @@ import type { HistoryEntry } from '@/lib/types'
 const PAGE = 50
 
 export default function History() {
+  const { t } = useTranslation()
   const household = useHousehold().data
   const hid = household?.id ?? 0
   const history = useInfiniteQuery({
@@ -40,12 +42,12 @@ export default function History() {
     <Screen edges={['top', 'bottom']}>
       <BackButton />
       <View style={{ gap: 6 }}>
-        <Title>Historique du foyer</Title>
-        <Body muted>Toutes les modifications, horodatées et non modifiables. Visible par les deux parents.</Body>
+        <Title>{t('settings.history.title')}</Title>
+        <Body muted>{t('settings.history.intro')}</Body>
       </View>
 
       {entries.length === 0 ? (
-        <Body muted>Rien pour l’instant. Les changements de règles, échanges, dépenses et messages apparaîtront ici.</Body>
+        <Body muted>{t('settings.history.empty')}</Body>
       ) : null}
 
       {[...days.entries()].map(([day, items]) => (
@@ -60,7 +62,7 @@ export default function History() {
                   <Avatar name={m?.display_name ?? '·'} color={m?.color ?? colors.line} size={30} />
                   <View style={{ flex: 1, gap: 2 }}>
                     <Text style={s.text}>
-                      <Text style={s.strong}>{m?.display_name ?? 'Système'}</Text> {e.summary}
+                      <Text style={s.strong}>{m?.display_name ?? t('settings.history.system')}</Text> {e.summary}
                     </Text>
                     <Text style={s.time}>{time}</Text>
                   </View>
@@ -72,7 +74,7 @@ export default function History() {
       ))}
 
       {history.hasNextPage ? (
-        <Button title="Voir plus" variant="secondary" onPress={() => history.fetchNextPage()} loading={history.isFetchingNextPage} />
+        <Button title={t('settings.history.more')} variant="secondary" onPress={() => history.fetchNextPage()} loading={history.isFetchingNextPage} />
       ) : null}
     </Screen>
   )

@@ -1,1 +1,48 @@
-{}
+{
+  "intro": "One subscription covers both parents.",
+  "features": {
+    "expenses": "Shared expenses: balance, reimbursements, disputes",
+    "wall": "Parents’ board: info, tasks, questions",
+    "reminders": "Email reminders for swaps awaiting approval",
+    "calendar": "Sync with your calendar"
+  },
+  "noRestore": "No subscription to restore for this account.",
+  "iapUnavailable": "In-app purchases aren’t available on this device.",
+  "offersUnavailable": "Plans unavailable right now.",
+  "subscribe": "Subscribe",
+  "restore": "Restore purchases",
+  "legal": "Renews automatically at the end of each period unless canceled at least 24 hours before, in your {{store}} account settings. Payment is charged by the store.",
+  "privacy": "Privacy",
+  "annual": "Yearly",
+  "monthly": "Monthly",
+  "freeTrial": "Free trial",
+  "launchOffer": "Introductory price {{price}}",
+  "introOffer": "{{offer}}: {{duration}}",
+  "perYear": "{{price}} / year",
+  "perMonth": "{{price}} / month",
+  "units": {
+    "DAY_one": "{{count}} day",
+    "DAY_other": "{{count}} days",
+    "WEEK_one": "{{count}} week",
+    "WEEK_other": "{{count}} weeks",
+    "MONTH_one": "{{count}} month",
+    "MONTH_other": "{{count}} months",
+    "YEAR_one": "{{count}} year",
+    "YEAR_other": "{{count}} years",
+    "PERIOD_one": "{{count}} period",
+    "PERIOD_other": "{{count}} periods"
+  },
+  "paymentPending": "Payment awaiting approval: Premium will activate as soon as it’s confirmed.",
+  "subscribed": {
+    "title": "Your household is Premium",
+    "all": "All features are unlocked for both parents.",
+    "viaPartner": "Thanks to the other parent’s subscription, all features are unlocked for both of you.",
+    "store": "Subscribed through {{store}}. Manage or cancel it in the store.",
+    "paddle": "Subscribed on alternly.com: manage it on the website, from a browser.",
+    "manage": "Manage my subscription",
+    "storeNames": {
+      "app_store": "the App Store",
+      "play_store": "Google Play"
+    }
+  }
+}

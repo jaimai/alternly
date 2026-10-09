@@ -1,4 +1,5 @@
 // Lecture du calendrier résolu par le backend (le moteur de garde reste côté serveur).
+import { t } from './i18n'
 import type { CalendarDay, CalendarResponse, Member } from './types'
 
 export interface Handover {
@@ -42,9 +43,9 @@ export function parentLabel(members: Member[], id: number | undefined, meId: num
 
 /** Même chose en milieu de phrase : « chez vous », « chez Julie », « chez l’autre parent ». */
 export function whoName(members: Member[], id: number | undefined, meId: number | undefined): string {
-  if (id !== undefined && id === meId) return 'vous'
+  if (id !== undefined && id === meId) return t('common.you')
   const m = memberById(members, id)
-  return !m || m.is_placeholder ? 'l’autre parent' : m.display_name
+  return !m || m.is_placeholder ? t('common.otherParent') : m.display_name
 }
 
 /** Période de vacances scolaires qui contient `date`, s'il y en a une. */
@@ -68,21 +69,21 @@ export function exchangesToAnswer(cal: Pick<CalendarResponse, 'pending_exchanges
 
 /** « Léa », « Léa et Hugo », « Léa, Hugo et Tom » ; « Les enfants » si aucun prénom. */
 export function kidsLabel(names: string[]): string {
-  if (names.length === 0) return 'Les enfants'
+  if (names.length === 0) return t('calendar.custody.kids')
   if (names.length === 1) return names[0]
-  return `${names.slice(0, -1).join(', ')} et ${names[names.length - 1]}`
+  return t('calendar.custody.andList', { list: names.slice(0, -1).join(', '), last: names[names.length - 1] })
 }
 
 /** « Léa est chez » / « Léa et Hugo sont chez ». */
 export function statusLead(names: string[]): string {
-  return `${kidsLabel(names)} ${names.length === 1 ? 'est' : 'sont'} chez`
+  return t(names.length === 1 ? 'calendar.custody.leadOne' : 'calendar.custody.leadMany', { kids: kidsLabel(names) })
 }
 
 /** « aujourd'hui », « demain », « dans 5 jours ». */
 export function relativeDays(n: number): string {
-  if (n <= 0) return "aujourd'hui"
-  if (n === 1) return 'demain'
-  return `dans ${n} jours`
+  if (n <= 0) return t('calendar.custody.today')
+  if (n === 1) return t('calendar.custody.tomorrow')
+  return t('calendar.custody.inDays', { n })
 }
 
 /** Vrai tant que l'autre parent n'a pas rejoint le foyer (seul un « placeholder »). */

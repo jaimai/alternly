@@ -1,8 +1,9 @@
 // Enfants (ajouter, retirer), zone scolaire, et prénom de l'autre parent tant qu'il n'a
 // pas de compte ; congés scolaires des foyers US. Avec deux parents, retirer un enfant attend l'accord de l'autre.
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native'
-import { PENDING_MESSAGE } from '@/components/ChangeRequests'
+import { pendingMessage } from '@/components/ChangeRequests'
 import { BackButton } from '@/components/BackButton'
 import { Chips, DateField } from '@/components/form'
 import { Icon } from '@/components/Icon'
@@ -16,13 +17,10 @@ import type { SchoolVacation } from '@/lib/types'
 // Noms donnés par défaut au second parent sans compte (backend/app/services/parents.py).
 const DEFAULT_PARTNER_NAMES = ["L'autre parent", 'Co-parent']
 
-const ZONES = [
-  { value: 'A' as const, label: 'Zone A', hint: 'Besançon, Bordeaux, Clermont, Dijon, Grenoble, Limoges, Lyon, Poitiers' },
-  { value: 'B' as const, label: 'Zone B', hint: 'Aix-Marseille, Amiens, Lille, Nancy-Metz, Nantes, Nice, Normandie, Orléans-Tours, Reims, Rennes, Strasbourg' },
-  { value: 'C' as const, label: 'Zone C', hint: 'Créteil, Montpellier, Paris, Toulouse, Versailles' },
-]
+const ZONES = ['A', 'B', 'C'] as const
 
 export default function HouseholdSettings() {
+  const { t } = useTranslation()
   const household = useHousehold().data
   const [childName, setChildName] = useState('')
   const [notice, setNotice] = useState<string | null>(null)
@@ -31,13 +29,13 @@ export default function HouseholdSettings() {
 
   const hid = household?.id ?? 0
   const add = useHouseholdAction(() => api.addChild(hid, childName.trim()), () => setChildName(''))
-  const remove = useHouseholdAction((id: number) => api.deleteChild(hid, id), (r) => setNotice(isPendingChange(r) ? PENDING_MESSAGE : null))
-  const zone = useHouseholdAction((z: 'A' | 'B' | 'C') => api.updateHousehold(hid, { school_zone: z }), () => setNotice('Zone mise à jour.'))
+  const remove = useHouseholdAction((id: number) => api.deleteChild(hid, id), (r) => setNotice(isPendingChange(r) ? pendingMessage() : null))
+  const zone = useHouseholdAction((z: 'A' | 'B' | 'C') => api.updateHousehold(hid, { school_zone: z }), () => setNotice(t('settings.household.zoneUpdated')))
   const rename = useHouseholdAction(
     () => api.renamePartner(hid, (partnerName ?? '').trim()),
     () => {
       setPartnerName(null)
-      setNotice('Prénom enregistré.')
+      setNotice(t('settings.household.partnerSaved'))
     },
   )
   const error = [add, remove, zone, rename].find((m) => m.error)?.error?.message
@@ -45,18 +43,19 @@ export default function HouseholdSettings() {
   if (!household) return <Loading />
 
   function confirmRemove(id: number, name: string) {
-    Alert.alert(`Retirer ${name} du foyer ?`, 'Son prénom disparaît du foyer pour les deux parents. Vous pourrez l’ajouter de nouveau plus tard.', [
-      { text: 'Annuler', style: 'cancel' },
-      { text: 'Retirer', style: 'destructive', onPress: () => remove.mutate(id) },
+    Alert.alert(t('settings.household.removeChildTitle', { name }), t('settings.household.removeChildBody'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('settings.household.removeChildAction'), style: 'destructive', onPress: () => remove.mutate(id) },
     ])
   }
 
-  const currentZone = ZONES.find((z) => z.value === household.school_zone)
+  const zones = ZONES.map((z) => ({ value: z, label: t(`settings.household.zones.${z}.label`) }))
+  const currentZone = ZONES.find((z) => z === household.school_zone)
 
   return (
     <Screen edges={['top', 'bottom']}>
       <BackButton />
-      <Title>Foyer</Title>
+      <Title>{t('settings.household.title')}</Title>
       <ErrorBanner message={error} />
       {notice ? (
         <Card style={{ backgroundColor: colors.pineSoft, borderColor: colors.pineSoft }}>
@@ -65,14 +64,14 @@ export default function HouseholdSettings() {
       ) : null}
 
       <View style={{ gap: 8 }}>
-        <SectionLabel>Enfants</SectionLabel>
+        <SectionLabel>{t('settings.household.children')}</SectionLabel>
         <View style={s.group}>
           {household.children.map((c) => (
             <View key={c.id} style={s.row}>
               <Text style={[s.strong, { flex: 1 }]}>{c.first_name}</Text>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel={`Retirer ${c.first_name}`}
+                accessibilityLabel={t('settings.household.removeChildA11y', { name: c.first_name })}
                 hitSlop={8}
                 onPress={() => confirmRemove(c.id, c.first_name)}
                 disabled={remove.isPending}
@@ -81,34 +80,34 @@ export default function HouseholdSettings() {
               </Pressable>
             </View>
           ))}
-          {household.children.length === 0 ? <Text style={[s.muted, { padding: 14 }]}>Aucun enfant pour l’instant.</Text> : null}
+          {household.children.length === 0 ? <Text style={[s.muted, { padding: 14 }]}>{t('settings.household.noChildren')}</Text> : null}
         </View>
         <View style={{ flexDirection: 'row', gap: 10, alignItems: 'flex-end' }}>
           <View style={{ flex: 1 }}>
-            <Field label="Ajouter un enfant" placeholder="Prénom" value={childName} onChangeText={setChildName} maxLength={50} returnKeyType="done" onSubmitEditing={() => childName.trim() && add.mutate()} />
+            <Field label={t('settings.household.addChild')} placeholder={t('settings.household.firstNamePlaceholder')} value={childName} onChangeText={setChildName} maxLength={50} returnKeyType="done" onSubmitEditing={() => childName.trim() && add.mutate()} />
           </View>
-          <Button title="Ajouter" variant="secondary" onPress={() => add.mutate()} loading={add.isPending} disabled={!childName.trim()} />
+          <Button title={t('common.add')} variant="secondary" onPress={() => add.mutate()} loading={add.isPending} disabled={!childName.trim()} />
         </View>
       </View>
 
       {placeholder ? (
         <View style={{ gap: 8 }}>
-          <SectionLabel>L’autre parent</SectionLabel>
+          <SectionLabel>{t('common.otherParentTitle')}</SectionLabel>
           <Body muted style={{ fontSize: 14 }}>
-            Pas encore de compte : vous pouvez déjà lui attribuer des dépenses. Il ou elle retrouvera tout en rejoignant le foyer.
+            {t('settings.household.partnerIntro')}
           </Body>
           <View style={{ flexDirection: 'row', gap: 10, alignItems: 'flex-end' }}>
             <View style={{ flex: 1 }}>
               <Field
-                label="Son prénom"
-                placeholder="ex. Camille"
+                label={t('settings.household.partnerName')}
+                placeholder={t('settings.household.partnerPlaceholder')}
                 value={partnerName ?? (DEFAULT_PARTNER_NAMES.includes(placeholder.display_name) ? '' : placeholder.display_name)}
                 onChangeText={setPartnerName}
                 maxLength={50}
               />
             </View>
             <Button
-              title="Enregistrer"
+              title={t('common.save')}
               variant="secondary"
               onPress={() => rename.mutate()}
               loading={rename.isPending}
@@ -122,9 +121,9 @@ export default function HouseholdSettings() {
 
       {household.country === 'FR' ? (
         <View style={{ gap: 8 }}>
-          <SectionLabel>Zone scolaire</SectionLabel>
-          <Chips options={ZONES} value={household.school_zone} onChange={(z) => z !== household.school_zone && zone.mutate(z)} />
-          {currentZone ? <Body muted style={{ fontSize: 13 }}>{currentZone.hint}</Body> : null}
+          <SectionLabel>{t('settings.household.schoolZone')}</SectionLabel>
+          <Chips options={zones} value={household.school_zone} onChange={(z) => z !== household.school_zone && zone.mutate(z)} />
+          {currentZone ? <Body muted style={{ fontSize: 13 }}>{t(`settings.household.zones.${currentZone}.hint`)}</Body> : null}
         </View>
       ) : null}
     </Screen>
@@ -133,6 +132,7 @@ export default function HouseholdSettings() {
 
 /** Foyers US : pas de calendrier scolaire national, les congés se saisissent à la main. */
 function SchoolBreaks({ householdId, breaks }: { householdId: number; breaks: SchoolVacation[] }) {
+  const { t } = useTranslation()
   const [label, setLabel] = useState('')
   const [start, setStart] = useState(todayIso())
   const [end, setEnd] = useState(todayIso(7))
@@ -143,47 +143,44 @@ function SchoolBreaks({ householdId, breaks }: { householdId: number; breaks: Sc
   const remove = useHouseholdAction((id: number) => api.deleteSchoolVacation(householdId, id))
 
   function confirmRemove(v: SchoolVacation) {
-    Alert.alert(`Supprimer « ${v.label} » ?`, 'Le calendrier reprend le rythme habituel sur ces dates.', [
-      { text: 'Annuler', style: 'cancel' },
-      { text: 'Supprimer', style: 'destructive', onPress: () => remove.mutate(v.id) },
+    Alert.alert(t('settings.household.breaks.removeTitle', { label: v.label }), t('settings.household.breaks.removeBody'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('common.delete'), style: 'destructive', onPress: () => remove.mutate(v.id) },
     ])
   }
 
   return (
     <View style={{ gap: 8 }}>
-      <SectionLabel>Congés scolaires</SectionLabel>
-      <Body muted style={{ fontSize: 14 }}>
-        Pas de calendrier national aux États-Unis : ajoutez les congés de votre district (Thanksgiving, hiver, printemps,
-        été…). Ils suivent la règle de partage des vacances.
-      </Body>
+      <SectionLabel>{t('settings.household.breaks.title')}</SectionLabel>
+      <Body muted style={{ fontSize: 14 }}>{t('settings.household.breaks.intro')}</Body>
       <ErrorBanner message={add.error?.message ?? remove.error?.message} />
       <View style={s.group}>
-        {breaks.length === 0 ? <Text style={[s.muted, { padding: 14 }]}>Aucun congé pour l’instant.</Text> : null}
+        {breaks.length === 0 ? <Text style={[s.muted, { padding: 14 }]}>{t('settings.household.breaks.none')}</Text> : null}
         {[...breaks].sort((a, b) => a.start.localeCompare(b.start)).map((v) => (
           <View key={v.id} style={s.row}>
             <View style={{ flex: 1, gap: 2 }}>
               <Text style={s.strong}>{v.label}</Text>
               <Text style={s.muted}>{formatRange(v.start, v.end)}</Text>
             </View>
-            <Pressable accessibilityRole="button" accessibilityLabel={`Supprimer ${v.label}`} hitSlop={8} onPress={() => confirmRemove(v)}>
+            <Pressable accessibilityRole="button" accessibilityLabel={t('settings.household.breaks.removeA11y', { label: v.label })} hitSlop={8} onPress={() => confirmRemove(v)}>
               <Icon name="close" size={18} color={colors.danger} />
             </Pressable>
           </View>
         ))}
       </View>
-      <Field label="Nom du congé" placeholder="ex. Winter break" value={label} onChangeText={setLabel} maxLength={80} />
+      <Field label={t('settings.household.breaks.name')} placeholder={t('settings.household.breaks.namePlaceholder')} value={label} onChangeText={setLabel} maxLength={80} />
       <View style={{ flexDirection: 'row', gap: 12 }}>
         <DateField
-          label="Début"
+          label={t('settings.household.breaks.start')}
           value={start}
           onChange={(d) => {
             setStart(d)
             if (d > end) setEnd(d)
           }}
         />
-        <DateField label="Fin" value={end} onChange={setEnd} min={start} />
+        <DateField label={t('settings.household.breaks.end')} value={end} onChange={setEnd} min={start} />
       </View>
-      <Button title="Ajouter le congé" variant="secondary" onPress={() => add.mutate()} loading={add.isPending} disabled={!label.trim() || end < start} />
+      <Button title={t('settings.household.breaks.add')} variant="secondary" onPress={() => add.mutate()} loading={add.isPending} disabled={!label.trim() || end < start} />
     </View>
   )
 }
