@@ -34,6 +34,40 @@ L'app demande la permission depuis une carte sur l'accueil (jamais au démarrage
 le téléphone (`POST /api/devices`), le désinscrit à la déconnexion, et ouvre le bon écran
 quand on touche une notification. Préférences : Réglages › Notifications.
 
+## Connexion Apple et Google
+
+Les boutons apparaissent en haut des écrans de connexion et d'inscription. Ils créent le
+compte s'il n'existe pas, et le relient à un compte e-mail existant si l'adresse est la même.
+
+- **Apple** (iPhone uniquement) : marche dans Expo Go si le backend accepte
+  `host.exp.Exponent` (`APPLE_CLIENT_IDS=com.alternly.app,host.exp.Exponent`), **sur un
+  backend local seulement** : en production, n'importe quel projet lancé dans Expo Go
+  obtiendrait des jetons Apple acceptés, donc un accès aux comptes. En build,
+  activer « Sign in with Apple » sur l'App ID `com.alternly.app` (EAS le fait au build).
+- **Google** : build de développement obligatoire (module natif absent d'Expo Go).
+  Dans Google Cloud Console, créer un ID client **iOS** (bundle `com.alternly.app`) et un
+  ID client **Android** (package `com.alternly.app` + empreinte SHA-1 du certificat EAS :
+  `eas credentials`). Côté app : `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` (ID web existant) et
+  `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID`. Côté backend : `GOOGLE_MOBILE_CLIENT_IDS` (ID iOS et
+  Android). Sans ces variables, le bouton Google est masqué.
+
+## Liens profonds
+
+`https://alternly.com/join/<jeton>` (invitation) et `/reset-password?token=…` s'ouvrent dans
+l'app quand elle est installée, sinon dans le navigateur comme avant. En développement :
+`npx uri-scheme open "alternly://join/<jeton>" --ios` (ou `--android`), ou le même lien
+`exp://…/--/join/<jeton>` dans Expo Go.
+
+Sans compte, l'invitation est gardée (trousseau) : après inscription ou connexion, l'app
+revient sur « Rejoindre le foyer » au lieu de lancer l'onboarding.
+
+Pour que les liens `https` ouvrent l'app (et non le site), le domaine doit le déclarer.
+Deux fichiers à servir par Vercel sous `frontend/public/.well-known/`, avec l'en-tête
+`Content-Type: application/json` :
+- `apple-app-site-association` : `{"applinks":{"details":[{"appIDs":["<TEAM_ID>.com.alternly.app"],"components":[{"/":"/join/*"},{"/":"/reset-password"}]}]}}`
+  (Team ID : developer.apple.com › Membership) ;
+- `assetlinks.json` : empreinte SHA-256 du certificat de signature Android (`eas credentials`).
+
 ## Vérifications (identiques à la CI)
 
 ```bash
@@ -51,6 +85,7 @@ src/app/            routes Expo Router (1 fichier = 1 écran)
   (app)/onboarding  foyer → enfants → rythme (tant que le foyer n'a pas de règle de garde)
   (app)/(tabs)/     Accueil, Calendrier, Tableau, Dépenses, Réglages
   (app)/exchange/   new (proposer / contre-proposer), [id] (répondre)
+  (app)/expense/    [id] (détail, actions), edit (ajouter / modifier), settle (remboursement)
   (app)/…           notifications, notification-settings (préférences push)
 src/components/     briques d'interface (charte « papier chaleureux »)
 src/lib/            client API, session, requêtes, dates, logique calendrier (+ tests)
@@ -61,14 +96,15 @@ l'app lit `/households/{id}/calendar` et ne recalcule rien.
 
 ## État
 
-Fait : connexion / inscription e-mail, mot de passe oublié ; **onboarding** (foyer, zone
+Fait : connexion / inscription e-mail, **Apple et Google**, mot de passe oublié ; **onboarding** (foyer, zone
 scolaire, enfants, rythme de garde en 4 étapes avec ajustement jour par jour, vacances) ;
 accueil (qui a les enfants, prochain passage, échanges à valider, 7 prochains jours, à venir) ;
-**invitation de l'autre parent** (feuille de partage du téléphone) ; **notifications push**
+**invitation de l'autre parent** (feuille de partage du téléphone) et **liens profonds**
+(rejoindre un foyer, nouveau mot de passe) ; **notifications push**
 (permission, préférences par catégorie, ouverture du bon écran) ; calendrier mensuel avec
-détail du jour ; **proposer un échange**, le retirer, accepter / refuser / **contre-proposer** ;
+détail du jour ; **dépenses partagées** (solde, ajout / modification, contestation,
+remboursements ; Premium) ; **proposer un échange**, le retirer, accepter / refuser / **contre-proposer** ;
 notifications in-app ; réglages en lecture, déconnexion.
 
-À venir : connexion Google et Apple, Tableau et Dépenses natifs,
-réglages modifiables (règles, enfants), liens profonds (`/join/<jeton>`, `/reset-password`),
-achats intégrés. En attendant, ces écrans renvoient vers alternly.com.
+À venir : Tableau natif,
+réglages modifiables (règles, enfants), achats intégrés. En attendant, ces écrans renvoient vers alternly.com.

@@ -161,6 +161,7 @@ def _anonymize(db: Session, user: User) -> None:
     user.email = f"deleted-{user.id}-{new_token()}@alternly.invalid"
     user.password_hash = ""  # inutilisable : plus aucune connexion possible
     user.google_sub = None  # plus de connexion via Google non plus
+    user.apple_sub = None  # ni via Apple
     user.display_name = "Ancien parent"
     user.is_placeholder = True
     user.email_opt_in = False

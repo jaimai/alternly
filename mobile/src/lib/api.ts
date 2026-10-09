@@ -4,17 +4,23 @@ import Constants from 'expo-constants'
 import * as SecureStore from 'expo-secure-store'
 import { Platform } from 'react-native'
 import type {
+  Balance,
   CalendarResponse,
   CustodyRule,
+  Expense,
+  ExpenseInput,
   Household,
   Invitation,
+  InvitationPreview,
   Notification,
   PushPrefs,
   ScheduleException,
+  Settlement,
   TokenResponse,
   User,
   VacationRule,
 } from './types'
+import { hasPendingInvite } from './pendingInvite'
 
 export const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://web-production-d1aa3.up.railway.app/api'
 
@@ -55,9 +61,12 @@ export function setUnauthorizedHandler(handler: (() => void) | null) {
 
 export class ApiError extends Error {
   status: number
-  constructor(status: number, detail: string) {
+  /** `detail` structuré renvoyé par l'API (ex. invitation expirée), sinon undefined. */
+  data?: Record<string, unknown>
+  constructor(status: number, detail: string, data?: Record<string, unknown>) {
     super(detail)
     this.status = status
+    this.data = data
   }
 }
 
@@ -103,7 +112,9 @@ async function request<T>(path: string, options: { method?: string; body?: unkno
     } catch {
       /* corps non JSON */
     }
-    throw new ApiError(resp.status, errorDetail(body, 'Une erreur est survenue.'))
+    const detail = body && typeof body === 'object' ? (body as { detail?: unknown }).detail : undefined
+    const data = detail && typeof detail === 'object' && !Array.isArray(detail) ? (detail as Record<string, unknown>) : undefined
+    throw new ApiError(resp.status, errorDetail(body, 'Une erreur est survenue.'), data)
   }
   if (resp.status === 204) return undefined as T
   return resp.json() as Promise<T>
@@ -113,12 +124,41 @@ export const api = {
   login: (email: string, password: string) =>
     request<TokenResponse>('/auth/login', { method: 'POST', body: { email, password } }),
   register: (data: { email: string; password: string; display_name: string; color: string }) =>
-    request<TokenResponse>('/auth/register', { method: 'POST', body: { ...data, locale: 'fr' } }),
+    request<TokenResponse>('/auth/register', { method: 'POST', body: { ...data, locale: 'fr', via_invite: hasPendingInvite() } }),
+  googleLogin: (credential: string) =>
+    request<TokenResponse>('/auth/google', { method: 'POST', body: { credential, locale: 'fr', via_invite: hasPendingInvite() } }),
+  appleLogin: (identity_token: string, given_name?: string) =>
+    request<TokenResponse>('/auth/apple', {
+      method: 'POST',
+      body: { identity_token, given_name, locale: 'fr', via_invite: hasPendingInvite() },
+    }),
+  resetPassword: (token: string, password: string) =>
+    request<TokenResponse>('/auth/password/reset', { method: 'POST', body: { token, password } }),
+  previewInvitation: (token: string) => request<InvitationPreview>(`/invitations/${encodeURIComponent(token)}`),
+  acceptInvitation: (token: string) =>
+    request<Household>(`/invitations/${encodeURIComponent(token)}/accept`, { method: 'POST' }),
   forgotPassword: (email: string) =>
     request<{ ok: boolean }>('/auth/password/forgot', { method: 'POST', body: { email } }),
   me: () => request<User>('/auth/me'),
 
   myHousehold: () => request<Household>('/households/mine'),
+  // Dépenses (Premium : 402 sinon).
+  expenses: (hid: number) => request<Expense[]>(`/households/${hid}/expenses`),
+  createExpense: (hid: number, data: ExpenseInput) =>
+    request<Expense>(`/households/${hid}/expenses`, { method: 'POST', body: data }),
+  updateExpense: (hid: number, id: number, data: ExpenseInput) =>
+    request<Expense>(`/households/${hid}/expenses/${id}`, { method: 'PATCH', body: data }),
+  deleteExpense: (hid: number, id: number) => request<void>(`/households/${hid}/expenses/${id}`, { method: 'DELETE' }),
+  disputeExpense: (hid: number, id: number, dispute_note: string) =>
+    request<Expense>(`/households/${hid}/expenses/${id}/dispute`, { method: 'POST', body: { dispute_note } }),
+  resolveExpense: (hid: number, id: number) => request<Expense>(`/households/${hid}/expenses/${id}/resolve`, { method: 'POST' }),
+  settleExpense: (hid: number, id: number) => request<Expense>(`/households/${hid}/expenses/${id}/settle`, { method: 'POST' }),
+  unsettleExpense: (hid: number, id: number) => request<Expense>(`/households/${hid}/expenses/${id}/unsettle`, { method: 'POST' }),
+  balance: (hid: number) => request<Balance>(`/households/${hid}/balance`),
+  settlements: (hid: number) => request<Settlement[]>(`/households/${hid}/settlements`),
+  createSettlement: (hid: number, data: Omit<Settlement, 'id' | 'created_by'>) =>
+    request<Settlement>(`/households/${hid}/settlements`, { method: 'POST', body: data }),
+  deleteSettlement: (hid: number, id: number) => request<void>(`/households/${hid}/settlements/${id}`, { method: 'DELETE' }),
   createHousehold: (data: { name: string; country: 'FR' | 'US'; school_zone: 'A' | 'B' | 'C' }) =>
     request<Household>('/households', { method: 'POST', body: data }),
   addChild: (householdId: number, first_name: string) =>

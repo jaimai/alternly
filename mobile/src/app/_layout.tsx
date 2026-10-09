@@ -41,6 +41,9 @@ function RootNavigator() {
       <Stack.Protected guard={!signedIn}>
         <Stack.Screen name="(auth)" />
       </Stack.Protected>
+      {/* Liens profonds : ouverts connecté ou non. */}
+      <Stack.Screen name="join/[token]" />
+      <Stack.Screen name="reset-password" />
     </Stack>
   )
 }

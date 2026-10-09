@@ -77,8 +77,18 @@ class GoogleLoginIn(BaseModel):
     via_invite: bool = False
 
 
+class AppleLoginIn(BaseModel):
+    # Jeton d'identité (JWT) renvoyé par « Se connecter avec Apple » sur l'iPhone.
+    identity_token: str = Field(min_length=20, max_length=4096)
+    # Prénom : Apple ne le transmet qu'à la toute première autorisation, et hors du jeton.
+    given_name: str | None = Field(default=None, max_length=50)
+    locale: Literal["fr", "en"] | None = None
+    analytics_consent: bool | None = None
+    via_invite: bool = False
+
+
 class ChangePasswordIn(BaseModel):
-    # Vide autorisé seulement pour un compte Google sans mot de passe (définition initiale).
+    # Vide autorisé seulement pour un compte Google / Apple sans mot de passe (définition initiale).
     current_password: str = Field(default="", max_length=200)
     new_password: NewPassword
 
@@ -93,7 +103,7 @@ class UserOut(ORMModel):
     locale: str
     has_password: bool = True
     # Mode de connexion principal (analytics, sans donnée d'identification).
-    auth_method: Literal["email", "google"] = "email"
+    auth_method: Literal["email", "google", "apple"] = "email"
     # Consentement à la mesure d'audience : None = jamais répondu.
     analytics_consent: bool | None = None
     created_at: datetime | None = None
