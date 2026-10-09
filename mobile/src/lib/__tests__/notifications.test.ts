@@ -29,6 +29,7 @@ describe('notifications', () => {
     expect(notificationArea('settlement_recorded')).toBe('expenses')
     expect(notificationArea('wall_task_assigned')).toBe('wall')
     expect(notificationArea('parent_joined')).toBe('settings')
+    expect(notificationArea('change_requested')).toBe('settings')
     expect(notificationArea('exchange_accepted')).toBe('calendar')
   })
 })

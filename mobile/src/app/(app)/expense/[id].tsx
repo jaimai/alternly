@@ -34,6 +34,8 @@ export default function ExpenseDetail() {
 
   if (!household || expenses.isPending) return <Loading />
   const e = expenses.data?.find((x) => x.id === eid)
+  // Ouverte depuis une notification : la dépense peut être plus récente que la liste en cache.
+  if (!e && expenses.isFetching) return <Loading />
   if (!e) {
     return (
       <Screen edges={['top', 'bottom']}>

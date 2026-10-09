@@ -65,7 +65,7 @@
   "expenses.add": "Ajouter",
   "expenses.memberYou": "{{name}} (toi)",
   "expenses.amountLabelCur": "Montant ({{symbol}})",
-  "expenses.editLiftsDispute": "Enregistrer une modification lève la contestation en cours.",
+  "expenses.editLiftsDispute": "La contestation reste en cours : l’autre parent est prévenu de la modification et peut la lever.",
   "expenses.deleteTitle": "Supprimer cette dépense ?",
   "expenses.deleteBody": "« {{label}} » ({{amount}}) sera retirée du solde.",
   "expenses.deleteSettlementTitle": "Supprimer ce remboursement ?",

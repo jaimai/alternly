@@ -72,10 +72,23 @@ export async function signInWithApple(): Promise<TokenResponse> {
   return (await appleNative()) ? signInWithAppleNative() : signInWithAppleWeb()
 }
 
+/**
+ * Nonce : Apple reçoit le SHA-256 d'une valeur aléatoire et l'inscrit dans le jeton ; seule
+ * cette app connaît la valeur d'origine, que le backend exige. Un jeton capté en route
+ * (une autre app qui intercepte le retour alternly:// sur Android) ne sert donc à rien.
+ */
+async function newNonce(): Promise<{ raw: string; hashed: string }> {
+  const raw = randomHex(16)
+  const hashed = await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, raw)
+  return { raw, hashed }
+}
+
 async function signInWithAppleNative(): Promise<TokenResponse> {
+  const nonce = await newNonce()
   let credential: AppleAuthentication.AppleAuthenticationCredential
   try {
     credential = await AppleAuthentication.signInAsync({
+      nonce: nonce.hashed,
       requestedScopes: [
         AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
         AppleAuthentication.AppleAuthenticationScope.EMAIL,
@@ -87,7 +100,7 @@ async function signInWithAppleNative(): Promise<TokenResponse> {
   }
   if (!credential.identityToken) throw new Error('Apple n’a pas confirmé votre identité. Réessayez.')
   // Le prénom n'est transmis qu'à la toute première autorisation.
-  return api.appleLogin(credential.identityToken, credential.fullName?.givenName ?? undefined)
+  return api.appleLogin(credential.identityToken, nonce.raw, credential.fullName?.givenName ?? undefined)
 }
 
 /**
@@ -97,14 +110,17 @@ async function signInWithAppleNative(): Promise<TokenResponse> {
 async function signInWithAppleWeb(): Promise<TokenResponse> {
   if (!APPLE_SERVICES_ID) throw new Error('La connexion Apple n’est pas encore configurée sur ce téléphone.')
   const returnUrl = Linking.createURL('apple-callback')
-  const nonce = randomHex(16)
+  // `state` : vérifié par l'app au retour (pas de réponse qu'elle n'a pas demandée).
+  const state = randomHex(16)
+  const nonce = await newNonce()
   const query = {
     client_id: APPLE_SERVICES_ID,
     redirect_uri: `${API_BASE}/auth/apple/callback`,
     response_type: 'code id_token',
     response_mode: 'form_post',
     scope: 'name email',
-    state: `${nonce}.${encodeURIComponent(returnUrl)}`,
+    state: `${state}.${encodeURIComponent(returnUrl)}`,
+    nonce: nonce.hashed,
   }
   const url = `https://appleid.apple.com/auth/authorize?${Object.entries(query)
     .map(([k, v]) => `${k}=${encodeURIComponent(v)}`)
@@ -114,11 +130,11 @@ async function signInWithAppleWeb(): Promise<TokenResponse> {
   if (result.type !== 'success') throw new SignInCancelled()
   const params = Linking.parse(result.url).queryParams ?? {}
   const param = (k: string) => (typeof params[k] === 'string' ? (params[k] as string) : undefined)
-  if (param('state') !== nonce) throw new Error('Réponse d’Apple inattendue. Réessayez.')
+  if (param('state') !== state) throw new Error('Réponse d’Apple inattendue. Réessayez.')
   if (param('error') === 'user_cancelled_authorize') throw new SignInCancelled()
   const idToken = param('id_token')
   if (!idToken) throw new Error('Apple n’a pas confirmé votre identité. Réessayez.')
-  return api.appleLogin(idToken, param('given_name'))
+  return api.appleLogin(idToken, nonce.raw, param('given_name'))
 }
 
 function randomHex(bytes: number): string {

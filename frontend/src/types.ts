@@ -22,6 +22,12 @@ export interface BillingStatus {
   trial_days_left: number | null
   trial_ends_at: string | null
   subscription_ends_at: string | null
+  /** Canal de l'abonnement du foyer : paddle (ce site) ou un store (achat dans l'app). */
+  source?: 'paddle' | 'app_store' | 'play_store' | null
+  /** Vrai si c'est l'abonnement de ce parent (et non celui de l'autre parent). */
+  is_payer?: boolean
+  /** Page d'abonnements du store, pour un achat fait dans l'app. */
+  manage_url?: string | null
 }
 
 export interface SubscriptionInfo {

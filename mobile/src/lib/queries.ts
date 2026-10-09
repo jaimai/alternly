@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ApiError, api } from './api'
 import { useAuth } from './auth'
 import { todayIso } from './dates'
-import type { PushPrefs } from './types'
+import type { BillingStatus, PushPrefs } from './types'
 
 export const keys = {
   me: ['me'] as const,
@@ -13,6 +13,7 @@ export const keys = {
   expenses: ['expenses'] as const,
   wall: ['wall'] as const,
   changeRequests: ['changeRequests'] as const,
+  billing: ['billing'] as const,
 }
 
 /** Profil : celui de la connexion d'abord, puis rafraîchi depuis l'API. */
@@ -194,6 +195,23 @@ export function useUpdateMe(onSuccess?: () => void) {
       qc.setQueryData(keys.me, user)
       void qc.invalidateQueries({ queryKey: keys.household }) // couleur et prénom visibles dans le foyer
       onSuccess?.()
+    },
+  })
+}
+
+/** Statut Premium du foyer (Paddle ou store), calculé par le backend. */
+export function useBilling() {
+  return useQuery({ queryKey: keys.billing, queryFn: api.billingStatus })
+}
+
+/** Achat ou restauration : enregistre le nouveau statut et recharge les écrans Premium. */
+export function useBillingAction<V = void>(fn: (v: V) => Promise<BillingStatus>) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: fn,
+    onSuccess: async (status) => {
+      qc.setQueryData(keys.billing, status)
+      await Promise.all([qc.invalidateQueries({ queryKey: keys.expenses }), qc.invalidateQueries({ queryKey: keys.wall })])
     },
   })
 }

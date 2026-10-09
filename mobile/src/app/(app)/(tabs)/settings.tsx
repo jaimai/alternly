@@ -10,7 +10,7 @@ import { Avatar, Screen, SectionLabel, Title } from '@/components/ui'
 import { useAuth } from '@/lib/auth'
 import { WEB_URL } from '@/lib/colors'
 import { isSolo } from '@/lib/custody'
-import { useHousehold, useMe } from '@/lib/queries'
+import { useBilling, useHousehold, useMe } from '@/lib/queries'
 import { colors, fonts } from '@/lib/theme'
 
 const PATTERN_LABEL: Record<string, string> = {
@@ -24,6 +24,7 @@ export default function Settings() {
   const { signOut } = useAuth()
   const me = useMe().data
   const household = useHousehold().data
+  const billing = useBilling().data
 
   const confirmSignOut = () =>
     Alert.alert('Se déconnecter ?', 'Vous pourrez vous reconnecter avec le même compte.', [
@@ -84,6 +85,7 @@ export default function Settings() {
       <View style={{ gap: 8 }}>
         <SectionLabel>Application</SectionLabel>
         <View style={s.group}>
+          <NavRow label="Alternly Premium" value={billing ? (billing.access ? 'Actif' : 'Découvrir') : undefined} href="/premium" />
           <NavRow label="Notifications" icon="bell" href="/notification-settings" />
           <NavRow label="Compte et mot de passe" icon="settings" href="/settings/account" />
           <Pressable accessibilityRole="link" onPress={() => Linking.openURL(`${WEB_URL}/history`)} style={s.row}>

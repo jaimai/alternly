@@ -72,5 +72,8 @@
   "settings.departureCommentPlaceholder": "Ce qui manquait, ce qui ne marchait pas…",
   "settings.deleting": "Suppression…",
   "settings.restartSetup": "Recommencer la configuration",
-  "settings.restartSetupHint": "Vous préférez être guidé·e pas à pas ?"
+  "settings.restartSetupHint": "Vous préférez être guidé·e pas à pas ?",
+  "settings.subStoreManaged": "Abonnement souscrit dans l'app ({{store}}). Il se gère et se résilie dans le store, pas ici.",
+  "settings.subStoreManagedOther": "Le foyer est abonné via l'app de l'autre parent ({{store}}).",
+  "settings.subStoreManage": "Gérer dans {{store}}"
 }

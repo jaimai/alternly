@@ -26,7 +26,8 @@ class Settings(BaseSettings):
     # leurs jetons d'identité sont acceptés en plus de ceux de google_client_id.
     google_mobile_client_ids: str = ""
     # « Se connecter avec Apple » : audiences acceptées (identifiant de bundle iOS),
-    # séparées par des virgules. Ajouter host.exp.Exponent pour tester dans Expo Go.
+    # séparées par des virgules. host.exp.Exponent (Expo Go) : backend local uniquement, jamais
+    # en production — tout projet lancé dans Expo Go obtient des jetons valables pour cette audience.
     # Vide → désactivé. Pas de secret : on vérifie seulement le jeton d'identité.
     apple_client_ids: str = "com.alternly.app"
     # Android : « Se connecter avec Apple » passe par le web. Services ID créé chez Apple
@@ -60,6 +61,16 @@ class Settings(BaseSettings):
     trial_days: int = 14
     paddle_webhook_secret: str = ""  # vérifie la signature des webhooks Paddle
     paddle_api_key: str = ""  # appels API serveur (gestion d'abonnement)
+    # Achats intégrés (App Store / Google Play) via RevenueCat. Secret : valeur exacte de
+    # l'en-tête Authorization configuré sur le webhook RevenueCat. Vide → webhook désactivé.
+    revenuecat_webhook_secret: str = ""
+    # Clé API secrète RevenueCat (sk_…) : resynchronisation à la demande. Vide → désactivée.
+    revenuecat_api_key: str = ""
+    # Entitlement RevenueCat qui donne Premium : tout autre produit du projet est ignoré.
+    revenuecat_entitlement: str = "premium"
+    # Achats de test (TestFlight, testeurs Play) : gratuits, donc jamais Premium en production.
+    # true seulement sur un backend de recette.
+    revenuecat_allow_sandbox: bool = False
     paddle_env: str = "sandbox"  # sandbox | production → base de l'API Paddle
     paddle_price_annual: str = ""   # price_id de l'offre annuelle
     paddle_price_monthly: str = ""  # price_id de l'offre mensuelle

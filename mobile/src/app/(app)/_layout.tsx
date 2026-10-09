@@ -1,4 +1,5 @@
 import { Redirect, Stack } from 'expo-router'
+import { PurchasesManager } from '@/components/PurchasesManager'
 import { PushManager } from '@/components/PushManager'
 import { ErrorState, Loading } from '@/components/ui'
 import { usePendingInvite } from '@/lib/pendingInvite'
@@ -22,6 +23,7 @@ export default function AppLayout() {
   return (
     <>
       <PushManager />
+      <PurchasesManager />
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.paper } }}>
         <Stack.Protected guard={!ready}>
           <Stack.Screen name="onboarding" />
@@ -42,6 +44,7 @@ export default function AppLayout() {
           <Stack.Screen name="settings/rules" />
           <Stack.Screen name="settings/special-days" />
           <Stack.Screen name="settings/account" />
+          <Stack.Screen name="premium" options={{ presentation: 'modal' }} />
         </Stack.Protected>
       </Stack>
     </>

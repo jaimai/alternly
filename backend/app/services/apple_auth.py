@@ -5,6 +5,8 @@ obtient un jeton d'identité (JWT RS256 signé par Apple) et nous l'envoie.
 On vérifie localement signature, audience (notre identifiant de bundle), émetteur
 et expiration avec les clés publiques d'Apple, mises en cache.
 """
+import hashlib
+import hmac
 from dataclasses import dataclass
 
 import jwt
@@ -35,8 +37,13 @@ def _audiences() -> list[str]:
     return [a.strip() for a in ids if a.strip()]
 
 
-def verify_identity_token(identity_token: str) -> AppleIdentity:
-    """Vérifie le jeton et renvoie l'identité Apple ; lève AppleAuthError sinon."""
+def verify_identity_token(identity_token: str, raw_nonce: str) -> AppleIdentity:
+    """Vérifie le jeton et renvoie l'identité Apple ; lève AppleAuthError sinon.
+
+    `raw_nonce` : valeur aléatoire gardée par l'app, qui n'a envoyé à Apple que son SHA-256.
+    Le jeton doit porter ce hachage : un jeton intercepté (une autre app qui capte le retour
+    alternly:// sur Android, par exemple) est inutilisable sans la valeur d'origine.
+    """
     audiences = _audiences()
     if not audiences:
         raise AppleAuthError("Connexion Apple non configurée")
@@ -48,11 +55,14 @@ def verify_identity_token(identity_token: str) -> AppleIdentity:
             algorithms=["RS256"],
             audience=audiences,
             issuer=APPLE_ISSUER,
-            options={"require": ["exp", "iat", "iss", "sub", "aud"]},
+            options={"require": ["exp", "iat", "iss", "sub", "aud", "nonce"]},
             leeway=30,
         )
     except (jwt.PyJWTError, jwt.PyJWKClientError) as exc:
         raise AppleAuthError("Jeton Apple invalide") from exc
+    expected = hashlib.sha256(raw_nonce.encode()).hexdigest()
+    if not hmac.compare_digest(str(claims["nonce"]), expected):
+        raise AppleAuthError("Jeton Apple invalide")
     return AppleIdentity(
         sub=str(claims["sub"]),
         email=(claims.get("email") or "").lower(),

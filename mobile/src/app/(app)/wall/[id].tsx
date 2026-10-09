@@ -3,8 +3,9 @@ import { router, useLocalSearchParams } from 'expo-router'
 import { useState } from 'react'
 import { Alert, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native'
 import { BackButton } from '@/components/BackButton'
+import { PremiumLocked } from '@/components/PremiumLocked'
 import { WallPostCard } from '@/components/WallPostCard'
-import { Body, Button, ErrorBanner, Loading, Screen, SectionLabel, Title } from '@/components/ui'
+import { Body, Button, ErrorBanner, ErrorState, Loading, Screen, SectionLabel, Title } from '@/components/ui'
 import { api } from '@/lib/api'
 import { formatAgo } from '@/lib/dates'
 import { useHousehold, useMe, useWall, useWallAction } from '@/lib/queries'
@@ -14,7 +15,7 @@ export default function WallPostScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const household = useHousehold().data ?? undefined
   const meId = useMe().data?.id
-  const { wall } = useWall(household?.id)
+  const { wall, locked } = useWall(household?.id)
   const [reply, setReply] = useState('')
 
   const hid = household?.id ?? 0
@@ -25,7 +26,21 @@ export default function WallPostScreen() {
   const error = [send, removePost, removeReply].find((m) => m.error)?.error?.message
 
   if (!household || wall.isPending) return <Loading />
-  const post = wall.data?.find((p) => p.id === pid)
+  if (wall.isError) {
+    return (
+      <Screen edges={['top', 'bottom']}>
+        <BackButton />
+        {locked ? (
+          <PremiumLocked icon="wall" what="Le tableau partagé" />
+        ) : (
+          <ErrorState message={wall.error.message} onRetry={() => wall.refetch()} />
+        )}
+      </Screen>
+    )
+  }
+  const post = wall.data.find((p) => p.id === pid)
+  // Ouvert depuis une notification : le post peut être plus récent que la liste en cache.
+  if (!post && wall.isFetching) return <Loading />
   if (!post) {
     return (
       <Screen edges={['top', 'bottom']}>
