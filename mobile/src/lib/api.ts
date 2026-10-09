@@ -19,6 +19,7 @@ import type {
   PendingChange,
   PushPrefs,
   ScheduleException,
+  SchoolVacation,
   Settlement,
   SpecialDayRule,
   TokenResponse,
@@ -228,6 +229,10 @@ export const api = {
   /** Annule un échange (accepté : demande d'accord à l'autre parent si deux parents → 202). */
   deleteException: (householdId: number, id: number) =>
     request<PendingChange | undefined>(`/households/${householdId}/exceptions/${id}`, { method: 'DELETE' }),
+  addSchoolVacation: (householdId: number, data: { label: string; start: string; end: string }) =>
+    request<SchoolVacation>(`/households/${householdId}/school-vacations`, { method: 'POST', body: data }),
+  deleteSchoolVacation: (householdId: number, periodId: number) =>
+    request<void>(`/households/${householdId}/school-vacations/${periodId}`, { method: 'DELETE' }),
   /** Nomme le second parent tant qu'il n'a pas de compte. */
   renamePartner: (householdId: number, display_name: string) =>
     request<unknown>(`/households/${householdId}/partner`, { method: 'PATCH', body: { display_name } }),
