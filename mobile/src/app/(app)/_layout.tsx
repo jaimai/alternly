@@ -32,6 +32,9 @@ export default function AppLayout() {
           <Stack.Screen name="notification-settings" />
           <Stack.Screen name="exchange/new" options={{ presentation: 'modal' }} />
           <Stack.Screen name="exchange/[id]" />
+          <Stack.Screen name="expense/[id]" />
+          <Stack.Screen name="expense/edit" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="expense/settle" options={{ presentation: 'modal' }} />
         </Stack.Protected>
       </Stack>
     </>

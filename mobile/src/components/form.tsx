@@ -1,4 +1,4 @@
-// Contrôles de formulaire : segments, cartes de choix, progression, sélecteur de date.
+// Contrôles de formulaire : segments, pastilles, cartes de choix, progression, sélecteur de date.
 import { useState, type ReactNode } from 'react'
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native'
 import { addMonths, formatLong, formatMonth, monthGrid, monthStart, parseIso } from '@/lib/dates'
@@ -39,6 +39,37 @@ export function Segmented<T extends string | number>({ options, value, onChange,
 }
 
 /** Carte sélectionnable (rythme de garde, mode de vacances…). */
+/** Choix unique sur plusieurs lignes (catégories, répartitions…), quand Segmented déborde. */
+export function Chips<T extends string | number>({ options, value, onChange, label }: {
+  options: { value: T; label: string; dot?: string }[]
+  value: T | null
+  onChange: (v: T) => void
+  label?: string
+}) {
+  return (
+    <View style={{ gap: 8 }}>
+      {label ? <Text style={s.label}>{label}</Text> : null}
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }} accessibilityRole="radiogroup" accessibilityLabel={label}>
+        {options.map((o) => {
+          const selected = o.value === value
+          return (
+            <Pressable
+              key={String(o.value)}
+              accessibilityRole="radio"
+              accessibilityState={{ selected }}
+              onPress={() => onChange(o.value)}
+              style={[s.chip, selected && s.chipOn]}
+            >
+              {o.dot ? <View style={[s.dot, { backgroundColor: o.dot }]} /> : null}
+              <Text style={[s.chipText, selected && { color: '#fff' }]}>{o.label}</Text>
+            </Pressable>
+          )
+        })}
+      </View>
+    </View>
+  )
+}
+
 export function ChoiceCard({ title, description, selected, onPress, aside }: {
   title: string
   description?: string
@@ -170,6 +201,12 @@ const s = StyleSheet.create({
   segmentOn: { backgroundColor: colors.surface, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 3, shadowOffset: { width: 0, height: 1 }, elevation: 1 },
   segmentText: { fontFamily: fonts.bodySemiBold, fontSize: 15, color: colors.inkSoft },
   dot: { width: 10, height: 10, borderRadius: 5 },
+  chip: {
+    minHeight: 40, borderRadius: radius.pill, paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center', gap: 6,
+    backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line,
+  },
+  chipOn: { backgroundColor: colors.pine, borderColor: colors.pine },
+  chipText: { fontFamily: fonts.bodySemiBold, fontSize: 14, color: colors.ink },
   choice: {
     flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: 16,
     backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line,

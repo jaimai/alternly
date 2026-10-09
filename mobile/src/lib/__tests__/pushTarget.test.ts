@@ -13,6 +13,11 @@ describe('pushTarget', () => {
     expect(pushTarget({ type: 'handover_reminder' })).toEqual({ pathname: '/calendar' })
   })
 
+  it('ouvre la dépense concernée', () => {
+    expect(pushTarget({ type: 'expense_disputed', id: 7 })).toEqual({ pathname: '/expense/[id]', params: { id: '7' } })
+    expect(pushTarget({ type: 'settlement_recorded', id: 4 })).toEqual({ pathname: '/expenses' })
+  })
+
   it('retombe sur le centre de notifications sans type', () => {
     expect(pushTarget(undefined)).toEqual({ pathname: '/notifications' })
   })
