@@ -26,7 +26,8 @@ class Settings(BaseSettings):
     # leurs jetons d'identité sont acceptés en plus de ceux de google_client_id.
     google_mobile_client_ids: str = ""
     # « Se connecter avec Apple » : audiences acceptées (identifiant de bundle iOS),
-    # séparées par des virgules. Ajouter host.exp.Exponent pour tester dans Expo Go.
+    # séparées par des virgules. host.exp.Exponent (Expo Go) : backend local uniquement, jamais
+    # en production — tout projet lancé dans Expo Go obtient des jetons valables pour cette audience.
     # Vide → désactivé. Pas de secret : on vérifie seulement le jeton d'identité.
     apple_client_ids: str = "com.alternly.app"
     public_site_url: str = "http://localhost:8000"

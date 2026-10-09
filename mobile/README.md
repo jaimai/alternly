@@ -40,7 +40,9 @@ Les boutons apparaissent en haut des écrans de connexion et d'inscription. Ils 
 compte s'il n'existe pas, et le relient à un compte e-mail existant si l'adresse est la même.
 
 - **Apple** (iPhone uniquement) : marche dans Expo Go si le backend accepte
-  `host.exp.Exponent` (`APPLE_CLIENT_IDS=com.alternly.app,host.exp.Exponent`). En build,
+  `host.exp.Exponent` (`APPLE_CLIENT_IDS=com.alternly.app,host.exp.Exponent`), **sur un
+  backend local seulement** : en production, n'importe quel projet lancé dans Expo Go
+  obtiendrait des jetons Apple acceptés, donc un accès aux comptes. En build,
   activer « Sign in with Apple » sur l'App ID `com.alternly.app` (EAS le fait au build).
 - **Google** : build de développement obligatoire (module natif absent d'Expo Go).
   Dans Google Cloud Console, créer un ID client **iOS** (bundle `com.alternly.app`) et un
