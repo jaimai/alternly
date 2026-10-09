@@ -55,6 +55,7 @@ export interface Household {
   name: string
   school_zone: 'A' | 'B' | 'C'
   country: 'FR' | 'US'
+  currency: 'EUR' | 'USD'
   members: Member[]
   children: Child[]
   custody_rule: CustodyRule | null
@@ -127,4 +128,42 @@ export interface InvitationPreview {
   household_name: string
   invited_by_name: string
   already_member: boolean
+}
+
+export type ExpenseCategory = 'sante' | 'ecole' | 'activites' | 'vetements' | 'cantine' | 'autre'
+
+export interface Expense {
+  id: number
+  label: string
+  amount_cents: number
+  date: string
+  category: ExpenseCategory
+  child_id: number | null
+  paid_by: number
+  payer_percent: number
+  status: 'active' | 'disputed'
+  dispute_note: string
+  settled_at: string | null
+  created_by: number
+}
+
+export type ExpenseInput = Pick<Expense, 'label' | 'amount_cents' | 'date' | 'category' | 'child_id' | 'paid_by' | 'payer_percent'>
+
+export interface Settlement {
+  id: number
+  from_user: number
+  to_user: number
+  amount_cents: number
+  date: string
+  note: string
+  created_by: number
+}
+
+export interface Balance {
+  net: { user_id: number; amount_cents: number }[]
+  debtor_id: number | null
+  creditor_id: number | null
+  amount_cents: number
+  owed_to_me_cents: number
+  i_owe_cents: number
 }

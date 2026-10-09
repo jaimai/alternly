@@ -4,14 +4,18 @@ import Constants from 'expo-constants'
 import * as SecureStore from 'expo-secure-store'
 import { Platform } from 'react-native'
 import type {
+  Balance,
   CalendarResponse,
   CustodyRule,
+  Expense,
+  ExpenseInput,
   Household,
   Invitation,
   InvitationPreview,
   Notification,
   PushPrefs,
   ScheduleException,
+  Settlement,
   TokenResponse,
   User,
   VacationRule,
@@ -138,6 +142,23 @@ export const api = {
   me: () => request<User>('/auth/me'),
 
   myHousehold: () => request<Household>('/households/mine'),
+  // Dépenses (Premium : 402 sinon).
+  expenses: (hid: number) => request<Expense[]>(`/households/${hid}/expenses`),
+  createExpense: (hid: number, data: ExpenseInput) =>
+    request<Expense>(`/households/${hid}/expenses`, { method: 'POST', body: data }),
+  updateExpense: (hid: number, id: number, data: ExpenseInput) =>
+    request<Expense>(`/households/${hid}/expenses/${id}`, { method: 'PATCH', body: data }),
+  deleteExpense: (hid: number, id: number) => request<void>(`/households/${hid}/expenses/${id}`, { method: 'DELETE' }),
+  disputeExpense: (hid: number, id: number, dispute_note: string) =>
+    request<Expense>(`/households/${hid}/expenses/${id}/dispute`, { method: 'POST', body: { dispute_note } }),
+  resolveExpense: (hid: number, id: number) => request<Expense>(`/households/${hid}/expenses/${id}/resolve`, { method: 'POST' }),
+  settleExpense: (hid: number, id: number) => request<Expense>(`/households/${hid}/expenses/${id}/settle`, { method: 'POST' }),
+  unsettleExpense: (hid: number, id: number) => request<Expense>(`/households/${hid}/expenses/${id}/unsettle`, { method: 'POST' }),
+  balance: (hid: number) => request<Balance>(`/households/${hid}/balance`),
+  settlements: (hid: number) => request<Settlement[]>(`/households/${hid}/settlements`),
+  createSettlement: (hid: number, data: Omit<Settlement, 'id' | 'created_by'>) =>
+    request<Settlement>(`/households/${hid}/settlements`, { method: 'POST', body: data }),
+  deleteSettlement: (hid: number, id: number) => request<void>(`/households/${hid}/settlements/${id}`, { method: 'DELETE' }),
   createHousehold: (data: { name: string; country: 'FR' | 'US'; school_zone: 'A' | 'B' | 'C' }) =>
     request<Household>('/households', { method: 'POST', body: data }),
   addChild: (householdId: number, first_name: string) =>

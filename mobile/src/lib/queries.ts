@@ -10,6 +10,7 @@ export const keys = {
   calendar: (hid: number, start: string, end: string) => ['calendar', hid, start, end] as const,
   notifications: ['notifications'] as const,
   pushPrefs: ['pushPrefs'] as const,
+  expenses: ['expenses'] as const,
 }
 
 /** Profil : celui de la connexion d'abord, puis rafraîchi depuis l'API. */
@@ -109,5 +110,28 @@ export function useSetPushPrefs() {
     },
     onError: (_e, _prefs, ctx) => qc.setQueryData(keys.pushPrefs, ctx?.previous),
     onSettled: () => qc.invalidateQueries({ queryKey: keys.pushPrefs }),
+  })
+}
+
+/** Dépenses, remboursements et solde du foyer. `locked` : pas d'abonnement Premium (402). */
+export function useExpenses(householdId: number | undefined) {
+  const enabled = householdId !== undefined
+  const hid = householdId ?? 0
+  const expenses = useQuery({ queryKey: [...keys.expenses, hid, 'list'], queryFn: () => api.expenses(hid), enabled })
+  const settlements = useQuery({ queryKey: [...keys.expenses, hid, 'settlements'], queryFn: () => api.settlements(hid), enabled })
+  const balance = useQuery({ queryKey: [...keys.expenses, hid, 'balance'], queryFn: () => api.balance(hid), enabled })
+  const locked = [expenses, settlements, balance].some((q) => q.error instanceof ApiError && q.error.status === 402)
+  return { expenses, settlements, balance, locked }
+}
+
+/** Action sur une dépense ou un remboursement, puis rafraîchit liste et solde. */
+export function useExpenseAction<V = void, R = unknown>(fn: (v: V) => Promise<R>, onSuccess?: (r: R) => void) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: fn,
+    onSuccess: async (r) => {
+      await qc.invalidateQueries({ queryKey: keys.expenses })
+      onSuccess?.(r)
+    },
   })
 }
