@@ -64,7 +64,7 @@ export default function Settings() {
               </View>
             ))}
             <NavRow
-              label="Enfants et zone scolaire"
+              label="Enfants, zone, autre parent"
               value={household.children.map((c) => c.first_name).join(', ') || '—'}
               href="/settings/household"
             />
