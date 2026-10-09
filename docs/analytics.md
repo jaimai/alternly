@@ -151,6 +151,7 @@ consentement). PostHog renseigne aussi `$initial_utm_*` sur la personne après c
 | `child_added` | C | enfant ajouté | `has_birthdate` |
 | `rule_wizard_step` | C | étape de la règle de garde validée à l'inscription | `step` (pattern, who, check, vacations), `pattern` |
 | `rule_day_adjusted` | C | jour touché dans l'aperçu de l'inscription : un rythme standard devient personnalisé | `from_pattern` |
+| `tool_answer_viewed` | C | outil vacances : réponse « moitié / moitié » affichée d'emblée (lien `?vacances=…` sans zone, dates communes aux 3 zones) | `tool`, `period`, `lang` |
 | `invite_created` | C | lien d'invitation généré | — |
 | `invite_prompt_clicked` | C | clic sur « Inviter l'autre parent » dans l'encadré du calendrier (foyer solo) | `source` |
 | `invite_link_created` | S | lien d'invitation généré (fait autorité) | — |

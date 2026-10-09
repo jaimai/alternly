@@ -219,6 +219,9 @@
     var slug = blogSlug();
     var tool = toolName();
     if (slug) track('blog_article_viewed', { slug: slug, lang: LANG });
+    // Réponse affichée d'emblée (arrivée par une annonce, ?vacances=… sans zone).
+    var quick = document.querySelector('[data-quick]');
+    if (quick && tool) track('tool_answer_viewed', { tool: tool, period: quick.getAttribute('data-quick'), lang: LANG });
 
     document.addEventListener('alternly:track', function (e) {
       var d = e.detail || {};

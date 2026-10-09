@@ -186,9 +186,36 @@ class TestToolPage:
         assert "lun. 2 nov." in html
         assert html.count('class="tl-day') == 16
 
-    def test_missing_zone_message(self, client):
-        html = client.get(PAGE, params={"vacances": "toussaint-2026", "mode": "split_half", "even_first": "A"}).text
+    def test_missing_zone_message_when_zones_differ(self, client):
+        # Hiver : dates différentes selon la zone → pas de réponse immédiate, la zone est demandée.
+        html = client.get(PAGE, params={"vacances": "hiver-2027"}).text
         assert "Choisissez la zone scolaire" in html
+        assert "data-quick=" not in html
+
+    def test_quick_answer_from_ad_link(self, client):
+        # Lien d'annonce : ?vacances=toussaint-2026 sans zone → réponse moitié/moitié tout de suite.
+        html = client.get(PAGE, params={"vacances": "toussaint-2026", "utm_source": "facebook"}).text
+        assert 'data-quick="toussaint-2026"' in html
+        assert "zones A, B et C" in html
+        assert "Du sam. 17 oct. au sam. 24 oct." in html
+        assert "Du dim. 25 oct. au dim. 1er nov." in html
+        assert "les années paires" in html
+        assert "Passage de bras&nbsp;: dim. 25 oct.</strong>" in html
+        assert "Choisissez la zone scolaire" not in html
+        # la réponse vient avant le formulaire, et l'inscription est proposée
+        assert html.index("data-quick=") < html.index('id="tool-form"')
+        assert 'data-cta="tool_quick"' in html
+        assert "Votre calcul personnalisé" in html
+
+    def test_quick_answer_absent_when_gov_unavailable(self, client, monkeypatch):
+        monkeypatch.setattr(public_holidays, "_transport", httpx.MockTransport(lambda r: httpx.Response(500)))
+        resp = client.get(PAGE, params={"vacances": "toussaint-2026"})
+        assert resp.status_code == 200
+        assert "data-quick=" not in resp.text
+        assert '<form class="tool-form"' in resp.text
+
+    def test_no_quick_answer_without_link_param(self, client):
+        assert "data-quick=" not in client.get(PAGE).text
 
     def test_gov_unavailable_graceful(self, client, monkeypatch):
         monkeypatch.setattr(public_holidays, "_transport", httpx.MockTransport(lambda r: httpx.Response(500)))

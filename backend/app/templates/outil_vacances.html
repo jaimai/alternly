@@ -35,10 +35,39 @@
 <article class="tool" data-tool="vacances-garde-alternee">
   <div class="wrap tool-wrap">
     <header class="tool-intro">
+      {%- if not quick %}
       <p class="eyebrow">Outil gratuit · sans inscription</p>
+      {%- endif %}
       <h1>Qui a les enfants <em>pendant les vacances&nbsp;?</em></h1>
+      {%- if not quick %}
       <p class="lede">Choisissez votre zone, la période et la règle de votre jugement ou convention&nbsp;: vous obtenez les dates officielles et le jour exact du passage d'un parent à l'autre.</p>
+      {%- endif %}
     </header>
+
+    {%- if quick %}
+    {%- set qp = quick.period %}
+    {%- set first = quick.segments[0] %}
+    {%- set second = quick.segments[1] if quick.segments | length > 1 else None %}
+    <section class="quick-answer" data-quick="{{ quick.value }}" aria-labelledby="quick-title">
+      <p class="result-kicker">{{ qp.label }} {{ qp.start[:4] }} · zones A, B et C</p>
+      <h2 id="quick-title">Du {{ qp.start_label }} au {{ qp.end_label }}</h2>
+      <p class="quick-rule">Règle la plus courante, <strong>moitié&nbsp;/&nbsp;moitié</strong>&nbsp;:</p>
+      <ul class="result-lines">
+        <li class="seg-line seg-a"><span class="seg-dates">Du {{ first.start_label }} au {{ first.end_label }}</span> <span class="seg-who">chez le parent qui a «&nbsp;la 1<sup>re</sup> moitié les années {{ quick.year_parity }}s&nbsp;»</span></li>
+        {%- if second %}
+        <li class="seg-line seg-b"><span class="seg-dates">Du {{ second.start_label }} au {{ second.end_label }}</span> <span class="seg-who">chez l'autre parent</span></li>
+        {%- endif %}
+      </ul>
+      {%- if quick.handover %}
+      <p class="handover"><strong>Passage de bras&nbsp;: {{ quick.handover.label }}</strong> · reprise de l'école&nbsp;: {{ qp.resume_label }}</p>
+      {%- endif %}
+      <div class="quick-actions">
+        <a class="cta big" href="{{ cta_href }}" data-cta="tool_quick">Créer mon calendrier gratuit</a>
+        <a class="quick-adjust" href="#tool-form">Autre règle&nbsp;? Adapter le calcul ↓</a>
+      </div>
+      <p class="hint">{{ qp.label }} {{ qp.start[:4] }} a les mêmes dates dans les trois zones. Source&nbsp;: {{ quick.source }}.</p>
+    </section>
+    {%- endif %}
 
     <div class="tool-grid">
       <form class="tool-form" method="get" action="/outils/vacances-garde-alternee" id="tool-form">
@@ -129,8 +158,13 @@
         </div>
         {%- else %}
         <div class="result-card result-empty">
+          {%- if quick %}
+          <h2 id="result-title">Votre calcul personnalisé</h2>
+          <p>Vacances entières, autre période ou prénoms&nbsp;: choisissez votre zone et votre règle, puis cliquez sur «&nbsp;Voir qui a les enfants&nbsp;».</p>
+          {%- else %}
           <h2 id="result-title">Votre résultat s'affichera ici</h2>
           <p>Choisissez la zone de l'école de l'enfant, puis cliquez sur «&nbsp;Voir qui a les enfants&nbsp;».</p>
+          {%- endif %}
         </div>
         {%- endif %}
         <aside class="tool-cta" data-cta="tool_result">
