@@ -29,6 +29,10 @@ class Settings(BaseSettings):
     # séparées par des virgules. Ajouter host.exp.Exponent pour tester dans Expo Go.
     # Vide → désactivé. Pas de secret : on vérifie seulement le jeton d'identité.
     apple_client_ids: str = "com.alternly.app"
+    # Android : « Se connecter avec Apple » passe par le web. Services ID créé chez Apple
+    # (ex. com.alternly.app.signin), avec pour Return URL <API>/api/auth/apple/callback.
+    # Ajouté aux audiences acceptées. Vide → connexion Apple indisponible sur Android.
+    apple_services_id: str = ""
     public_site_url: str = "http://localhost:8000"
     # Origines autorisées à appeler l'API (CORS), séparées par des virgules.
     cors_origins: str = "http://localhost:5173"

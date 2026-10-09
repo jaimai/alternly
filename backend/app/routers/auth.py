@@ -1,12 +1,14 @@
 import hashlib
 import html
+import json
 import secrets
 from datetime import timedelta
 from typing import Literal
+from urllib.parse import unquote, urlencode
 
-from fastapi import APIRouter, BackgroundTasks, Body, Depends, Header, HTTPException, Response
+from fastapi import APIRouter, BackgroundTasks, Body, Depends, Form, Header, HTTPException, Response
 from fastapi.encoders import jsonable_encoder
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from pydantic import BaseModel, Field
 from sqlalchemy import delete, select, update
 from sqlalchemy.orm import Session
@@ -241,6 +243,43 @@ def apple_login(
         analytics_consent=data.analytics_consent,
         via_invite=data.via_invite,
     )
+
+
+# Retours autorisés après la page web d'Apple : l'app installée (alternly://) ou Expo Go
+# en développement (exp://). Jamais une adresse web : le jeton ne doit pas en sortir.
+APPLE_RETURN_SCHEMES = ("alternly://", "exp://", "exps://")
+
+
+@router.post("/apple/callback", dependencies=[Depends(rate_limit("apple_callback", 30, MINUTE))])
+def apple_web_callback(
+    state: str = Form(""),
+    id_token: str = Form(""),
+    user: str = Form(""),
+    error: str = Form(""),
+):
+    """Android : Apple poste ici le jeton d'identité (response_mode=form_post), qu'on renvoie
+    tel quel à l'app. L'app le vérifie comme sur iPhone via POST /auth/apple.
+
+    `state` = « <nonce>.<adresse de retour encodée> » : l'app vérifie le nonce à son retour.
+    """
+    nonce, _, encoded = state.partition(".")
+    return_url = unquote(encoded)
+    if not nonce or not return_url.startswith(APPLE_RETURN_SCHEMES):
+        raise HTTPException(status_code=400, detail="Retour non autorisé")
+    params = {"state": nonce}
+    if error or not id_token:
+        params["error"] = error or "no_token"
+    else:
+        params["id_token"] = id_token
+        # Prénom : transmis par Apple à la toute première autorisation seulement.
+        try:
+            given_name = (json.loads(user).get("name") or {}).get("firstName") if user else None
+        except (ValueError, AttributeError):
+            given_name = None
+        if given_name:
+            params["given_name"] = str(given_name)[:50]
+    separator = "&" if "?" in return_url else "?"
+    return RedirectResponse(f"{return_url}{separator}{urlencode(params)}", status_code=303)
 
 
 @router.post(

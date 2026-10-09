@@ -1,6 +1,7 @@
-"""Vérification des jetons d'identité « Se connecter avec Apple » (app iOS).
+"""Vérification des jetons d'identité « Se connecter avec Apple » (app mobile).
 
-L'iPhone obtient un jeton d'identité (JWT RS256 signé par Apple) et nous l'envoie.
+L'iPhone (en natif) ou Android (par la page web d'Apple, cf. /auth/apple/callback)
+obtient un jeton d'identité (JWT RS256 signé par Apple) et nous l'envoie.
 On vérifie localement signature, audience (notre identifiant de bundle), émetteur
 et expiration avec les clés publiques d'Apple, mises en cache.
 """
@@ -30,7 +31,8 @@ class AppleIdentity:
 
 
 def _audiences() -> list[str]:
-    return [a.strip() for a in settings.apple_client_ids.split(",") if a.strip()]
+    ids = [*settings.apple_client_ids.split(","), settings.apple_services_id]
+    return [a.strip() for a in ids if a.strip()]
 
 
 def verify_identity_token(identity_token: str) -> AppleIdentity:

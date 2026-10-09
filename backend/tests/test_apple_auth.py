@@ -121,3 +121,45 @@ def test_deleted_account_unlinks_apple(client):
     again = client.post("/api/auth/apple", json={"identity_token": identity_token()})
     assert again.status_code == 200
     assert again.json()["user"]["has_password"] is False
+
+
+# ---------- Android : page web d'Apple → backend → app ----------
+
+def test_web_callback_redirects_token_to_app(client):
+    token = identity_token()
+    r = client.post(
+        "/api/auth/apple/callback",
+        data={
+            "state": "abc123.alternly%3A%2F%2Fapple-callback",
+            "id_token": token,
+            "code": "x",
+            "user": '{"name":{"firstName":"Camille","lastName":"Martin"},"email":"camille@icloud.com"}',
+        },
+        follow_redirects=False,
+    )
+    assert r.status_code == 303
+    location = r.headers["location"]
+    assert location.startswith("alternly://apple-callback?")
+    assert "state=abc123" in location and f"id_token={token}" in location and "given_name=Camille" in location
+
+
+def test_web_callback_keeps_expo_go_query(client):
+    r = client.post(
+        "/api/auth/apple/callback",
+        data={"state": "n1.exp%3A%2F%2F192.168.1.2%3A8081%2F--%2Fapple-callback", "error": "user_cancelled_authorize"},
+        follow_redirects=False,
+    )
+    assert r.status_code == 303
+    assert r.headers["location"] == "exp://192.168.1.2:8081/--/apple-callback?state=n1&error=user_cancelled_authorize"
+
+
+@pytest.mark.parametrize("state", ["", "abc", "abc.https%3A%2F%2Fevil.example.com", ".alternly%3A%2F%2Fx"])
+def test_web_callback_refuses_other_destinations(client, state):
+    r = client.post("/api/auth/apple/callback", data={"state": state, "id_token": identity_token()}, follow_redirects=False)
+    assert r.status_code == 400
+
+
+def test_services_id_is_an_accepted_audience(client, monkeypatch):
+    monkeypatch.setattr(settings, "apple_services_id", "com.alternly.app.signin")
+    r = client.post("/api/auth/apple", json={"identity_token": identity_token(aud="com.alternly.app.signin")})
+    assert r.status_code == 200, r.text

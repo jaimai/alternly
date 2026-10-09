@@ -36,18 +36,23 @@ quand on touche une notification. Préférences : Réglages › Notifications.
 
 ## Connexion Apple et Google
 
-Les boutons apparaissent en haut des écrans de connexion et d'inscription. Ils créent le
-compte s'il n'existe pas, et le relient à un compte e-mail existant si l'adresse est la même.
+Les deux boutons apparaissent sur tous les téléphones, en haut des écrans de connexion et
+d'inscription. Ils créent le compte s'il n'existe pas, et le relient à un compte e-mail
+existant si l'adresse est la même. Un bouton non configuré explique pourquoi au toucher.
 
-- **Apple** (iPhone uniquement) : marche dans Expo Go si le backend accepte
+- **Apple sur iPhone** (natif) : marche dans Expo Go si le backend accepte
   `host.exp.Exponent` (`APPLE_CLIENT_IDS=com.alternly.app,host.exp.Exponent`). En build,
   activer « Sign in with Apple » sur l'App ID `com.alternly.app` (EAS le fait au build).
-- **Google** : build de développement obligatoire (module natif absent d'Expo Go).
-  Dans Google Cloud Console, créer un ID client **iOS** (bundle `com.alternly.app`) et un
-  ID client **Android** (package `com.alternly.app` + empreinte SHA-1 du certificat EAS :
-  `eas credentials`). Côté app : `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` (ID web existant) et
-  `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID`. Côté backend : `GOOGLE_MOBILE_CLIENT_IDS` (ID iOS et
-  Android). Sans ces variables, le bouton Google est masqué.
+- **Apple sur Android** (page web d'Apple, marche aussi dans Expo Go) : chez Apple, créer
+  un **Services ID** (ex. `com.alternly.app.signin`), activer « Sign in with Apple », domaine
+  de l'API et Return URL `<API>/api/auth/apple/callback`. Puis `APPLE_SERVICES_ID` côté
+  backend et `EXPO_PUBLIC_APPLE_SERVICES_ID` côté app (même valeur).
+- **Google** : build de développement obligatoire (module natif absent d'Expo Go : le
+  bouton le dit). Dans Google Cloud Console, créer un ID client **iOS** (bundle
+  `com.alternly.app`) et un ID client **Android** (package `com.alternly.app` + empreinte
+  SHA-1 du certificat EAS : `eas credentials`). Côté app : `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID`
+  (ID web existant) et `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID`. Côté backend :
+  `GOOGLE_MOBILE_CLIENT_IDS` (ID iOS et Android).
 
 ## Liens profonds
 
