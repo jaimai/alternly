@@ -1,25 +1,25 @@
-// Boutons « Se connecter avec Apple » (iPhone) et « Continuer avec Google » des écrans
-// de connexion et d'inscription. Crée le compte s'il n'existe pas, le relie s'il existe.
+// Boutons « Continuer avec Apple » et « Continuer avec Google » des écrans de connexion
+// et d'inscription, sur tous les téléphones. Crée le compte s'il n'existe pas, le relie s'il
+// existe. Apple : bouton natif sur iPhone, page web d'Apple ailleurs (cf. socialAuth.ts).
 import { useMutation } from '@tanstack/react-query'
 import * as AppleAuthentication from 'expo-apple-authentication'
 import { useEffect, useState } from 'react'
-import { Linking, Text, View } from 'react-native'
+import { ActivityIndicator, Linking, Pressable, StyleSheet, Text, View } from 'react-native'
 import Svg, { Path } from 'react-native-svg'
 import { useAuth } from '@/lib/auth'
 import { WEB_URL } from '@/lib/colors'
-import { SignInCancelled, appleAvailable, googleAvailable, signInWithApple, signInWithGoogle } from '@/lib/socialAuth'
+import { SignInCancelled, appleNative, signInWithApple, signInWithGoogle } from '@/lib/socialAuth'
 import { colors, fonts } from '@/lib/theme'
 import type { TokenResponse } from '@/lib/types'
 import { Body, Button, ErrorBanner } from './ui'
 
 export function SocialSignIn({ mode }: { mode: 'login' | 'register' }) {
   const { signIn } = useAuth()
-  const [apple, setApple] = useState(false)
-  const google = googleAvailable()
+  const [nativeApple, setNativeApple] = useState(false)
 
   useEffect(() => {
     let cancelled = false
-    appleAvailable().then((ok) => !cancelled && setApple(ok), () => {})
+    appleNative().then((ok) => !cancelled && setNativeApple(ok), () => {})
     return () => {
       cancelled = true
     }
@@ -31,12 +31,10 @@ export function SocialSignIn({ mode }: { mode: 'login' | 'register' }) {
   })
   const error = login.error instanceof SignInCancelled ? null : login.error?.message
 
-  if (!apple && !google) return null
-
   return (
     <View style={{ gap: 10 }}>
       <ErrorBanner message={error} />
-      {apple ? (
+      {nativeApple ? (
         <AppleAuthentication.AppleAuthenticationButton
           buttonType={
             mode === 'register'
@@ -48,17 +46,26 @@ export function SocialSignIn({ mode }: { mode: 'login' | 'register' }) {
           style={{ height: 52, opacity: login.isPending ? 0.55 : 1 }}
           onPress={() => !login.isPending && login.mutate('apple')}
         />
-      ) : null}
-      {google ? (
-        <Button
-          title="Continuer avec Google"
-          variant="secondary"
-          icon={<GoogleLogo />}
-          loading={login.isPending && login.variables === 'google'}
-          disabled={login.isPending}
-          onPress={() => login.mutate('google')}
-        />
-      ) : null}
+      ) : (
+        // Hors iPhone : même apparence que le bouton officiel (noir, logo blanc).
+        <Pressable
+          accessibilityRole="button"
+          accessibilityState={{ disabled: login.isPending, busy: login.isPending && login.variables === 'apple' }}
+          onPress={() => !login.isPending && login.mutate('apple')}
+          style={({ pressed }) => [s.apple, (pressed || login.isPending) && { opacity: 0.8 }]}
+        >
+          {login.isPending && login.variables === 'apple' ? <ActivityIndicator color="#fff" /> : <AppleLogo />}
+          <Text style={s.appleText}>Continuer avec Apple</Text>
+        </Pressable>
+      )}
+      <Button
+        title="Continuer avec Google"
+        variant="secondary"
+        icon={<GoogleLogo />}
+        loading={login.isPending && login.variables === 'google'}
+        disabled={login.isPending}
+        onPress={() => login.mutate('google')}
+      />
       {mode === 'register' ? (
         <Body muted style={{ fontSize: 13, textAlign: 'center' }}>
           En continuant avec Apple ou Google, vous acceptez les{' '}
@@ -81,6 +88,17 @@ export function SocialSignIn({ mode }: { mode: 'login' | 'register' }) {
   )
 }
 
+function AppleLogo() {
+  return (
+    <Svg width={17} height={20} viewBox="0 0 17 20" accessibilityElementsHidden importantForAccessibility="no">
+      <Path
+        fill="#fff"
+        d="M14.2 10.6c0-2.6 2.1-3.8 2.2-3.9-1.2-1.8-3.1-2-3.7-2-1.6-.2-3.1.9-3.9.9-.8 0-2.1-.9-3.4-.9-1.7 0-3.3 1-4.2 2.6-1.8 3.1-.5 7.7 1.3 10.2.9 1.2 1.9 2.6 3.2 2.6 1.3-.1 1.8-.8 3.3-.8 1.5 0 2 .8 3.4.8 1.4 0 2.3-1.3 3.1-2.5 1-1.4 1.4-2.8 1.4-2.9 0 0-2.7-1-2.7-4.1zM11.7 3c.7-.9 1.2-2 1-3.2-1 0-2.3.7-3 1.5-.7.8-1.2 2-1.1 3.1 1.2.1 2.3-.6 3.1-1.4z"
+      />
+    </Svg>
+  )
+}
+
 // Logo « G » officiel (couleurs imposées par la charte Google).
 function GoogleLogo() {
   return (
@@ -92,3 +110,11 @@ function GoogleLogo() {
     </Svg>
   )
 }
+
+const s = StyleSheet.create({
+  apple: {
+    minHeight: 52, borderRadius: 26, backgroundColor: '#000', flexDirection: 'row',
+    alignItems: 'center', justifyContent: 'center', gap: 10, paddingHorizontal: 20,
+  },
+  appleText: { fontFamily: fonts.bodySemiBold, fontSize: 17, color: '#fff' },
+})

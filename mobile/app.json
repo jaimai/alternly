@@ -16,7 +16,10 @@
       "usesAppleSignIn": true,
       "associatedDomains": [
         "applinks:alternly.com"
-      ]
+      ],
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "com.alternly.app",
@@ -76,6 +79,16 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "6ae01510-448c-483c-9654-33aa011fca1c"
+      }
+    },
+    "updates": {
+      "url": "https://u.expo.dev/6ae01510-448c-483c-9654-33aa011fca1c"
+    },
+    "owner": "jaime1"
   }
 }

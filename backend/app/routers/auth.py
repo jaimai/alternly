@@ -1,12 +1,14 @@
 import hashlib
 import html
+import json
 import secrets
 from datetime import timedelta
 from typing import Literal
+from urllib.parse import unquote, urlencode
 
-from fastapi import APIRouter, BackgroundTasks, Body, Depends, Header, HTTPException, Response
+from fastapi import APIRouter, BackgroundTasks, Body, Depends, Form, Header, HTTPException, Response
 from fastapi.encoders import jsonable_encoder
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from pydantic import BaseModel, Field
 from sqlalchemy import delete, select, update
 from sqlalchemy.orm import Session
@@ -223,7 +225,7 @@ def apple_login(
 ):
     """« Se connecter avec Apple » (iPhone) : connecte, relie ou crée le compte à partir du jeton d'identité."""
     try:
-        identity = apple_auth.verify_identity_token(data.identity_token)
+        identity = apple_auth.verify_identity_token(data.identity_token, data.nonce)
     except apple_auth.AppleAuthError as exc:
         status = 503 if "configurée" in str(exc) else 401
         raise HTTPException(status_code=status, detail=str(exc))
@@ -241,6 +243,49 @@ def apple_login(
         analytics_consent=data.analytics_consent,
         via_invite=data.via_invite,
     )
+
+
+# Retour autorisé après la page web d'Apple : l'app installée (alternly://), jamais une
+# adresse web. Expo Go (exp://) seulement si APPLE_ALLOW_EXPO_GO, en développement.
+def _apple_return_allowed(url: str) -> bool:
+    # ASCII imprimable uniquement (ni espace ni caractère de contrôle avant le schéma).
+    if not url.isascii() or not url.isprintable() or " " in url:
+        return False
+    prefixes = ("alternly://", "exp://", "exps://") if settings.apple_allow_expo_go else ("alternly://",)
+    return url.startswith(prefixes)
+
+
+@router.post("/apple/callback", dependencies=[Depends(rate_limit("apple_callback", 30, MINUTE))])
+def apple_web_callback(
+    state: str = Form("", max_length=1024),
+    id_token: str = Form("", max_length=4096),
+    user: str = Form("", max_length=2048),
+    error: str = Form("", max_length=100),
+):
+    """Android : Apple poste ici le jeton d'identité (response_mode=form_post), qu'on renvoie
+    tel quel à l'app. L'app le vérifie comme sur iPhone via POST /auth/apple.
+
+    `state` = « <valeur aléatoire>.<adresse de retour encodée> » : l'app vérifie la valeur à
+    son retour. Le jeton, lui, est lié au nonce que seule l'app connaît (cf. apple_auth).
+    """
+    nonce, _, encoded = state.partition(".")
+    return_url = unquote(encoded)
+    if not nonce or not _apple_return_allowed(return_url):
+        raise HTTPException(status_code=400, detail="Retour non autorisé")
+    params = {"state": nonce}
+    if error or not id_token:
+        params["error"] = error or "no_token"
+    else:
+        params["id_token"] = id_token
+        # Prénom : transmis par Apple à la toute première autorisation seulement.
+        try:
+            given_name = (json.loads(user).get("name") or {}).get("firstName") if user else None
+        except (ValueError, AttributeError):
+            given_name = None
+        if given_name:
+            params["given_name"] = str(given_name)[:50]
+    separator = "&" if "?" in return_url else "?"
+    return RedirectResponse(f"{return_url}{separator}{urlencode(params)}", status_code=303)
 
 
 @router.post(

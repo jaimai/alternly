@@ -18,6 +18,11 @@ describe('pushTarget', () => {
     expect(pushTarget({ type: 'settlement_recorded', id: 4 })).toEqual({ pathname: '/expenses' })
   })
 
+  it('ouvre le post du tableau, y compris pour une réponse', () => {
+    expect(pushTarget({ type: 'wall_task_assigned', id: 5 })).toEqual({ pathname: '/wall/[id]', params: { id: '5' } })
+    expect(pushTarget({ type: 'wall_reply_added', post_id: 8 })).toEqual({ pathname: '/wall/[id]', params: { id: '8' } })
+  })
+
   it('retombe sur le centre de notifications sans type', () => {
     expect(pushTarget(undefined)).toEqual({ pathname: '/notifications' })
   })

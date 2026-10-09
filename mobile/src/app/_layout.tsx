@@ -44,6 +44,7 @@ function RootNavigator() {
       {/* Liens profonds : ouverts connecté ou non. */}
       <Stack.Screen name="join/[token]" />
       <Stack.Screen name="reset-password" />
+      <Stack.Screen name="apple-callback" />
     </Stack>
   )
 }

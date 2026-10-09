@@ -60,6 +60,7 @@ export interface Household {
   children: Child[]
   custody_rule: CustodyRule | null
   vacation_rule: VacationRule | null
+  special_day_rules: SpecialDayRule[]
   my_role: string | null
 }
 
@@ -166,4 +167,75 @@ export interface Balance {
   amount_cents: number
   owed_to_me_cents: number
   i_owe_cents: number
+}
+
+export type WallKind = 'message' | 'task' | 'question'
+
+export interface WallReply {
+  id: number
+  author_id: number
+  body: string
+  created_at: string
+}
+
+export interface WallPost {
+  id: number
+  author_id: number
+  kind: WallKind
+  body: string
+  child_id: number | null
+  due_date: string | null
+  assigned_to: number | null
+  completed_at: string | null
+  completed_by: number | null
+  created_at: string
+  edited_at: string | null
+  replies: WallReply[]
+}
+
+export type SpecialDayKind =
+  | 'christmas_eve' | 'christmas_day' | 'mothers_day' | 'fathers_day'
+  | 'thanksgiving' | 'halloween' | 'independence_day' | 'new_years_day'
+
+export interface SpecialDayRule {
+  kind: SpecialDayKind
+  parent_mode: 'auto' | 'fixed' | 'alternate'
+  parent_id: number | null
+  enabled: boolean
+}
+
+export type ChangeKind = 'custody_rule' | 'vacation_rule' | 'special_day_rules' | 'delete_child' | 'cancel_exchange'
+
+/** Changement sensible soumis à l'accord de l'autre parent. */
+export interface ChangeRequest {
+  id: number
+  kind: ChangeKind
+  /** Résumé lisible généré par le serveur, ex. « Rythme : semaine/semaine → 2-2-3 » */
+  summary: string
+  status: 'pending' | 'accepted' | 'refused' | 'withdrawn'
+  requested_by: number
+  created_at: string
+  resolved_by: number | null
+  resolved_at: string | null
+}
+
+/** Réponse 202 d'une modification qui attend l'accord de l'autre parent. */
+export interface PendingChange {
+  change_request: ChangeRequest
+}
+
+export type DepartureReason = 'not_my_situation' | 'start_over' | 'other_parent' | 'price' | 'just_testing' | 'other'
+
+export interface BillingStatus {
+  status: string
+  /** Accès Premium du foyer (un parent abonné suffit, quel que soit le canal). */
+  access: boolean
+  trial_days_left: number | null
+  trial_ends_at: string | null
+  subscription_ends_at: string | null
+  /** Canal qui donne l'accès : paddle (alternly.com) ou un store (achat dans l'app). */
+  source: 'paddle' | 'app_store' | 'play_store' | null
+  /** Vrai si c'est l'abonnement de ce parent (et non celui de l'autre parent). */
+  is_payer: boolean
+  manage_url: string | null
 }

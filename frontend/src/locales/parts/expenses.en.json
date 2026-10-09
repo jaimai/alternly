@@ -65,7 +65,7 @@
   "expenses.add": "Add",
   "expenses.memberYou": "{{name}} (you)",
   "expenses.amountLabelCur": "Amount ({{symbol}})",
-  "expenses.editLiftsDispute": "Saving a change clears the current dispute.",
+  "expenses.editLiftsDispute": "The dispute stays open: the other parent is notified of the change and can resolve it.",
   "expenses.deleteTitle": "Delete this expense?",
   "expenses.deleteBody": "“{{label}}” ({{amount}}) will be removed from the balance.",
   "expenses.deleteSettlementTitle": "Delete this reimbursement?",
