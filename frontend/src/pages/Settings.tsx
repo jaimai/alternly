@@ -21,7 +21,7 @@ import UpgradeDialog from '../components/UpgradeDialog'
 import { useConfirm } from '../components/useConfirm'
 import { useFormat } from '../format'
 import { isSolo } from '../members'
-import type { Household, SpecialDayRule, SubscriptionInfo } from '../types'
+import type { BillingStatus, Household, SpecialDayRule, SubscriptionInfo } from '../types'
 
 const SPECIAL_LABEL_KEYS: Record<SpecialDayRule['kind'], string> = {
   mothers_day: 'settings.mothersDay',
@@ -36,7 +36,7 @@ const SPECIAL_LABEL_KEYS: Record<SpecialDayRule['kind'], string> = {
 
 export default function SettingsPage() {
   const { t, i18n } = useTranslation()
-  const { user, setUser, household, householdLoaded, refreshHousehold, refreshBilling } = useAuth()
+  const { user, setUser, household, householdLoaded, refreshHousehold, refreshBilling, billing } = useAuth()
   const premium = usePremium()
   const navigate = useNavigate()
   const [icalUrl, setIcalUrl] = useState<string | null>(null)
@@ -382,7 +382,7 @@ export default function SettingsPage() {
           )}
         </div>
 
-        {premium && <SubscriptionCard onChanged={refreshBilling} />}
+        {premium && <SubscriptionCard billing={billing} onChanged={refreshBilling} />}
 
         <div className="card">
           <h2>{t('settings.myProfile')}</h2>
@@ -449,8 +449,11 @@ export default function SettingsPage() {
   )
 }
 
-function SubscriptionCard({ onChanged }: { onChanged: () => void }) {
+const STORE_NAME = { app_store: 'App Store', play_store: 'Google Play' } as const
+
+function SubscriptionCard({ billing, onChanged }: { billing: BillingStatus | null; onChanged: () => void }) {
   const { t } = useTranslation()
+  const store = billing?.source === 'app_store' || billing?.source === 'play_store' ? billing.source : null
   const { date } = useFormat()
   const [sub, setSub] = useState<SubscriptionInfo | null>(null)
   const [busy, setBusy] = useState(false)
@@ -458,7 +461,7 @@ function SubscriptionCard({ onChanged }: { onChanged: () => void }) {
   const [confirm, confirmNode] = useConfirm()
 
   const load = () => api.subscription().then(setSub).catch(() => setSub({ manageable: false }))
-  useEffect(() => { load() }, [])
+  useEffect(() => { if (!store) load() }, [store])
 
   async function run(fn: () => Promise<unknown>, done: string) {
     setBusy(true)
@@ -481,7 +484,19 @@ function SubscriptionCard({ onChanged }: { onChanged: () => void }) {
   return (
     <div className="card">
       <h2>{t('settings.subscriptionTitle')}</h2>
-      {sub === null ? (
+      {store ? (
+        // Achat fait dans l'app : il se gère dans le store, jamais un second abonnement ici.
+        <>
+          <p className="hint">
+            {t(billing?.is_payer ? 'settings.subStoreManaged' : 'settings.subStoreManagedOther', { store: STORE_NAME[store] })}
+          </p>
+          {billing?.is_payer && billing.manage_url && (
+            <a className="button secondary" href={billing.manage_url} target="_blank" rel="noreferrer">
+              {t('settings.subStoreManage', { store: STORE_NAME[store] })}
+            </a>
+          )}
+        </>
+      ) : sub === null ? (
         <p className="hint">…</p>
       ) : !sub.manageable ? (
         <p className="hint">{t('settings.subGrandfathered')}</p>

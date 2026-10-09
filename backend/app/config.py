@@ -60,6 +60,11 @@ class Settings(BaseSettings):
     trial_days: int = 14
     paddle_webhook_secret: str = ""  # vérifie la signature des webhooks Paddle
     paddle_api_key: str = ""  # appels API serveur (gestion d'abonnement)
+    # Achats intégrés (App Store / Google Play) via RevenueCat. Secret : valeur exacte de
+    # l'en-tête Authorization configuré sur le webhook RevenueCat. Vide → webhook désactivé.
+    revenuecat_webhook_secret: str = ""
+    # Clé API secrète RevenueCat (sk_…) : resynchronisation à la demande. Vide → désactivée.
+    revenuecat_api_key: str = ""
     paddle_env: str = "sandbox"  # sandbox | production → base de l'API Paddle
     paddle_price_annual: str = ""   # price_id de l'offre annuelle
     paddle_price_monthly: str = ""  # price_id de l'offre mensuelle

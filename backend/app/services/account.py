@@ -30,6 +30,7 @@ from ..models import (
     SchoolVacationPeriod,
     Settlement,
     SpecialDayRule,
+    StoreSubscription,
     User,
     VacationRule,
     WallPost,
@@ -132,6 +133,8 @@ def _delete_user_rows(db: Session, user_ids: list[int]) -> None:
     db.execute(delete(PasswordResetToken).where(PasswordResetToken.user_id.in_(user_ids)))
     db.execute(delete(EmailLog).where(EmailLog.user_id.in_(user_ids)))
     db.execute(delete(DeviceToken).where(DeviceToken.user_id.in_(user_ids)))
+    # Un achat App Store / Google Play ne se résilie pas d'ici : seulement dans le store.
+    db.execute(delete(StoreSubscription).where(StoreSubscription.user_id.in_(user_ids)))
 
 
 def _delete_household(db: Session, household_id: int) -> None:

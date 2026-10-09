@@ -6,13 +6,15 @@ from sqlalchemy.orm import Session
 from .auth import get_current_user
 from .db import get_db
 from .models import Household, HouseholdMember, Notification, User, utcnow
-from .services import billing, push
+from .services import billing, push, store_billing
 
 
 def _user_is_premium(db: Session, user: User) -> bool:
-    return billing.has_access(
-        user.subscription_status, user.trial_ends_at, user.subscription_ends_at, utcnow()
-    )
+    """Paddle (web) ou achat intégré (App Store / Google Play) : une source suffit."""
+    now = utcnow()
+    if billing.has_access(user.subscription_status, user.trial_ends_at, user.subscription_ends_at, now):
+        return True
+    return store_billing.user_has_store_access(db, user.id, now)
 
 
 def household_has_premium(db: Session, household_id: int) -> bool:

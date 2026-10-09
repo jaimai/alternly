@@ -114,7 +114,8 @@ function DeleteSection() {
       <SectionLabel>Supprimer mon compte</SectionLabel>
       <Body muted style={{ fontSize: 14 }}>
         Vos données personnelles sont effacées définitivement. Si vous êtes le seul parent du foyer, tout le foyer et son
-        historique sont supprimés.
+        historique sont supprimés. Un abonnement pris dans l’App Store ou Google Play se résilie dans le store : la
+        suppression du compte ne l’arrête pas.
       </Body>
       {!open ? (
         <Button title="Supprimer mon compte" variant="danger" onPress={() => setOpen(true)} />

@@ -225,3 +225,17 @@ export interface PendingChange {
 }
 
 export type DepartureReason = 'not_my_situation' | 'start_over' | 'other_parent' | 'price' | 'just_testing' | 'other'
+
+export interface BillingStatus {
+  status: string
+  /** Accès Premium du foyer (un parent abonné suffit, quel que soit le canal). */
+  access: boolean
+  trial_days_left: number | null
+  trial_ends_at: string | null
+  subscription_ends_at: string | null
+  /** Canal qui donne l'accès : paddle (alternly.com) ou un store (achat dans l'app). */
+  source: 'paddle' | 'app_store' | 'play_store' | null
+  /** Vrai si c'est l'abonnement de ce parent (et non celui de l'autre parent). */
+  is_payer: boolean
+  manage_url: string | null
+}

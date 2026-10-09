@@ -5,6 +5,7 @@ import * as SecureStore from 'expo-secure-store'
 import { Platform } from 'react-native'
 import type {
   Balance,
+  BillingStatus,
   ChangeRequest,
   CalendarResponse,
   CustodyRule,
@@ -151,6 +152,9 @@ export const api = {
   forgotPassword: (email: string) =>
     request<{ ok: boolean }>('/auth/password/forgot', { method: 'POST', body: { email } }),
   me: () => request<User>('/auth/me'),
+  billingStatus: () => request<BillingStatus>('/billing/status'),
+  /** Relit l'état des achats chez RevenueCat puis renvoie le statut à jour. */
+  storeSync: () => request<BillingStatus>('/billing/store-sync', { method: 'POST' }),
   updateMe: (data: { display_name?: string; color?: string; email_opt_in?: boolean }) =>
     request<User>('/auth/me', { method: 'PATCH', body: data }),
   /** Révoque les autres sessions : renvoie un nouveau jeton pour ce téléphone. */
