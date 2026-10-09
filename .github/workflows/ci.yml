@@ -23,6 +23,7 @@ jobs:
     outputs:
       backend: ${{ steps.filter.outputs.backend }}
       frontend: ${{ steps.filter.outputs.frontend }}
+      mobile: ${{ steps.filter.outputs.mobile }}
     steps:
       - uses: actions/checkout@v4
       - id: filter
@@ -37,6 +38,10 @@ jobs:
               - '.github/workflows/ci.yml'
             frontend:
               - 'frontend/**'
+              - 'packages/shared/**'
+              - '.github/workflows/ci.yml'
+            mobile:
+              - 'mobile/**'
               - 'packages/shared/**'
               - '.github/workflows/ci.yml'
 
@@ -81,3 +86,29 @@ jobs:
           git diff --exit-code -- src/locales/fr.json src/locales/en.json
       - run: npm run lint
       - run: npm run build
+
+  mobile:
+    name: Mobile (types + lint + tests + bundle)
+    needs: changes
+    if: needs.changes.outputs.mobile == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+      - run: npm ci
+      - run: npx tsc --noEmit
+      - run: npx expo lint
+      - run: npx jest --ci
+      # Bundle iOS + Android avec Metro : attrape les erreurs d'import et de routes que tsc ne voit pas.
+      - name: Bundle natif (expo export)
+        run: npx expo export --platform ios --platform android --output-dir dist
+        env:
+          CI: "1"
+          EXPO_OFFLINE: "1"
