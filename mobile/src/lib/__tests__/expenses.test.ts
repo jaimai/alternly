@@ -26,6 +26,12 @@ describe('parseAmount', () => {
     expect(parseAmount('0')).toBeNull()
     expect(parseAmount('abc')).toBeNull()
   })
+  it('refuse les formats ambigus plutôt que de deviner', () => {
+    expect(parseAmount('1,200.50')).toBeNull()
+    expect(parseAmount('1.200,50')).toBeNull()
+    expect(parseAmount('12abc')).toBeNull()
+    expect(parseAmount('12,345')).toBeNull()
+  })
   it('se relit depuis amountInput', () => {
     expect(parseAmount(amountInput(2450))).toBe(2450)
   })

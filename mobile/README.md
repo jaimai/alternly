@@ -41,7 +41,9 @@ d'inscription. Ils créent le compte s'il n'existe pas, et le relient à un comp
 existant si l'adresse est la même. Un bouton non configuré explique pourquoi au toucher.
 
 - **Apple sur iPhone** (natif) : marche dans Expo Go si le backend accepte
-  `host.exp.Exponent` (`APPLE_CLIENT_IDS=com.alternly.app,host.exp.Exponent`). En build,
+  `host.exp.Exponent` (`APPLE_CLIENT_IDS=com.alternly.app,host.exp.Exponent`), **sur un
+  backend local seulement** : en production, n'importe quel projet lancé dans Expo Go
+  obtiendrait des jetons Apple acceptés, donc un accès aux comptes. En build,
   activer « Sign in with Apple » sur l'App ID `com.alternly.app` (EAS le fait au build).
 - **Apple sur Android** (page web d'Apple) : chez Apple, créer
   un **Services ID** (ex. `com.alternly.app.signin`), activer « Sign in with Apple », domaine

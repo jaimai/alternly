@@ -1,4 +1,5 @@
 """« Se connecter avec Apple » (app iOS) : vérification du jeton, création, liaison."""
+import hashlib
 import time
 from types import SimpleNamespace
 
@@ -11,6 +12,8 @@ from app.models import User
 from app.services import apple_auth
 
 BUNDLE_ID = "com.alternly.app"
+# Nonce brut gardé par l'app ; Apple inscrit son SHA-256 dans le jeton.
+RAW_NONCE = "0123456789abcdef0123456789abcdef"
 _KEY = rsa.generate_private_key(public_exponent=65537, key_size=2048)
 
 
@@ -34,6 +37,7 @@ def identity_token(**overrides) -> str:
         "email_verified": "true",
         "iat": now,
         "exp": now + 600,
+        "nonce": hashlib.sha256(RAW_NONCE.encode()).hexdigest(),
     }
     claims.update(overrides)
     claims = {k: v for k, v in claims.items() if v is not None}
@@ -41,7 +45,7 @@ def identity_token(**overrides) -> str:
 
 
 def test_creates_account_with_given_name(client, db_session):
-    r = client.post("/api/auth/apple", json={"identity_token": identity_token(), "given_name": "Camille", "locale": "fr"})
+    r = client.post("/api/auth/apple", json={"nonce": RAW_NONCE, "identity_token": identity_token(), "given_name": "Camille", "locale": "fr"})
     assert r.status_code == 200, r.text
     user = r.json()["user"]
     assert user["email"] == "camille@icloud.com"
@@ -53,16 +57,16 @@ def test_creates_account_with_given_name(client, db_session):
 
 
 def test_second_login_reuses_account_without_email(client, db_session):
-    first = client.post("/api/auth/apple", json={"identity_token": identity_token()}).json()
+    first = client.post("/api/auth/apple", json={"nonce": RAW_NONCE, "identity_token": identity_token()}).json()
     # Connexions suivantes : ni prénom, et parfois pas d'e-mail dans le jeton → retrouvé par « sub ».
-    second = client.post("/api/auth/apple", json={"identity_token": identity_token(email=None, email_verified=None)})
+    second = client.post("/api/auth/apple", json={"nonce": RAW_NONCE, "identity_token": identity_token(email=None, email_verified=None)})
     assert second.status_code == 200, second.text
     assert first["user"]["id"] == second.json()["user"]["id"]
     assert db_session.query(User).count() == 1
 
 
 def test_unknown_account_without_email_is_rejected(client):
-    r = client.post("/api/auth/apple", json={"identity_token": identity_token(email=None, email_verified=None)})
+    r = client.post("/api/auth/apple", json={"nonce": RAW_NONCE, "identity_token": identity_token(email=None, email_verified=None)})
     assert r.status_code == 401
 
 
@@ -71,7 +75,7 @@ def test_links_existing_password_account(client, db_session):
         "/api/auth/register",
         json={"email": "camille@icloud.com", "password": "motdepasse1", "display_name": "Cam"},
     ).json()["user"]["id"]
-    r = client.post("/api/auth/apple", json={"identity_token": identity_token()}).json()
+    r = client.post("/api/auth/apple", json={"nonce": RAW_NONCE, "identity_token": identity_token()}).json()
     assert r["user"]["id"] == uid
     assert r["user"]["auth_method"] == "email"
     assert db_session.get(User, uid).apple_sub == "001234.apple.5678"
@@ -82,7 +86,7 @@ def test_unverified_email_never_links(client, db_session):
         "/api/auth/register",
         json={"email": "camille@icloud.com", "password": "motdepasse1", "display_name": "Cam"},
     )
-    r = client.post("/api/auth/apple", json={"identity_token": identity_token(email_verified="false")})
+    r = client.post("/api/auth/apple", json={"nonce": RAW_NONCE, "identity_token": identity_token(email_verified="false")})
     assert r.status_code == 401
     assert db_session.query(User).filter(User.apple_sub.isnot(None)).count() == 0
 
@@ -96,7 +100,7 @@ def test_unverified_email_never_links(client, db_session):
     ],
 )
 def test_rejects_invalid_tokens(client, overrides):
-    assert client.post("/api/auth/apple", json={"identity_token": identity_token(**overrides)}).status_code == 401
+    assert client.post("/api/auth/apple", json={"nonce": RAW_NONCE, "identity_token": identity_token(**overrides)}).status_code == 401
 
 
 def test_rejects_token_signed_by_another_key(client):
@@ -107,18 +111,18 @@ def test_rejects_token_signed_by_another_key(client):
          "email_verified": "true", "iat": now, "exp": now + 600},
         other, algorithm="RS256",
     )
-    assert client.post("/api/auth/apple", json={"identity_token": forged}).status_code == 401
+    assert client.post("/api/auth/apple", json={"nonce": RAW_NONCE, "identity_token": forged}).status_code == 401
 
 
 def test_disabled_without_client_ids(client, monkeypatch):
     monkeypatch.setattr(settings, "apple_client_ids", "")
-    assert client.post("/api/auth/apple", json={"identity_token": identity_token()}).status_code == 503
+    assert client.post("/api/auth/apple", json={"nonce": RAW_NONCE, "identity_token": identity_token()}).status_code == 503
 
 
 def test_deleted_account_unlinks_apple(client):
-    token = client.post("/api/auth/apple", json={"identity_token": identity_token()}).json()["access_token"]
+    token = client.post("/api/auth/apple", json={"nonce": RAW_NONCE, "identity_token": identity_token()}).json()["access_token"]
     assert client.delete("/api/auth/me", headers={"Authorization": f"Bearer {token}"}).status_code == 204
-    again = client.post("/api/auth/apple", json={"identity_token": identity_token()})
+    again = client.post("/api/auth/apple", json={"nonce": RAW_NONCE, "identity_token": identity_token()})
     assert again.status_code == 200
     assert again.json()["user"]["has_password"] is False
 
@@ -161,6 +165,8 @@ def test_web_callback_keeps_expo_go_query(client, monkeypatch):
         # Expo Go refusé hors développement : un serveur exp:// tiers recevrait le jeton.
         "abc.exp%3A%2F%2Fevil.example.com%2F--%2Fapple-callback",
         "abc.alternly-evil%3A%2F%2Fx",
+        # Espace ou caractère de contrôle devant le schéma, schéma en majuscules.
+        "abc.%20alternly%3A%2F%2Fx", "abc.%00alternly%3A%2F%2Fx", "abc.ALTERNLY%3A%2F%2Fx",
     ],
 )
 def test_web_callback_refuses_other_destinations(client, state):
@@ -170,5 +176,31 @@ def test_web_callback_refuses_other_destinations(client, state):
 
 def test_services_id_is_an_accepted_audience(client, monkeypatch):
     monkeypatch.setattr(settings, "apple_services_id", "com.alternly.app.signin")
-    r = client.post("/api/auth/apple", json={"identity_token": identity_token(aud="com.alternly.app.signin")})
+    r = client.post("/api/auth/apple", json={"nonce": RAW_NONCE, "identity_token": identity_token(aud="com.alternly.app.signin")})
     assert r.status_code == 200, r.text
+
+
+@pytest.mark.parametrize(
+    "nonce, overrides",
+    [
+        ("f" * 32, {}),  # jeton intercepté, rejoué sans le nonce d'origine
+        (RAW_NONCE, {"nonce": None}),  # jeton sans nonce
+        (RAW_NONCE, {"nonce": RAW_NONCE}),  # nonce en clair au lieu de son hachage
+    ],
+)
+def test_rejects_token_not_bound_to_nonce(client, nonce, overrides):
+    r = client.post("/api/auth/apple", json={"nonce": nonce, "identity_token": identity_token(**overrides)})
+    assert r.status_code == 401
+
+
+def test_requires_nonce(client):
+    assert client.post("/api/auth/apple", json={"identity_token": identity_token()}).status_code == 422
+
+
+def test_web_callback_rejects_oversized_fields(client):
+    r = client.post(
+        "/api/auth/apple/callback",
+        data={"state": "abc.alternly%3A%2F%2Fx", "id_token": "x" * 5000},
+        follow_redirects=False,
+    )
+    assert r.status_code == 422

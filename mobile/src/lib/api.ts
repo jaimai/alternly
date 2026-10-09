@@ -139,10 +139,10 @@ export const api = {
     request<TokenResponse>('/auth/register', { method: 'POST', body: { ...data, locale: 'fr', via_invite: hasPendingInvite() } }),
   googleLogin: (credential: string) =>
     request<TokenResponse>('/auth/google', { method: 'POST', body: { credential, locale: 'fr', via_invite: hasPendingInvite() } }),
-  appleLogin: (identity_token: string, given_name?: string) =>
+  appleLogin: (identity_token: string, nonce: string, given_name?: string) =>
     request<TokenResponse>('/auth/apple', {
       method: 'POST',
-      body: { identity_token, given_name, locale: 'fr', via_invite: hasPendingInvite() },
+      body: { identity_token, nonce, given_name, locale: 'fr', via_invite: hasPendingInvite() },
     }),
   resetPassword: (token: string, password: string) =>
     request<TokenResponse>('/auth/password/reset', { method: 'POST', body: { token, password } }),

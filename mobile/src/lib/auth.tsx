@@ -36,8 +36,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signIn = useCallback(async (resp: TokenResponse) => {
     await saveToken(resp.access_token)
     setUser(resp.user)
+    // Profil en cache (keys.me de queries.ts) à jour aussi : useMe ne reprend la valeur de
+    // connexion que si le cache est vide (ex. has_password après un premier mot de passe).
+    queryClient.setQueryData(['me'], resp.user)
     setStatus('signedIn')
-  }, [])
+  }, [queryClient])
 
   useEffect(() => {
     setUnauthorizedHandler(() => void signOut())

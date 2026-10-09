@@ -226,7 +226,7 @@
   "expenses.disputeTitle": "Dispute this expense",
   "expenses.edit": "Edit",
   "expenses.editExpense": "Edit expense",
-  "expenses.editLiftsDispute": "Saving a change clears the current dispute.",
+  "expenses.editLiftsDispute": "The dispute stays open: the other parent is notified of the change and can resolve it.",
   "expenses.emptyBody": "Lunch money, glasses, soccer fees… Log what you pay for the kids and Alternly keeps the balance up to date for both of you.",
   "expenses.emptyState": "No expenses yet.",
   "expenses.emptyTitle": "No expenses yet",

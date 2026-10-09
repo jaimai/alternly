@@ -82,11 +82,25 @@ def _row(db: Session, user: User, source: str) -> StoreSubscription:
     return sub
 
 
+def _sandbox_ignored(is_sandbox: bool) -> bool:
+    return is_sandbox and not settings.revenuecat_allow_sandbox
+
+
+def _grants_premium(event: dict) -> bool:
+    """L'événement concerne-t-il l'entitlement Premium (et pas un autre produit du projet) ?"""
+    ids = event.get("entitlement_ids")
+    if ids is None and event.get("entitlement_id"):
+        ids = [event["entitlement_id"]]
+    return settings.revenuecat_entitlement in (ids or [])
+
+
 def apply_event(db: Session, user: User, event: dict) -> StoreSubscription | None:
     """Applique un événement webhook RevenueCat. Renvoie la ligne modifiée, ou None si ignoré."""
     etype = event.get("type", "")
     source = _STORES.get(event.get("store", ""))
     if source is None:  # promotionnel, Stripe… : hors périmètre
+        return None
+    if _sandbox_ignored(event.get("environment") == "SANDBOX") or not _grants_premium(event):
         return None
     occurred = _ms(event.get("event_timestamp_ms"))
     sub = _row(db, user, source)
@@ -119,6 +133,18 @@ def apply_event(db: Session, user: User, event: dict) -> StoreSubscription | Non
     return sub
 
 
+def expire_user(db: Session, user: User, at: datetime) -> list[StoreSubscription]:
+    """Coupe l'accès store de ce parent (abonnement transféré à un autre compte). Ne commit pas."""
+    changed = []
+    for sub in db.scalars(select(StoreSubscription).where(StoreSubscription.user_id == user.id)):
+        if has_access(sub, at):
+            sub.status, sub.ends_at = "expired", at
+            sub.last_event_at = at
+            sub.updated_at = utcnow()
+            changed.append(sub)
+    return changed
+
+
 def fetch_subscriber(app_user_id: str) -> dict:
     with httpx.Client(timeout=10) as client:
         resp = client.get(
@@ -132,16 +158,20 @@ def fetch_subscriber(app_user_id: str) -> dict:
 def sync_user(db: Session, user: User) -> None:
     """Resynchronise depuis l'API RevenueCat (webhook perdu, « Restaurer les achats »).
 
-    Pour chaque store, garde l'abonnement qui expire le plus tard. Ne commit pas.
+    Pour chaque store, garde l'abonnement Premium qui expire le plus tard. Un store absent
+    de la réponse (abonnement transféré à un autre compte, par exemple) perd l'accès.
+    Ne commit pas.
     """
     if not settings.revenuecat_api_key:
         return
     subscriber = fetch_subscriber(str(user.id))
     now = utcnow()
+    entitlement = (subscriber.get("entitlements") or {}).get(settings.revenuecat_entitlement) or {}
+    premium_products = {entitlement.get("product_identifier")} - {None}
     best: dict[str, tuple[datetime | None, str, dict]] = {}
     for product_id, info in (subscriber.get("subscriptions") or {}).items():
         source = _STORES.get(info.get("store", ""))
-        if source is None:
+        if source is None or product_id not in premium_products or _sandbox_ignored(bool(info.get("is_sandbox"))):
             continue
         expires = _iso(info.get("expires_date"))
         current = best.get(source)
@@ -163,3 +193,8 @@ def sync_user(db: Session, user: User) -> None:
             sub.ends_at = expires
         sub.product_id = product_id
         sub.updated_at = now
+        # État lu à la source : un webhook plus ancien, livré en retard, ne l'écrase pas.
+        sub.last_event_at = now
+    for sub in db.scalars(select(StoreSubscription).where(StoreSubscription.user_id == user.id)):
+        if sub.source not in best and has_access(sub, now):
+            sub.status, sub.ends_at, sub.last_event_at, sub.updated_at = "expired", now, now, now
