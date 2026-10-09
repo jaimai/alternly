@@ -3,11 +3,11 @@ import { useMemo, useState } from 'react'
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Icon } from '@/components/Icon'
-import { Card, ErrorState, Loading } from '@/components/ui'
+import { Button, Card, ErrorState, Loading } from '@/components/ui'
 import { ApiError } from '@/lib/api'
-import { memberById, pendingOn, publicHolidayOn, schoolHolidayOn } from '@/lib/custody'
+import { memberById, pendingOn, publicHolidayOn, schoolHolidayOn, whoName } from '@/lib/custody'
 import { addMonths, formatLong, formatMonth, formatRange, monthGrid, monthStart, parseIso, todayIso } from '@/lib/dates'
-import { useCalendar, useHousehold, useMe } from '@/lib/queries'
+import { useCalendar, useHousehold, useMe, useWithdrawExchange } from '@/lib/queries'
 import { colors, fonts, tint } from '@/lib/theme'
 import type { CalendarResponse } from '@/lib/types'
 
@@ -83,7 +83,7 @@ export default function CalendarScreen() {
             ))}
           </View>
 
-          <DayDetail date={selected} cal={calendar.data} meId={meId} />
+          <DayDetail key={selected} date={selected} cal={calendar.data} meId={meId} householdId={household?.id} />
         </ScrollView>
       )}
     </SafeAreaView>
@@ -131,13 +131,14 @@ function DayCell({ date, cal, inMonth, isToday, isSelected, onPress }: {
   )
 }
 
-function DayDetail({ date, cal, meId }: { date: string; cal: CalendarResponse; meId?: number }) {
+function DayDetail({ date, cal, meId, householdId }: { date: string; cal: CalendarResponse; meId?: number; householdId?: number }) {
+  const withdraw = useWithdrawExchange(householdId)
   const day = cal.days.find((d) => d.date === date)
   const member = memberById(cal.members, day?.parent_id)
   const vacation = schoolHolidayOn(cal, date)
   const holiday = publicHolidayOn(cal, date)
   const pending = pendingOn(cal, date)
-  const who = (id?: number) => (id === meId ? 'vous' : memberById(cal.members, id)?.display_name ?? "l'autre parent")
+  const who = (id?: number) => whoName(cal.members, id, meId)
 
   return (
     <Card>
@@ -172,6 +173,23 @@ function DayDetail({ date, cal, meId }: { date: string; cal: CalendarResponse; m
               : `Échange proposé : ${formatRange(pending.date_start, pending.date_end)} chez ${who(pending.proposed_parent_id)}. Toucher pour répondre.`}
           </Text>
         </Pressable>
+      ) : null}
+      {pending && pending.proposed_by === meId ? (
+        <Button
+          title="Retirer ma proposition"
+          variant="danger"
+          onPress={() => withdraw.mutate(pending.id)}
+          loading={withdraw.isPending}
+        />
+      ) : null}
+      {withdraw.error ? <Text style={[s.detailSub, { color: colors.danger }]}>{withdraw.error.message}</Text> : null}
+      {!pending && date >= todayIso() ? (
+        <Button
+          title="Proposer un échange"
+          variant="secondary"
+          icon={<Icon name="swap" size={18} color={colors.pine} strokeWidth={2} />}
+          onPress={() => router.push({ pathname: '/exchange/new', params: { date } })}
+        />
       ) : null}
     </Card>
   )

@@ -1,5 +1,6 @@
 // Sous-ensemble des types de l'API utilisés par l'app (cf. frontend/src/types.ts).
 // À extraire dans packages/shared en phase 2 (docs/mobile/architecture-technique.md §5).
+import type { Pattern } from './custodyPreview'
 
 export type Locale = 'fr' | 'en'
 
@@ -35,6 +36,20 @@ export interface Child {
   birthdate: string | null
 }
 
+export interface CustodyRule {
+  pattern: Pattern
+  start_date: string
+  reference_parent_id: number
+  handover_day: number
+  handover_time: string
+  custom_weeks: string[] | null
+}
+
+export interface VacationRule {
+  mode: 'split_half' | 'alternate_full'
+  even_year_first_half_parent_id: number | null
+}
+
 export interface Household {
   id: number
   name: string
@@ -42,7 +57,26 @@ export interface Household {
   country: 'FR' | 'US'
   members: Member[]
   children: Child[]
+  custody_rule: CustodyRule | null
+  vacation_rule: VacationRule | null
   my_role: string | null
+}
+
+export interface ScheduleException {
+  id: number
+  date_start: string
+  date_end: string
+  parent_id: number
+  note: string
+  created_by: number
+  status: 'pending' | 'accepted' | 'refused' | 'withdrawn'
+  replaces_id: number | null
+}
+
+export interface Invitation {
+  invite_url: string
+  token: string
+  expires_at: string
 }
 
 export interface CalendarDay {

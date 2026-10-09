@@ -71,3 +71,21 @@ export function useAnswerExchange(householdId: number | undefined) {
     },
   })
 }
+
+export function useWithdrawExchange(householdId: number | undefined) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number) => api.withdrawExchange(householdId!, id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['calendar'] }),
+  })
+}
+
+/** Lien d'invitation de l'autre parent : l'actif s'il existe, sinon un nouveau. */
+export function useInviteLink(householdId: number | undefined) {
+  return useMutation({
+    mutationFn: async () => {
+      const current = await api.currentInvitation(householdId!)
+      return current.invitation ?? (await api.createInvitation(householdId!))
+    },
+  })
+}

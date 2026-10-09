@@ -1,4 +1,4 @@
-import { exchangesToAnswer, kidsLabel, parentLabel, pendingOn, relativeDays, statusLead, todayStatus } from '../custody'
+import { exchangesToAnswer, isSolo, kidsLabel, parentLabel, pendingOn, relativeDays, statusLead, todayStatus, whoName } from '../custody'
 import type { CalendarDay, Member, PendingExchange } from '../types'
 
 const ME = 1
@@ -59,7 +59,11 @@ describe('parentLabel', () => {
   it('dit « Vous » pour soi et le prénom pour l’autre', () => {
     expect(parentLabel(members, ME, ME)).toBe('Vous')
     expect(parentLabel(members, JULIE, ME)).toBe('Julie')
-    expect(parentLabel(members, 99, ME)).toBe("L'autre parent")
+    expect(parentLabel(members, 99, ME)).toBe('L’autre parent')
+    const placeholder = [members[0], { ...members[1], display_name: "L'autre parent", is_placeholder: true }]
+    expect(whoName(placeholder, JULIE, ME)).toBe('l’autre parent')
+    expect(whoName(members, JULIE, ME)).toBe('Julie')
+    expect(whoName(members, ME, ME)).toBe('vous')
   })
 })
 
@@ -74,5 +78,13 @@ describe('libellés', () => {
     expect(relativeDays(0)).toBe("aujourd'hui")
     expect(relativeDays(1)).toBe('demain')
     expect(relativeDays(5)).toBe('dans 5 jours')
+  })
+})
+
+describe('isSolo', () => {
+  it('ignore le second parent pas encore inscrit', () => {
+    expect(isSolo(members)).toBe(false)
+    expect(isSolo([members[0], { ...members[1], is_placeholder: true }])).toBe(true)
+    expect(isSolo([members[0]])).toBe(true)
   })
 })

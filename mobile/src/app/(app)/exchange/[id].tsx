@@ -3,7 +3,7 @@ import { Text, View } from 'react-native'
 import { BackButton } from '@/components/BackButton'
 import { Icon } from '@/components/Icon'
 import { Avatar, Body, Button, Card, ErrorBanner, ErrorState, Loading, Screen, Title } from '@/components/ui'
-import { memberById } from '@/lib/custody'
+import { memberById, whoName } from '@/lib/custody'
 import { addDays, formatLong, parseIso } from '@/lib/dates'
 import { useAnswerExchange, useMe, useUpcoming } from '@/lib/queries'
 import { colors, fonts, tint } from '@/lib/theme'
@@ -48,7 +48,7 @@ export default function AnswerExchange() {
 
   const proposer = memberById(cal.members, exchange.proposed_by)
   const target = memberById(cal.members, exchange.proposed_parent_id)
-  const targetName = exchange.proposed_parent_id === meId ? 'vous' : target?.display_name ?? "l'autre parent"
+  const targetName = whoName(cal.members, exchange.proposed_parent_id, meId)
   // Aperçu jour par jour (7 jours max) : couleur actuelle → couleur proposée.
   const span: string[] = []
   for (let d = exchange.date_start; d <= exchange.date_end && span.length < 7; d = addDays(d, 1)) span.push(d)
@@ -117,6 +117,12 @@ export default function AnswerExchange() {
           variant="danger"
           onPress={() => answer.mutate({ id: exchange.id, accept: false })}
           loading={answer.isPending && !answer.variables?.accept}
+          disabled={answer.isPending}
+        />
+        <Button
+          title="Contre-proposer d’autres dates"
+          variant="ghost"
+          onPress={() => router.replace({ pathname: '/exchange/new', params: { replaces: String(exchange.id) } })}
           disabled={answer.isPending}
         />
       </View>

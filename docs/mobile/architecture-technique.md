@@ -310,12 +310,84 @@ class DeviceToken(Base):
 - `DELETE /api/auth/me` existe déjà : Apple exige la suppression de compte depuis l'app,
   il suffit de l'exposer dans Réglages.
 
-### 7.3 Abonnement
+### 7.3 Abonnement : Paddle (web) + RevenueCat (mobile), un seul Premium
 
-- `POST /api/billing/revenuecat-webhook` (secret partagé) → met à jour le même statut que
-  Paddle. Le Premium reste attaché au foyer, quel que soit le canal d'achat.
-- `GET /api/billing/status` renvoie en plus la source (`paddle` | `app_store` |
-  `play_store`) pour que chaque client affiche le bon bouton « Gérer mon abonnement ».
+**Objectif** : un parent qui paie sur l'iPhone est Premium sur le web, un abonné Paddle est
+Premium dans l'app, et une résiliation d'un côté coupe l'accès des deux côtés (à la fin de la
+période payée). C'est faisable, et c'est le fonctionnement attendu par les utilisateurs.
+
+**Principe : le backend reste la seule source de vérité.** Le web et l'app ne décident jamais
+eux-mêmes de l'accès : ils lisent `GET /api/billing/status`, et les routes Premium sont
+protégées côté serveur (`require_premium`). Aujourd'hui `user_has_premium` (`deps.py`)
+calcule déjà l'accès par foyer (« un payeur suffit ») à partir des champs Paddle de `User`.
+Il suffit d'y ajouter une seconde source.
+
+```
+App Store / Play ──► RevenueCat ──webhook──► backend ◄──webhook── Paddle (web)
+                                               │
+                         Premium = Paddle actif OU store actif (par foyer)
+                                               │
+                              web et app lisent /api/billing/status
+```
+
+**Modèle de données** : ne pas réutiliser les colonnes Paddle (`subscription_status`,
+`subscription_ends_at`) pour les achats store, sinon un événement Paddle « canceled »
+écraserait un abonnement Apple actif, et inversement. Nouvelle table :
+
+| Colonne | Contenu |
+|---|---|
+| `user_id` | payeur |
+| `source` | `app_store` \| `play_store` (et plus tard `paddle` si on y migre les colonnes actuelles) |
+| `status` | `active` \| `trialing` \| `grace` \| `canceled` \| `expired` |
+| `ends_at` | fin de la période payée (accès conservé jusque-là après résiliation) |
+| `product_id`, `external_id` | produit et identifiant de transaction RevenueCat |
+| `updated_at` | ordre des événements (ignorer un webhook plus ancien que l'état connu) |
+
+`has_access()` est appelée pour chaque source ; le foyer est Premium si **au moins une**
+source d'un de ses parents donne accès.
+
+**Rattacher l'achat au bon compte** : dans l'app, `Purchases.logIn(String(user.id))` juste
+après la connexion. L'`app_user_id` RevenueCat est alors l'id Alternly, et le webhook sait à
+qui attribuer l'achat. À la déconnexion, `Purchases.logOut()`.
+
+**Webhook** `POST /api/billing/revenuecat-webhook` (en-tête `Authorization` partagé,
+comparaison à temps constant, idempotent sur l'id d'événement comme `paddle_events`) :
+
+| Événement RevenueCat | Effet |
+|---|---|
+| `INITIAL_PURCHASE`, `RENEWAL`, `UNCANCELLATION`, `PRODUCT_CHANGE` | `active`, `ends_at` = fin de période |
+| `CANCELLATION` (résiliation simple) | `canceled`, accès jusqu'à `ends_at` |
+| `CANCELLATION` pour remboursement | `expired` immédiatement |
+| `BILLING_ISSUE` | `grace` (accès conservé pendant la période de grâce du store) |
+| `EXPIRATION` | `expired` : plus d'accès |
+
+En complément, une resynchronisation à la demande (API REST RevenueCat, abonné par
+`app_user_id`) au lancement de l'app et sur « Restaurer les achats » rattrape un webhook perdu.
+
+**Éviter le double abonnement** (le vrai risque de ce montage) :
+- Dans l'app : si le foyer est déjà Premium (quelle que soit la source), pas de paywall ;
+  si la source est Paddle, afficher « Abonnement géré sur alternly.com ».
+- Sur le web : si la source est un store, pas de checkout Paddle ; afficher « Abonnement
+  géré dans l'App Store / Google Play » avec la marche à suivre pour résilier.
+- `GET /api/billing/status` renvoie donc `source` et `manage_url` (portail Paddle, ou page
+  d'abonnements Apple / Google).
+- Un abonnement Apple ne se résilie pas depuis le web (et inversement) : chaque canal gère le
+  sien, le backend ne fait qu'agréger.
+
+**Option : RevenueCat comme tableau de bord unique.** RevenueCat sait importer les achats
+faits avec notre propre checkout Paddle (intégration Paddle de RevenueCat, en passant
+l'`app_user_id` dans les `custom_data` Paddle). Intérêt : revenus web et mobile dans les mêmes
+graphiques, et entitlements lisibles directement dans le SDK de l'app. Pas nécessaire pour
+l'accès (le backend agrège déjà tout) : à décider selon le besoin d'analyse.
+
+**Règles des stores** : dans l'app iOS, ne pas renvoyer vers le paiement web (les exceptions
+dépendent du pays et évoluent : à vérifier au moment de la soumission). Le bouton
+« Restaurer les achats » est obligatoire.
+
+**Tests à prévoir** : achat store puis lecture web ; résiliation store → accès jusqu'à
+`ends_at` puis coupure sur le web ; remboursement Apple → coupure immédiate ; foyer avec un
+parent Paddle et l'autre store ; webhook rejoué ou arrivé dans le désordre ; résiliation
+Paddle alors qu'un abonnement store est actif (l'accès doit rester).
 
 ### 7.4 Liens profonds
 
@@ -335,7 +407,7 @@ installée, le web sinon.
 | GitHub (secret de dépôt) | `EXPO_TOKEN` (compte Expo, pour EAS dans les Actions) |
 | EAS (gérés par Expo) | certificats et profils iOS, keystore Android, clé API App Store Connect, compte de service Google Play |
 | EAS (variables par profil) | `EXPO_PUBLIC_API_URL`, IDs Google iOS/Android, clé publique RevenueCat, DSN Sentry, clé PostHog |
-| Railway | `GOOGLE_CLIENT_ID` (liste), `APPLE_BUNDLE_ID`, `REVENUECAT_WEBHOOK_SECRET`, `EXPO_ACCESS_TOKEN` (optionnel, renforce l'envoi push) |
+| Railway | `GOOGLE_CLIENT_ID` (liste), `APPLE_BUNDLE_ID`, `REVENUECAT_WEBHOOK_SECRET`, `REVENUECAT_API_KEY` (resynchronisation), `EXPO_ACCESS_TOKEN` (optionnel, renforce l'envoi push) |
 | Comptes | Apple Developer (99 $/an), Google Play Console (25 $), Expo (gratuit au départ), RevenueCat (gratuit jusqu'à un seuil de revenus) |
 
 ## 9. Conventions de travail

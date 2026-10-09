@@ -1,8 +1,10 @@
 import Constants from 'expo-constants'
 import { Alert, Linking, Pressable, StyleSheet, Text, View } from 'react-native'
 import { Icon } from '@/components/Icon'
+import { InviteCard } from '@/components/InviteCard'
 import { Avatar, Card, Screen, SectionLabel, Title } from '@/components/ui'
 import { useAuth } from '@/lib/auth'
+import { isSolo } from '@/lib/custody'
 import { WEB_URL } from '@/lib/colors'
 import { useHousehold, useMe } from '@/lib/queries'
 import { colors, fonts } from '@/lib/theme'
@@ -57,11 +59,14 @@ export default function Settings() {
         </View>
       ) : null}
 
+      {household && isSolo(household.members) ? (
+        <InviteCard householdId={household.id} childNames={household.children.map((c) => c.first_name)} />
+      ) : null}
+
       <View style={{ gap: 8 }}>
         <SectionLabel>Sur le web</SectionLabel>
         <View style={s.group}>
           <LinkRow label="Règles de garde et vacances" path="/settings" />
-          <LinkRow label="Inviter l'autre parent" path="/settings#invite" />
           <LinkRow label="Abonnement" path="/settings" />
           <LinkRow label="Historique des changements" path="/history" />
         </View>
