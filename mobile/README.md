@@ -73,7 +73,8 @@ aucun des deux canaux ne propose un second abonnement (conception :
    publiques). Expo Go fonctionne en mode aperçu (sans vrai achat) ; tester les achats sur
    un build (TestFlight / test interne Play) avec des comptes de test.
 
-Écran : Réglages › Alternly Premium, ou « Découvrir Premium » sur un onglet verrouillé.
+Paywall : dernière étape de l'onboarding (« Continuer avec la version gratuite » pour passer),
+onglets Dépenses et Tableau sans abonnement, et Réglages › Alternly Premium.
 
 ## Liens profonds
 
@@ -106,7 +107,7 @@ npx expo export --platform ios --platform android   # bundle natif complet
 ```
 src/app/            routes Expo Router (1 fichier = 1 écran)
   (auth)/           bienvenue, connexion, inscription, mot de passe oublié
-  (app)/onboarding  foyer → enfants → rythme (tant que le foyer n'a pas de règle de garde)
+  (app)/onboarding  foyer → enfants → rythme → notifications → Premium (facultatif)
   (app)/(tabs)/     Accueil, Calendrier, Tableau, Dépenses, Réglages
   (app)/exchange/   new (proposer / contre-proposer), [id] (répondre)
   (app)/expense/    [id] (détail, actions), edit (ajouter / modifier), settle (remboursement)

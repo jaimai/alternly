@@ -4,7 +4,7 @@ import { router } from 'expo-router'
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Icon } from '@/components/Icon'
-import { PremiumLocked } from '@/components/PremiumLocked'
+import { Paywall } from '@/components/Paywall'
 import { Tag } from '@/components/Tag'
 import { Body, Button, Card, ErrorState, Loading, SectionLabel } from '@/components/ui'
 import { formatMonth, formatShort } from '@/lib/dates'
@@ -23,7 +23,16 @@ export default function Expenses() {
 
   let body
   if (!household || expenses.isPending || balance.isPending) body = <Loading />
-  else if (locked) body = <PremiumLocked icon="wallet" what="Dépenses partagées, solde et remboursements" />
+  else if (locked) {
+    body = (
+      <ScrollView contentContainerStyle={s.content}>
+        <Paywall
+          title="Les dépenses, avec Premium"
+          intro="Notez ce que vous avancez pour les enfants : Alternly tient le solde à jour pour vous deux. Un seul abonnement suffit pour les deux parents."
+        />
+      </ScrollView>
+    )
+  }
   else if (expenses.isError) body = <ErrorState message={expenses.error.message} onRetry={refetch} />
   else {
     body = (
