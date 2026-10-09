@@ -5,6 +5,7 @@ import { addMonths, formatLong, formatMonth, monthGrid, monthStart, parseIso } f
 import { colors, fonts, radius } from '@/lib/theme'
 import { Icon } from './Icon'
 import { Button } from './ui'
+import { intlLocale } from '@/lib/i18n'
 
 export function Segmented<T extends string | number>({ options, value, onChange, label }: {
   options: { value: T; label: string; dot?: string }[]
@@ -131,7 +132,7 @@ export function DateField({ label, value, onChange, min }: {
       >
         <Icon name="calendar" size={18} color={colors.inkSoft} />
         <Text style={s.fieldText} numberOfLines={1}>
-          {parseIso(value).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}
+          {parseIso(value).toLocaleDateString(intlLocale(), { weekday: 'short', day: 'numeric', month: 'short' })}
         </Text>
       </Pressable>
 

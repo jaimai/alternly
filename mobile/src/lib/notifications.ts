@@ -2,11 +2,12 @@
 // (frontend/src/components/NotificationBell.tsx, clés common.notif* de fr.json).
 import { formatRange } from './dates'
 import type { Notification } from './types'
+import { intlLocale } from './i18n'
 
 function money(cents: string | undefined): string {
   const n = Number(cents)
   if (!Number.isFinite(n)) return ''
-  return (n / 100).toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })
+  return (n / 100).toLocaleString(intlLocale(), { style: 'currency', currency: 'EUR' })
 }
 
 export function notificationMessage(n: Notification): string {

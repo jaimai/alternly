@@ -1,6 +1,7 @@
 // Dépenses partagées : catégories, montants, solde (mêmes règles que frontend/src/pages/Expenses.tsx).
 // Le solde est calculé par le backend (/balance) ; ici, seulement la mise en forme.
 import type { Balance, Expense, ExpenseCategory, Member } from './types'
+import { intlLocale } from './i18n'
 
 export const CATEGORIES: { value: ExpenseCategory; label: string }[] = [
   { value: 'sante', label: 'Santé' },
@@ -32,7 +33,7 @@ export function amountInput(cents: number): string {
 }
 
 export function formatMoney(cents: number, currency: string): string {
-  return new Intl.NumberFormat('fr-FR', { style: 'currency', currency }).format(cents / 100)
+  return new Intl.NumberFormat(intlLocale(), { style: 'currency', currency }).format(cents / 100)
 }
 
 /** Phrase du solde, du point de vue du parent connecté. */

@@ -12,6 +12,7 @@ import { addDays, daysBetween, formatLong, formatRange, formatShort, parseIso, t
 import { useMe, useNotifications, useUpcoming } from '@/lib/queries'
 import { colors, fonts, radius, tint } from '@/lib/theme'
 import type { CalendarResponse, Household } from '@/lib/types'
+import { intlLocale } from '@/lib/i18n'
 
 export default function Home() {
   const me = useMe()
@@ -153,7 +154,7 @@ function Content({ cal, household, meId, today }: { cal: CalendarResponse; house
                 accessible
                 accessibilityLabel={`${formatLong(d)} : ${day ? `chez ${who(day.parent_id)}` : 'inconnu'}`}
               >
-                <Text style={s.weekLabel}>{parseIso(d).toLocaleDateString('fr-FR', { weekday: 'short' })}</Text>
+                <Text style={s.weekLabel}>{parseIso(d).toLocaleDateString(intlLocale(), { weekday: 'short' })}</Text>
                 <View style={[s.weekCell, { backgroundColor: tint(color, 0.3) }, isToday && s.weekToday]}>
                   <Text style={s.weekNum}>{parseIso(d).getDate()}</Text>
                   <View style={[s.weekStrip, { backgroundColor: color }]} />

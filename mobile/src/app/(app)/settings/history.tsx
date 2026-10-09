@@ -6,6 +6,7 @@ import { BackButton } from '@/components/BackButton'
 import { Avatar, Body, Button, ErrorState, Loading, Screen, SectionLabel, Title } from '@/components/ui'
 import { api } from '@/lib/api'
 import { formatLong, isoLocal, parseTimestamp } from '@/lib/dates'
+import { intlLocale } from '@/lib/i18n'
 import { useHousehold } from '@/lib/queries'
 import { colors, fonts } from '@/lib/theme'
 import type { HistoryEntry } from '@/lib/types'
@@ -53,7 +54,7 @@ export default function History() {
           <View style={s.group}>
             {items.map((e, i) => {
               const m = member(e.actor_id)
-              const time = parseTimestamp(e.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+              const time = parseTimestamp(e.created_at).toLocaleTimeString(intlLocale(), { hour: '2-digit', minute: '2-digit' })
               return (
                 <View key={e.id} style={[s.row, i > 0 && s.border]}>
                   <Avatar name={m?.display_name ?? '·'} color={m?.color ?? colors.line} size={30} />
