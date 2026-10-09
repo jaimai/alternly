@@ -1,4 +1,5 @@
 import Constants from 'expo-constants'
+import { router } from 'expo-router'
 import { Alert, Linking, Pressable, StyleSheet, Text, View } from 'react-native'
 import { Icon } from '@/components/Icon'
 import { InviteCard } from '@/components/InviteCard'
@@ -62,6 +63,17 @@ export default function Settings() {
       {household && isSolo(household.members) ? (
         <InviteCard householdId={household.id} childNames={household.children.map((c) => c.first_name)} />
       ) : null}
+
+      <View style={{ gap: 8 }}>
+        <SectionLabel>Application</SectionLabel>
+        <View style={s.group}>
+          <Pressable accessibilityRole="button" onPress={() => router.push('/notification-settings')} style={s.row}>
+            <Icon name="bell" color={colors.ink} />
+            <Text style={[s.strong, { flex: 1 }]}>Notifications</Text>
+            <Icon name="chevron" size={18} color={colors.inkSoft} />
+          </Pressable>
+        </View>
+      </View>
 
       <View style={{ gap: 8 }}>
         <SectionLabel>Sur le web</SectionLabel>

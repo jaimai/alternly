@@ -9,6 +9,7 @@ import type {
   Household,
   Invitation,
   Notification,
+  PushPrefs,
   ScheduleException,
   TokenResponse,
   User,
@@ -145,5 +146,10 @@ export const api = {
     request<unknown>(`/households/${householdId}/exceptions/${id}/refuse`, { method: 'POST', body: { response_note: '' } }),
 
   notifications: () => request<Notification[]>('/notifications'),
+  registerDevice: (data: { token: string; platform: 'ios' | 'android'; app_version?: string }) =>
+    request<void>('/devices', { method: 'POST', body: data }),
+  unregisterDevice: (token: string) => request<void>(`/devices/${encodeURIComponent(token)}`, { method: 'DELETE' }),
+  pushPrefs: () => request<PushPrefs>('/devices/prefs'),
+  setPushPrefs: (prefs: PushPrefs) => request<PushPrefs>('/devices/prefs', { method: 'PUT', body: prefs }),
   markRead: (ids: number[]) => request<{ updated: number }>('/notifications/read', { method: 'POST', body: { ids } }),
 }

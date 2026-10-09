@@ -2,12 +2,14 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ApiError, api } from './api'
 import { useAuth } from './auth'
 import { todayIso } from './dates'
+import type { PushPrefs } from './types'
 
 export const keys = {
   me: ['me'] as const,
   household: ['household'] as const,
   calendar: (hid: number, start: string, end: string) => ['calendar', hid, start, end] as const,
   notifications: ['notifications'] as const,
+  pushPrefs: ['pushPrefs'] as const,
 }
 
 /** Profil : celui de la connexion d'abord, puis rafraîchi depuis l'API. */
@@ -87,5 +89,25 @@ export function useInviteLink(householdId: number | undefined) {
       const current = await api.currentInvitation(householdId!)
       return current.invitation ?? (await api.createInvitation(householdId!))
     },
+  })
+}
+
+export function usePushPrefs() {
+  return useQuery({ queryKey: keys.pushPrefs, queryFn: api.pushPrefs })
+}
+
+/** Enregistre les préférences, affichées tout de suite (annulé en cas d'erreur). */
+export function useSetPushPrefs() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (prefs: PushPrefs) => api.setPushPrefs(prefs),
+    onMutate: async (prefs) => {
+      await qc.cancelQueries({ queryKey: keys.pushPrefs })
+      const previous = qc.getQueryData<PushPrefs>(keys.pushPrefs)
+      qc.setQueryData(keys.pushPrefs, prefs)
+      return { previous }
+    },
+    onError: (_e, _prefs, ctx) => qc.setQueryData(keys.pushPrefs, ctx?.previous),
+    onSettled: () => qc.invalidateQueries({ queryKey: keys.pushPrefs }),
   })
 }

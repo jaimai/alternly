@@ -27,6 +27,8 @@ class Settings(BaseSettings):
     cors_origins: str = "http://localhost:5173"
     # Secret protégeant l'endpoint cron des rappels. Vide → endpoint désactivé.
     cron_secret: str = ""
+    # Service Expo qui relaie les notifications push vers APNs / FCM (modifiable pour un faux service en recette).
+    push_api_url: str = "https://exp.host/--/api/v2/push/send"
     # Limitation de débit anti-abus (mémoire du processus, voir ratelimit.py).
     rate_limit_enabled: bool = True
     # Suivi d'erreurs Sentry. DSN vide → désactivé.

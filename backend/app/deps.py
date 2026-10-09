@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from .auth import get_current_user
 from .db import get_db
 from .models import Household, HouseholdMember, Notification, User, utcnow
-from .services import billing
+from .services import billing, push
 
 
 def _user_is_premium(db: Session, user: User) -> bool:
@@ -81,10 +81,15 @@ def other_parent_id(db: Session, household_id: int, user_id: int) -> int | None:
 
 
 def notify(db: Session, user_id: int | None, type_: str, payload: dict) -> None:
-    """Crée une notification in-app (no-op si pas de destinataire)."""
+    """Crée une notification in-app et prépare le push mobile (no-op si pas de destinataire).
+
+    Le push part après le commit de la requête (services/push.py) : jamais pour une
+    action annulée.
+    """
     if user_id is None:
         return
     db.add(Notification(user_id=user_id, type=type_, payload=payload))
+    push.queue(db, push.prepare(db, user_id, type_, payload))
 
 
 def get_household(db: Session, household_id: int) -> Household:

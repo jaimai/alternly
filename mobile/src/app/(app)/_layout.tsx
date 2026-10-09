@@ -1,4 +1,5 @@
 import { Stack } from 'expo-router'
+import { PushManager } from '@/components/PushManager'
 import { ErrorState, Loading } from '@/components/ui'
 import { useHousehold } from '@/lib/queries'
 import { colors } from '@/lib/theme'
@@ -14,16 +15,20 @@ export default function AppLayout() {
   const ready = household.data !== null && household.data.custody_rule !== null
 
   return (
-    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.paper } }}>
-      <Stack.Protected guard={!ready}>
-        <Stack.Screen name="onboarding" />
-      </Stack.Protected>
-      <Stack.Protected guard={ready}>
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="notifications" />
-        <Stack.Screen name="exchange/new" options={{ presentation: 'modal' }} />
-        <Stack.Screen name="exchange/[id]" />
-      </Stack.Protected>
-    </Stack>
+    <>
+      <PushManager />
+      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.paper } }}>
+        <Stack.Protected guard={!ready}>
+          <Stack.Screen name="onboarding" />
+        </Stack.Protected>
+        <Stack.Protected guard={ready}>
+          <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="notifications" />
+          <Stack.Screen name="notification-settings" />
+          <Stack.Screen name="exchange/new" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="exchange/[id]" />
+        </Stack.Protected>
+      </Stack>
+    </>
   )
 }

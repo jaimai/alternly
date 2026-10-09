@@ -33,6 +33,7 @@ _ADD_COLUMNS: dict[str, dict[str, str]] = {
         "google_sub": "VARCHAR",
         "analytics_consent": "BOOLEAN",
         "invite_nudge_sent_at": "TIMESTAMP",
+        "push_prefs": "JSON",
     },
     "invitations": {
         "created_at": "TIMESTAMP",

@@ -86,6 +86,16 @@ def fake_public_apis(monkeypatch):
 
 
 @pytest.fixture(autouse=True)
+def no_push_network(monkeypatch):
+    """Push mobile : envoi synchrone et sans réseau (tests/test_push.py capture les messages)."""
+    from app.services import push
+
+    monkeypatch.setattr(push, "_run", lambda fn, messages: fn(messages))
+    monkeypatch.setattr(push, "_post", lambda messages: [])
+    monkeypatch.setattr(push, "_forget", lambda tokens: None)
+
+
+@pytest.fixture(autouse=True)
 def no_rate_limit(monkeypatch):
     """Limitation de débit coupée par défaut ; réactivée dans tests/test_ratelimit.py."""
     monkeypatch.setattr(settings, "rate_limit_enabled", False)

@@ -15,7 +15,7 @@ from ..db import get_db
 from ..deps import is_premium, other_parent_id
 from ..models import ScheduleException, User, utcnow
 from ..services import email as email_service
-from ..services import invite_reminders, lifecycle
+from ..services import handover_reminders, invite_reminders, lifecycle
 
 router = APIRouter(prefix="/api/cron", tags=["cron"])
 
@@ -87,3 +87,13 @@ def lifecycle_job(
     Idempotent (email_log) ; au plus un e-mail par utilisateur et par jour."""
     _authorize(x_cron_key)
     return lifecycle.run(db)
+
+
+@router.post("/handover-reminders")
+def handover_reminders_job(
+    x_cron_key: str | None = Header(default=None),
+    db: Session = Depends(get_db),
+):
+    """Push la veille d'un changement de parent (lancé le soir). Idempotent (email_log)."""
+    _authorize(x_cron_key)
+    return handover_reminders.run(db)

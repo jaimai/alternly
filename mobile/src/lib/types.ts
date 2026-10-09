@@ -113,3 +113,12 @@ export interface Notification {
   read_at: string | null
   created_at: string
 }
+
+/** Notifications push par catégorie (GET/PUT /api/devices/prefs). */
+export interface PushPrefs {
+  handover: boolean
+  exchanges: boolean
+  expenses: boolean
+  wall: boolean
+  household: boolean
+}

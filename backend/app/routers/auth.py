@@ -8,13 +8,13 @@ from fastapi import APIRouter, BackgroundTasks, Body, Depends, Header, HTTPExcep
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
-from sqlalchemy import select, update
+from sqlalchemy import delete, select, update
 from sqlalchemy.orm import Session
 
 from ..auth import create_token, get_current_user, hash_password, verify_password
 from ..config import settings
 from ..db import get_db
-from ..models import Feedback, PasswordResetToken, User, utcnow
+from ..models import DeviceToken, Feedback, PasswordResetToken, User, utcnow
 from ..ratelimit import HOUR, MINUTE, rate_limit
 from ..schemas import (
     ChangePasswordIn,
@@ -248,6 +248,8 @@ def change_password(data: ChangePasswordIn, user: User = Depends(get_current_use
 @router.post("/logout-all", status_code=204)
 def logout_all(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     _revoke_sessions(user)
+    # Les téléphones déconnectés ne doivent plus recevoir de push pour ce compte.
+    db.execute(delete(DeviceToken).where(DeviceToken.user_id == user.id))
     db.commit()
     return Response(status_code=204)
 

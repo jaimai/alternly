@@ -103,6 +103,8 @@ jobs:
           cache: npm
           cache-dependency-path: mobile/package-lock.json
       - run: npm ci
+      # Modules natifs (même indirects) alignés sur le SDK Expo : sinon crash sur le téléphone.
+      - run: npm run check:native
       - run: npx tsc --noEmit
       - run: npx expo lint
       - run: npx jest --ci
