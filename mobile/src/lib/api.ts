@@ -12,6 +12,7 @@ import type {
   DepartureReason,
   Expense,
   ExpenseInput,
+  HistoryEntry,
   Household,
   Invitation,
   InvitationPreview,
@@ -207,6 +208,11 @@ export const api = {
     request<PendingChange | undefined>(`/households/${householdId}/children/${childId}`, { method: 'DELETE' }),
   updateHousehold: (householdId: number, data: { name?: string; school_zone?: 'A' | 'B' | 'C' }) =>
     request<Household>(`/households/${householdId}`, { method: 'PATCH', body: data }),
+  history: (householdId: number, beforeId?: number) =>
+    request<HistoryEntry[]>(`/households/${householdId}/history?limit=50${beforeId ? `&before_id=${beforeId}` : ''}`),
+  // Flux d'agenda privé (Premium) : lire le lien ne le change pas ; régénérer coupe l'ancien.
+  icalLink: () => request<{ ical_token: string }>('/ical/link'),
+  regenerateIcal: () => request<{ ical_token: string }>('/ical/regenerate', { method: 'POST' }),
   changeRequests: (householdId: number) =>
     request<ChangeRequest[]>(`/households/${householdId}/change-requests?status=pending`),
   answerChange: (householdId: number, id: number, action: 'accept' | 'refuse' | 'withdraw') =>

@@ -239,3 +239,12 @@ export interface BillingStatus {
   is_payer: boolean
   manage_url: string | null
 }
+
+/** Entrée du journal (immuable) des modifications du foyer. */
+export interface HistoryEntry {
+  id: number
+  actor_id: number | null
+  action: string
+  summary: string
+  created_at: string
+}
