@@ -1,0 +1,45 @@
+{
+  "expo": {
+    "name": "Alternly",
+    "slug": "alternly",
+    "scheme": "alternly",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "runtimeVersion": { "policy": "fingerprint" },
+    "ios": {
+      "bundleIdentifier": "com.alternly.app",
+      "supportsTablet": false
+    },
+    "android": {
+      "package": "com.alternly.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#FAF6EF",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 120,
+          "backgroundColor": "#FAF6EF"
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

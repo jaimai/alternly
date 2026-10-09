@@ -52,8 +52,9 @@ dans `frontend/` ou `backend/` ne relance pas de build mobile.
 | `packages/shared/**` (phase 2) | — | ✅ | — | ✅ | ✅ |
 | `docs/**`, `*.md` | — | — | — | — | — |
 
-Les filtres Railway, Vercel et CI (backend / frontend) sont en place. Le job CI `mobile`
-et le workflow `mobile.yml` seront ajoutés avec le premier commit de `mobile/`.
+Les filtres Railway, Vercel et CI sont en place, y compris le job CI `mobile`
+(types, lint, tests, bundle natif). Le workflow `mobile.yml` (EAS) viendra avec le
+premier build.
 
 ### 3.1 Railway — `watchPatterns`
 
@@ -353,7 +354,7 @@ installée, le web sinon.
        vérifier sur un commit qui ne touche que `docs/` que ni Railway ni Vercel ne
        redéploient.
 2. [ ] Comptes Apple Developer, Google Play, Expo ; `EXPO_TOKEN` dans GitHub.
-3. [ ] `npx create-expo-app mobile` (template TypeScript + Expo Router), `eas init`,
+3. [x] `npx create-expo-app mobile` (template TypeScript + Expo Router), `eas init`,
        `eas.json`, premier build `development`.
 4. [ ] Écran de connexion e-mail branché sur l'API de staging → premier build TestFlight
        (fin du spike).
