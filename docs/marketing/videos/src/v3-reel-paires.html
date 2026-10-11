@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><title>Alternly — Reel paires / impaires</title>
+<link rel="stylesheet" href="base.css">
+<style>
+  .stage { width: 1080px; height: 1920px; }
+  .blob { position: absolute; border-radius: 50%; filter: blur(90px); opacity: .35; }
+  .blob.a1 { width: 760px; height: 760px; background: var(--terra-soft); top: -220px; right: -260px; animation: drift1 15s linear both; }
+  .blob.b1 { width: 700px; height: 700px; background: var(--pine-soft); bottom: -160px; left: -240px; animation: drift2 15s linear both; }
+  @keyframes drift1 { to { transform: translate(-180px, 260px); } }
+  @keyframes drift2 { to { transform: translate(160px, -300px); } }
+
+  /* Scène 1 : la règle, telle qu'elle est écrite */
+  .eyebrow { font-size: 34px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-soft); margin-bottom: 40px; }
+  .doc { width: 900px; background: #fff; border-radius: 36px; padding: 70px 70px 64px; box-shadow: 0 40px 80px -40px rgba(36,49,43,.45); position: relative; }
+  .doc::before { content: '«'; position: absolute; top: -96px; left: 46px; font-family: 'Fraunces', serif; font-size: 200px; line-height: 1; color: var(--terra); }
+  .doc p { font-family: 'Fraunces', serif; font-variation-settings: 'opsz' 72; font-size: 58px; line-height: 1.3; letter-spacing: -0.01em; }
+  .hl { position: relative; white-space: nowrap; }
+  .hl::before { content: ''; position: absolute; left: -6px; right: -6px; bottom: 4px; height: 40%; border-radius: 8px; z-index: -1; transform-origin: left center; animation: wipe 600ms var(--out) var(--t) both; }
+  .hl.pa::before { background: #cfe2d8; }
+  .hl.pb::before { background: var(--terra-soft); }
+  .hl { z-index: 0; isolation: isolate; }
+  @keyframes wipe { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+  .q1 { font-size: 96px; line-height: 1.04; text-align: center; margin-top: 90px; padding: 0 70px; }
+  .q1 em { color: var(--terra); font-style: italic; }
+
+  /* Scène 2 : 2026 = paire */
+  .year { font-family: 'Fraunces', serif; font-variation-settings: 'opsz' 144; font-size: 330px; line-height: 1; letter-spacing: -0.04em; color: var(--ink); }
+  .eq { margin-top: 30px; background: var(--pine); color: #fff; font-size: 64px; font-weight: 700; padding: 26px 60px; border-radius: 999px; }
+  .s2 .sub { margin-top: 50px; font-size: 52px; color: var(--ink-soft); text-align: center; line-height: 1.3; }
+  .s2 .sub b { color: var(--pine); }
+
+  /* Scène 3 : la réponse de l'outil */
+  .s3 { justify-content: flex-start; padding-top: 170px; }
+  .s3 h3 { font-size: 80px; line-height: 1.06; text-align: center; padding: 0 70px; margin-bottom: 60px; }
+  .s3 h3 em { color: var(--pine); font-style: italic; }
+  .card { width: 900px; background: #fff; border-radius: 48px; padding: 52px 50px 50px; box-shadow: 0 50px 100px -40px rgba(36,49,43,.45); }
+  .kicker { font-size: 30px; font-weight: 600; color: var(--ink-soft); letter-spacing: .04em; text-transform: uppercase; }
+  .card h4 { font-family: 'Fraunces', serif; font-variation-settings: 'opsz' 72; font-weight: 500; font-size: 58px; line-height: 1.1; letter-spacing: -0.02em; margin: 14px 0 40px; white-space: nowrap; }
+  .tl { display: grid; grid-template-columns: repeat(8, 1fr); gap: 10px; }
+  .day { position: relative; height: 120px; border-radius: 20px; background: var(--paper); overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 36px; font-weight: 700; }
+  .day b { font-size: 22px; font-weight: 600; opacity: .7; margin-bottom: 4px; }
+  .day .fill { position: absolute; inset: 0; transform-origin: left center; animation: fillin 380ms var(--out) var(--t) both; }
+  .day.A .fill { background: var(--pa); }
+  .day.B .fill { background: var(--pb); }
+  .day span { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; color: #fff; }
+  .day.ho { box-shadow: 0 0 0 6px var(--ink); }
+  @keyframes fillin { from { transform: scaleX(0); opacity: .2; } to { transform: scaleX(1); opacity: 1; } }
+  .lines { margin-top: 40px; display: flex; flex-direction: column; gap: 18px; }
+  .line { display: flex; align-items: center; gap: 22px; font-size: 38px; }
+  .line i { width: 30px; height: 30px; border-radius: 9px; flex: none; }
+  .line b { font-weight: 700; }
+  .line small { margin-left: auto; font-size: 30px; color: var(--ink-soft); font-weight: 600; }
+  .ho-pill { margin-top: 60px; background: var(--ink); color: #fff; font-size: 44px; font-weight: 700; padding: 28px 46px; border-radius: 999px; display: flex; align-items: center; gap: 20px; }
+  .ho-pill svg { width: 48px; height: 48px; }
+  .resume { margin-top: 26px; font-size: 36px; color: var(--ink-soft); }
+
+  /* Scène 4 : toutes les vacances */
+  .s4 h3 { font-size: 84px; line-height: 1.06; text-align: center; padding: 0 80px; margin-bottom: 70px; }
+  .s4 h3 em { color: var(--terra); font-style: italic; }
+  .row { width: 860px; background: #fff; border-radius: 32px; padding: 34px 44px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; font-size: 44px; font-weight: 600; box-shadow: 0 24px 50px -30px rgba(36,49,43,.45); }
+  .row .ok { width: 64px; height: 64px; border-radius: 50%; background: var(--pine-soft); color: var(--pine); display: grid; place-items: center; font-size: 38px; font-weight: 700; }
+  .row small { display: block; font-size: 30px; color: var(--ink-soft); font-weight: 500; margin-top: 4px; }
+
+  /* Scène 5 : CTA */
+  .s5 .wordmark { font-size: 200px; }
+  .s5 p { font-size: 56px; text-align: center; line-height: 1.25; margin-top: 30px; color: var(--ink-soft); padding: 0 100px; }
+  .s5 p b { color: var(--ink); }
+  .cta { margin-top: 80px; background: var(--pine); color: #fff; font-size: 54px; font-weight: 700; padding: 38px 76px; border-radius: 999px; box-shadow: 0 30px 60px -24px rgba(31,77,63,.6); }
+  .pulse { animation: pulse 1400ms var(--inout) 13800ms infinite both; }
+  @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+  .small { margin-top: 40px; font-size: 36px; color: var(--ink-soft); }
+</style></head>
+<body>
+<div class="stage" id="stage">
+  <div class="blob a1"></div><div class="blob b1"></div>
+
+  <!-- 1. La règle : 0 → 3,6 s -->
+  <section class="scene x" style="--x:3300ms">
+    <div class="eyebrow a" style="--k:fade;--t:100ms">La règle la plus courante</div>
+    <div class="doc a" style="--t:200ms">
+      <p>La première moitié des vacances les <span class="hl pa" style="--t:900ms">années paires</span>, la seconde moitié les <span class="hl pb" style="--t:1400ms">années impaires</span>.</p>
+    </div>
+    <h1 class="q1 serif a" style="--t:1900ms">Toussaint 2026, <em>ça&nbsp;donne&nbsp;quoi&nbsp;?</em></h1>
+  </section>
+
+  <!-- 2. 2026 est paire : 3,6 → 5,3 s -->
+  <section class="scene s2 x" style="--x:5100ms">
+    <div class="year a" style="--k:zoom;--d:800ms;--t:3600ms">2026</div>
+    <div class="a" style="--k:pop;--t:4000ms"><div class="eq">= année paire</div></div>
+    <div class="sub a" style="--t:4300ms">→ <b>1<sup>re</sup> moitié</b> pour le parent<br>des années paires</div>
+  </section>
+
+  <!-- 3. La réponse : 5,4 → 10,8 s -->
+  <section class="scene s3 x" style="--x:10600ms">
+    <h3 class="serif a" style="--t:5400ms">Les dates exactes, <em>en&nbsp;un&nbsp;clic</em></h3>
+    <div class="card a" style="--k:rise;--d:900ms;--t:5500ms">
+      <div class="kicker">Toussaint 2026 · zones A, B et C</div>
+      <h4>Du sam. 17 oct. au dim. 1<sup>er</sup> nov.</h4>
+      <div class="tl" id="tl"></div>
+      <div class="lines">
+        <div class="line a" style="--k:fade;--t:7500ms"><i style="background:var(--pa)"></i><span><b>17 → 24 oct.</b> · 1<sup>re</sup> moitié</span><small>8 jours</small></div>
+        <div class="line a" style="--k:fade;--t:7800ms"><i style="background:var(--pb)"></i><span><b>25 oct. → 1<sup>er</sup> nov.</b> · 2<sup>de</sup> moitié</span><small>8 jours</small></div>
+      </div>
+    </div>
+    <div class="a" style="--k:pop;--t:8500ms"><div class="ho-pill"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h11l-3-3M17 17H6l3 3"/></svg>Passage : dimanche 25 octobre</div></div>
+    <div class="resume a" style="--k:fade;--t:9000ms">Reprise de l'école : lundi 2 novembre</div>
+  </section>
+
+  <!-- 4. Toutes les vacances : 10,8 → 12,9 s -->
+  <section class="scene s4 x" style="--x:12700ms">
+    <h3 class="serif a" style="--t:10800ms">Et <em>toutes</em> les autres vacances aussi</h3>
+    <div class="row a" style="--k:right;--t:11000ms"><div>Noël 2026<small>passage dim. 27 décembre</small></div><div class="ok">✓</div></div>
+    <div class="row a" style="--k:right;--t:11200ms"><div>Hiver 2027<small>selon votre zone A, B ou C</small></div><div class="ok">✓</div></div>
+    <div class="row a" style="--k:right;--t:11400ms"><div>Printemps 2027</div><div class="ok">✓</div></div>
+    <div class="row a" style="--k:right;--t:11600ms"><div>Été 2027</div><div class="ok">✓</div></div>
+  </section>
+
+  <!-- 5. CTA : 13 → 15 s -->
+  <section class="scene s5">
+    <div class="wordmark a" style="--k:zoom;--d:900ms;--t:12950ms">altern<span>ly</span></div>
+    <p class="a" style="--t:13300ms">Qui a les enfants pendant les vacances&nbsp;?<br><b>L'outil gratuit qui fait le calcul.</b></p>
+    <div class="a" style="--k:pop;--t:13600ms"><div class="cta pulse">alternly.com</div></div>
+    <div class="small a" style="--k:fade;--t:13900ms">Sans inscription · dates officielles</div>
+  </section>
+</div>
+<script>
+  // Toussaint 2026 (zones A, B, C) : sam. 17 oct. → dim. 1er nov., moitié/moitié,
+  // résultat du moteur de garde (vacation_tool) : 1re moitié 17 → 24, seconde 25 → 1er.
+  const tl = document.getElementById('tl')
+  const start = new Date(2026, 9, 17)
+  for (let i = 0; i < 16; i++) {
+    const d = new Date(start); d.setDate(start.getDate() + i)
+    const p = i < 8 ? 'A' : 'B'
+    const el = document.createElement('div')
+    el.className = 'day ' + p + (i === 8 ? ' ho' : '')
+    el.innerHTML = `<div class="fill" style="--t:${6300 + i * 60}ms"></div><span><b>${'DLMMJVS'[d.getDay()]}</b>${d.getDate()}</span>`
+    tl.appendChild(el)
+  }
+</script>
+</body></html>

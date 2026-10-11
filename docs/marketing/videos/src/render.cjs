@@ -1,6 +1,7 @@
 // Rendu image par image d'une composition HTML/CSS → MP4 H.264.
 // usage : node render.cjs page.html W H durée_ms sortie.mp4 [fps] [--stills t1,t2,…]
-const { chromium } = require('playwright')
+let chromium
+try { ({ chromium } = require('playwright')) } catch { ({ chromium } = require('playwright-core')) }
 const { execFileSync } = require('child_process')
 const fs = require('fs')
 const path = require('path')
@@ -12,7 +13,7 @@ const fps = Number(FPS)
 const frames = Math.round((Number(DUR) / 1000) * fps)
 
 ;(async () => {
-  const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' })
+  const browser = await chromium.launch({ executablePath: process.env.CHROME || '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' })
   const ctx = await browser.newContext({ viewport: { width: +W, height: +H }, deviceScaleFactor: 1 })
   const p = await ctx.newPage()
   await p.goto('file://' + path.resolve(page))
