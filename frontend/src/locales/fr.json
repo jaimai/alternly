@@ -60,6 +60,7 @@
   "auth.showPasswordAria": "Afficher le mot de passe",
   "auth.signInPrompt": "Connectez-vous ou créez un compte pour accepter l'invitation.",
   "auth.tagline": "Le calendrier de garde partagée",
+  "auth.toolPrefill": "Zone {{zone}} et votre règle de vacances sont reprises de l'outil : il ne restera que l'enfant et votre rythme.",
   "auth.verifyingInvitation": "Vérification de l'invitation…",
   "calendar.alreadyMember": "Vous faites déjà partie de ce foyer : voici votre calendrier partagé.",
   "calendar.expiringTomorrowMany": "{{count}} propositions expirent demain",

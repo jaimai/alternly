@@ -60,6 +60,7 @@
   "auth.showPasswordAria": "Show password",
   "auth.signInPrompt": "Sign in or create an account to accept the invitation.",
   "auth.tagline": "The shared-custody calendar",
+  "auth.toolPrefill": "Zone {{zone}} and your holiday rule carry over from the tool: only your child and weekly schedule are left.",
   "auth.verifyingInvitation": "Verifying invitation…",
   "calendar.alreadyMember": "You're already part of this household — here's your shared calendar.",
   "calendar.expiringTomorrowMany": "{{count}} requests expire tomorrow",

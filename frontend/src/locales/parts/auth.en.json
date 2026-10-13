@@ -60,5 +60,6 @@
   "auth.consentRequired": "Please accept the terms of service to create your account.",
   "auth.or": "or",
   "auth.googleError": "Couldn't sign in with Google. Please try again.",
-  "auth.googleConsentLead": "By continuing with Google, you agree to the"
+  "auth.googleConsentLead": "By continuing with Google, you agree to the",
+  "auth.toolPrefill": "Zone {{zone}} and your holiday rule carry over from the tool: only your child and weekly schedule are left."
 }

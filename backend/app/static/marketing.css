@@ -597,6 +597,59 @@ h2 { font-size: clamp(1.6rem, 3.2vw, 2.3rem); }
 .tool-links { margin-top: 26px; color: var(--ink-soft); font-size: 0.95rem; }
 .tool-links a, .tool-teaser a:not(.cta) { color: var(--pine); }
 
+/* vue « toute l'année » sous le résultat */
+.year-view { margin-top: 40px; scroll-margin-top: 80px; }
+.year-view[hidden] { display: none; }
+.year-head h2 { font-size: clamp(1.5rem, 3.4vw, 2rem); margin: 0 0 16px; }
+.year-head h2:focus { outline: none; }
+.year-summary {
+  background: #fff; border: 1px solid var(--line); border-radius: var(--radius);
+  box-shadow: var(--shadow); padding: 20px 22px; margin-bottom: 18px;
+}
+.year-bar, .yp-bar { display: flex; gap: 2px; border-radius: 8px; overflow: hidden; }
+.year-bar { height: 16px; margin-bottom: 14px; }
+.yp-bar { height: 12px; margin: 10px 0; border-radius: 6px; }
+.yb-a { background: var(--pine); }
+.yb-b { background: var(--terra); }
+.year-totals { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.year-totals p { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 2px 4px; color: var(--ink-soft); font-size: 0.92rem; }
+.year-totals strong { flex-basis: 100%; font-family: var(--font-display); font-size: 1.7rem; color: var(--ink); font-weight: 650; }
+.year-next { margin: 14px 0 0; background: var(--paper-deep); border-radius: 10px; padding: 12px 14px; font-size: 0.97rem; }
+.year-periods { list-style: none; padding: 0; margin: 0 0 14px; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+.year-period { background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 18px; }
+.year-period.is-next { border: 2px solid var(--pine); }
+.year-period.is-past { opacity: 0.6; }
+.yp-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.yp-head h3 { margin: 0; font-size: 1.15rem; }
+.yp-badge { font-size: 0.75rem; font-weight: 700; color: #fff; background: var(--pine); border-radius: 999px; padding: 3px 9px; }
+.yp-badge.past { background: var(--line); color: var(--ink-soft); }
+.yp-dates { margin: 4px 0 0; color: var(--ink-soft); font-size: 0.9rem; }
+.yp-segs { list-style: none; padding: 0; margin: 0; display: grid; gap: 4px; font-size: 0.93rem; }
+.yp-segs li { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 8px; }
+.yp-segs .who { font-weight: 600; min-width: 6.5em; }
+.yp-segs span:last-child { color: var(--ink-soft); }
+.yp-handover { margin: 8px 0 0; font-size: 0.88rem; color: #8a4527; font-weight: 600; }
+.year-hint { margin: 0 0 22px; font-size: 0.85rem; }
+.year-cta { background: var(--pine); color: var(--paper); border-radius: var(--radius); padding: 24px 26px; max-width: 46rem; }
+.year-cta h3 { color: #fff; font-size: 1.35rem; margin: 0 0 12px; }
+.year-cta ul { list-style: none; padding: 0; margin: 0 0 18px; display: grid; gap: 8px; }
+.year-cta li { padding-left: 26px; position: relative; }
+.year-cta li::before { content: ""; position: absolute; left: 2px; top: 0.3em; width: 12px; height: 7px; border-left: 2.5px solid #bfe0cf; border-bottom: 2.5px solid #bfe0cf; transform: rotate(-45deg); }
+.year-cta .cta { background: var(--paper); color: var(--pine) !important; }
+.year-cta .cta:hover { background: #fff; }
+.year-cta-note { margin: 10px 0 0; font-size: 0.88rem; color: color-mix(in srgb, var(--paper) 82%, transparent); }
+.year-share {
+  margin-top: 14px; min-height: 48px; padding: 0 20px; border-radius: 999px; cursor: pointer;
+  border: 1.5px solid var(--line); background: #fff; color: var(--ink); font: inherit; font-weight: 600;
+}
+.year-share[hidden] { display: none; }
+@media (max-width: 860px) {
+  .year-view { margin-top: 28px; }
+  .year-summary, .year-cta { padding: 18px 16px; }
+  .year-cta .cta { display: block; text-align: center; }
+  .year-share { width: 100%; }
+}
+
 /* réponse immédiate (arrivée depuis une annonce : ?vacances=… sans zone) */
 .quick-answer {
   background: #fff; border: 2px solid var(--pine); border-radius: var(--radius);

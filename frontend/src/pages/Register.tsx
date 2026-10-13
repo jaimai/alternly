@@ -11,6 +11,7 @@ import ColorPicker from '../components/ColorPicker'
 import GoogleButton from '../components/GoogleButton'
 import PasswordField from '../components/PasswordField'
 import { passwordProblem } from '../password'
+import { saveToolPrefill } from '../toolPrefill'
 
 export default function RegisterPage() {
   const [email, setEmail] = useState('')
@@ -20,6 +21,8 @@ export default function RegisterPage() {
   const [accepted, setAccepted] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  // Arrivée depuis l'outil vacances : zone et règle reprises dans l'onboarding.
+  const [prefill] = useState(() => saveToolPrefill(new URLSearchParams(window.location.search)))
   const { setUser } = useAuth()
   const navigate = useNavigate()
   const { t, i18n } = useTranslation()
@@ -63,6 +66,7 @@ export default function RegisterPage() {
       </div>
       <form className="card" onSubmit={submit}>
         <h2>{t('auth.registerTitle')}</h2>
+        {prefill?.zone && <p className="hint">{t('auth.toolPrefill', { zone: prefill.zone })}</p>}
         <GoogleButton text="signup_with" consent />
         <label htmlFor="name">{t('auth.firstNameLabel')}</label>
         <input id="name" value={displayName} onChange={(e) => setDisplayName(e.target.value)} required maxLength={50} />
