@@ -16,7 +16,7 @@ import Spinner from '../components/Spinner'
 import { cachedCalendar, cachedExceptions, fetchCalendar, fetchExceptions, invalidateCalendar } from '../calendarCache'
 import StatusCard from '../components/StatusCard'
 import TopBar from '../components/TopBar'
-import { todayIso } from '../dates'
+import { addDays, todayIso } from '../dates'
 import { useFormat } from '../format'
 import { isSolo } from '../members'
 import type { CalendarResponse, ScheduleException } from '../types'
@@ -36,10 +36,9 @@ export default function CalendarPage() {
   // quand le jour revient au rythme), enregistrés d'un coup.
   const [adjusting, setAdjusting] = useState(false)
   const [flips, setFlips] = useState<Record<string, { to: number; clearId: number | null }>>({})
-  const [lastFlip, setLastFlip] = useState<string | null>(null)
   const [adjustBusy, setAdjustBusy] = useState(false)
   const [adjustNotice, setAdjustNotice] = useState<string | null>(null)
-  const { day: fmtDay } = useFormat()
+  const { range: fmtRange } = useFormat()
   // Incrémenté après chaque changement : recharge la carte de statut.
   const [refreshKey, setRefreshKey] = useState(0)
   // Arrivée depuis un lien d'invitation déjà utilisé par ce parent (page /join).
@@ -93,6 +92,26 @@ export default function CalendarPage() {
     return out
   }, [flips])
   const flipCount = Object.keys(flips).length
+  // Récapitulatif : jours consécutifs envoyés au même parent regroupés en une ligne.
+  const recap = useMemo(() => {
+    const groups: { start: string; end: string; to: number; dates: string[] }[] = []
+    for (const date of Object.keys(flips).sort()) {
+      const last = groups[groups.length - 1]
+      if (last && last.to === flips[date].to && addDays(last.end, 1) === date) {
+        last.end = date
+        last.dates.push(date)
+      } else {
+        groups.push({ start: date, end: date, to: flips[date].to, dates: [date] })
+      }
+    }
+    return groups
+  }, [flips])
+
+  function removeFlips(dates: string[]) {
+    const next = { ...flips }
+    for (const d of dates) delete next[d]
+    setFlips(next)
+  }
 
   function memberName(id: number) {
     if (id === user?.id) return t('adjust.you')
@@ -107,7 +126,6 @@ export default function CalendarPage() {
     if (next[date]) {
       delete next[date]
       setFlips(next)
-      setLastFlip(null)
       return
     }
     const other = household.members.find((m) => m.id !== day.parent_id)?.id
@@ -118,13 +136,11 @@ export default function CalendarPage() {
       : undefined
     next[date] = { to: other, clearId: adj?.id ?? null }
     setFlips(next)
-    setLastFlip(date)
   }
 
   function startAdjust() {
     setAdjusting(true)
     setFlips({})
-    setLastFlip(null)
     setAdjustNotice(null)
     track(EV.adjustModeOpened, {})
   }
@@ -133,7 +149,6 @@ export default function CalendarPage() {
     if (flipCount > 0) track(EV.adjustModeCancelled, { days: flipCount })
     setAdjusting(false)
     setFlips({})
-    setLastFlip(null)
   }
 
   async function saveAdjust() {
@@ -158,7 +173,6 @@ export default function CalendarPage() {
       )
       setAdjusting(false)
       setFlips({})
-      setLastFlip(null)
       onChanged()
     } catch (err) {
       setError(err instanceof Error ? err.message : t('calendar.genericError'))
@@ -299,23 +313,28 @@ export default function CalendarPage() {
       </div>
       {adjusting && (
         <div className="adjust-bar" role="region" aria-label={t('adjust.open')}>
-          {lastFlip && flips[lastFlip] && (
-            <div className="adjust-toast" role="status">
-              <span>{t('adjust.toast', { day: fmtDay(lastFlip), name: memberName(flips[lastFlip].to) })}</span>
-              <button
-                className="link"
-                onClick={() => {
-                  setFlips((prev) => {
-                    const next = { ...prev }
-                    delete next[lastFlip]
-                    return next
-                  })
-                  setLastFlip(null)
-                }}
-              >
-                {t('adjust.undo')}
-              </button>
-            </div>
+          {recap.length > 0 && (
+            <ul className="adjust-recap" aria-label={t('adjust.recapLabel')}>
+              {recap.map((g) => {
+                const color = household?.members.find((m) => m.id === g.to)?.color ?? '#888888'
+                return (
+                  <li key={g.start}>
+                    <span className="dot" style={{ background: color }} />
+                    <span className="adjust-recap-text">
+                      {t('adjust.recapLine', { dates: fmtRange(g.start, g.end), name: memberName(g.to) })}
+                    </span>
+                    <button
+                      type="button"
+                      className="icon-btn"
+                      aria-label={t('adjust.recapRemove', { dates: fmtRange(g.start, g.end) })}
+                      onClick={() => removeFlips(g.dates)}
+                    >
+                      <Icon name="x" size={14} />
+                    </button>
+                  </li>
+                )
+              })}
+            </ul>
           )}
           <div className="adjust-actions">
             <span className="adjust-count">

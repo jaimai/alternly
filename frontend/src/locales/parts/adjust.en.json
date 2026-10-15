@@ -2,9 +2,7 @@
   "adjust.open": "Adjust my schedule",
   "adjust.hintTitle": "Tap a day to move it to the other parent.",
   "adjust.hintBody": "These are one-off adjustments: your usual schedule stays the same. Tap a customised day to put it back on schedule.",
-  "adjust.toast": "{{day}} moves to {{name}}.",
   "adjust.you": "you",
-  "adjust.undo": "Undo",
   "adjust.countNone": "No day changed",
   "adjust.count_one": "{{count}} day changed",
   "adjust.count_other": "{{count}} days changed",
@@ -18,5 +16,8 @@
   "adjust.noticeConsent": "Request sent to {{name}} to go back to the usual schedule.",
   "adjust.tag": "Customised day",
   "adjust.backToRhythm": "Back to the usual schedule",
-  "calendar.legendAdjusted": "Customised day"
+  "calendar.legendAdjusted": "Customised day",
+  "adjust.recapLabel": "Changed days",
+  "adjust.recapLine": "{{dates}} · with {{name}}",
+  "adjust.recapRemove": "Remove {{dates}}"
 }

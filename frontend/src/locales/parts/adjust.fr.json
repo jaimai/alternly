@@ -2,9 +2,7 @@
   "adjust.open": "Ajuster mon planning",
   "adjust.hintTitle": "Touchez un jour pour le passer chez l'autre parent.",
   "adjust.hintBody": "Ce sont des ajustements ponctuels : votre rythme habituel ne change pas. Touchez un jour personnalisé pour le rendre au rythme.",
-  "adjust.toast": "{{day}} passe chez {{name}}.",
   "adjust.you": "vous",
-  "adjust.undo": "Annuler",
   "adjust.countNone": "Aucun jour modifié",
   "adjust.count_one": "{{count}} jour modifié",
   "adjust.count_other": "{{count}} jours modifiés",
@@ -18,5 +16,8 @@
   "adjust.noticeConsent": "Demande envoyée à {{name}} pour revenir au rythme habituel.",
   "adjust.tag": "Jour personnalisé",
   "adjust.backToRhythm": "Revenir au rythme habituel",
-  "calendar.legendAdjusted": "Jour personnalisé"
+  "calendar.legendAdjusted": "Jour personnalisé",
+  "adjust.recapLabel": "Jours modifiés",
+  "adjust.recapLine": "{{dates}} · chez {{name}}",
+  "adjust.recapRemove": "Retirer {{dates}}"
 }
