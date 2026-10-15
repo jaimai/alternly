@@ -114,7 +114,7 @@ export interface Household {
 export interface CalendarDay {
   date: string
   parent_id: number
-  source: 'rule' | 'vacation' | 'special' | 'exception'
+  source: 'rule' | 'vacation' | 'special' | 'exception' | 'adjustment'
 }
 
 export interface PendingExchange {
@@ -124,6 +124,7 @@ export interface PendingExchange {
   proposed_parent_id: number
   proposed_by: number
   note: string
+  kind?: 'exchange' | 'adjustment'
 }
 
 export interface WallTask {
@@ -184,6 +185,15 @@ export interface ScheduleException {
   resolved_at: string | null
   response_note: string
   replaces_id: number | null
+  /** exchange : échange ; adjustment : jour personnalisé (« Ajuster mon planning »). */
+  kind?: 'exchange' | 'adjustment'
+  group_id?: string | null
+}
+
+export interface AdjustmentsResult {
+  status: 'applied' | 'proposed' | 'pending_consent'
+  created: number
+  cleared: number
 }
 
 export interface Notification {

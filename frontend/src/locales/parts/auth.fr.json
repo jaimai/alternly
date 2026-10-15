@@ -60,5 +60,8 @@
   "auth.consentRequired": "Merci d'accepter les conditions d'utilisation pour créer votre compte.",
   "auth.or": "ou",
   "auth.googleError": "Connexion avec Google impossible. Réessayez.",
-  "auth.googleConsentLead": "En continuant avec Google, vous acceptez les"
+  "auth.googleConsentLead": "En continuant avec Google, vous acceptez les",
+  "auth.toolPrefill": "Zone {{zone}} et votre règle de vacances sont reprises de l'outil : il ne restera que l'enfant et votre rythme.",
+  "auth.googleFastest": "Le plus rapide : un clic avec Google, sans mot de passe à créer.",
+  "auth.useEmail": "S'inscrire avec mon e-mail"
 }

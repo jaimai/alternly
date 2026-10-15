@@ -46,3 +46,29 @@ def vacation_split(
         raise HTTPException(status_code=404, detail=NOT_PUBLISHED)
     response.headers["Cache-Control"] = "public, max-age=3600"
     return result
+
+
+@router.get(
+    "/vacation-year",
+    dependencies=[Depends(rate_limit("vacation_tool", 30, MINUTE))],
+)
+def vacation_year(
+    response: Response,
+    zone: Literal["A", "B", "C"],
+    school_year: str = Query(pattern=r"^\d{4}-\d{4}$"),
+    mode: Literal["split_half", "alternate_full"] = "split_half",
+    even_first: Literal["A", "B"] = "A",
+    db: Session = Depends(get_db),
+):
+    """Toutes les vacances d'une année scolaire avec le même partage (vue « toute l'année »)."""
+    if school_year not in {o["school_year"] for o in vacation_tool.period_options()}:
+        raise HTTPException(
+            status_code=422,
+            detail="Année scolaire hors de la plage proposée (en cours et suivante).",
+        )
+    try:
+        result = vacation_tool.year_overview(db, zone, school_year, mode, even_first)
+    except PublicDataUnavailable:
+        raise HTTPException(status_code=503, detail=UNAVAILABLE)
+    response.headers["Cache-Control"] = "public, max-age=3600"
+    return result

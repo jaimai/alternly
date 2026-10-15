@@ -236,7 +236,59 @@ def vacation_split(db: Session, zone: str, period: str, year: int, mode: str, ev
     return result
 
 
+def year_overview(db: Session, zone: str, school_year: str, mode: str, even_first: str) -> dict:
+    """Toutes les vacances d'une année scolaire (Toussaint → été) avec le même partage,
+    plus les totaux de jours par parent et le prochain passage. Les périodes dont les
+    dates ne sont pas publiées sont omises. Lève PublicDataUnavailable."""
+    y0 = int(school_year[:4])
+    ref = today()
+    periods, totals = [], {p: 0 for p in PARENTS}
+    for key, (_, _, starts_with_rentree) in PERIODS.items():
+        year = y0 if starts_with_rentree else y0 + 1
+        try:
+            r = vacation_split(db, zone, key, year, mode, even_first)
+        except PeriodNotPublished:
+            continue
+        for s in r["segments"]:
+            totals[s["parent"]] += s["days"]
+        periods.append({
+            "key": key,
+            "value": f"{key}-{year}",
+            "name": PERIODS[key][0],
+            "label": r["period"]["label"],
+            "start": r["period"]["start"],
+            "end": r["period"]["end"],
+            "days": r["period"]["days"],
+            "start_label": r["period"]["start_label"],
+            "end_label": r["period"]["end_label"],
+            "year_parity": r["year_parity"],
+            "segments": r["segments"],
+            "handover": r["handover"],
+            "past": date.fromisoformat(r["period"]["end"]) < ref,
+        })
+    upcoming = [p for p in periods if not p["past"]]
+    nxt = upcoming[0] if upcoming else None
+    return {
+        "zone": zone,
+        "school_year": school_year,
+        "mode": mode,
+        "even_first": even_first,
+        "periods": periods,
+        "totals": totals,
+        "next": {
+            "value": nxt["value"],
+            "name": nxt["name"],
+            "start": nxt["start"],
+            "days_until": max((date.fromisoformat(nxt["start"]) - ref).days, 0),
+            "first_parent": nxt["segments"][0]["parent"],
+            "handover": nxt["handover"],
+        } if nxt else None,
+        "source": "Calendrier scolaire officiel (data.education.gouv.fr)",
+    }
+
+
 __all__ = [
     "PARENTS", "ZONES", "MODES", "PERIODS", "PeriodNotPublished", "PublicDataUnavailable",
     "allowed_years", "compute_split", "default_option", "period_options", "vacation_split",
+    "year_overview",
 ]

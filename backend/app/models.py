@@ -172,6 +172,11 @@ class ScheduleException(Base):
     response_note: Mapped[str] = mapped_column(String, default="")
     replaces_id: Mapped[int | None] = mapped_column(ForeignKey("schedule_exceptions.id"), nullable=True)
     reminder_sent_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    # exchange : échange de garde (dialogue jour) ; adjustment : jour personnalisé
+    # posé depuis « Ajuster mon planning » (un jour par ligne, sans toucher au rythme).
+    kind: Mapped[str] = mapped_column(String, default="exchange")
+    # Ajustements proposés ensemble à l'autre parent (même enregistrement).
+    group_id: Mapped[str | None] = mapped_column(String, nullable=True)
 
 
 class Expense(Base):

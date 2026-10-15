@@ -239,6 +239,50 @@ class TestToolPage:
             assert f"({PAGE}" in next(a for a in load_articles() if a.slug == slug).body_md, slug
 
 
+class TestYearView:
+    """Vue « toute l'année » : toutes les vacances de l'année scolaire, même règle."""
+
+    def test_year_api(self, client):
+        resp = client.get("/api/public/vacation-year", params={
+            "zone": "C", "school_year": "2026-2027", "mode": "split_half", "even_first": "A",
+        })
+        assert resp.status_code == 200, resp.text
+        body = resp.json()
+        assert [p["key"] for p in body["periods"]] == ["toussaint", "noel", "hiver", "printemps", "ete"]
+        # 2026 (paire) : A a la 1re moitié ; 2027 (impaire) : B
+        assert [p["segments"][0]["parent"] for p in body["periods"]] == ["A", "A", "B", "B", "B"]
+        assert body["totals"]["A"] + body["totals"]["B"] == sum(p["days"] for p in body["periods"])
+        # hiver zone C décalé (fixture) : bien les dates de la zone demandée
+        assert body["periods"][2]["start"] == "2027-02-21"
+        assert body["next"]["value"] == "toussaint-2026" and body["next"]["days_until"] == 20
+        assert body["next"]["handover"]["label"] == "dim. 25 oct."
+
+    def test_year_api_full_mode_and_bounds(self, client):
+        body = client.get("/api/public/vacation-year", params={
+            "zone": "A", "school_year": "2026-2027", "mode": "alternate_full", "even_first": "B",
+        }).json()
+        assert all(len(p["segments"]) == 1 for p in body["periods"])
+        assert [p["segments"][0]["parent"] for p in body["periods"]] == ["B", "B", "A", "A", "A"]
+        assert body["next"]["handover"] is None
+        bad = client.get("/api/public/vacation-year", params={"zone": "A", "school_year": "2031-2032"})
+        assert bad.status_code == 422
+
+    def test_page_shows_year_with_prefilled_cta(self, client):
+        html = client.get(PAGE, params={"zone": "C", "vacances": "toussaint-2026", "mode": "split_half", "even_first": "A"}).text
+        assert "Toute l'année scolaire 2026-2027" in html
+        assert html.count('<li class="year-period') == 5
+        assert 'data-cta="tool_year"' in html
+        assert "zone=C&amp;vac_mode=split_half" in html
+        assert "dans 20 jours" in html
+        # l'encart générique laisse la place à celui de l'année
+        assert '<aside class="tool-cta" data-cta="tool_result" hidden>' in html
+
+    def test_no_year_without_zone(self, client):
+        html = client.get(PAGE, params={"vacances": "toussaint-2026"}).text
+        assert 'class="year-view" id="year-view"' in html and "Toute l'année scolaire" not in html
+        assert "vac_mode=" not in html
+
+
 class TestSeo:
     def test_sitemap_and_llms(self, client):
         assert f"{PAGE}</loc>" in client.get("/sitemap.xml").text

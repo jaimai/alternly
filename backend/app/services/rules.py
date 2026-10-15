@@ -218,12 +218,14 @@ def exchange_snapshot(exc: ScheduleException) -> dict:
         "parent_id": exc.parent_id,
         "note": exc.note,
         "status": exc.status,
+        "kind": exc.kind or "exchange",
     }
 
 
 def delete_exchange(db: Session, exc: ScheduleException, actor_id: int, cancelled: bool = False) -> None:
+    action = "adjustment.clear" if exc.kind == "adjustment" else "exchange.delete"
     audit.record(
-        db, exc.household_id, actor_id, "exchange.delete", "exception", exc.id,
+        db, exc.household_id, actor_id, action, "exception", exc.id,
         {"before": exchange_snapshot(exc), "cancelled": cancelled},
     )
     # Contre-propositions qui la remplaçaient : lien rompu (clé étrangère replaces_id).

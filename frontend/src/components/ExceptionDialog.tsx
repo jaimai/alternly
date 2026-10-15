@@ -98,7 +98,10 @@ export default function ExceptionDialog({ householdId, date, members, existing, 
   }
 
   const toAnswer = overlapping.some((e) => e.status === 'pending' && e.created_by !== user?.id)
-  const title = solo
+  const adjustedDay = overlapping.some((e) => e.kind === 'adjustment' && e.status === 'accepted')
+  const title = adjustedDay && replacesId === null
+    ? t('adjust.tag')
+    : solo
     ? t('exchange.titleSolo')
     : replacesId !== null
       ? t('exchange.titleCounter')
@@ -117,10 +120,11 @@ export default function ExceptionDialog({ householdId, date, members, existing, 
           return (
             <div key={e.id} className="card inset">
               <p style={{ margin: '0 0 8px' }}>
+                {e.kind === 'adjustment' && <span className="tag tag-adjusted">{t('adjust.tag')}</span>}{' '}
                 {e.status === 'pending' ? (
                   <span className="tag tag-pending">{t('exchange.tagProposed')}</span>
                 ) : (
-                  <span className="tag tag-accepted">{t('exchange.tagConfirmed')}</span>
+                  e.kind !== 'adjustment' && <span className="tag tag-accepted">{t('exchange.tagConfirmed')}</span>
                 )}{' '}
                 {fmtRange(e)} {t('exchange.at')} <strong>{parentName(e.parent_id)}</strong>
                 {e.note && <em> — {e.note}</em>}
@@ -150,7 +154,9 @@ export default function ExceptionDialog({ householdId, date, members, existing, 
               {e.status === 'accepted' && (
                 <button className="danger-link" onClick={() => run(() => api.deleteException(householdId, e.id))} disabled={busy}>
                   {/* Deux parents réels : l'annulation devient une demande à valider par l'autre. */}
-                  {solo ? t('exchange.cancelExchange') : t('exchange.requestCancel')}
+                  {e.kind === 'adjustment' && solo
+                    ? t('adjust.backToRhythm')
+                    : solo ? t('exchange.cancelExchange') : t('exchange.requestCancel')}
                 </button>
               )}
             </div>

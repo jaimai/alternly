@@ -42,6 +42,12 @@ class NoCustodyRule(Exception):
     pass
 
 
+def _exception_priority(e: ScheduleException) -> tuple:
+    """Jours personnalisés d'abord (le plus récent gagne), puis les échanges."""
+    created = e.created_at.timestamp() if e.created_at else 0
+    return (e.kind != "adjustment", -created)
+
+
 def _auto_special_parent(kind: str, members: list, users: dict[int, User], fallback_id: int) -> int:
     """Mode auto : fête des mères → parent «mère» non déterminable sans genre ;
     convention MVP : parent1 pour mothers_day, parent2 pour fathers_day (modifiable en mode fixed)."""
@@ -142,9 +148,10 @@ def build_calendar(db: Session, household: Household, start: date, end: date) ->
         select(ScheduleException).where(ScheduleException.household_id == household.id)
     ).all()
     # Seuls les échanges acceptés modifient la garde résolue.
+    # Les jours personnalisés passent avant les échanges qui les recouvrent.
     exceptions = [
-        EngineException(start=e.date_start, end=e.date_end, parent=str(e.parent_id))
-        for e in all_exceptions
+        EngineException(start=e.date_start, end=e.date_end, parent=str(e.parent_id), kind=e.kind or "exchange")
+        for e in sorted(all_exceptions, key=_exception_priority)
         if e.status == "accepted"
     ]
     # Propositions en attente non expirées, recoupant la plage demandée (overlay provisoire).

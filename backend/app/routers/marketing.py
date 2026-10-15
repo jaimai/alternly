@@ -107,6 +107,14 @@ TOOL_PATH = "/outils/vacances-garde-alternee"
 TOOL_TITLE = "Qui a les enfants pendant les vacances ?"
 TOOL_CTA = "/register?lang=fr&utm_source=outil&utm_medium=web&utm_campaign=toussaint-2026"
 
+def tool_cta_href(form: dict | None) -> str:
+    """Lien d'inscription ; avec un calcul fait, la zone et la règle de vacances sont
+    passées pour pré-remplir l'onboarding (l'inscrit n'a pas à les refaire)."""
+    if not form:
+        return TOOL_CTA
+    return f"{TOOL_CTA}&zone={form['zone']}&vac_mode={form['mode']}"
+
+
 # Rattachement des académies (métropole) aux zones de vacances.
 ZONE_ACADEMIES = {
     "A": "Besançon, Bordeaux, Clermont-Ferrand, Dijon, Grenoble, Limoges, Lyon, Poitiers",
@@ -212,6 +220,16 @@ def tool_vacation_split(request: Request, db: Session = Depends(get_db)):
         except vacation_tool.PeriodNotPublished:
             error = ("Les dates officielles de ces vacances ne sont pas encore publiées "
                      "pour cette zone. Choisissez une autre période.")
+    year = None
+    if result is not None:
+        # Vue « toute l'année » : les autres vacances de la même année scolaire,
+        # avec la même règle (données en cache, déjà chargées pour la période).
+        try:
+            year = vacation_tool.year_overview(
+                db, form["zone"], result["period"]["school_year"], form["mode"], form["even_first"]
+            )
+        except PublicDataUnavailable:
+            year = None
     quick = None
     if not submitted and "vacances" in request.query_params:
         # Arrivée depuis une annonce ou un lien (?vacances=… sans zone) : si les dates
@@ -227,11 +245,13 @@ def tool_vacation_split(request: Request, db: Session = Depends(get_db)):
             "form": form,
             "options": vacation_tool.period_options(),
             "result": result,
+            "year": year,
             "quick": quick,
             "error": error,
             "zones": ZONE_ACADEMIES,
             "faq": TOOL_FAQ,
-            "cta_href": TOOL_CTA,
+            "cta_href": tool_cta_href(form if submitted else None),
+            "cta_base": TOOL_CTA,
             "tool_title": TOOL_TITLE,
             "canonical": f"{site_base(request)}{TOOL_PATH}",
         },

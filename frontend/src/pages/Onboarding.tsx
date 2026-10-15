@@ -10,6 +10,7 @@ import Spinner from '../components/Spinner'
 import RuleWizard from '../components/RuleWizard'
 import type { RuleFormValue } from '../components/RuleForm'
 import type { Country, Household } from '../types'
+import { clearToolPrefill, readToolPrefill } from '../toolPrefill'
 
 export default function OnboardingPage() {
   const { t, i18n } = useTranslation()
@@ -23,7 +24,9 @@ export default function OnboardingPage() {
   const [name, setName] = useState('')
   const [country, setCountry] = useState<Country>(i18n.language.startsWith('en') ? 'US' : 'FR')
   const countryTouched = useRef(false)
-  const [zone, setZone] = useState<'A' | 'B' | 'C'>('A')
+  // Réglages repris de l'outil vacances du site, s'il a précédé l'inscription.
+  const [prefill] = useState(readToolPrefill)
+  const [zone, setZone] = useState<'A' | 'B' | 'C'>(prefill.zone ?? 'A')
 
   // Défaut du pays selon la langue du compte, une fois l'utilisateur chargé
   // (sauf si le parent a déjà choisi manuellement).
@@ -62,7 +65,9 @@ export default function OnboardingPage() {
         school_zone: zone,
       })
       setHousehold(h)
-      track(EV.onboardingStepCompleted, { step: 'household', country, zone: country === 'FR' ? zone : null })
+      track(EV.onboardingStepCompleted, {
+        step: 'household', country, zone: country === 'FR' ? zone : null, from_tool: Boolean(prefill.zone),
+      })
       setStep(1)
     } catch (err) {
       setError(err instanceof Error ? err.message : t('onboarding.errorGeneric'))
@@ -98,6 +103,7 @@ export default function OnboardingPage() {
       await api.setCustodyRule(household.id, value.custody)
       await api.setVacationRule(household.id, value.vacation)
       await refreshHousehold()  // met à jour le cache avant d'entrer dans l'app
+      clearToolPrefill()
       if (restart) {
         track(EV.custodyRuleSaved, { pattern: value.custody.pattern, source: 'restart' })
         navigate('/app', { replace: true })
@@ -255,7 +261,10 @@ export default function OnboardingPage() {
             myId={user.id}
             childNames={household.children.map((c) => c.first_name)}
             initialCustody={household.custody_rule}
-            initialVacation={household.vacation_rule}
+            initialVacation={
+              household.vacation_rule
+              ?? (prefill.vacMode ? { mode: prefill.vacMode, even_year_first_half_parent_id: null } : null)
+            }
             busy={busy}
             onSubmit={saveRules}
           />

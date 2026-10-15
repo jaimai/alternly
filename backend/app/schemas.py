@@ -263,6 +263,8 @@ class ExceptionOut(ORMModel):
     resolved_at: datetime | None
     response_note: str
     replaces_id: int | None
+    kind: str = "exchange"
+    group_id: str | None = None
 
 
 class PendingExchange(BaseModel):
@@ -272,6 +274,25 @@ class PendingExchange(BaseModel):
     proposed_parent_id: int
     proposed_by: int
     note: str
+    kind: str = "exchange"
+
+
+class AdjustmentDay(BaseModel):
+    date: date
+    parent_id: int
+
+
+class AdjustmentsIn(BaseModel):
+    """« Ajuster mon planning » : jours à personnaliser et jours à rendre au rythme."""
+    set: list[AdjustmentDay] = Field(default_factory=list, max_length=62)
+    clear: list[int] = Field(default_factory=list, max_length=62)
+    note: str = Field(default="", max_length=NOTE_MAX)
+
+
+class AdjustmentsOut(BaseModel):
+    status: str  # applied | proposed | pending_consent
+    created: int
+    cleared: int
 
 
 class InvitationOut(BaseModel):
@@ -326,7 +347,7 @@ class InvitationSchedulePreview(BaseModel):
 class CalendarDay(BaseModel):
     date: date
     parent_id: int
-    source: str  # rule | vacation | special | exception
+    source: str  # rule | vacation | special | exception | adjustment
 
 
 class LabeledDate(BaseModel):
