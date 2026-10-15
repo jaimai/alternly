@@ -2354,7 +2354,8 @@ button.wz-day, .wz-day {
   content: ''; position: absolute; top: 6px; right: 6px;
   width: 7px; height: 7px; border-radius: 50%; background: var(--ink);
 }
-.fc td.adj-pending .fc-daygrid-day-frame { box-shadow: inset 0 0 0 2.5px var(--ink); }
+.fc td.adj-pending .fc-daygrid-day-frame,
+.fc td.adj-pending:hover .fc-daygrid-day-frame { box-shadow: inset 0 0 0 2.5px var(--ink); }
 .dot.adjusted-dot { width: 7px; height: 7px; background: var(--ink); }
 .tag-adjusted { background: var(--ink); color: #fff; }
 .adjust-bar {
@@ -2362,11 +2363,19 @@ button.wz-day, .wz-day {
   max-width: 720px; margin: 12px auto 0; padding: 0 12px;
   display: flex; flex-direction: column; gap: 8px;
 }
-.adjust-toast {
-  display: flex; align-items: center; gap: 12px; justify-content: space-between;
-  background: var(--ink); color: #fff; border-radius: 14px; padding: 10px 14px; font-size: 0.92rem;
+.adjust-recap {
+  list-style: none; margin: 0; padding: 8px 10px; display: flex; flex-direction: column; gap: 2px;
+  background: #fff; border: 1px solid var(--line); border-radius: 14px;
+  max-height: 168px; overflow-y: auto;
 }
-.adjust-toast button.link { color: #fff; font-weight: 600; }
+.adjust-recap li { display: flex; align-items: center; gap: 8px; font-size: 0.92rem; min-height: 36px; }
+.adjust-recap .dot { flex: none; margin: 0; }
+.adjust-recap-text { flex: 1; }
+.adjust-recap .icon-btn {
+  width: 36px; height: 36px; display: grid; place-items: center; flex: none;
+  border: 0; border-radius: 10px; background: transparent; color: var(--ink-soft); cursor: pointer; padding: 0;
+}
+.adjust-recap .icon-btn:hover { background: var(--paper-deep, #f3ecdf); color: var(--ink); }
 .adjust-actions {
   display: flex; align-items: center; gap: 8px;
   background: #fff; border: 1px solid var(--line); border-radius: 18px; padding: 10px 12px;
@@ -2377,3 +2386,6 @@ button.wz-day, .wz-day {
   .adjust-bar { bottom: calc(76px + env(safe-area-inset-bottom)); padding: 0; }
   .adjust-entry > button { align-self: stretch; justify-content: center; }
 }
+.adjust-recap .dot { width: 12px; height: 12px; border-radius: 4px; display: inline-block; }
+/* Pendant l'ajustement, la bulle d'avis ne masque pas « Enregistrer ». */
+body:has(.adjust-bar) .feedback-fab { display: none; }
