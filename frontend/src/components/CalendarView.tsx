@@ -16,6 +16,9 @@ interface Props {
   data: CalendarResponse
   onDayClick: (date: string) => void
   onRangeChange: (start: string, end: string) => void
+  /** « Ajuster mon planning » : jours touchés (date → parent visé), affichés tels qu'ils seront. */
+  flips?: Record<string, number>
+  adjusting?: boolean
 }
 
 const SOURCE_ICONS: Record<string, IconName> = {
@@ -51,7 +54,7 @@ function renderEvent(arg: EventContentArg) {
   )
 }
 
-export default function CalendarView({ data, onDayClick, onRangeChange }: Props) {
+export default function CalendarView({ data, onDayClick, onRangeChange, flips, adjusting = false }: Props) {
   const { t, i18n } = useTranslation()
   const mobile = useIsMobile()
   const prevStart = useRef<number | null>(null)
@@ -63,17 +66,18 @@ export default function CalendarView({ data, onDayClick, onRangeChange }: Props)
 
   // Garde jour par jour + jour de passage (le parent change par rapport à la veille).
   const custody = useMemo(() => {
-    const byDate = new Map<string, { parent: number; from: number | null }>()
+    const byDate = new Map<string, { parent: number; from: number | null; adjusted: boolean; flipped: boolean }>()
     const sorted = [...data.days].sort((a, b) => a.date.localeCompare(b.date))
     let prev: { date: string; parent: number } | null = null
     for (const d of sorted) {
-      const from =
-        prev && prev.parent !== d.parent_id && addDays(prev.date, 1) === d.date ? prev.parent : null
-      byDate.set(d.date, { parent: d.parent_id, from })
-      prev = { date: d.date, parent: d.parent_id }
+      const target = flips?.[d.date]
+      const parent = target ?? d.parent_id
+      const from = prev && prev.parent !== parent && addDays(prev.date, 1) === d.date ? prev.parent : null
+      byDate.set(d.date, { parent, from, adjusted: d.source === 'adjustment', flipped: target !== undefined })
+      prev = { date: d.date, parent }
     }
     return byDate
-  }, [data.days])
+  }, [data.days, flips])
 
   // Couleurs des parents injectées en CSS : une tuile teintée par jour, et un
   // dégradé diagonal les jours de passage (ancien parent → nouveau parent).
@@ -145,7 +149,7 @@ export default function CalendarView({ data, onDayClick, onRangeChange }: Props)
   }, [data, memberById, t])
 
   return (
-    <div className="calendar-shell ph-mask ph-sensitive">
+    <div className={`calendar-shell ph-mask ph-sensitive${adjusting ? ' is-adjusting' : ''}`}>
       <style>{paletteCss}</style>
       <FullCalendar
         plugins={[dayGridPlugin, interactionPlugin]}
@@ -161,7 +165,10 @@ export default function CalendarView({ data, onDayClick, onRangeChange }: Props)
         dayCellClassNames={(arg) => {
           const c = custody.get(isoLocal(arg.date))
           if (!c) return []
-          return c.from !== null ? [`p-${c.parent}`, `from-${c.from}`, 'handover'] : [`p-${c.parent}`]
+          const cls = c.from !== null ? [`p-${c.parent}`, `from-${c.from}`, 'handover'] : [`p-${c.parent}`]
+          if (c.flipped) cls.push('adj-pending')
+          else if (c.adjusted) cls.push('adjusted')
+          return cls
         }}
         dateClick={(info) => onDayClick(info.dateStr)}
         eventClick={(info) => {

@@ -362,6 +362,21 @@ def _render(ctx: Ctx, action: str, d: dict, db: Session) -> str:  # noqa: C901 �
             "a proposé un échange : ", "proposed a swap: "
         )
         return verb + exchange_label(ctx, d["after"])
+    if action == "adjustment.apply":
+        days = d.get("days") or []
+        n = len(days)
+        if d.get("solo"):
+            verb = t(f"a personnalisé {n} jour{'s' if n > 1 else ''} : ", f"customised {n} day{'s' if n > 1 else ''}: ")
+        else:
+            verb = t(
+                f"a proposé de personnaliser {n} jour{'s' if n > 1 else ''} : ",
+                f"proposed to customise {n} day{'s' if n > 1 else ''}: ",
+            )
+        return verb + ", ".join(exchange_label(ctx, x) for x in days)
+    if action == "adjustment.clear":
+        return t("a remis au rythme habituel : ", "put back on the usual schedule: ") + ctx.range(
+            d["before"]["date_start"], d["before"]["date_end"]
+        )
     if action in _EXCHANGE_VERBS:
         return t(*_EXCHANGE_VERBS[action]) + exchange_label(ctx, d["after"])
     if action == "exchange.delete":

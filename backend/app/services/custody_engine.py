@@ -59,6 +59,7 @@ class EngineException:
     start: date
     end: date
     parent: str
+    kind: str = "exchange"  # exchange | adjustment (jour personnalisé)
 
 
 # Motif 2-2-3 standard sur 14 jours, ancré au lundi :
@@ -229,7 +230,8 @@ def resolve_calendar(
         assignment = None
         for exc in exceptions:
             if exc.start <= day <= exc.end:
-                assignment = DayAssignment(day, exc.parent, "exception")
+                source = "adjustment" if exc.kind == "adjustment" else "exception"
+                assignment = DayAssignment(day, exc.parent, source)
                 break
         if assignment is None and day in special_dates:
             assignment = DayAssignment(day, special_dates[day], "special")

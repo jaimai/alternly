@@ -1,4 +1,5 @@
-from datetime import date
+import uuid
+from datetime import date, timedelta
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from sqlalchemy import select
@@ -13,6 +14,8 @@ from ..services import change_requests as cr_service
 from ..services import email as email_service
 from ..services import rules as rules_service
 from ..schemas import (
+    AdjustmentsIn,
+    AdjustmentsOut,
     CustodyRuleIn,
     CustodyRuleOut,
     ExceptionIn,
@@ -317,3 +320,119 @@ def delete_exception(
     )
     rules_service.delete_exchange(db, exc, member.user_id)
     db.commit()
+
+
+# ------------------------------------------------- « Ajuster mon planning »
+# Jours personnalisés : des exceptions d'un jour (kind="adjustment"), jamais une
+# nouvelle règle de rythme. Seul, le parent les applique directement ; avec un
+# autre parent connecté, elles lui sont proposées ensemble (même group_id).
+
+ADJUST_WINDOW_DAYS = 400
+
+
+@router.post(
+    "/adjustments",
+    response_model=AdjustmentsOut,
+    dependencies=[Depends(rate_limit("adjustments", 60, DAY, by="household"))],
+)
+def save_adjustments(
+    data: AdjustmentsIn,
+    background: BackgroundTasks,
+    member: HouseholdMember = Depends(get_membership),
+    db: Session = Depends(get_db),
+):
+    hid = member.household_id
+    today = date.today()
+    window = timedelta(days=ADJUST_WINDOW_DAYS)
+    days = {d.date: d.parent_id for d in data.set}  # un même jour envoyé deux fois : le dernier gagne
+    for day, parent_id in days.items():
+        if not (today - window <= day <= today + window):
+            raise HTTPException(status_code=422, detail="Date hors de la plage autorisée")
+        rules_service.check_parent(db, hid, parent_id)
+    if not days and not data.clear:
+        raise HTTPException(status_code=422, detail="Aucun jour à ajuster")
+
+    recipient_id = other_parent_id(db, hid, member.user_id)
+    solo = recipient_id is None
+    existing = db.scalars(
+        select(ScheduleException).where(
+            ScheduleException.household_id == hid,
+            ScheduleException.kind == "adjustment",
+            ScheduleException.status.in_(("accepted", "pending")),
+        )
+    ).all()
+
+    cleared, consent_needed = 0, False
+    clear_ids = set(data.clear)
+    # Un jour reposé remplace l'ajustement déjà présent sur ce jour.
+    for exc in existing:
+        if exc.date_start in days and (solo or exc.status == "pending"):
+            clear_ids.add(exc.id)
+    for exc_id in clear_ids:
+        exc = db.get(ScheduleException, exc_id)
+        if exc is None or exc.household_id != hid or exc.kind != "adjustment":
+            raise HTTPException(status_code=404, detail="Jour personnalisé introuvable")
+        if exc.status == "pending":
+            if exc.created_by != member.user_id:
+                raise HTTPException(status_code=403, detail="Cette proposition attend votre réponse")
+            exc.status = "withdrawn"
+            exc.resolved_at = utcnow()
+            cleared += 1
+        elif exc.status == "accepted":
+            if cr_service.needs_consent(db, member):
+                # Revenir sur un jour convenu engage les deux parents.
+                cr_service.create_request(
+                    db, member, "cancel_exchange", {"exception_id": exc.id},
+                    {"date_start": exc.date_start, "date_end": exc.date_end, "parent_id": exc.parent_id},
+                )
+                consent_needed = True
+            else:
+                rules_service.delete_exchange(db, exc, member.user_id)
+                cleared += 1
+
+    group_id = None if solo else uuid.uuid4().hex
+    created = []
+    for day, parent_id in sorted(days.items()):
+        exc = ScheduleException(
+            household_id=hid,
+            date_start=day,
+            date_end=day,
+            parent_id=parent_id,
+            note=data.note,
+            created_by=member.user_id,
+            kind="adjustment",
+            group_id=group_id,
+            status="accepted" if solo else "pending",
+            resolved_by=member.user_id if solo else None,
+            resolved_at=utcnow() if solo else None,
+        )
+        db.add(exc)
+        created.append(exc)
+    db.flush()
+    if created:
+        audit.record(
+            db, hid, member.user_id, "adjustment.apply", "exception", created[0].id,
+            {"days": [rules_service.exchange_snapshot(e) for e in created], "solo": solo},
+        )
+    if created and not solo:
+        payload = {
+            "id": created[0].id,
+            "date_start": created[0].date_start.isoformat(),
+            "date_end": created[-1].date_start.isoformat(),
+            "note": data.note,
+        }
+        notify(db, recipient_id, "exchange_proposed", payload)
+        recipient = db.get(User, recipient_id)
+        if recipient is not None and recipient.email_opt_in and is_premium(db, recipient):
+            subject, html = email_service.exchange_proposed_email(payload, recipient.locale)
+            background.add_task(email_service.send_email, recipient.email, subject, html)
+    db.commit()
+    analytics.capture_for_member(db, member, "adjustments_saved", {
+        "solo": solo,
+        "set": len(created),
+        "cleared": cleared,
+        "consent_needed": consent_needed,
+        "span_days": (max(days) - min(days)).days + 1 if days else 0,
+    })
+    status = "applied" if solo else ("proposed" if created else "pending_consent" if consent_needed else "applied")
+    return AdjustmentsOut(status=status, created=len(created), cleared=cleared)

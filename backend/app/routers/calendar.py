@@ -85,6 +85,7 @@ def get_calendar(
                 proposed_parent_id=e.parent_id,
                 proposed_by=e.created_by,
                 note=e.note,
+                kind=e.kind or "exchange",
             )
             for e in data.pending_exchanges
         ],

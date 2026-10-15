@@ -35,6 +35,8 @@ export const EV = {
   exchangeRefused: 'exchange_refused',
   exchangeWithdrawn: 'exchange_withdrawn',
   exchangeDeleted: 'exchange_deleted',
+  adjustModeOpened: 'adjust_mode_opened', // « Ajuster mon planning » ouvert
+  adjustModeCancelled: 'adjust_mode_cancelled', // days: jours touchés puis abandonnés
   changeRequestCreated: 'change_request_created', // kind
   changeRequestAccepted: 'change_request_accepted', // kind
   changeRequestRefused: 'change_request_refused', // kind

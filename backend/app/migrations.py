@@ -17,6 +17,8 @@ _ADD_COLUMNS: dict[str, dict[str, str]] = {
         "response_note": "VARCHAR",
         "replaces_id": "INTEGER",
         "reminder_sent_at": "TIMESTAMP",
+        "kind": "VARCHAR",
+        "group_id": "VARCHAR",
     },
     "users": {
         "email_opt_in": "BOOLEAN",
@@ -96,6 +98,7 @@ def run_migrations(engine: Engine) -> None:
             conn.execute(
                 text("UPDATE schedule_exceptions SET response_note = '' WHERE response_note IS NULL")
             )
+            conn.execute(text("UPDATE schedule_exceptions SET kind = 'exchange' WHERE kind IS NULL"))
         # Les comptes existants reçoivent les e-mails par défaut.
         # TRUE (et non 1) : Postgres est strict sur le type booléen, SQLite l'accepte aussi.
         if "users" in existing_tables:
