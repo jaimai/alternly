@@ -54,10 +54,13 @@ function loadGsi(): Promise<void> {
 export default function GoogleButton({
   text = 'continue_with',
   consent = false,
+  onUnavailable,
 }: {
   text?: 'continue_with' | 'signin_with' | 'signup_with'
   /** Rappel des CGU sous le bouton (création de compte possible). */
   consent?: boolean
+  /** Google indisponible (non configuré, script bloqué) : la page affiche son formulaire. */
+  onUnavailable?: () => void
 }) {
   const box = useRef<HTMLDivElement>(null)
   const [error, setError] = useState<string | null>(null)
@@ -68,7 +71,10 @@ export default function GoogleButton({
   const { t, i18n } = useTranslation()
 
   useEffect(() => {
-    if (!GOOGLE_CLIENT_ID) return
+    if (!GOOGLE_CLIENT_ID) {
+      onUnavailable?.()
+      return
+    }
     let alive = true
     loadGsi()
       .then(() => {
@@ -103,11 +109,15 @@ export default function GoogleButton({
           locale: i18n.language.startsWith('en') ? 'en' : 'fr',
         })
       })
-      .catch(() => alive && setUnavailable(true))
+      .catch(() => {
+        if (!alive) return
+        setUnavailable(true)
+        onUnavailable?.()
+      })
     return () => {
       alive = false
     }
-  }, [i18n.language, navigate, setUser, t, text])
+  }, [i18n.language, navigate, setUser, t, text, onUnavailable])
 
   if (!GOOGLE_CLIENT_ID || unavailable) return null
   const legal = (page: 'terms' | 'privacy') => (i18n.language.startsWith('en') ? `/en/${page}` : `/${page}`)

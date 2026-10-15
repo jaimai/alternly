@@ -2330,3 +2330,9 @@ button.wz-day, .wz-day {
 @media (prefers-reduced-motion: reduce) {
   .wz-day.editable, .wz-progress span { transition: none; }
 }
+
+/* Inscription : Google proposé d'abord, formulaire e-mail à la demande */
+.signup-fastest {
+  text-align: center;
+  margin: 0 0 12px;
+}

@@ -391,6 +391,17 @@ h2 { font-size: clamp(1.6rem, 3.2vw, 2.3rem); }
 .post-body th { background: var(--paper-deep); font-weight: 600; }
 .post-body blockquote { border-left: 3px solid var(--terra); margin: 18px 0; padding: 4px 18px; color: var(--ink-soft); background: var(--paper-deep); border-radius: 0 8px 8px 0; }
 .post-body code { background: var(--paper-deep); border-radius: 5px; padding: 1px 6px; font-size: 0.9em; }
+.post-tool {
+  display: flex; gap: 14px 20px; align-items: center; justify-content: space-between; flex-wrap: wrap;
+  background: var(--terra-soft); border-radius: var(--radius); padding: 18px 20px; margin: 22px 0 26px;
+}
+.post-tool > div { flex: 1 1 260px; }
+.post-body .post-tool p { margin: 0; }
+.post-body .post-tool-kicker { color: #8a4527; font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; }
+.post-body .post-tool-title { font-family: var(--font-display); font-size: 1.25rem; font-weight: 650; margin-top: 2px; margin-bottom: 4px; color: var(--ink); }
+.post-body .post-tool-text { color: #6b4a3a; font-size: 0.95rem; }
+.post-tool .cta { white-space: nowrap; }
+@media (max-width: 640px) { .post-tool .cta { width: 100%; text-align: center; } }
 .post-cta {
   margin-top: 48px;
   background: var(--sage);

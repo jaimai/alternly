@@ -21,7 +21,19 @@
     <h1>{{ article.title }}</h1>
     <time datetime="{{ article.date.isoformat() }}">{{ article.date | date_fr }}</time>
     <div class="post-body">
-      {{ body | safe }}
+      {#- Encart outil juste après l'introduction : les lecteurs des guides ne
+          descendaient pas jusqu'à l'appel en fin d'article (0 clic sur 30 jours). #}
+      {%- set parts = body.split('</p>', 1) if '</p>' in body else [body] %}
+      {{ parts[0] | safe }}{% if parts | length > 1 %}</p>
+      <aside class="post-tool" data-cta="blog_tool">
+        <div>
+          <p class="post-tool-kicker">Outil gratuit · 10 secondes</p>
+          <p class="post-tool-title">Qui a les enfants pendant les vacances&nbsp;?</p>
+          <p class="post-tool-text">Votre zone, votre règle (moitié/moitié, années paires/impaires)&nbsp;: les dates exactes de toute l'année, passages de bras compris.</p>
+        </div>
+        <a class="cta" href="/outils/vacances-garde-alternee">Calculer mes vacances</a>
+      </aside>
+      {{ parts[1] | safe }}{% endif %}
     </div>
     <aside class="post-cta">
       <h3>Marre de recalculer à la main&nbsp;?</h3>

@@ -124,3 +124,15 @@ def test_llms_txt_has_quick_answers(client):
     assert "## Réponses rapides" in text
     assert "19 décembre 2026" in text
     assert "/blog/calcul-pension-alimentaire-garde-alternee-exemples" in text
+
+
+def test_blog_post_has_tool_box_after_intro(client):
+    # Encart « outil vacances » juste après le premier paragraphe (lecteurs des guides
+    # qui ne descendaient pas jusqu'à l'appel de fin d'article).
+    html = client.get("/blog/planning-garde-alternee-choisir-rythme").text
+    body = html[html.index('class="post-body"'):]
+    box = body.index('data-cta="blog_tool"')
+    assert body.index("</p>") < box
+    assert body.count("<p>", 0, box) == 1  # un seul paragraphe d'article avant l'encart
+    assert 'href="/outils/vacances-garde-alternee"' in body[box:box + 800]
+    assert html.count('data-cta="blog_tool"') == 1

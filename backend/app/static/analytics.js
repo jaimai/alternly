@@ -251,6 +251,8 @@
         if (slug) { props.slug = slug; track('blog_cta_clicked', props); }
         else if (tool) { props.tool = tool; track('tool_cta_clicked', props); }
         else track('landing_cta_clicked', props);
+      } else if (slug && href.indexOf('/outils/') === 0) {
+        track('blog_tool_clicked', { slug: slug, location: ctaLocation(a), lang: LANG });
       }
     });
 

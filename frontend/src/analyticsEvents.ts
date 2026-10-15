@@ -8,6 +8,7 @@
 export const EV = {
   // Acquisition / compte
   signupStarted: 'signup_started', // method: email|google
+  signupEmailOpened: 'signup_email_opened', // inscription : formulaire e-mail ouvert (Google proposé d'abord)
   signedUp: 'signed_up', // method, via_invite, utm_*
   login: 'login', // method
   passwordResetRequested: 'password_reset_requested',

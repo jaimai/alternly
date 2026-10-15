@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
@@ -23,6 +23,10 @@ export default function RegisterPage() {
   const [busy, setBusy] = useState(false)
   // Arrivée depuis l'outil vacances : zone et règle reprises dans l'onboarding.
   const [prefill] = useState(() => saveToolPrefill(new URLSearchParams(window.location.search)))
+  // Google d'abord (un clic, sans mot de passe) : le formulaire e-mail s'ouvre à la
+  // demande, ou d'emblée si Google n'est pas disponible.
+  const [showEmail, setShowEmail] = useState(!import.meta.env.VITE_GOOGLE_CLIENT_ID)
+  const googleUnavailable = useCallback(() => setShowEmail(true), [])
   const { setUser } = useAuth()
   const navigate = useNavigate()
   const { t, i18n } = useTranslation()
@@ -67,7 +71,24 @@ export default function RegisterPage() {
       <form className="card" onSubmit={submit}>
         <h2>{t('auth.registerTitle')}</h2>
         {prefill?.zone && <p className="hint">{t('auth.toolPrefill', { zone: prefill.zone })}</p>}
-        <GoogleButton text="signup_with" consent />
+        {!showEmail && <p className="hint signup-fastest">{t('auth.googleFastest')}</p>}
+        <GoogleButton text="signup_with" consent onUnavailable={googleUnavailable} />
+        {!showEmail ? (
+          <p style={{ margin: '10px 0 14px' }}>
+            <button
+              type="button"
+              className="secondary"
+              style={{ width: '100%' }}
+              onClick={() => {
+                setShowEmail(true)
+                track(EV.signupEmailOpened, {})
+              }}
+            >
+              {t('auth.useEmail')}
+            </button>
+          </p>
+        ) : (
+        <>
         <label htmlFor="name">{t('auth.firstNameLabel')}</label>
         <input id="name" value={displayName} onChange={(e) => setDisplayName(e.target.value)} required maxLength={50} />
         <label htmlFor="email">{t('auth.emailLabel')}</label>
@@ -106,6 +127,8 @@ export default function RegisterPage() {
             {busy ? t('auth.registerBusy') : t('auth.registerSubmit')}
           </button>
         </p>
+        </>
+        )}
         <p style={{ textAlign: 'center', margin: 0 }}>
           {t('auth.haveAccountPrompt')} <Link to="/login">{t('auth.loginLink')}</Link>
         </p>
