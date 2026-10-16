@@ -119,3 +119,26 @@ class TestCheckoutSync:
     def test_rejects_malformed_id(self, client, auth_headers):
         headers, _ = auth_headers()
         assert client.post("/api/billing/sync-checkout", json={"transaction_id": "../x"}, headers=headers).status_code == 422
+
+
+class TestPaddleSync:
+    def test_catches_up_missed_webhooks(self, client, auth_headers, db_session, monkeypatch):
+        headers, user = auth_headers()
+        monkeypatch.setattr(settings, "cron_secret", "k", raising=False)
+        monkeypatch.setattr(paddle_api, "list_subscriptions", lambda: [
+            {"id": "sub_a", "status": "active", "customer_id": "ctm_a",
+             "custom_data": {"user_id": str(user["id"])},
+             "current_billing_period": {"ends_at": "2027-10-16T00:00:00Z"}},
+            {"id": "sub_orphan", "status": "active", "custom_data": {}},
+        ])
+        assert client.post("/api/cron/paddle-sync").status_code == 401
+        resp = client.post("/api/cron/paddle-sync", headers={"X-Cron-Key": "k"})
+        assert resp.status_code == 200, resp.text
+        body = resp.json()
+        assert body["subscriptions"] == 2 and body["unmatched"] == ["sub_orphan"]
+        assert [(x["user_id"], x["after"]) for x in body["updated"]] == [(user["id"], "active")]
+        u = db_session.get(User, user["id"])
+        db_session.refresh(u)
+        assert (u.subscription_status, u.paddle_subscription_id) == ("active", "sub_a")
+        # deuxième passage : rien ne change
+        assert client.post("/api/cron/paddle-sync", headers={"X-Cron-Key": "k"}).json()["updated"] == []

@@ -15,7 +15,7 @@ from ..db import get_db
 from ..deps import is_premium, other_parent_id
 from ..models import ScheduleException, User, utcnow
 from ..services import email as email_service
-from ..services import handover_reminders, invite_reminders, lifecycle
+from ..services import handover_reminders, invite_reminders, lifecycle, paddle_api
 
 router = APIRouter(prefix="/api/cron", tags=["cron"])
 
@@ -97,3 +97,33 @@ def handover_reminders_job(
     """Push la veille d'un changement de parent (lancé le soir). Idempotent (email_log)."""
     _authorize(x_cron_key)
     return handover_reminders.run(db)
+
+
+@router.post("/paddle-sync")
+def paddle_sync(
+    x_cron_key: str | None = Header(default=None),
+    db: Session = Depends(get_db),
+):
+    """Relit tous les abonnements chez Paddle et met les comptes à jour (rattrapage
+    des webhooks manqués, ex. destination configurée après des paiements)."""
+    _authorize(x_cron_key)
+    from .billing import _apply_subscription, _find_user, _track_billing  # import local : évite le cycle
+
+    try:
+        subs = paddle_api.list_subscriptions()
+    except paddle_api.PaddleUnavailable as e:
+        raise HTTPException(status_code=503, detail=str(e))
+    updated, unmatched, tracked = [], [], []
+    for sub in subs:
+        user = _find_user(db, sub)
+        if user is None:
+            unmatched.append(sub.get("id"))
+            continue
+        before = user.subscription_status
+        tracked.extend(_apply_subscription(db, user, sub, canceled=sub.get("status") == "canceled"))
+        if user.subscription_status != before:
+            updated.append({"user_id": user.id, "before": before, "after": user.subscription_status})
+    db.commit()
+    for u, name, payload in tracked:
+        _track_billing(db, u, name, payload)
+    return {"subscriptions": len(subs), "updated": updated, "unmatched": unmatched}

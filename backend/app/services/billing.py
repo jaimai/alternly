@@ -47,18 +47,26 @@ def trial_days_left(status: str, trial_ends_at, now: datetime) -> int | None:
 
 
 def verify_signature(raw_body: bytes, signature_header: str | None, secret: str) -> bool:
-    """Vérifie l'en-tête `Paddle-Signature: ts=..;h1=..` (HMAC-SHA256 de `ts:body`)."""
+    """Vérifie l'en-tête `Paddle-Signature: ts=..;h1=..` (HMAC-SHA256 de `ts:body`).
+
+    Paddle peut envoyer plusieurs `h1` (rotation du secret) : un seul doit correspondre.
+    Le secret est lu sans espaces ni retour à la ligne parasites (copier-coller).
+    """
+    secret = (secret or "").strip()
     if not secret or not signature_header:
         return False
-    parts = dict(
-        p.split("=", 1) for p in signature_header.split(";") if "=" in p
-    )
-    ts, h1 = parts.get("ts"), parts.get("h1")
-    if not ts or not h1:
+    ts, candidates = None, []
+    for part in signature_header.split(";"):
+        key, _, value = part.strip().partition("=")
+        if key == "ts":
+            ts = value
+        elif key == "h1" and value:
+            candidates.append(value)
+    if not ts or not candidates:
         return False
     signed = f"{ts}:".encode() + raw_body
     expected = hmac.new(secret.encode(), signed, hashlib.sha256).hexdigest()
-    return hmac.compare_digest(expected, h1)
+    return any(hmac.compare_digest(expected, h1) for h1 in candidates)
 
 
 def parse_iso(value: str | None) -> datetime | None:
