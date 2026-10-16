@@ -32,6 +32,11 @@ def get_subscription(subscription_id: str) -> dict:
     return _request("GET", f"/subscriptions/{subscription_id}")
 
 
+def get_transaction(transaction_id: str) -> dict:
+    """Transaction du checkout (custom_data, subscription_id une fois l'abonnement créé)."""
+    return _request("GET", f"/transactions/{transaction_id}", timeout=8)
+
+
 def cancel_subscription(subscription_id: str) -> dict:
     """Résiliation en fin de période payée (l'accès est conservé jusque-là)."""
     return _request(

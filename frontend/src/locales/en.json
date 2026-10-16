@@ -98,6 +98,7 @@
   "calendar.legendPublicHoliday": "public holiday",
   "calendar.legendSpecial": "special day",
   "calendar.legendYou": "{{name}} (you)",
+  "calendar.premiumActivated": "Thank you! Premium is on: reminders, expenses, wall and history are unlocked.",
   "calendar.proposedLabel": "proposed — {{name}}",
   "calendar.schoolHolidaysError": "School holidays couldn't be loaded — the calendar shows only the base schedule.",
   "calendar.soloBody": "Invite your co-parent: they see their days ahead, and swaps get settled in the app. Nothing to set up, free for them.",

@@ -43,7 +43,9 @@ export default function CalendarPage() {
   const [refreshKey, setRefreshKey] = useState(0)
   // Arrivée depuis un lien d'invitation déjà utilisé par ce parent (page /join).
   const location = useLocation()
-  const alreadyMember = (location.state as { notice?: string } | null)?.notice === 'alreadyMember'
+  const notice = (location.state as { notice?: string } | null)?.notice
+  const alreadyMember = notice === 'alreadyMember'
+  const premiumActivated = notice === 'premiumActivated'
 
   useEffect(() => {
     if (householdLoaded && (!household || !household.custody_rule)) navigate('/onboarding', { replace: true })
@@ -190,6 +192,7 @@ export default function CalendarPage() {
       <div className="layout">
         {error && <div className="error">{error}</div>}
         {alreadyMember && <div className="info-banner">{t('calendar.alreadyMember')}</div>}
+        {premiumActivated && <div className="info-banner" role="status">{t('calendar.premiumActivated')}</div>}
         {household && user && (
           <StatusCard
             household={household}

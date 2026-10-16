@@ -79,3 +79,43 @@ class TestChangePlan:
     def test_change_without_subscription_404(self, client, auth_headers):
         headers, _ = auth_headers()
         assert client.post("/api/billing/change-plan", json={"plan": "annual"}, headers=headers).status_code == 404
+
+
+class TestCheckoutSync:
+    """Activation juste après le paiement, sans attendre le webhook Paddle."""
+
+    def _mock(self, monkeypatch, user_id, sub_id="sub_new", status="active"):
+        monkeypatch.setattr(paddle_api, "get_transaction", lambda tid: {
+            "id": tid, "custom_data": {"user_id": str(user_id)}, "subscription_id": sub_id,
+        })
+        monkeypatch.setattr(paddle_api, "get_subscription", lambda sid: {
+            "id": sid, "status": status, "customer_id": "ctm_1",
+            "current_billing_period": {"ends_at": "2027-10-16T00:00:00Z"},
+        })
+
+    def test_activates_the_payer(self, client, auth_headers, db_session, monkeypatch):
+        headers, user = auth_headers()
+        self._mock(monkeypatch, user["id"])
+        resp = client.post("/api/billing/sync-checkout", json={"transaction_id": "txn_abc"}, headers=headers)
+        assert resp.status_code == 200, resp.text
+        assert resp.json() == {"status": "active"}
+        u = db_session.get(User, user["id"])
+        db_session.refresh(u)
+        assert (u.subscription_status, u.paddle_subscription_id, u.paddle_customer_id) == ("active", "sub_new", "ctm_1")
+        assert client.get("/api/billing/status", headers=headers).json()["access"] is True
+
+    def test_pending_until_subscription_exists(self, client, auth_headers, monkeypatch):
+        headers, user = auth_headers()
+        self._mock(monkeypatch, user["id"], sub_id=None)
+        resp = client.post("/api/billing/sync-checkout", json={"transaction_id": "txn_abc"}, headers=headers)
+        assert resp.status_code == 202 and resp.json() == {"status": "pending"}
+
+    def test_refuses_someone_elses_transaction(self, client, auth_headers, monkeypatch):
+        headers, user = auth_headers()
+        self._mock(monkeypatch, user["id"] + 999)
+        resp = client.post("/api/billing/sync-checkout", json={"transaction_id": "txn_abc"}, headers=headers)
+        assert resp.status_code == 403
+
+    def test_rejects_malformed_id(self, client, auth_headers):
+        headers, _ = auth_headers()
+        assert client.post("/api/billing/sync-checkout", json={"transaction_id": "../x"}, headers=headers).status_code == 422

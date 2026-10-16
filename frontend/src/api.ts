@@ -414,6 +414,12 @@ export const api = {
     request<void>(`/households/${householdId}/replies/${replyId}`, { method: 'DELETE' }),
 
   billingStatus: () => request<BillingStatus>('/billing/status'),
+  /** Après paiement : active l'accès en lisant l'abonnement chez Paddle (sans attendre le webhook). */
+  syncCheckout: (transactionId: string) =>
+    request<{ status: string }>('/billing/sync-checkout', {
+      method: 'POST',
+      body: JSON.stringify({ transaction_id: transactionId }),
+    }),
   subscription: () => request<SubscriptionInfo>('/billing/subscription'),
   cancelSubscription: () =>
     ev(request<{ ok: boolean }>('/billing/cancel', { method: 'POST' }), EV.subscriptionCancelRequested),
