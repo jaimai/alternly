@@ -70,6 +70,7 @@ export const EV = {
   paywallViewed: 'paywall_viewed', // feature
   checkoutOpened: 'checkout_opened', // plan, source
   checkoutCompleted: 'checkout_completed', // plan
+  checkoutError: 'checkout_error', // plan, event, code, type, detail (erreur renvoyée par Paddle)
   planChanged: 'plan_changed', // plan
   // (subscription_canceled est émis par le serveur, webhook Paddle)
   subscriptionCancelRequested: 'subscription_cancel_requested',

@@ -410,6 +410,7 @@
   "onboarding.zoneB": "Zone B (Aix-Marseille, Amiens, Lille, Nancy-Metz, Nantes, Nice, Normandie, Orléans-Tours, Reims, Rennes, Strasbourg)",
   "onboarding.zoneC": "Zone C (Créteil, Montpellier, Paris, Toulouse, Versailles)",
   "paywall.activating": "Merci ! Activation de votre abonnement en cours…",
+  "paywall.checkoutFailed": "Le paiement n'a pas pu aboutir de notre côté. Réessayez dans quelques minutes, ou écrivez-nous avec le bouton d'aide en bas à droite : on vous répond rapidement par e-mail.",
   "paywall.continueFree": "Continuer en gratuit",
   "paywall.featureExpenses": "Dépenses partagées",
   "paywall.featureWall": "Mur de communication",

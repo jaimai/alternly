@@ -31,5 +31,6 @@
   "paywall.startTrial_one": "Essayer {{count}} jour gratuitement",
   "paywall.startTrial_other": "Essayer {{count}} jours gratuitement",
   "paywall.offerApplied": "🎁 Code {{code}} : -20 % sur votre première année, appliqué au paiement.",
-  "paywall.offerAnnualOnly": "Le code {{code}} s'applique à l'offre annuelle."
+  "paywall.offerAnnualOnly": "Le code {{code}} s'applique à l'offre annuelle.",
+  "paywall.checkoutFailed": "Le paiement n'a pas pu aboutir de notre côté. Réessayez dans quelques minutes, ou écrivez-nous avec le bouton d'aide en bas à droite : on vous répond rapidement par e-mail."
 }
