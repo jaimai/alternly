@@ -39,7 +39,15 @@ export function loadPlans(): Promise<Plans> {
 
 let paddlePromise: Promise<Paddle | undefined> | null = null
 // Le callback Paddle est fixé à l'initialisation : on garde le dernier contexte d'ouverture.
-let current: { onComplete: () => void; plan: Plan } = { onComplete: () => {}, plan: 'annual' }
+let current: { onComplete: () => void; onError: () => void; plan: Plan } = {
+  onComplete: () => {},
+  onError: () => {},
+  plan: 'annual',
+}
+
+// Erreurs remontées par l'overlay Paddle (« Something went wrong, contact support ») :
+// mesurées avec leur code pour savoir ce qui bloque, et signalées à l'écran.
+const CHECKOUT_ERRORS = new Set(['checkout.error', 'checkout.failed', 'checkout.payment.failed', 'checkout.payment.error'])
 
 function getPaddle(): Promise<Paddle | undefined> {
   if (!paddlePromise) {
@@ -50,6 +58,15 @@ function getPaddle(): Promise<Paddle | undefined> {
         if (ev?.name === 'checkout.completed') {
           track(EV.checkoutCompleted, { plan: current.plan })
           current.onComplete()
+        } else if (ev?.name && CHECKOUT_ERRORS.has(ev.name)) {
+          track(EV.checkoutError, {
+            plan: current.plan,
+            event: ev.name,
+            code: ev.code ?? null,
+            type: ev.type ?? null,
+            detail: typeof ev.detail === 'string' ? ev.detail.slice(0, 200) : null,
+          })
+          current.onError()
         }
       },
     })
@@ -65,6 +82,7 @@ export async function openCheckout(
   plan: Plan = 'annual',
   source = 'unknown',
   discountCode?: string,
+  onError: () => void = () => {},
 ) {
   // Jamais de repli silencieux d'une offre sur l'autre : le parent paie ce qu'il a choisi.
   const priceId = (await loadPlans())[plan].price_id
@@ -72,10 +90,21 @@ export async function openCheckout(
     alert(i18n.t('paywall.notConfigured'))
     return
   }
-  current = { onComplete, plan }
+  current = { onComplete, onError, plan }
   track(EV.checkoutOpened, { plan, source, discount: Boolean(discountCode) })
-  const paddle = await getPaddle()
-  paddle?.Checkout.open({
+  let paddle: Paddle | undefined
+  try {
+    paddle = await getPaddle()
+  } catch {
+    paddle = undefined
+  }
+  if (!paddle) {
+    paddlePromise = null // nouvel essai au prochain clic
+    track(EV.checkoutError, { plan, event: 'init_failed', code: null, type: null, detail: null })
+    onError()
+    return
+  }
+  paddle.Checkout.open({
     items: [{ priceId, quantity: 1 }],
     ...(discountCode ? { discountCode } : {}),
     customer: { email: user.email },
