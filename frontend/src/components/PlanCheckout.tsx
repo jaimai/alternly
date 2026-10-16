@@ -40,7 +40,6 @@ export default function PlanCheckout({
       () => {
         setDone(true)
         onSubscribed()
-        window.setTimeout(onSubscribed, 4000)
       },
       plan,
       source,

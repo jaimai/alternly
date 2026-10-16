@@ -100,7 +100,11 @@ export default function TopBar({ householdName }: { householdName?: string }) {
           source={offerCode ? 'offer_email' : 'topbar'}
           discountCode={offerCode}
           onClose={() => setUpgradeOpen(false)}
-          onSubscribed={refreshBilling}
+          onSubscribed={() => {
+            refreshBilling()
+            setUpgradeOpen(false)
+            navigate('/app', { state: { notice: 'premiumActivated' } })
+          }}
         />
       )}
     </>

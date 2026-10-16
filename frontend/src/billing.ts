@@ -1,7 +1,7 @@
 import { initializePaddle, type Paddle } from '@paddle/paddle-js'
 import { track } from './analytics'
 import { EV } from './analyticsEvents'
-import { API_BASE } from './api'
+import { API_BASE, api } from './api'
 import i18n from './i18n'
 import type { User } from './types'
 
@@ -57,7 +57,14 @@ function getPaddle(): Promise<Paddle | undefined> {
       eventCallback: (ev) => {
         if (ev?.name === 'checkout.completed') {
           track(EV.checkoutCompleted, { plan: current.plan })
-          current.onComplete()
+          const done = current.onComplete
+          const txn = (ev.data as { transaction_id?: string } | undefined)?.transaction_id
+          // Accès activé tout de suite (lecture de l'abonnement chez Paddle), puis
+          // retour à l'app : le parent n'a pas à fermer l'écran Paddle lui-même.
+          void syncAfterCheckout(txn).finally(() => {
+            void paddlePromise?.then((p) => p?.Checkout.close())
+            done()
+          })
         } else if (ev?.name && CHECKOUT_ERRORS.has(ev.name)) {
           track(EV.checkoutError, {
             plan: current.plan,
@@ -72,6 +79,26 @@ function getPaddle(): Promise<Paddle | undefined> {
     })
   }
   return paddlePromise
+}
+
+/** Quelques essais espacés : l'abonnement Paddle est créé peu après le paiement. */
+async function syncAfterCheckout(transactionId: string | undefined): Promise<boolean> {
+  if (!transactionId) return false
+  for (let attempt = 0; attempt < 8; attempt++) {
+    try {
+      const res = await api.syncCheckout(transactionId)
+      if (res.status !== 'pending') {
+        track(EV.checkoutSynced, { status: res.status, attempts: attempt + 1 })
+        return true
+      }
+    } catch (err) {
+      const status = (err as { status?: number }).status
+      if (status !== undefined && status < 500 && status !== 429) return false // refus définitif
+    }
+    await new Promise((r) => setTimeout(r, 2500))
+  }
+  track(EV.checkoutSynced, { status: 'timeout', attempts: 8 })
+  return false
 }
 
 /** Ouvre le checkout Paddle. `plan` = 'annual' (défaut) ou 'monthly'. `onComplete`

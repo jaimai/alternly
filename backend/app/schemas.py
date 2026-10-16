@@ -134,6 +134,10 @@ class MemberOut(ORMModel):
     is_placeholder: bool = False
 
 
+class CheckoutSyncIn(BaseModel):
+    transaction_id: str = Field(min_length=3, max_length=80, pattern=r"^txn_[A-Za-z0-9]+$")
+
+
 class ChangePlanIn(BaseModel):
     plan: Literal["annual", "monthly"]
 

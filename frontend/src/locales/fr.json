@@ -98,6 +98,7 @@
   "calendar.legendPublicHoliday": "férié",
   "calendar.legendSpecial": "fête",
   "calendar.legendYou": "{{name}} (vous)",
+  "calendar.premiumActivated": "Merci ! Premium est activé : rappels, dépenses, mur et historique sont débloqués.",
   "calendar.proposedLabel": "proposé — {{name}}",
   "calendar.schoolHolidaysError": "Les vacances scolaires n'ont pas pu être chargées — le calendrier affiche uniquement le rythme de base.",
   "calendar.soloBody": "Invitez l'autre parent : il voit ses jours à l'avance, et les échanges se règlent dans l'app. Rien à configurer, gratuit pour lui ou elle.",
