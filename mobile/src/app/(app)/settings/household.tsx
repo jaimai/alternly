@@ -1,5 +1,5 @@
-// Enfants (ajouter, retirer) et zone scolaire. Avec deux parents, retirer un enfant
-// attend l'accord de l'autre.
+// Enfants (ajouter, retirer), zone scolaire, et prénom de l'autre parent tant qu'il n'a
+// pas de compte. Avec deux parents, retirer un enfant attend l'accord de l'autre.
 import { useState } from 'react'
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native'
 import { PENDING_MESSAGE } from '@/components/ChangeRequests'
@@ -11,6 +11,9 @@ import { api, isPendingChange } from '@/lib/api'
 import { useHousehold, useHouseholdAction } from '@/lib/queries'
 import { colors, fonts } from '@/lib/theme'
 
+// Noms donnés par défaut au second parent sans compte (backend/app/services/parents.py).
+const DEFAULT_PARTNER_NAMES = ["L'autre parent", 'Co-parent']
+
 const ZONES = [
   { value: 'A' as const, label: 'Zone A', hint: 'Besançon, Bordeaux, Clermont, Dijon, Grenoble, Limoges, Lyon, Poitiers' },
   { value: 'B' as const, label: 'Zone B', hint: 'Aix-Marseille, Amiens, Lille, Nancy-Metz, Nantes, Nice, Normandie, Orléans-Tours, Reims, Rennes, Strasbourg' },
@@ -21,12 +24,21 @@ export default function HouseholdSettings() {
   const household = useHousehold().data
   const [childName, setChildName] = useState('')
   const [notice, setNotice] = useState<string | null>(null)
+  const placeholder = household?.members.find((m) => m.is_placeholder)
+  const [partnerName, setPartnerName] = useState<string | null>(null)
 
   const hid = household?.id ?? 0
   const add = useHouseholdAction(() => api.addChild(hid, childName.trim()), () => setChildName(''))
   const remove = useHouseholdAction((id: number) => api.deleteChild(hid, id), (r) => setNotice(isPendingChange(r) ? PENDING_MESSAGE : null))
   const zone = useHouseholdAction((z: 'A' | 'B' | 'C') => api.updateHousehold(hid, { school_zone: z }), () => setNotice('Zone mise à jour.'))
-  const error = [add, remove, zone].find((m) => m.error)?.error?.message
+  const rename = useHouseholdAction(
+    () => api.renamePartner(hid, (partnerName ?? '').trim()),
+    () => {
+      setPartnerName(null)
+      setNotice('Prénom enregistré.')
+    },
+  )
+  const error = [add, remove, zone, rename].find((m) => m.error)?.error?.message
 
   if (!household) return <Loading />
 
@@ -42,7 +54,7 @@ export default function HouseholdSettings() {
   return (
     <Screen edges={['top', 'bottom']}>
       <BackButton />
-      <Title>Enfants et zone</Title>
+      <Title>Foyer</Title>
       <ErrorBanner message={error} />
       {notice ? (
         <Card style={{ backgroundColor: colors.pineSoft, borderColor: colors.pineSoft }}>
@@ -76,6 +88,33 @@ export default function HouseholdSettings() {
           <Button title="Ajouter" variant="secondary" onPress={() => add.mutate()} loading={add.isPending} disabled={!childName.trim()} />
         </View>
       </View>
+
+      {placeholder ? (
+        <View style={{ gap: 8 }}>
+          <SectionLabel>L’autre parent</SectionLabel>
+          <Body muted style={{ fontSize: 14 }}>
+            Pas encore de compte : vous pouvez déjà lui attribuer des dépenses. Il ou elle retrouvera tout en rejoignant le foyer.
+          </Body>
+          <View style={{ flexDirection: 'row', gap: 10, alignItems: 'flex-end' }}>
+            <View style={{ flex: 1 }}>
+              <Field
+                label="Son prénom"
+                placeholder="ex. Camille"
+                value={partnerName ?? (DEFAULT_PARTNER_NAMES.includes(placeholder.display_name) ? '' : placeholder.display_name)}
+                onChangeText={setPartnerName}
+                maxLength={50}
+              />
+            </View>
+            <Button
+              title="Enregistrer"
+              variant="secondary"
+              onPress={() => rename.mutate()}
+              loading={rename.isPending}
+              disabled={!partnerName?.trim()}
+            />
+          </View>
+        </View>
+      ) : null}
 
       {household.country === 'FR' ? (
         <View style={{ gap: 8 }}>

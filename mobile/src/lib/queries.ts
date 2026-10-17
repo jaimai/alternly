@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ApiError, api } from './api'
+import { ApiError, api, isPendingChange } from './api'
 import { useAuth } from './auth'
 import { todayIso } from './dates'
 import type { BillingStatus, PushPrefs } from './types'
@@ -83,6 +83,30 @@ export function useWithdrawExchange(householdId: number | undefined) {
   return useMutation({
     mutationFn: (id: number) => api.withdrawExchange(householdId!, id),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['calendar'] }),
+  })
+}
+
+/** Échanges acceptés (sous la clé « calendar » : rafraîchis avec le calendrier). */
+export function useAcceptedExchanges(householdId: number | undefined) {
+  return useQuery({
+    queryKey: ['calendar', 'accepted', householdId ?? 0],
+    queryFn: () => api.exceptions(householdId!, 'accepted'),
+    enabled: householdId !== undefined,
+  })
+}
+
+/** Annuler un échange accepté : direct en solo, sinon demande d'accord à l'autre parent. */
+export function useCancelExchange(householdId: number | undefined, onSuccess?: (pending: boolean) => void) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number) => api.deleteException(householdId!, id),
+    onSuccess: async (r) => {
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ['calendar'] }),
+        qc.invalidateQueries({ queryKey: keys.changeRequests }),
+      ])
+      onSuccess?.(isPendingChange(r))
+    },
   })
 }
 
