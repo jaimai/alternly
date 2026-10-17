@@ -61,6 +61,14 @@ class User(Base):
     analytics_consent: Mapped[bool | None] = mapped_column(Boolean, nullable=True, default=None)
 
     @property
+    def is_internal(self) -> bool:
+        """Compte de l'équipe (INTERNAL_EMAILS) : exclu des statistiques."""
+        from .config import settings
+
+        emails = {e.strip().lower() for e in settings.internal_emails.split(",") if e.strip()}
+        return bool(self.email) and self.email.lower() in emails
+
+    @property
     def has_password(self) -> bool:
         """Faux pour un compte créé via Google ou Apple qui n'a jamais défini de mot de passe."""
         return bool(self.password_hash)

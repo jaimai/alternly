@@ -79,13 +79,16 @@ def _member_out(db: Session, m: HouseholdMember) -> MemberOut:
 
 def _household_out(db: Session, household: Household, my_user_id: int) -> HouseholdOut:
     # Foyers solo (y compris antérieurs) : on garantit un second parent (placeholder).
-    me = db.get(User, my_user_id)
-    created = ensure_second_parent(db, household.id, locale=(me.locale if me else "fr")) is not None
+    members = household_members(db, household.id)
+    created = False
+    if len(members) < 2:
+        me = db.get(User, my_user_id)
+        created = ensure_second_parent(db, household.id, locale=(me.locale if me else "fr")) is not None
+        members = household_members(db, household.id)
     # Parent réel et placeholder doivent se distinguer sur le calendrier (foyers existants
     # compris, et après un changement de couleur du parent).
-    if fix_placeholder_color(db, household.id) or created:
+    if fix_placeholder_color(db, household.id, members) or created:
         db.commit()
-    members = household_members(db, household.id)
     my_role = next((m.role for m in members if m.user_id == my_user_id), None)
     return HouseholdOut(
         id=household.id,

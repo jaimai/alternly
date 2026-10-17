@@ -14,6 +14,8 @@ export interface User {
   /** Consentement à la mesure d'audience (null = jamais répondu). */
   analytics_consent?: boolean | null
   created_at?: string | null
+  /** Compte de l'équipe : événements marqués is_internal (exclus des stats). */
+  is_internal?: boolean
 }
 
 export interface BillingStatus {

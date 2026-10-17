@@ -17,7 +17,7 @@ from sqlalchemy.orm import Session
 
 from ..models import SchoolHolidayCache
 from .custody_engine import Period
-from .public_holidays import NegativeCache, PublicDataUnavailable, commit_cache, http_client
+from .public_holidays import NegativeCache, PublicDataUnavailable, commit_cache, http_client, memory_get, memory_set
 
 API_URL = (
     "https://data.education.gouv.fr/api/explore/v2.1/catalog/datasets/"
@@ -93,6 +93,10 @@ def get(db: Session, zone: str, school_years: list[str], client: httpx.Client | 
     missing: list[str] = []
 
     for sy in school_years:
+        mem = memory_get(("school", zone, sy))
+        if mem is not None:
+            raw.extend(mem)
+            continue
         cached = db.scalars(
             select(SchoolHolidayCache).where(
                 SchoolHolidayCache.zone == zone,
@@ -100,7 +104,9 @@ def get(db: Session, zone: str, school_years: list[str], client: httpx.Client | 
             )
         ).all()
         if cached:
-            raw.extend(Period(label=r.label, start=r.start, end=r.end) for r in cached)
+            periods = [Period(label=r.label, start=r.start, end=r.end) for r in cached]
+            memory_set(("school", zone, sy), periods)
+            raw.extend(periods)
         else:
             missing.append(sy)
 

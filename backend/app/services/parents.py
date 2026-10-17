@@ -112,19 +112,16 @@ def ensure_second_parent(
     return ghost
 
 
-def fix_placeholder_color(db: Session, household_id: int) -> bool:
+def fix_placeholder_color(db: Session, household_id: int, members: list[HouseholdMember] | None = None) -> bool:
     """Si le placeholder a (presque) la couleur du parent réel — parent qui a choisi
     terracotta, ou qui a changé de couleur depuis —, lui en donne une distincte.
-    Renvoie True si une couleur a changé. Ne commit pas."""
-    ghost_member = placeholder_member(db, household_id)
-    if ghost_member is None:
-        return False
-    ghost = db.get(User, ghost_member.user_id)
-    real = [
-        u for m in db.scalars(select(HouseholdMember).where(HouseholdMember.household_id == household_id))
-        if (u := db.get(User, m.user_id)) is not None and not u.is_placeholder
-    ]
-    if not real or ghost is None:
+    Renvoie True si une couleur a changé. Ne commit pas. `members` : déjà chargés."""
+    if members is None:
+        members = list(db.scalars(select(HouseholdMember).where(HouseholdMember.household_id == household_id)))
+    users = [u for m in members if (u := db.get(User, m.user_id)) is not None]
+    ghost = next((u for u in users if u.is_placeholder), None)
+    real = [u for u in users if not u.is_placeholder]
+    if ghost is None or not real:
         return False
     if color_distance(ghost.color, real[0].color) >= _MIN_COLOR_DISTANCE:
         return False

@@ -135,6 +135,8 @@
         advanced_disable_feature_flags: true,
         before_send: function (cr) {
           if (!cr) return cr;
+          // Appareil de l'équipe (marqué par l'app) : exclu des statistiques.
+          try { if (localStorage.getItem('alternly_internal') === '1') cr.properties.is_internal = true; } catch (e) {}
           [cr.properties, cr.$set, cr.$set_once].forEach(function (o) {
             if (o) Object.keys(o).forEach(function (k) { o[k] = scrub(o[k]); });
           });

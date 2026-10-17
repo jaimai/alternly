@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { cachedCalendar, fetchCalendar } from '../calendarCache'
-import { addDays, daysBetween, todayIso } from '../dates'
+import { cachedCalendar, fetchCalendar, statusRange } from '../calendarCache'
+import { daysBetween, todayIso } from '../dates'
 import { useFormat } from '../format'
 import Icon from './Icon'
 import type { IconName } from './Icon'
@@ -9,7 +9,6 @@ import type { CalendarResponse, Household, ScheduleException } from '../types'
 
 // Horizon de la carte : assez loin pour trouver le prochain passage même en
 // vacances d'été (2 × 4 semaines) et la prochaine période de vacances.
-const HORIZON_DAYS = 75
 
 interface Props {
   household: Household
@@ -26,16 +25,15 @@ export default function StatusCard({ household, myId, exceptions, refreshKey, on
   const { t, i18n } = useTranslation()
   const { day, dayLong, range, relativeDays } = useFormat()
   const [data, setData] = useState<CalendarResponse | null>(() => {
-    const today = todayIso()
-    return cachedCalendar(household.id, today, addDays(today, HORIZON_DAYS)) ?? null
+    const { start, end } = statusRange()
+    return cachedCalendar(household.id, start, end) ?? null
   })
 
   useEffect(() => {
-    const today = todayIso()
-    const end = addDays(today, HORIZON_DAYS)
-    const cached = cachedCalendar(household.id, today, end)
+    const { start, end } = statusRange()
+    const cached = cachedCalendar(household.id, start, end)
     if (cached) setData(cached)
-    fetchCalendar(household.id, today, end)
+    fetchCalendar(household.id, start, end)
       .then(setData)
       .catch(() => {
         if (!cached) setData(null)

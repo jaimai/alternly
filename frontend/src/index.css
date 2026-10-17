@@ -2389,3 +2389,83 @@ button.wz-day, .wz-day {
 .adjust-recap .dot { width: 12px; height: 12px; border-radius: 4px; display: inline-block; }
 /* Pendant l'ajustement, la bulle d'avis ne masque pas « Enregistrer ». */
 body:has(.adjust-bar) .feedback-fab { display: none; }
+
+/* ---------- Écran de chargement de l'app ---------- */
+.app-splash {
+  min-height: 100vh; display: grid; place-items: center;
+  background: var(--paper, #faf6ef); padding: 24px;
+}
+.app-splash.is-overlay { position: fixed; inset: 0; z-index: 200; min-height: 0; }
+.app-splash.is-leaving { opacity: 0; transition: opacity 240ms ease; pointer-events: none; }
+.app-splash-inner { display: flex; flex-direction: column; align-items: center; gap: 18px; }
+.app-splash .wordmark { font-size: 2rem; }
+.app-splash p { margin: 0; color: var(--ink-soft); font-size: 0.95rem; }
+.app-splash-grid { display: grid; grid-template-columns: repeat(7, 22px); gap: 5px; }
+.app-splash-grid span {
+  height: 22px; border-radius: 6px; background: var(--line, #e7dfd0);
+  animation: splash-tile 1.4s ease-in-out infinite;
+}
+.app-splash-grid span:nth-child(7n + 1), .app-splash-grid span:nth-child(7n + 2),
+.app-splash-grid span:nth-child(7n + 3) { animation-name: splash-tile-pine; }
+@keyframes splash-tile { 0%, 100% { opacity: 0.45; } 50% { opacity: 1; background: color-mix(in srgb, var(--terra, #c96f4a) 45%, white); } }
+@keyframes splash-tile-pine { 0%, 100% { opacity: 0.45; } 50% { opacity: 1; background: color-mix(in srgb, var(--pine, #1f4d3f) 40%, white); } }
+@media (prefers-reduced-motion: reduce) {
+  .app-splash-grid span { animation: none; opacity: 0.8; }
+  .app-splash.is-leaving { transition: none; }
+}
+
+/* « Autre organisation » à l'inscription : modèles, grille à corriger, aperçu du mois */
+.cr-templates .wz-thumb-cell.a { background: var(--cr-a, var(--pine)); }
+.cr-templates .wz-thumb-cell.b { background: var(--cr-b, var(--terra)); }
+.cr-brushes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+button.cr-brush {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 56px;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--paper);
+  color: var(--ink);
+  text-align: left;
+  box-shadow: none;
+}
+button.cr-brush.selected { background: var(--surface); border-width: 2.5px; padding: 6.5px 10.5px; }
+.cr-brush-dot { width: 22px; height: 22px; border-radius: 7px; flex: none; }
+button.cr-brush strong { font-size: 0.95rem; line-height: 1.2; }
+button.wz-day.cr-unset {
+  background: transparent;
+  color: var(--ink-soft);
+  text-shadow: none;
+  border: 1.5px dashed color-mix(in srgb, var(--ink-soft) 55%, transparent);
+}
+.cr-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--pine-soft);
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+.cr-summary > span { color: var(--ink-soft); }
+button.cr-reset, button.cr-again { align-self: center; min-height: 44px; font-weight: 600; color: var(--ink); }
+button.cr-again { display: block; width: 100%; margin-top: 6px; }
+.cr-month { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.cr-month-head { font-size: 0.75rem; font-weight: 600; color: var(--ink-soft); text-align: center; }
+.cr-month-day {
+  display: grid;
+  place-items: center;
+  height: 42px;
+  border-radius: 9px;
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.9rem;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.25);
+}
+.cr-month-day.today { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--ink); }
+@media (hover: hover) {
+  button.cr-brush:hover { background: var(--pine-soft); }
+}

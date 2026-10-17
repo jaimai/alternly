@@ -15,6 +15,9 @@ class Settings(BaseSettings):
     # Boîte qui reçoit les signalements « Signaler un problème / Une idée ».
     # Vide → signalements enregistrés en base seulement (table feedback).
     feedback_email: str = ""
+    # Comptes de l'équipe (e-mails séparés par des virgules) : leurs événements portent
+    # is_internal=true pour être exclus des statistiques PostHog.
+    internal_emails: str = ""
     # URL publique du site (Vercel sert la landing en / et l'app). Utilisée pour
     # les liens absolus des e-mails et le canonical/OG (la landing est proxifiée,
     # donc request.url refléterait l'URL interne Railway).

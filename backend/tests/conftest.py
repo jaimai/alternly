@@ -80,9 +80,11 @@ def fake_public_apis(monkeypatch):
     monkeypatch.setattr(public_holidays, "_transport", httpx.MockTransport(_fake_gov_api))
     public_holidays._memo.clear()
     school_holidays._memo.clear()
+    public_holidays.clear_memory_cache()
     yield
     public_holidays._memo.clear()
     school_holidays._memo.clear()
+    public_holidays.clear_memory_cache()
 
 
 @pytest.fixture(autouse=True)
