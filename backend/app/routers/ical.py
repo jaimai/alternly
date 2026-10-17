@@ -59,6 +59,13 @@ def ical_feed(ical_token: str, db: Session = Depends(get_db)):
     )
 
 
+@router.get("/link")
+def current_link(user: User = Depends(require_premium)):
+    """Jeton actuel du flux, sans le changer (l'app mobile l'affiche à chaque visite :
+    régénérer couperait les agendas déjà abonnés)."""
+    return {"ical_token": user.ical_token}
+
+
 @router.post("/regenerate")
 def regenerate(user: User = Depends(require_premium), db: Session = Depends(get_db)):
     user.ical_token = new_token()
