@@ -8,7 +8,7 @@ import { addDays, daysBetween, parseIso, todayIso } from '../dates'
 import { useFormat } from '../format'
 import type { CustodyRule, Member, Pattern, VacationRule } from '../types'
 import type { RuleFormValue } from './RuleForm'
-import { CycleDrawer, MonthCheck, TEMPLATES, TemplatePicker, templateCells } from './CustomRhythm'
+import { CURRENT, CycleDrawer, MonthCheck, TEMPLATES, TemplatePicker, templateCells } from './CustomRhythm'
 import type { Cell } from './CustomRhythm'
 
 // Ordre de présentation : du plus courant au plus libre (« Autre organisation »).
@@ -71,8 +71,18 @@ export default function RuleWizard({ members, myId, childNames, initialCustody, 
   } | null>(null)
   // « Autre organisation » : modèle proche (étape 2), puis grille à corriger et aperçu du mois (étape 3).
   const [customFlow, setCustomFlow] = useState(false)
-  const [template, setTemplate] = useState(0)
-  const [cells, setCells] = useState<Cell[]>(() => templateCells(0))
+  // Rythme personnalisé déjà enregistré, vu depuis « vous » (côté ref = le parent connecté).
+  const [currentCells] = useState<Cell[] | null>(() =>
+    initialCustody?.pattern === 'custom' && initialCustody.custom_weeks?.length === 14
+      ? (initialCustody.custom_weeks as Side[]).map((x) =>
+          initialCustody.reference_parent_id === myId ? x : x === 'ref' ? 'other' : 'ref',
+        )
+      : null,
+  )
+  const [template, setTemplate] = useState(currentCells ? CURRENT : 0)
+  const [cells, setCells] = useState<Cell[]>(() => currentCells ?? templateCells(0))
+  const cellsOf = (i: number) => (i === CURRENT && currentCells ? currentCells : templateCells(i))
+  const templateId = template === CURRENT ? 'current' : TEMPLATES[template].id
   const [cellsFrom, setCellsFrom] = useState<number | null>(null)
   const [brush, setBrush] = useState<Side>('other')
   const [monthView, setMonthView] = useState(false)
@@ -164,13 +174,13 @@ export default function RuleWizard({ members, myId, childNames, initialCustody, 
 
   function next() {
     if (customFlow && step > 0) {
-      track(EV.ruleWizardStep, { step: customStepName(), pattern, template: TEMPLATES[template].id })
+      track(EV.ruleWizardStep, { step: customStepName(), pattern, template: templateId })
       if (step === 1) {
         // Le parent qui s'inscrit est le côté « ref » de la grille.
         if (cellsFrom !== template) {
-          setCells(templateCells(template))
+          setCells(cellsOf(template))
           setCellsFrom(template)
-          setBrush(TEMPLATES[template].id === 'blank' ? 'ref' : 'other')
+          setBrush(templateId === 'blank' ? 'ref' : 'other')
         }
         setMonthView(false)
         setStep(2)
@@ -324,7 +334,7 @@ export default function RuleWizard({ members, myId, childNames, initialCustody, 
         </>
       )}
 
-      {customFlow && step === 1 && <TemplatePicker template={template} onPick={setTemplate} colorOf={colorOf} atLabel={atLabel} />}
+      {customFlow && step === 1 && <TemplatePicker template={template} onPick={setTemplate} current={currentCells} colorOf={colorOf} atLabel={atLabel} />}
 
       {customFlow && step === 2 && !monthView && (
         <CycleDrawer
@@ -335,7 +345,7 @@ export default function RuleWizard({ members, myId, childNames, initialCustody, 
           startDate={startDate}
           onStartDate={setStartDate}
           template={template}
-          onReset={() => setCells(templateCells(template))}
+          onReset={() => setCells(cellsOf(template))}
           colorOf={colorOf}
           atLabel={atLabel}
         />

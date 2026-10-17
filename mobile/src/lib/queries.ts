@@ -110,6 +110,19 @@ export function useCancelExchange(householdId: number | undefined, onSuccess?: (
   })
 }
 
+/** « Ajuster mon planning » : applique (solo) ou propose (deux parents) des jours personnalisés. */
+export function useSaveAdjustments(householdId: number | undefined) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (data: { set: { date: string; parent_id: number }[]; clear: number[] }) =>
+      api.saveAdjustments(householdId!, data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['calendar'] })
+      qc.invalidateQueries({ queryKey: keys.changeRequests })
+    },
+  })
+}
+
 /** Lien d'invitation de l'autre parent : l'actif s'il existe, sinon un nouveau. */
 export function useInviteLink(householdId: number | undefined) {
   return useMutation({

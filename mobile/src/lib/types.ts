@@ -75,6 +75,8 @@ export interface ScheduleException {
   created_by: number
   status: 'pending' | 'accepted' | 'refused' | 'withdrawn'
   replaces_id: number | null
+  /** exchange : échange ; adjustment : jour personnalisé (« Ajuster mon planning »). */
+  kind?: 'exchange' | 'adjustment'
 }
 
 export interface Invitation {
@@ -86,7 +88,13 @@ export interface Invitation {
 export interface CalendarDay {
   date: string
   parent_id: number
-  source: 'rule' | 'vacation' | 'special' | 'exception'
+  source: 'rule' | 'vacation' | 'special' | 'exception' | 'adjustment'
+}
+
+export interface AdjustmentsResult {
+  status: 'applied' | 'proposed' | 'pending_consent'
+  created: number
+  cleared: number
 }
 
 export interface PendingExchange {

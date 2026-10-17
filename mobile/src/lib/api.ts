@@ -28,6 +28,7 @@ import type {
   VacationRule,
   WallPost,
   WallReply,
+  AdjustmentsResult,
 } from './types'
 import { hasPendingInvite } from './pendingInvite'
 
@@ -249,6 +250,9 @@ export const api = {
     householdId: number,
     data: { date_start: string; date_end: string; parent_id: number; note: string; replaces_id?: number },
   ) => request<ScheduleException>(`/households/${householdId}/exceptions`, { method: 'POST', body: data }),
+  /** « Ajuster mon planning » : jours personnalisés à poser / à rendre au rythme. */
+  saveAdjustments: (householdId: number, data: { set: { date: string; parent_id: number }[]; clear: number[]; note?: string }) =>
+    request<AdjustmentsResult>(`/households/${householdId}/adjustments`, { method: 'POST', body: data }),
   withdrawExchange: (householdId: number, id: number) =>
     request<unknown>(`/households/${householdId}/exceptions/${id}/withdraw`, { method: 'POST' }),
   acceptExchange: (householdId: number, id: number) =>

@@ -4,13 +4,15 @@ import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { CalendarNotices } from '@/components/CalendarNotices'
 import { Icon } from '@/components/Icon'
-import { Button, Card, ErrorState, Loading } from '@/components/ui'
+import { Body, Button, Card, ErrorState, Loading } from '@/components/ui'
 import { ApiError } from '@/lib/api'
-import { memberById, pendingOn, publicHolidayOn, schoolHolidayOn, whoName } from '@/lib/custody'
-import { addMonths, formatLong, formatMonth, formatRange, monthGrid, monthStart, parseIso, todayIso } from '@/lib/dates'
-import { useAcceptedExchanges, useCalendar, useCancelExchange, useHousehold, useMe, useWithdrawExchange } from '@/lib/queries'
+import { isSolo, memberById, pendingOn, publicHolidayOn, schoolHolidayOn, whoName } from '@/lib/custody'
+import { addDays, addMonths, formatLong, formatMonth, formatRange, monthGrid, monthStart, parseIso, todayIso } from '@/lib/dates'
+import {
+  useAcceptedExchanges, useCalendar, useCancelExchange, useHousehold, useMe, useSaveAdjustments, useWithdrawExchange,
+} from '@/lib/queries'
 import { colors, fonts, tint } from '@/lib/theme'
-import type { CalendarResponse } from '@/lib/types'
+import type { CalendarResponse, ScheduleException } from '@/lib/types'
 
 const WEEKDAYS = ['LUN', 'MAR', 'MER', 'JEU', 'VEN', 'SAM', 'DIM']
 const SOURCE_LABEL: Record<string, string> = {
@@ -18,6 +20,18 @@ const SOURCE_LABEL: Record<string, string> = {
   vacation: 'Vacances scolaires',
   special: 'Jour spécial',
   exception: 'Échange accepté',
+  adjustment: 'Jour personnalisé',
+}
+
+/** Jour touché en mode « Ajuster » : parent visé, et jour personnalisé à rendre au rythme le cas échéant. */
+interface Flip {
+  to: number
+  clearId: number | null
+}
+
+/** Jour personnalisé accepté posé sur `date`, s'il y en a un. */
+function adjustmentOn(exceptions: ScheduleException[], date: string) {
+  return exceptions.find((e) => e.kind === 'adjustment' && e.status === 'accepted' && e.date_start === date)
 }
 
 export default function CalendarScreen() {
@@ -28,6 +42,80 @@ export default function CalendarScreen() {
   const household = useHousehold().data ?? undefined
   const meId = useMe().data?.id
   const calendar = useCalendar(household?.id, grid[0], grid[grid.length - 1])
+  const exceptions = useAcceptedExchanges(household?.id).data ?? []
+  const save = useSaveAdjustments(household?.id)
+  const [adjusting, setAdjusting] = useState(false)
+  const [flips, setFlips] = useState<Record<string, Flip>>({})
+  const [notice, setNotice] = useState<string | null>(null)
+  const solo = household ? isSolo(household.members) : true
+  const otherName = household?.members.find((m) => m.id !== meId && !m.is_placeholder)?.display_name ?? 'l’autre parent'
+  const flipCount = Object.keys(flips).length
+  const nameOf = (id: number) => whoName(household?.members ?? [], id, meId)
+
+  // Récapitulatif : jours consécutifs vers le même parent regroupés en une ligne.
+  const groups = useMemo(() => {
+    const out: { start: string; end: string; to: number; dates: string[] }[] = []
+    for (const date of Object.keys(flips).sort()) {
+      const last = out[out.length - 1]
+      if (last && last.to === flips[date].to && addDays(last.end, 1) === date) {
+        last.end = date
+        last.dates.push(date)
+      } else {
+        out.push({ start: date, end: date, to: flips[date].to, dates: [date] })
+      }
+    }
+    return out
+  }, [flips])
+
+  function toggleDay(date: string) {
+    const day = calendar.data?.days.find((d) => d.date === date)
+    if (!day || !household) return
+    const next = { ...flips }
+    if (next[date]) {
+      delete next[date]
+    } else {
+      const other = household.members.find((m) => m.id !== day.parent_id)?.id
+      if (other === undefined) return
+      // Jour déjà personnalisé : le toucher le rend à son rythme habituel.
+      const adj = day.source === 'adjustment' ? adjustmentOn(exceptions, date) : undefined
+      next[date] = { to: other, clearId: adj?.id ?? null }
+    }
+    setFlips(next)
+  }
+
+  function removeFlips(dates: string[]) {
+    const next = { ...flips }
+    for (const d of dates) delete next[d]
+    setFlips(next)
+  }
+
+  function noticeFor(status: 'applied' | 'proposed' | 'pending_consent', count: number) {
+    const days = count > 1 ? `${count} jours` : '1 jour'
+    if (status === 'proposed') return `${days} proposé${count > 1 ? 's' : ''} à ${otherName} : ${count > 1 ? 'ils s’appliqueront' : 'il s’appliquera'} dès son accord.`
+    if (status === 'pending_consent') return `Demande envoyée à ${otherName} pour revenir au rythme habituel.`
+    return `${days} personnalisé${count > 1 ? 's' : ''}. Votre rythme habituel reprend ensuite tout seul.`
+  }
+
+  function saveAdjust() {
+    const set: { date: string; parent_id: number }[] = []
+    const clear: number[] = []
+    for (const [date, f] of Object.entries(flips)) {
+      if (f.clearId !== null) clear.push(f.clearId)
+      else set.push({ date, parent_id: f.to })
+    }
+    const count = flipCount
+    save.mutate({ set, clear }, {
+      onSuccess: (res) => {
+        setNotice(noticeFor(res.status, count))
+        setAdjusting(false)
+        setFlips({})
+      },
+    })
+  }
+
+  function backToRhythm(id: number) {
+    save.mutate({ set: [], clear: [id] }, { onSuccess: (res) => setNotice(noticeFor(res.status, 1)) })
+  }
 
   const goTo = (delta: number) => {
     const next = addMonths(month, delta)
@@ -48,15 +136,16 @@ export default function CalendarScreen() {
       {calendar.isPending ? (
         <Loading />
       ) : calendar.isError ? (
-        <ErrorState
-          message={
-            calendar.error instanceof ApiError && calendar.error.status === 409
-              ? 'Aucun rythme de garde défini. Choisissez-le dans Réglages › Garde et vacances.'
-              : calendar.error.message
-          }
-          onRetry={() => calendar.refetch()}
-        />
+        calendar.error instanceof ApiError && calendar.error.status === 409 ? (
+          <View style={{ padding: 20, gap: 12 }}>
+            <Body>Aucun rythme de garde défini pour l’instant.</Body>
+            <Button title="Configurer mon rythme" onPress={() => router.push('/settings/rules')} />
+          </View>
+        ) : (
+          <ErrorState message={calendar.error.message} onRetry={() => calendar.refetch()} />
+        )
       ) : (
+        <>
         <ScrollView contentContainerStyle={{ paddingHorizontal: 12, paddingBottom: 24, gap: 12 }}>
           <CalendarNotices cal={calendar.data} />
           <View style={s.legendRow}>
@@ -64,7 +153,46 @@ export default function CalendarScreen() {
               <Legend key={m.id} color={m.color} label={m.id === meId ? 'Vous' : m.display_name} />
             ))}
             <Legend color={colors.holiday} label="Vacances" bar />
+            {calendar.data.days.some((d) => d.source === 'adjustment') ? (
+              <Legend color={colors.ink} label="Jour personnalisé" ring />
+            ) : null}
           </View>
+
+          {adjusting ? (
+            <View style={s.hint}>
+              <Icon name="pencil" size={18} color={colors.pine} strokeWidth={2} />
+              <View style={{ flex: 1, gap: 2 }}>
+                <Text style={s.detailMain}>Touchez un jour pour le passer chez l’autre parent.</Text>
+                <Text style={s.detailSub}>
+                  Ce sont des ajustements ponctuels : votre rythme habituel ne change pas. Touchez un jour personnalisé pour le rendre au rythme.
+                </Text>
+              </View>
+            </View>
+          ) : (
+            <View style={{ gap: 8, paddingHorizontal: 4 }}>
+              {notice ? (
+                <Card style={{ backgroundColor: colors.pineSoft, borderColor: colors.pineSoft }}>
+                  <Body style={{ fontSize: 14 }}>{notice}</Body>
+                </Card>
+              ) : null}
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                <Button
+                  title="Ajuster mon planning"
+                  variant="secondary"
+                  icon={<Icon name="pencil" size={18} color={colors.pine} strokeWidth={2} />}
+                  onPress={() => {
+                    setAdjusting(true)
+                    setFlips({})
+                    setNotice(null)
+                  }}
+                  style={{ flex: 1 }}
+                />
+              </View>
+              <Text accessibilityRole="button" onPress={() => router.push('/settings/rules')} style={s.rhythmLink}>
+                Changer mon rythme habituel
+              </Text>
+            </View>
+          )}
 
           <View style={s.grid}>
             {WEEKDAYS.map((d) => (
@@ -79,29 +207,92 @@ export default function CalendarScreen() {
                 cal={calendar.data}
                 inMonth={date.slice(0, 7) === month.slice(0, 7)}
                 isToday={date === today}
-                isSelected={date === selected}
-                onPress={() => setSelected(date)}
+                isSelected={!adjusting && date === selected}
+                flipColor={flips[date] ? memberById(calendar.data.members, flips[date].to)?.color : undefined}
+                onPress={() => (adjusting ? toggleDay(date) : setSelected(date))}
               />
             ))}
           </View>
 
-          <DayDetail key={selected} date={selected} cal={calendar.data} meId={meId} householdId={household?.id} />
+          {!adjusting ? (
+            <DayDetail
+              key={selected}
+              date={selected}
+              cal={calendar.data}
+              meId={meId}
+              householdId={household?.id}
+              adjustment={adjustmentOn(exceptions, selected)}
+              onBackToRhythm={backToRhythm}
+              busy={save.isPending}
+            />
+          ) : null}
+          {save.error ? <Text style={[s.detailSub, { color: colors.danger, paddingHorizontal: 8 }]}>{save.error.message}</Text> : null}
         </ScrollView>
+        {adjusting ? (
+          <View style={s.bar}>
+            {groups.length ? (
+              <View style={{ gap: 6 }} accessibilityLabel="Jours modifiés">
+                {groups.map((g) => (
+                  <View key={g.start} style={s.recapRow}>
+                    <View style={[s.recapDot, { backgroundColor: memberById(calendar.data.members, g.to)?.color ?? colors.ink }]} />
+                    <Text style={[s.detailSub, { flex: 1, color: colors.ink }]}>
+                      {formatRange(g.start, g.end)} · chez {nameOf(g.to)}
+                    </Text>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={`Retirer ${formatRange(g.start, g.end)}`}
+                      onPress={() => removeFlips(g.dates)}
+                      hitSlop={10}
+                    >
+                      <Icon name="close" size={16} color={colors.inkSoft} />
+                    </Pressable>
+                  </View>
+                ))}
+              </View>
+            ) : null}
+            <Text style={s.detailSub}>
+              {flipCount === 0 ? 'Aucun jour modifié' : `${flipCount} ${flipCount > 1 ? 'jours modifiés' : 'jour modifié'}`}
+            </Text>
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              <Button
+                title="Annuler"
+                variant="secondary"
+                onPress={() => {
+                  setAdjusting(false)
+                  setFlips({})
+                }}
+                disabled={save.isPending}
+                style={{ flex: 1 }}
+              />
+              <Button
+                title={solo ? 'Enregistrer' : 'Proposer'}
+                onPress={saveAdjust}
+                loading={save.isPending}
+                disabled={flipCount === 0}
+                style={{ flex: 1 }}
+              />
+            </View>
+          </View>
+        ) : null}
+        </>
       )}
     </SafeAreaView>
   )
 }
 
-function DayCell({ date, cal, inMonth, isToday, isSelected, onPress }: {
+function DayCell({ date, cal, inMonth, isToday, isSelected, flipColor, onPress }: {
   date: string
   cal: CalendarResponse
   inMonth: boolean
   isToday: boolean
   isSelected: boolean
+  /** Couleur du parent visé quand le jour est touché en mode « Ajuster ». */
+  flipColor?: string
   onPress: () => void
 }) {
   const day = cal.days.find((d) => d.date === date)
-  const color = memberById(cal.members, day?.parent_id)?.color
+  const color = flipColor ?? memberById(cal.members, day?.parent_id)?.color
+  const adjusted = day?.source === 'adjustment'
   const vacation = schoolHolidayOn(cal, date)
   const holiday = publicHolidayOn(cal, date)
   const pending = pendingOn(cal, date)
@@ -111,7 +302,7 @@ function DayCell({ date, cal, inMonth, isToday, isSelected, onPress }: {
     <Pressable
       accessibilityRole="button"
       accessibilityState={{ selected: isSelected }}
-      accessibilityLabel={[formatLong(date), owner ? `chez ${owner}` : null, vacation?.label, holiday?.label, pending ? 'échange proposé' : null]
+      accessibilityLabel={[formatLong(date), owner ? `chez ${owner}` : null, adjusted ? 'jour personnalisé' : null, flipColor ? 'modifié' : null, vacation?.label, holiday?.label, pending ? 'échange proposé' : null]
         .filter(Boolean)
         .join(', ')}
       onPress={onPress}
@@ -119,7 +310,9 @@ function DayCell({ date, cal, inMonth, isToday, isSelected, onPress }: {
         s.cell,
         { backgroundColor: color ? tint(color, 0.3) : colors.paperDeep, opacity: inMonth ? 1 : 0.4 },
         isSelected && { borderColor: colors.ink, borderWidth: 2 },
+        adjusted && !isSelected && { borderColor: colors.ink, borderWidth: 1.5 },
         pending && !isSelected && { borderColor: colors.terraText, borderWidth: 2, borderStyle: 'dashed' },
+        flipColor ? { borderColor: colors.ink, borderWidth: 2, borderStyle: 'dashed' } : null,
       ]}
     >
       <View style={isToday ? s.todayDot : null}>
@@ -133,7 +326,15 @@ function DayCell({ date, cal, inMonth, isToday, isSelected, onPress }: {
   )
 }
 
-function DayDetail({ date, cal, meId, householdId }: { date: string; cal: CalendarResponse; meId?: number; householdId?: number }) {
+function DayDetail({ date, cal, meId, householdId, adjustment, onBackToRhythm, busy }: {
+  date: string
+  cal: CalendarResponse
+  meId?: number
+  householdId?: number
+  adjustment?: ScheduleException
+  onBackToRhythm: (id: number) => void
+  busy: boolean
+}) {
   const withdraw = useWithdrawExchange(householdId)
   const accepted = useAcceptedExchanges(householdId).data ?? []
   const [cancelNotice, setCancelNotice] = useState<string | null>(null)
@@ -146,8 +347,9 @@ function DayDetail({ date, cal, meId, householdId }: { date: string; cal: Calend
   const holiday = publicHolidayOn(cal, date)
   const pending = pendingOn(cal, date)
   const who = (id?: number) => whoName(cal.members, id, meId)
-  // Échange accepté qui couvre ce jour (annulable tant qu'il n'est pas passé).
-  const exchange = accepted.find((e) => e.date_start <= date && date <= e.date_end)
+  // Échange accepté qui couvre ce jour (annulable tant qu'il n'est pas passé) ; un jour
+  // personnalisé se rend au rythme avec son propre bouton.
+  const exchange = accepted.find((e) => e.kind !== 'adjustment' && e.date_start <= date && date <= e.date_end)
 
   function confirmCancel() {
     if (!exchange) return
@@ -204,6 +406,9 @@ function DayDetail({ date, cal, meId, householdId }: { date: string; cal: Calend
         />
       ) : null}
       {withdraw.error ? <Text style={[s.detailSub, { color: colors.danger }]}>{withdraw.error.message}</Text> : null}
+      {day?.source === 'adjustment' && adjustment ? (
+        <Button title="Revenir au rythme habituel" variant="ghost" onPress={() => onBackToRhythm(adjustment.id)} loading={busy} />
+      ) : null}
       {exchange && exchange.date_end >= todayIso() ? (
         <Button title="Annuler cet échange" variant="ghost" onPress={confirmCancel} loading={cancel.isPending} />
       ) : null}
@@ -229,10 +434,18 @@ function NavButton({ icon, label, onPress }: { icon: 'back' | 'chevron'; label: 
   )
 }
 
-function Legend({ color, label, bar }: { color: string; label: string; bar?: boolean }) {
+function Legend({ color, label, bar, ring }: { color: string; label: string; bar?: boolean; ring?: boolean }) {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-      <View style={bar ? { width: 14, height: 3, borderRadius: 2, backgroundColor: color } : { width: 10, height: 10, borderRadius: 3, backgroundColor: color }} />
+      <View
+        style={
+          bar
+            ? { width: 14, height: 3, borderRadius: 2, backgroundColor: color }
+            : ring
+              ? { width: 10, height: 10, borderRadius: 3, borderWidth: 1.5, borderColor: color }
+              : { width: 10, height: 10, borderRadius: 3, backgroundColor: color }
+        }
+      />
       <Text style={{ fontFamily: fonts.body, fontSize: 12, color: colors.inkSoft }}>{label}</Text>
     </View>
   )
@@ -264,6 +477,17 @@ const s = StyleSheet.create({
   detailTitle: { fontFamily: fonts.display, fontSize: 20, color: colors.ink },
   detailMain: { fontFamily: fonts.bodySemiBold, fontSize: 15, color: colors.ink },
   detailSub: { fontFamily: fonts.body, fontSize: 13, color: colors.inkSoft },
+  hint: {
+    flexDirection: 'row', gap: 10, alignItems: 'flex-start', padding: 12, marginHorizontal: 4, borderRadius: 12,
+    backgroundColor: colors.pineSoft,
+  },
+  rhythmLink: { alignSelf: 'center', fontFamily: fonts.bodySemiBold, fontSize: 14, color: colors.pine, paddingVertical: 6 },
+  bar: {
+    gap: 10, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 14, backgroundColor: colors.surface,
+    borderTopWidth: 1, borderTopColor: colors.line,
+  },
+  recapRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  recapDot: { width: 10, height: 10, borderRadius: 5 },
   pending: {
     flexDirection: 'row', gap: 10, alignItems: 'center', padding: 12, borderRadius: 12,
     backgroundColor: '#fdf3ee', borderWidth: 1, borderColor: '#e8c4b2', borderStyle: 'dashed',

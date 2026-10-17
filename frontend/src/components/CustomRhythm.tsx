@@ -33,6 +33,9 @@ const TEMPLATE_KEY: Record<(typeof TEMPLATES)[number]['id'], string> = {
   blank: 'Blank',
 }
 
+/** Index réservé au rythme personnalisé déjà enregistré (« Recommencer la configuration »). */
+export const CURRENT = -1
+
 export function templateCells(index: number): Cell[] {
   return TEMPLATES[index].cells.split('').map((c) => (c === 'a' ? 'ref' : c === 'b' ? 'other' : null))
 }
@@ -48,10 +51,28 @@ interface Common {
 interface PickerProps extends Common {
   template: number
   onPick: (i: number) => void
+  /** Rythme personnalisé déjà en place : proposé en premier pour le retoucher. */
+  current?: Cell[] | null
 }
 
-export function TemplatePicker({ template, onPick, colorOf, atLabel }: PickerProps) {
+export function TemplatePicker({ template, onPick, current, colorOf, atLabel }: PickerProps) {
   const { t } = useTranslation()
+  const options = [
+    ...(current
+      ? [{
+          index: CURRENT,
+          title: t('wizard.tplCurrentTitle'),
+          desc: t('wizard.tplCurrentDesc'),
+          cells: current.map((c) => (c === 'ref' ? 'a' : c === 'other' ? 'b' : 'x')).join(''),
+        }]
+      : []),
+    ...TEMPLATES.map((tpl, index) => ({
+      index,
+      title: t(`wizard.tpl${TEMPLATE_KEY[tpl.id]}Title`),
+      desc: t(`wizard.tpl${TEMPLATE_KEY[tpl.id]}Desc`),
+      cells: tpl.cells as string,
+    })),
+  ]
   return (
     <>
       <h2 className="wz-title">{t('wizard.customTemplateTitle')}</h2>
@@ -62,17 +83,17 @@ export function TemplatePicker({ template, onPick, colorOf, atLabel }: PickerPro
         aria-label={t('wizard.customTemplateTitle')}
         style={{ '--cr-a': colorOf('ref'), '--cr-b': colorOf('other') } as CSSProperties}
       >
-        {TEMPLATES.map((tpl, i) => (
-          <label key={tpl.id} className={`wz-option${template === i ? ' selected' : ''}`}>
-            <input type="radio" name="wz-template" checked={template === i} onChange={() => onPick(i)} />
+        {options.map((opt) => (
+          <label key={opt.index} className={`wz-option${template === opt.index ? ' selected' : ''}`}>
+            <input type="radio" name="wz-template" checked={template === opt.index} onChange={() => onPick(opt.index)} />
             <span className="wz-option-text">
-              <strong>{t(`wizard.tpl${TEMPLATE_KEY[tpl.id]}Title`)}</strong>
-              <span>{t(`wizard.tpl${TEMPLATE_KEY[tpl.id]}Desc`)}</span>
+              <strong>{opt.title}</strong>
+              <span>{opt.desc}</span>
             </span>
             <span className="wz-thumb" aria-hidden="true">
               {[0, 1].map((w) => (
                 <span key={w} className="wz-thumb-row">
-                  {tpl.cells
+                  {opt.cells
                     .slice(w * 7, w * 7 + 7)
                     .split('')
                     .map((c, j) => (
@@ -113,7 +134,7 @@ export function CycleDrawer({ cells, onChange, brush, onBrush, startDate, onStar
   const fmt = useFormat()
   const [editDate, setEditDate] = useState(false)
   const anchor = mondayOf(startDate)
-  const blank = TEMPLATES[template].id === 'blank'
+  const blank = template !== CURRENT && TEMPLATES[template].id === 'blank'
   const DOW = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((d) => t(`rules.weekdayShort${d}`))
   const DAY = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((d) => t(`rules.weekday${d}`))
 

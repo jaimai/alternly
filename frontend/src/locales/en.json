@@ -719,6 +719,8 @@
   "wizard.thumbLegend": "Thumbnails: two weeks, Monday to Sunday; one color per parent.",
   "wizard.tplBlankDesc": "You place every day yourself.",
   "wizard.tplBlankTitle": "Start from an empty grid",
+  "wizard.tplCurrentDesc": "Start again from your saved two weeks.",
+  "wizard.tplCurrentTitle": "My current schedule",
   "wizard.tplTwoTwoFiveFiveDesc": "Mon-Tue with you, Wed-Thu with the other parent, alternating weekends.",
   "wizard.tplTwoTwoFiveFiveTitle": "2-2-5-5",
   "wizard.tplWeekdaysWeekendsDesc": "Monday to Thursday with you, Friday to Sunday with the other parent.",
