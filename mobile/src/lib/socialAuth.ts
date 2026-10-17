@@ -8,6 +8,7 @@ import * as Linking from 'expo-linking'
 import * as WebBrowser from 'expo-web-browser'
 import { Platform } from 'react-native'
 import { API_BASE, api } from './api'
+import { t } from './i18n'
 import type { TokenResponse } from './types'
 
 // ID client OAuth « Application Web » (le même que le web) : audience du jeton sur Android.
@@ -44,8 +45,8 @@ export async function signInWithGoogle(): Promise<TokenResponse> {
   if (!googleAvailable()) {
     throw new Error(
       isExpoGo
-        ? 'La connexion Google fonctionne dans l’app installée, pas dans Expo Go.'
-        : 'La connexion Google n’est pas encore configurée.',
+        ? t('auth.social.googleExpoGo')
+        : t('auth.social.googleNotConfigured'),
     )
   }
   const { GoogleSignin, isErrorWithCode, statusCodes } = await googleModule()
@@ -59,12 +60,12 @@ export async function signInWithGoogle(): Promise<TokenResponse> {
     if (isErrorWithCode(e)) {
       if (e.code === statusCodes.SIGN_IN_CANCELLED || e.code === statusCodes.IN_PROGRESS) throw new SignInCancelled()
       if (e.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
-        throw new Error('Les services Google Play ne sont pas disponibles sur ce téléphone.')
+        throw new Error(t('auth.social.playServicesUnavailable'))
       }
     }
     throw e
   }
-  if (!idToken) throw new Error('Google n’a pas confirmé votre identité. Réessayez.')
+  if (!idToken) throw new Error(t('auth.social.googleNoIdentity'))
   return api.googleLogin(idToken)
 }
 
@@ -98,7 +99,7 @@ async function signInWithAppleNative(): Promise<TokenResponse> {
     if ((e as { code?: string })?.code === 'ERR_REQUEST_CANCELED') throw new SignInCancelled()
     throw e
   }
-  if (!credential.identityToken) throw new Error('Apple n’a pas confirmé votre identité. Réessayez.')
+  if (!credential.identityToken) throw new Error(t('auth.social.appleNoIdentity'))
   // Le prénom n'est transmis qu'à la toute première autorisation.
   return api.appleLogin(credential.identityToken, nonce.raw, credential.fullName?.givenName ?? undefined)
 }
@@ -108,7 +109,7 @@ async function signInWithAppleNative(): Promise<TokenResponse> {
  * (/auth/apple/callback), qui le renvoie à l'app ; l'app le fait vérifier comme sur iPhone.
  */
 async function signInWithAppleWeb(): Promise<TokenResponse> {
-  if (!APPLE_SERVICES_ID) throw new Error('La connexion Apple n’est pas encore configurée sur ce téléphone.')
+  if (!APPLE_SERVICES_ID) throw new Error(t('auth.social.appleNotConfigured'))
   const returnUrl = Linking.createURL('apple-callback')
   // `state` : vérifié par l'app au retour (pas de réponse qu'elle n'a pas demandée).
   const state = randomHex(16)
@@ -130,10 +131,10 @@ async function signInWithAppleWeb(): Promise<TokenResponse> {
   if (result.type !== 'success') throw new SignInCancelled()
   const params = Linking.parse(result.url).queryParams ?? {}
   const param = (k: string) => (typeof params[k] === 'string' ? (params[k] as string) : undefined)
-  if (param('state') !== state) throw new Error('Réponse d’Apple inattendue. Réessayez.')
+  if (param('state') !== state) throw new Error(t('auth.social.appleUnexpected'))
   if (param('error') === 'user_cancelled_authorize') throw new SignInCancelled()
   const idToken = param('id_token')
-  if (!idToken) throw new Error('Apple n’a pas confirmé votre identité. Réessayez.')
+  if (!idToken) throw new Error(t('auth.social.appleNoIdentity'))
   return api.appleLogin(idToken, nonce.raw, param('given_name'))
 }
 

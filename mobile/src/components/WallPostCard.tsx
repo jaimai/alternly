@@ -1,13 +1,14 @@
 // Carte d'un post du tableau : type, échéance, enfant, auteur ; case à cocher pour les
 // tâches et questions. Toucher la carte ouvre le post et ses réponses.
 import { router } from 'expo-router'
+import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { api } from '@/lib/api'
 import { formatShort, isoLocal, parseTimestamp, todayIso } from '@/lib/dates'
 import { useWallAction } from '@/lib/queries'
 import { colors, fonts, radius } from '@/lib/theme'
 import type { Household, WallKind, WallPost } from '@/lib/types'
-import { KIND_LABEL, isOverdue } from '@/lib/wall'
+import { isOverdue, kindLabel } from '@/lib/wall'
 import { Icon } from './Icon'
 import { Tag } from './Tag'
 
@@ -18,6 +19,7 @@ export const KIND_TAG: Record<WallKind, { bg: string; fg: string }> = {
 }
 
 export function WallPostCard({ post: p, household, detail = false }: { post: WallPost; household: Household; detail?: boolean }) {
+  const { t } = useTranslation()
   const name = (id: number | null) => household.members.find((m) => m.id === id)?.display_name ?? '?'
   const child = household.children.find((c) => c.id === p.child_id)?.first_name
   const done = p.completed_at !== null
@@ -26,11 +28,11 @@ export function WallPostCard({ post: p, household, detail = false }: { post: Wal
 
   const meta = [
     child,
-    p.due_date ? `pour le ${formatShort(p.due_date)}` : null,
-    p.assigned_to ? `pour ${name(p.assigned_to)}` : null,
+    p.due_date ? t('wall.card.dueOn', { date: formatShort(p.due_date) }) : null,
+    p.assigned_to ? t('wall.card.assignedTo', { name: name(p.assigned_to) }) : null,
   ].filter(Boolean).join(' · ')
 
-  const checkLabel = done ? 'Rouvrir' : p.kind === 'task' ? 'Marquer fait' : 'Marquer résolu'
+  const checkLabel = done ? t('wall.card.reopen') : p.kind === 'task' ? t('wall.card.markDone') : t('wall.card.markResolved')
 
   return (
     <Pressable
@@ -52,8 +54,8 @@ export function WallPostCard({ post: p, household, detail = false }: { post: Wal
             {done ? <Icon name="check" size={14} color="#fff" strokeWidth={3} /> : null}
           </Pressable>
         ) : null}
-        <Tag label={KIND_LABEL[p.kind]} {...KIND_TAG[p.kind]} />
-        {isOverdue(p, todayIso()) ? <Tag label="En retard" bg={colors.dangerSoft} fg={colors.danger} /> : null}
+        <Tag label={kindLabel(p.kind)} {...KIND_TAG[p.kind]} />
+        {isOverdue(p, todayIso()) ? <Tag label={t('wall.card.overdue')} bg={colors.dangerSoft} fg={colors.danger} /> : null}
         <Text style={s.author} numberOfLines={1}>
           {`${name(p.author_id)} · ${formatShort(isoLocal(parseTimestamp(p.created_at)))}`}
         </Text>
@@ -63,7 +65,7 @@ export function WallPostCard({ post: p, household, detail = false }: { post: Wal
       </Text>
       {meta ? <Text style={s.meta}>{meta}</Text> : null}
       {!detail && p.replies.length > 0 ? (
-        <Text style={s.meta}>{`${p.replies.length} réponse${p.replies.length > 1 ? 's' : ''}`}</Text>
+        <Text style={s.meta}>{t('wall.card.replies', { count: p.replies.length })}</Text>
       ) : null}
     </Pressable>
   )

@@ -1,29 +1,31 @@
 import { router } from 'expo-router'
+import { useTranslation } from 'react-i18next'
 import { StyleSheet, Text, View } from 'react-native'
 import { LogoMark } from '@/components/Icon'
 import { Body, Button, Card, Screen } from '@/components/ui'
 import { colors, fonts } from '@/lib/theme'
 
 // Illustration : une semaine type, passation le vendredi.
-const WEEK: { label: string; split?: boolean; other?: boolean }[] = [
-  { label: 'L' }, { label: 'M' }, { label: 'M' }, { label: 'J' },
-  { label: 'V', split: true }, { label: 'S', other: true }, { label: 'D', other: true },
+const WEEK: { day: string; split?: boolean; other?: boolean }[] = [
+  { day: 'mon' }, { day: 'tue' }, { day: 'wed' }, { day: 'thu' },
+  { day: 'fri', split: true }, { day: 'sat', other: true }, { day: 'sun', other: true },
 ]
 
 export default function Welcome() {
+  const { t } = useTranslation()
   return (
     <Screen edges={['top', 'bottom']} contentStyle={{ flexGrow: 1, justifyContent: 'space-between', paddingHorizontal: 24 }}>
       <View style={s.hero}>
         <LogoMark size={76} />
         <Text accessibilityRole="header" style={s.brand}>Alternly</Text>
-        <Body muted style={s.tagline}>Le calendrier de garde partagée, clair pour les deux parents.</Body>
+        <Body muted style={s.tagline}>{t('auth.welcome.tagline')}</Body>
 
         <Card style={s.preview}>
-          <Text style={s.previewTitle}>Une semaine type</Text>
-          <View style={s.week} accessible accessibilityLabel="Du lundi au vendredi chez vous, passation vendredi soir, week-end chez l'autre parent">
+          <Text style={s.previewTitle}>{t('auth.welcome.previewTitle')}</Text>
+          <View style={s.week} accessible accessibilityLabel={t('auth.welcome.previewA11y')}>
             {WEEK.map((d, i) => (
               <View key={i} style={s.dayCol}>
-                <Text style={s.dayLabel}>{d.label}</Text>
+                <Text style={s.dayLabel}>{t(`auth.welcome.days.${d.day}`)}</Text>
                 <View style={[s.dayCell, { backgroundColor: d.other ? colors.terra : '#2f6b57' }]}>
                   {d.split ? <View style={s.half} /> : null}
                 </View>
@@ -31,16 +33,16 @@ export default function Welcome() {
             ))}
           </View>
           <View style={s.legend}>
-            <Legend color="#2f6b57" label="Vous" />
-            <Legend color={colors.terra} label="L'autre parent" />
+            <Legend color="#2f6b57" label={t('common.youTitle')} />
+            <Legend color={colors.terra} label={t('auth.welcome.otherParent')} />
           </View>
         </Card>
       </View>
 
       <View style={{ gap: 10 }}>
-        <Button title="Créer un compte" onPress={() => router.push('/register')} />
-        <Button title="J'ai déjà un compte" variant="secondary" onPress={() => router.push('/login')} />
-        <Body muted style={{ textAlign: 'center', fontSize: 13 }}>Le même compte que sur alternly.com</Body>
+        <Button title={t('auth.createAccount')} onPress={() => router.push('/register')} />
+        <Button title={t('auth.haveAccount')} variant="secondary" onPress={() => router.push('/login')} />
+        <Body muted style={{ textAlign: 'center', fontSize: 13 }}>{t('auth.welcome.sameAccount')}</Body>
       </View>
     </Screen>
   )

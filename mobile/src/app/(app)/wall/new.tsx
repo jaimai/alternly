@@ -1,6 +1,7 @@
 // Nouveau post du tableau : info, tâche (échéance, pour qui) ou question.
 import { router } from 'expo-router'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { StyleSheet, TextInput, View } from 'react-native'
 import { BackButton } from '@/components/BackButton'
 import { Chips, DateField } from '@/components/form'
@@ -10,15 +11,10 @@ import { todayIso } from '@/lib/dates'
 import { useHousehold, useMe, useWallAction } from '@/lib/queries'
 import { colors, fonts, radius } from '@/lib/theme'
 import type { WallKind } from '@/lib/types'
-import { KIND_LABEL } from '@/lib/wall'
-
-const PLACEHOLDER: Record<WallKind, string> = {
-  message: 'Une info à partager…',
-  task: 'Ce qu’il y a à faire…',
-  question: 'Votre question à l’autre parent…',
-}
+import { kindLabel } from '@/lib/wall'
 
 export default function NewPost() {
+  const { t } = useTranslation()
   const household = useHousehold().data ?? undefined
   const meId = useMe().data?.id
   const [kind, setKind] = useState<WallKind>('message')
@@ -45,31 +41,31 @@ export default function NewPost() {
   return (
     <Screen edges={['top', 'bottom']}>
       <BackButton />
-      <Title>Nouveau post</Title>
+      <Title>{t('wall.tab.newPost')}</Title>
       <ErrorBanner message={publish.error?.message} />
 
       <Chips
-        label="Type"
-        options={(['message', 'task', 'question'] as const).map((k) => ({ value: k, label: KIND_LABEL[k] }))}
+        label={t('wall.new.type')}
+        options={(['message', 'task', 'question'] as const).map((k) => ({ value: k, label: kindLabel(k) }))}
         value={kind}
         onChange={setKind}
       />
       <TextInput
         value={body}
         onChangeText={setBody}
-        placeholder={PLACEHOLDER[kind]}
+        placeholder={t(`wall.new.placeholders.${kind}`)}
         placeholderTextColor={colors.inkSoft}
         multiline
         autoFocus
         maxLength={2000}
-        accessibilityLabel="Message"
+        accessibilityLabel={t('wall.new.messageLabel')}
         style={s.input}
       />
 
       {household.children.length > 0 ? (
         <Chips
-          label="Enfant concerné"
-          options={[{ value: 0, label: 'Aucun' }, ...household.children.map((c) => ({ value: c.id, label: c.first_name }))]}
+          label={t('wall.new.child')}
+          options={[{ value: 0, label: t('common.none') }, ...household.children.map((c) => ({ value: c.id, label: c.first_name }))]}
           value={childId}
           onChange={setChildId}
         />
@@ -78,29 +74,29 @@ export default function NewPost() {
       {kind === 'task' ? (
         <>
           <Chips
-            label="Pour"
+            label={t('wall.new.for')}
             options={[
-              { value: 0, label: 'L’un ou l’autre' },
-              ...household.members.map((m) => ({ value: m.id, label: m.id === meId ? `${m.display_name} (vous)` : m.display_name, dot: m.color })),
+              { value: 0, label: t('wall.new.either') },
+              ...household.members.map((m) => ({ value: m.id, label: m.id === meId ? t('common.youSuffix', { name: m.display_name }) : m.display_name, dot: m.color })),
             ]}
             value={assignedTo}
             onChange={setAssignedTo}
           />
           <Chips
-            label="Échéance"
-            options={[{ value: 0, label: 'Aucune' }, { value: 1, label: 'Choisir une date' }]}
+            label={t('wall.new.due')}
+            options={[{ value: 0, label: t('wall.new.noDue') }, { value: 1, label: t('wall.new.pickDate') }]}
             value={hasDue ? 1 : 0}
             onChange={(v) => setHasDue(v === 1)}
           />
           {hasDue ? (
             <View style={{ flexDirection: 'row' }}>
-              <DateField label="Date" value={dueDate} onChange={setDueDate} min={todayIso()} />
+              <DateField label={t('wall.new.date')} value={dueDate} onChange={setDueDate} min={todayIso()} />
             </View>
           ) : null}
         </>
       ) : null}
 
-      <Button title="Publier" onPress={() => publish.mutate()} loading={publish.isPending} disabled={!body.trim()} />
+      <Button title={t('wall.new.publish')} onPress={() => publish.mutate()} loading={publish.isPending} disabled={!body.trim()} />
     </Screen>
   )
 }

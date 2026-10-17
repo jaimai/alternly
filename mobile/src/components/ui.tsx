@@ -1,5 +1,6 @@
 // Briques d'interface partagées par les écrans (charte « papier chaleureux »).
 import { forwardRef, type ReactNode } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   ActivityIndicator,
   Pressable,
@@ -131,10 +132,11 @@ export function Loading() {
 
 /** État d'erreur plein écran avec « Réessayer ». */
 export function ErrorState({ message, onRetry }: { message: string; onRetry?: () => void }) {
+  const { t } = useTranslation()
   return (
     <View style={[styles.center, { padding: 24, gap: 16 }]}>
       <Body muted style={{ textAlign: 'center' }}>{message}</Body>
-      {onRetry ? <Button title="Réessayer" variant="secondary" onPress={onRetry} /> : null}
+      {onRetry ? <Button title={t('common.retry')} variant="secondary" onPress={onRetry} /> : null}
     </View>
   )
 }

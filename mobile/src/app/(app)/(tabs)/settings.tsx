@@ -2,34 +2,28 @@
 // notifications, compte. Chaque rubrique s'ouvre dans son écran (app/(app)/settings/…).
 import Constants from 'expo-constants'
 import { router, type Href } from 'expo-router'
-import { Alert, Linking, Pressable, StyleSheet, Text, View } from 'react-native'
+import { useTranslation } from 'react-i18next'
+import { Alert, Pressable, StyleSheet, Text, View } from 'react-native'
 import { ChangeRequests } from '@/components/ChangeRequests'
 import { Icon } from '@/components/Icon'
 import { InviteCard } from '@/components/InviteCard'
 import { Avatar, Screen, SectionLabel, Title } from '@/components/ui'
 import { useAuth } from '@/lib/auth'
-import { WEB_URL } from '@/lib/colors'
 import { isSolo } from '@/lib/custody'
 import { useBilling, useHousehold, useMe } from '@/lib/queries'
 import { colors, fonts } from '@/lib/theme'
 
-const PATTERN_LABEL: Record<string, string> = {
-  alternate_weeks: 'Semaine / semaine',
-  every_other_weekend: 'Un week-end sur deux',
-  two_two_three: '2-2-3',
-  custom: 'Organisation personnalisée',
-}
-
 export default function Settings() {
+  const { t } = useTranslation()
   const { signOut } = useAuth()
   const me = useMe().data
   const household = useHousehold().data
   const billing = useBilling().data
 
   const confirmSignOut = () =>
-    Alert.alert('Se déconnecter ?', 'Vous pourrez vous reconnecter avec le même compte.', [
-      { text: 'Annuler', style: 'cancel' },
-      { text: 'Se déconnecter', style: 'destructive', onPress: () => void signOut() },
+    Alert.alert(t('settings.signOut.title'), t('settings.signOut.body'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('settings.signOut.action'), style: 'destructive', onPress: () => void signOut() },
     ])
 
   const solo = household ? isSolo(household.members) : true
@@ -37,7 +31,7 @@ export default function Settings() {
 
   return (
     <Screen>
-      <Title>Réglages</Title>
+      <Title>{t('settings.title')}</Title>
 
       {me ? (
         <Pressable accessibilityRole="button" onPress={() => router.push('/settings/profile')} style={[s.group, s.row, { borderBottomWidth: 0 }]}>
@@ -54,26 +48,30 @@ export default function Settings() {
 
       {household ? (
         <View style={{ gap: 8 }}>
-          <SectionLabel>Foyer</SectionLabel>
+          <SectionLabel>{t('settings.householdSection')}</SectionLabel>
           <View style={s.group}>
             {household.members.map((m) => (
               <View key={m.id} style={s.row}>
                 <Avatar name={m.display_name} color={m.color} size={32} />
-                <Text style={[s.strong, { flex: 1 }]}>{m.id === me?.id ? `${m.display_name} (vous)` : m.display_name}</Text>
-                {m.is_placeholder ? <Text style={s.muted}>pas encore inscrit·e</Text> : null}
+                <Text style={[s.strong, { flex: 1 }]}>{m.id === me?.id ? t('common.youSuffix', { name: m.display_name }) : m.display_name}</Text>
+                {m.is_placeholder ? <Text style={s.muted}>{t('settings.notRegistered')}</Text> : null}
               </View>
             ))}
             <NavRow
-              label="Enfants, zone, autre parent"
+              label={t('settings.childrenRow')}
               value={household.children.map((c) => c.first_name).join(', ') || '—'}
               href="/settings/household"
             />
             <NavRow
-              label="Garde et vacances"
-              value={household.custody_rule ? PATTERN_LABEL[household.custody_rule.pattern] : '—'}
+              label={t('settings.custodyRow')}
+              value={household.custody_rule ? t(`settings.pattern.${household.custody_rule.pattern}`) : '—'}
               href="/settings/rules"
             />
-            <NavRow label="Jours de fête" value={enabledDays ? `${enabledDays} actif${enabledDays > 1 ? 's' : ''}` : 'Aucun'} href="/settings/special-days" />
+            <NavRow
+              label={t('settings.specialDaysRow')}
+              value={enabledDays ? t('settings.specialDaysActive', { count: enabledDays }) : t('common.none')}
+              href="/settings/special-days"
+            />
           </View>
         </View>
       ) : null}
@@ -83,22 +81,20 @@ export default function Settings() {
       ) : null}
 
       <View style={{ gap: 8 }}>
-        <SectionLabel>Application</SectionLabel>
+        <SectionLabel>{t('settings.appSection')}</SectionLabel>
         <View style={s.group}>
-          <NavRow label="Alternly Premium" value={billing ? (billing.access ? 'Actif' : 'Découvrir') : undefined} href="/premium" />
-          <NavRow label="Notifications" icon="bell" href="/notification-settings" />
-          <NavRow label="Compte et mot de passe" icon="settings" href="/settings/account" />
-          <Pressable accessibilityRole="link" onPress={() => Linking.openURL(`${WEB_URL}/history`)} style={s.row}>
-            <Text style={[s.strong, { flex: 1 }]}>Historique des changements</Text>
-            <Text style={s.muted}>sur le web</Text>
-          </Pressable>
+          <NavRow label="Alternly Premium" value={billing ? (billing.access ? t('settings.premiumActive') : t('settings.premiumDiscover')) : undefined} href="/premium" />
+          <NavRow label={t('settings.notificationsRow')} icon="bell" href="/notification-settings" />
+          <NavRow label={t('settings.accountRow')} icon="settings" href="/settings/account" />
+          <NavRow label={t('settings.calendarSyncRow')} icon="calendar" href="/settings/calendar-sync" />
+          <NavRow label={t('settings.historyRow')} href="/settings/history" />
         </View>
       </View>
 
       <View style={s.group}>
         <Pressable accessibilityRole="button" onPress={confirmSignOut} style={[s.row, { borderBottomWidth: 0 }]}>
           <Icon name="logout" color={colors.danger} />
-          <Text style={[s.strong, { color: colors.danger }]}>Se déconnecter</Text>
+          <Text style={[s.strong, { color: colors.danger }]}>{t('settings.signOut.action')}</Text>
         </Pressable>
       </View>
 
@@ -107,7 +103,7 @@ export default function Settings() {
   )
 }
 
-function NavRow({ label, value, icon, href }: { label: string; value?: string; icon?: 'bell' | 'settings'; href: Href }) {
+function NavRow({ label, value, icon, href }: { label: string; value?: string; icon?: 'bell' | 'settings' | 'calendar'; href: Href }) {
   return (
     <Pressable accessibilityRole="button" onPress={() => router.push(href)} style={({ pressed }) => [s.row, pressed && { backgroundColor: colors.paperDeep }]}>
       {icon ? <Icon name={icon} color={colors.ink} /> : null}

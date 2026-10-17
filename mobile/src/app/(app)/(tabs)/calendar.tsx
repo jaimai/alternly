@@ -1,5 +1,6 @@
 import { router } from 'expo-router'
 import { useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { CalendarNotices } from '@/components/CalendarNotices'
@@ -12,15 +13,13 @@ import { useAcceptedExchanges, useCalendar, useCancelExchange, useHousehold, use
 import { colors, fonts, tint } from '@/lib/theme'
 import type { CalendarResponse } from '@/lib/types'
 
-const WEEKDAYS = ['LUN', 'MAR', 'MER', 'JEU', 'VEN', 'SAM', 'DIM']
-const SOURCE_LABEL: Record<string, string> = {
-  rule: 'Rythme habituel',
-  vacation: 'Vacances scolaires',
-  special: 'Jour spécial',
-  exception: 'Échange accepté',
-}
+// Clés calendar.month.weekdays.* (traduites au rendu).
+const WEEKDAYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
+// Sources dont le libellé existe (calendar.month.source.*).
+const SOURCES = ['rule', 'vacation', 'special', 'exception']
 
 export default function CalendarScreen() {
+  const { t } = useTranslation()
   const today = todayIso()
   const [month, setMonth] = useState(monthStart(today))
   const [selected, setSelected] = useState(today)
@@ -41,8 +40,8 @@ export default function CalendarScreen() {
         <Text accessibilityRole="header" style={s.title}>
           {capitalize(formatMonth(month))}
         </Text>
-        <NavButton icon="back" label="Mois précédent" onPress={() => goTo(-1)} />
-        <NavButton icon="chevron" label="Mois suivant" onPress={() => goTo(1)} />
+        <NavButton icon="back" label={t('calendar.month.prev')} onPress={() => goTo(-1)} />
+        <NavButton icon="chevron" label={t('calendar.month.next')} onPress={() => goTo(1)} />
       </View>
 
       {calendar.isPending ? (
@@ -51,7 +50,7 @@ export default function CalendarScreen() {
         <ErrorState
           message={
             calendar.error instanceof ApiError && calendar.error.status === 409
-              ? 'Aucun rythme de garde défini. Choisissez-le dans Réglages › Garde et vacances.'
+              ? t('calendar.month.noRule')
               : calendar.error.message
           }
           onRetry={() => calendar.refetch()}
@@ -61,15 +60,15 @@ export default function CalendarScreen() {
           <CalendarNotices cal={calendar.data} />
           <View style={s.legendRow}>
             {calendar.data.members.map((m) => (
-              <Legend key={m.id} color={m.color} label={m.id === meId ? 'Vous' : m.display_name} />
+              <Legend key={m.id} color={m.color} label={m.id === meId ? t('common.youTitle') : m.display_name} />
             ))}
-            <Legend color={colors.holiday} label="Vacances" bar />
+            <Legend color={colors.holiday} label={t('calendar.month.vacationLegend')} bar />
           </View>
 
           <View style={s.grid}>
             {WEEKDAYS.map((d) => (
               <Text key={d} style={s.weekday}>
-                {d}
+                {t(`calendar.month.weekdays.${d}`)}
               </Text>
             ))}
             {grid.map((date) => (
@@ -100,6 +99,7 @@ function DayCell({ date, cal, inMonth, isToday, isSelected, onPress }: {
   isSelected: boolean
   onPress: () => void
 }) {
+  const { t } = useTranslation()
   const day = cal.days.find((d) => d.date === date)
   const color = memberById(cal.members, day?.parent_id)?.color
   const vacation = schoolHolidayOn(cal, date)
@@ -111,7 +111,13 @@ function DayCell({ date, cal, inMonth, isToday, isSelected, onPress }: {
     <Pressable
       accessibilityRole="button"
       accessibilityState={{ selected: isSelected }}
-      accessibilityLabel={[formatLong(date), owner ? `chez ${owner}` : null, vacation?.label, holiday?.label, pending ? 'échange proposé' : null]
+      accessibilityLabel={[
+        formatLong(date),
+        owner ? t('calendar.month.cellWith', { name: owner }) : null,
+        vacation?.label,
+        holiday?.label,
+        pending ? t('calendar.month.cellPending') : null,
+      ]
         .filter(Boolean)
         .join(', ')}
       onPress={onPress}
@@ -134,11 +140,12 @@ function DayCell({ date, cal, inMonth, isToday, isSelected, onPress }: {
 }
 
 function DayDetail({ date, cal, meId, householdId }: { date: string; cal: CalendarResponse; meId?: number; householdId?: number }) {
+  const { t } = useTranslation()
   const withdraw = useWithdrawExchange(householdId)
   const accepted = useAcceptedExchanges(householdId).data ?? []
   const [cancelNotice, setCancelNotice] = useState<string | null>(null)
   const cancel = useCancelExchange(householdId, (pending) =>
-    setCancelNotice(pending ? 'Demande envoyée : l’échange sera annulé quand l’autre parent l’acceptera.' : 'Échange annulé.'),
+    setCancelNotice(pending ? t('calendar.month.cancelRequested') : t('calendar.month.cancelDone')),
   )
   const day = cal.days.find((d) => d.date === date)
   const member = memberById(cal.members, day?.parent_id)
@@ -152,11 +159,13 @@ function DayDetail({ date, cal, meId, householdId }: { date: string; cal: Calend
   function confirmCancel() {
     if (!exchange) return
     Alert.alert(
-      'Annuler cet échange ?',
-      `${formatRange(exchange.date_start, exchange.date_end)} : le rythme habituel reprend.${cal.members.length > 1 ? ' Avec deux parents, l’autre doit accepter l’annulation.' : ''}`,
+      t('calendar.month.cancelTitle'),
+      t(cal.members.length > 1 ? 'calendar.month.cancelBodyShared' : 'calendar.month.cancelBody', {
+        range: formatRange(exchange.date_start, exchange.date_end),
+      }),
       [
-        { text: 'Garder', style: 'cancel' },
-        { text: 'Annuler l’échange', style: 'destructive', onPress: () => cancel.mutate(exchange.id) },
+        { text: t('calendar.month.cancelKeep'), style: 'cancel' },
+        { text: t('calendar.month.cancelConfirm'), style: 'destructive', onPress: () => cancel.mutate(exchange.id) },
       ],
     )
   }
@@ -168,15 +177,15 @@ function DayDetail({ date, cal, meId, householdId }: { date: string; cal: Calend
         <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
           <View style={{ width: 8, alignSelf: 'stretch', borderRadius: 4, backgroundColor: member.color }} />
           <View>
-            <Text style={s.detailMain}>Chez {who(member.id)}</Text>
-            <Text style={s.detailSub}>{SOURCE_LABEL[day.source] ?? ''}</Text>
+            <Text style={s.detailMain}>{t('calendar.month.with', { name: who(member.id) })}</Text>
+            <Text style={s.detailSub}>{SOURCES.includes(day.source) ? t(`calendar.month.source.${day.source}`) : ''}</Text>
           </View>
         </View>
       ) : (
-        <Text style={s.detailSub}>Pas d’information pour ce jour.</Text>
+        <Text style={s.detailSub}>{t('calendar.month.noInfo')}</Text>
       )}
       {vacation ? <Text style={s.detailSub}>{vacation.label} ({formatRange(vacation.start, vacation.end)})</Text> : null}
-      {holiday ? <Text style={s.detailSub}>Férié : {holiday.label}</Text> : null}
+      {holiday ? <Text style={s.detailSub}>{t('calendar.month.holiday', { label: holiday.label })}</Text> : null}
       {pending ? (
         <Pressable
           accessibilityRole="button"
@@ -190,14 +199,17 @@ function DayDetail({ date, cal, meId, householdId }: { date: string; cal: Calend
           <Icon name="swap" size={18} color={colors.terraText} strokeWidth={2} />
           <Text style={{ flex: 1, fontFamily: fonts.body, fontSize: 14, color: colors.ink }}>
             {pending.proposed_by === meId
-              ? `Votre proposition (${formatRange(pending.date_start, pending.date_end)}) attend une réponse.`
-              : `Échange proposé : ${formatRange(pending.date_start, pending.date_end)} chez ${who(pending.proposed_parent_id)}. Toucher pour répondre.`}
+              ? t('calendar.month.pendingMine', { range: formatRange(pending.date_start, pending.date_end) })
+              : t('calendar.month.pendingOther', {
+                range: formatRange(pending.date_start, pending.date_end),
+                name: who(pending.proposed_parent_id),
+              })}
           </Text>
         </Pressable>
       ) : null}
       {pending && pending.proposed_by === meId ? (
         <Button
-          title="Retirer ma proposition"
+          title={t('calendar.month.withdraw')}
           variant="danger"
           onPress={() => withdraw.mutate(pending.id)}
           loading={withdraw.isPending}
@@ -205,13 +217,13 @@ function DayDetail({ date, cal, meId, householdId }: { date: string; cal: Calend
       ) : null}
       {withdraw.error ? <Text style={[s.detailSub, { color: colors.danger }]}>{withdraw.error.message}</Text> : null}
       {exchange && exchange.date_end >= todayIso() ? (
-        <Button title="Annuler cet échange" variant="ghost" onPress={confirmCancel} loading={cancel.isPending} />
+        <Button title={t('calendar.month.cancelButton')} variant="ghost" onPress={confirmCancel} loading={cancel.isPending} />
       ) : null}
       {cancel.error ? <Text style={[s.detailSub, { color: colors.danger }]}>{cancel.error.message}</Text> : null}
       {cancelNotice ? <Text style={s.detailSub}>{cancelNotice}</Text> : null}
       {!pending && date >= todayIso() ? (
         <Button
-          title="Proposer un échange"
+          title={t('calendar.month.propose')}
           variant="secondary"
           icon={<Icon name="swap" size={18} color={colors.pine} strokeWidth={2} />}
           onPress={() => router.push({ pathname: '/exchange/new', params: { date } })}

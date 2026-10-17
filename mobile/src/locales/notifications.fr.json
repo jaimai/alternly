@@ -1,0 +1,75 @@
+{
+  "messages": {
+    "exchangeProposed": "Nouvel échange proposé ({{range}}) — à accepter ou refuser",
+    "exchangeProposedNote": "Nouvel échange proposé ({{range}}) — « {{note}} » — à accepter ou refuser",
+    "exchangeAccepted": "Votre proposition d'échange a été acceptée ({{range}})",
+    "exchangeRefused": "Votre proposition d'échange a été refusée ({{range}})",
+    "exchangeWithdrawn": "Une proposition d'échange a été retirée ({{range}})",
+    "exceptionDeleted": "Échange de garde annulé ({{range}})",
+    "ruleChanged": "Les règles de garde ont été modifiées",
+    "inviteReminder": "L'autre parent n'a pas encore rejoint le calendrier. Renvoyez-lui l'invitation.",
+    "parentJoined": "{{name}} a rejoint le foyer",
+    "parentLeft": "{{name}} a supprimé son compte",
+    "expenseAdded": "Nouvelle dépense « {{label}} » ({{amount}})",
+    "expenseUpdated": "La dépense « {{label}} » a été modifiée ({{amount}})",
+    "expenseDisputed": "Votre dépense « {{label}} » a été contestée",
+    "expenseResolved": "La contestation sur « {{label}} » a été levée",
+    "expenseSettled": "« {{label}} » a été marquée remboursée",
+    "settlementRecorded": "Remboursement enregistré ({{amount}})",
+    "changeRequested": "Demande de changement à valider : {{summary}}",
+    "changeAccepted": "Votre demande a été acceptée : {{summary}}",
+    "changeRefused": "Votre demande a été refusée : {{summary}}",
+    "paymentFailed": "Le paiement de votre abonnement a échoué : mettez à jour votre moyen de paiement",
+    "wallPostAdded": "Nouveau sur le tableau : « {{body}} »",
+    "wallReplyAdded": "Nouvelle réponse : « {{body}} »",
+    "wallTaskAssigned": "Une tâche vous a été assignée : « {{body}} »",
+    "fallback": "Nouvelle activité dans votre foyer"
+  },
+  "center": {
+    "title": "Notifications",
+    "unread_one": "{{count}} non lue",
+    "unread_other": "{{count}} non lues",
+    "markAll": "Tout marquer comme lu",
+    "empty": "Aucune notification pour l’instant.",
+    "itemUnread": "Non lue. {{message}}"
+  },
+  "settings": {
+    "title": "Notifications",
+    "granted": "Activées sur ce téléphone.",
+    "denied": "Les notifications sont désactivées dans les réglages du téléphone.",
+    "openSettings": "Ouvrir les réglages du téléphone",
+    "undetermined": "Recevez un rappel la veille des passations et les demandes de l’autre parent.",
+    "enable": "Activer les notifications",
+    "unavailable": "Les notifications push ne sont disponibles que dans l’app installée sur un téléphone.",
+    "sectionLabel": "Recevoir une notification pour",
+    "footer": "Ces choix valent pour tous vos téléphones. Tout reste visible dans le centre de notifications de l’app.",
+    "categories": {
+      "handover": {
+        "title": "Rappel de passation",
+        "desc": "La veille de chaque changement de parent"
+      },
+      "exchanges": {
+        "title": "Échanges et demandes",
+        "desc": "Proposés, acceptés, refusés, retirés"
+      },
+      "expenses": {
+        "title": "Dépenses",
+        "desc": "Ajoutées, contestées, remboursées"
+      },
+      "wall": {
+        "title": "Tableau",
+        "desc": "Messages, réponses, tâches assignées"
+      },
+      "household": {
+        "title": "Foyer",
+        "desc": "Règles modifiées, parent qui rejoint ou quitte"
+      }
+    }
+  },
+  "pushCard": {
+    "title": "Ne ratez plus une passation",
+    "body": "Rappel la veille, échanges à valider, dépenses et messages de l’autre parent. Vous choisissez quoi recevoir.",
+    "error": "Activation impossible pour le moment. Réessayez depuis Réglages › Notifications.",
+    "enable": "Activer"
+  }
+}

@@ -4,6 +4,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { router, useLocalSearchParams } from 'expo-router'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Text, TextInput, View } from 'react-native'
 import { BackButton } from '@/components/BackButton'
 import { DateField, Segmented } from '@/components/form'
@@ -50,6 +51,7 @@ function Form({ householdId, members, meId, initialDate, replaces, currentParent
   currentParentOn: (date: string) => number | undefined
   onDone: () => void
 }) {
+  const { t } = useTranslation()
   const solo = isSolo(members)
   const today = todayIso()
   // Par défaut, l'échange part vers le parent qui n'a pas les enfants ce jour-là.
@@ -61,17 +63,17 @@ function Form({ householdId, members, meId, initialDate, replaces, currentParent
   )
   const [note, setNote] = useState('')
   const other = members.find((m) => m.id !== meId)
-  const otherName = other && !other.is_placeholder ? other.display_name : 'l’autre parent'
+  const otherName = other && !other.is_placeholder ? other.display_name : t('common.otherParent')
   const label = (id: number) => {
     const m = memberById(members, id)
     if (!m) return '?'
-    if (m.id === meId) return 'Moi'
-    return m.is_placeholder ? 'L’autre parent' : m.display_name
+    if (m.id === meId) return t('calendar.exchangeNew.me')
+    return m.is_placeholder ? t('common.otherParentTitle') : m.display_name
   }
 
   const send = useMutation({
     mutationFn: async () => {
-      if (dateEnd < dateStart) throw new Error('La date de fin doit être égale ou postérieure à la date de début.')
+      if (dateEnd < dateStart) throw new Error(t('calendar.exchangeNew.endBeforeStart'))
       const created = await api.createException(householdId, {
         date_start: dateStart,
         date_end: dateEnd,
@@ -92,16 +94,20 @@ function Form({ householdId, members, meId, initialDate, replaces, currentParent
           <Icon name="check" color={colors.pine} strokeWidth={2.4} />
           <Body style={{ flex: 1 }}>
             {solo
-              ? `Échange enregistré (${formatRange(dateStart, dateEnd)}) : le calendrier est à jour.`
-              : `Proposition envoyée à ${otherName} (${formatRange(dateStart, dateEnd)}). Rien ne change tant qu’elle n’est pas acceptée.`}
+              ? t('calendar.exchangeNew.doneSolo', { range: formatRange(dateStart, dateEnd) })
+              : t('calendar.exchangeNew.doneSent', { name: otherName, range: formatRange(dateStart, dateEnd) })}
           </Body>
         </Card>
-        <Button title="Retour au calendrier" onPress={() => router.back()} />
+        <Button title={t('calendar.exchangeNew.backToCalendar')} onPress={() => router.back()} />
       </Screen>
     )
   }
 
-  const title = solo ? 'Échange ponctuel' : replaces ? 'Contre-proposition' : 'Proposer un échange'
+  const title = solo
+    ? t('calendar.exchangeNew.titleSolo')
+    : replaces
+      ? t('calendar.exchangeNew.titleCounter')
+      : t('calendar.exchangeNew.titlePropose')
 
   return (
     <Screen edges={['top', 'bottom']}>
@@ -110,8 +116,7 @@ function Form({ householdId, members, meId, initialDate, replaces, currentParent
       {replaces ? (
         <Card style={{ backgroundColor: '#fdf3ee', borderColor: '#e8c4b2' }}>
           <Body style={{ fontSize: 14 }}>
-            Ajustez les dates ci-dessous. La proposition initiale ({formatRange(replaces.date_start, replaces.date_end)}) sera
-            refusée à l’envoi de la vôtre.
+            {t('calendar.exchangeNew.counterHint', { range: formatRange(replaces.date_start, replaces.date_end) })}
           </Body>
         </Card>
       ) : null}
@@ -120,7 +125,7 @@ function Form({ householdId, members, meId, initialDate, replaces, currentParent
 
       <View style={{ flexDirection: 'row', gap: 10 }}>
         <DateField
-          label="Du"
+          label={t('calendar.exchangeNew.from')}
           value={dateStart}
           min={today}
           onChange={(d) => {
@@ -128,23 +133,23 @@ function Form({ householdId, members, meId, initialDate, replaces, currentParent
             if (dateEnd < d) setDateEnd(d)
           }}
         />
-        <DateField label="Au (inclus)" value={dateEnd} min={dateStart} onChange={setDateEnd} />
+        <DateField label={t('calendar.exchangeNew.to')} value={dateEnd} min={dateStart} onChange={setDateEnd} />
       </View>
 
       <Segmented
-        label="Les enfants seront chez"
+        label={t('calendar.exchangeNew.kidsWith')}
         value={parentId}
         onChange={setParentId}
         options={members.map((m) => ({ value: m.id, label: label(m.id), dot: m.color }))}
       />
 
       <View style={{ gap: 8 }}>
-        <Text style={{ fontFamily: fonts.bodySemiBold, fontSize: 13, color: colors.inkSoft }}>Note (facultatif)</Text>
+        <Text style={{ fontFamily: fonts.bodySemiBold, fontSize: 13, color: colors.inkSoft }}>{t('calendar.exchangeNew.note')}</Text>
         <TextInput
-          accessibilityLabel="Note (facultatif)"
+          accessibilityLabel={t('calendar.exchangeNew.note')}
           value={note}
           onChangeText={setNote}
-          placeholder="ex. anniversaire de mamie"
+          placeholder={t('calendar.exchangeNew.notePlaceholder')}
           placeholderTextColor={colors.inkSoft}
           multiline
           maxLength={500}
@@ -157,11 +162,11 @@ function Form({ householdId, members, meId, initialDate, replaces, currentParent
 
       <Body muted style={{ fontSize: 13, textAlign: 'center' }}>
         {solo
-          ? 'L’échange est appliqué directement.'
-          : `${otherName.charAt(0).toUpperCase()}${otherName.slice(1)} reçoit la proposition et peut l’accepter ou la refuser.`}
+          ? t('calendar.exchangeNew.soloHint')
+          : t('calendar.exchangeNew.receivesHint', { name: `${otherName.charAt(0).toUpperCase()}${otherName.slice(1)}` })}
       </Body>
       <Button
-        title={solo ? 'Enregistrer' : replaces ? 'Envoyer la contre-proposition' : 'Envoyer la proposition'}
+        title={solo ? t('common.save') : replaces ? t('calendar.exchangeNew.sendCounter') : t('calendar.exchangeNew.send')}
         onPress={() => send.mutate()}
         loading={send.isPending}
       />

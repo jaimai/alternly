@@ -1,6 +1,7 @@
 // Un post du tableau, ses réponses, et la réponse de l'autre parent.
 import { router, useLocalSearchParams } from 'expo-router'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Alert, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native'
 import { BackButton } from '@/components/BackButton'
 import { Paywall } from '@/components/Paywall'
@@ -12,6 +13,7 @@ import { useHousehold, useMe, useWall, useWallAction } from '@/lib/queries'
 import { colors, fonts, radius } from '@/lib/theme'
 
 export default function WallPostScreen() {
+  const { t } = useTranslation()
   const { id } = useLocalSearchParams<{ id: string }>()
   const household = useHousehold().data ?? undefined
   const meId = useMe().data?.id
@@ -31,7 +33,7 @@ export default function WallPostScreen() {
       <Screen edges={['top', 'bottom']}>
         <BackButton />
         {locked ? (
-          <Paywall title="Le tableau, avec Premium" />
+          <Paywall title={t('wall.tab.paywallTitle')} />
         ) : (
           <ErrorState message={wall.error.message} onRetry={() => wall.refetch()} />
         )}
@@ -45,24 +47,24 @@ export default function WallPostScreen() {
     return (
       <Screen edges={['top', 'bottom']}>
         <BackButton />
-        <Title>Post introuvable</Title>
-        <Body muted>Il a peut-être été supprimé par son auteur.</Body>
+        <Title>{t('wall.detail.notFoundTitle')}</Title>
+        <Body muted>{t('wall.detail.notFoundBody')}</Body>
       </Screen>
     )
   }
   const name = (uid: number) => household.members.find((m) => m.id === uid)?.display_name ?? '?'
 
   function confirmDeletePost() {
-    Alert.alert('Supprimer ce post ?', 'Il disparaîtra du tableau pour les deux parents, avec ses réponses.', [
-      { text: 'Annuler', style: 'cancel' },
-      { text: 'Supprimer', style: 'destructive', onPress: () => removePost.mutate() },
+    Alert.alert(t('wall.detail.deletePostTitle'), t('wall.detail.deletePostBody'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('common.delete'), style: 'destructive', onPress: () => removePost.mutate() },
     ])
   }
 
   function confirmDeleteReply(rid: number) {
-    Alert.alert('Supprimer cette réponse ?', undefined, [
-      { text: 'Annuler', style: 'cancel' },
-      { text: 'Supprimer', style: 'destructive', onPress: () => removeReply.mutate(rid) },
+    Alert.alert(t('wall.detail.deleteReplyTitle'), undefined, [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('common.delete'), style: 'destructive', onPress: () => removeReply.mutate(rid) },
     ])
   }
 
@@ -73,17 +75,17 @@ export default function WallPostScreen() {
         <ErrorBanner message={error} />
         <WallPostCard post={post} household={household} detail />
 
-        {post.replies.length > 0 ? <SectionLabel>Réponses</SectionLabel> : null}
+        {post.replies.length > 0 ? <SectionLabel>{t('wall.detail.replies')}</SectionLabel> : null}
         {post.replies.map((r) => {
           const mine = r.author_id === meId
           return (
             <Pressable
               key={r.id}
-              accessibilityHint={mine ? 'Appui long pour supprimer' : undefined}
+              accessibilityHint={mine ? t('wall.detail.longPressHint') : undefined}
               onLongPress={mine ? () => confirmDeleteReply(r.id) : undefined}
               style={[s.reply, mine && s.replyMine]}
             >
-              <Text style={s.replyAuthor}>{`${mine ? 'Vous' : name(r.author_id)} · ${formatAgo(r.created_at)}`}</Text>
+              <Text style={s.replyAuthor}>{`${mine ? t('common.youTitle') : name(r.author_id)} · ${formatAgo(r.created_at)}`}</Text>
               <Text style={s.replyBody}>{r.body}</Text>
             </Pressable>
           )
@@ -93,18 +95,18 @@ export default function WallPostScreen() {
           <TextInput
             value={reply}
             onChangeText={setReply}
-            placeholder="Répondre…"
+            placeholder={t('wall.detail.replyPlaceholder')}
             placeholderTextColor={colors.inkSoft}
             multiline
             maxLength={2000}
-            accessibilityLabel="Votre réponse"
+            accessibilityLabel={t('wall.detail.replyLabel')}
             style={s.input}
           />
-          <Button title="Envoyer" onPress={() => send.mutate()} loading={send.isPending} disabled={!reply.trim()} />
+          <Button title={t('common.send')} onPress={() => send.mutate()} loading={send.isPending} disabled={!reply.trim()} />
         </View>
 
         {post.author_id === meId ? (
-          <Button title="Supprimer le post" variant="danger" onPress={confirmDeletePost} loading={removePost.isPending} />
+          <Button title={t('wall.detail.deletePost')} variant="danger" onPress={confirmDeletePost} loading={removePost.isPending} />
         ) : null}
       </Screen>
     </KeyboardAvoidingView>

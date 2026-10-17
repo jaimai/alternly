@@ -7,13 +7,17 @@ import {
 } from '@expo-google-fonts/instrument-sans'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useFonts } from 'expo-font'
-import { Stack } from 'expo-router'
+import { Stack, type ErrorBoundaryProps } from 'expo-router'
 import * as SplashScreen from 'expo-splash-screen'
 import { StatusBar } from 'expo-status-bar'
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { Text, View } from 'react-native'
 import { ApiError } from '@/lib/api'
 import { AuthProvider, useAuth } from '@/lib/auth'
-import { colors } from '@/lib/theme'
+import '@/lib/i18n' // initialise la langue avant le premier rendu
+import { reportError, wrapRoot } from '@/lib/sentry'
+import { colors, fonts } from '@/lib/theme'
 
 void SplashScreen.preventAutoHideAsync()
 
@@ -31,10 +35,12 @@ function makeQueryClient() {
 
 function RootNavigator() {
   const { status } = useAuth()
+  // Changement de langue : la navigation est recréée pour que chaque écran se retraduise.
+  const { i18n } = useTranslation()
   const signedIn = status === 'signedIn'
   if (status === 'loading') return null // le splash reste affiché
   return (
-    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.paper } }}>
+    <Stack key={i18n.language} screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.paper } }}>
       <Stack.Protected guard={signedIn}>
         <Stack.Screen name="(app)" />
       </Stack.Protected>
@@ -57,7 +63,24 @@ function SplashGate({ ready }: { ready: boolean }) {
   return null
 }
 
-export default function RootLayout() {
+/** Écran de secours si un écran plante : l'erreur part à Sentry, l'utilisateur peut réessayer. */
+export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
+  const { t } = useTranslation()
+  useEffect(() => reportError(error), [error])
+  return (
+    <View style={{ flex: 1, backgroundColor: colors.paper, alignItems: 'center', justifyContent: 'center', padding: 24, gap: 12 }}>
+      <Text style={{ fontFamily: fonts.display, fontSize: 24, color: colors.ink, textAlign: 'center' }}>{t('common.crash.title')}</Text>
+      <Text style={{ fontFamily: fonts.body, fontSize: 15, color: colors.inkSoft, textAlign: 'center' }}>
+        {t('common.crash.body')}
+      </Text>
+      <Text accessibilityRole="button" onPress={retry} style={{ fontFamily: fonts.bodySemiBold, fontSize: 16, color: colors.pine, padding: 12 }}>
+        {t('common.retry')}
+      </Text>
+    </View>
+  )
+}
+
+function RootLayout() {
   const [queryClient] = useState(makeQueryClient)
   const [fontsLoaded, fontError] = useFonts({
     Fraunces_500Medium,
@@ -78,3 +101,5 @@ export default function RootLayout() {
     </QueryClientProvider>
   )
 }
+
+export default wrapRoot(RootLayout)

@@ -78,6 +78,13 @@ aucun des deux canaux ne propose un second abonnement (conception :
 Paywall : dernière étape de l'onboarding (« Continuer avec la version gratuite » pour passer),
 onglets Dépenses et Tableau sans abonnement, et Réglages › Alternly Premium.
 
+## Suivi des plantages (Sentry)
+
+Actif seulement si `EXPO_PUBLIC_SENTRY_DSN` est défini (projet Sentry « React Native »).
+Aucune donnée personnelle : l'id du compte, jamais l'e-mail. Un écran qui plante affiche
+« Réessayer » et remonte l'erreur. Pour des traces lisibles, définir aussi `SENTRY_ORG`,
+`SENTRY_PROJECT` et le secret EAS `SENTRY_AUTH_TOKEN` : les source maps partent au build.
+
 ## Liens profonds
 
 `https://alternly.com/join/<jeton>` (invitation) et `/reset-password?token=…` s'ouvrent dans
@@ -94,6 +101,15 @@ Deux fichiers à servir par Vercel sous `frontend/public/.well-known/`, avec l'e
 - `apple-app-site-association` : `{"applinks":{"details":[{"appIDs":["<TEAM_ID>.com.alternly.app"],"components":[{"/":"/join/*"},{"/":"/reset-password"}]}]}}`
   (Team ID : developer.apple.com › Membership) ;
 - `assetlinks.json` : empreinte SHA-256 du certificat de signature Android (`eas credentials`).
+
+## Langues (français, anglais)
+
+i18next (`src/lib/i18n.ts`) : la langue du téléphone au lancement, puis celle du compte
+(Réglages › Mon profil › Langue), qui décide aussi de la langue des push et des e-mails.
+Textes dans `src/locales/<domaine>.{fr,en}.json` (mêmes clés dans les deux fichiers),
+dates et montants via `intlLocale()`. Composants : `useTranslation()` ; code hors React :
+`t()` de `@/lib/i18n`, appelé au moment de l'affichage (jamais au chargement du module).
+Les tests tournent en français.
 
 ## Vérifications (identiques à la CI)
 
@@ -114,7 +130,8 @@ src/app/            routes Expo Router (1 fichier = 1 écran)
   (app)/exchange/   new (proposer / contre-proposer), [id] (répondre)
   (app)/expense/    [id] (détail, actions), edit (ajouter / modifier), settle (remboursement)
   (app)/wall/       [id] (post et réponses), new (info, tâche, question)
-  (app)/settings/   profile, household (enfants, zone), rules, special-days, account
+  (app)/settings/   profile, household (enfants, zone), rules, special-days, account,
+                    calendar-sync (agenda iPhone / Google), history
   (app)/…           notifications, notification-settings (préférences push), premium (achat)
 src/components/     briques d'interface (charte « papier chaleureux »)
 src/lib/            client API, session, requêtes, dates, logique calendrier (+ tests)
@@ -138,4 +155,4 @@ notifications in-app ; **achats intégrés** (Premium partagé avec le web) ; **
 jours de fête, demandes de changement à accepter, mot de passe, suppression du compte),
 déconnexion.
 
-À venir : synchronisation d'agenda (iCal), historique des changements.
+**synchronisation d'agenda** (Calendrier iPhone, Google Agenda ; Premium) ; **historique du foyer**.

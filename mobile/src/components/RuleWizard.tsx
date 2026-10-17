@@ -1,22 +1,25 @@
 // Règle de garde en 4 petites étapes (portage de frontend/src/components/RuleWizard.tsx) :
 // rythme → qui a les enfants à une date précise → vérifier/ajuster jour par jour → vacances.
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native'
 import { flipDay, mondayOf, sideOn, weekday, type Pattern, type Side } from '@/lib/custodyPreview'
 import { addDays, formatLong, parseIso, todayIso } from '@/lib/dates'
+import { intlLocale } from '@/lib/i18n'
 import { colors, fonts, tint } from '@/lib/theme'
 import type { CustodyRule, Member, VacationRule } from '@/lib/types'
 import { ChoiceCard, DateField, Progress, Segmented } from './form'
 import { Avatar, Body, Button, Title } from './ui'
 
-const PATTERNS: { value: Pattern; title: string; desc: string; thumb: string }[] = [
-  { value: 'alternate_weeks', title: 'Semaine / semaine', desc: 'Une semaine chez chacun, avec un jour de passage fixe.', thumb: 'aaaaaaabbbbbbb' },
-  { value: 'every_other_weekend', title: 'Un week-end sur deux', desc: 'L’enfant vit chez un parent ; l’autre l’accueille un week-end sur deux.', thumb: 'bbbbaaabbbbbbb' },
-  { value: 'two_two_three', title: '2-2-3', desc: '2 jours chacun, puis 3 jours. Souvent choisi pour les tout-petits.', thumb: 'aabbaaabbaabbb' },
-  { value: 'custom', title: 'Autre organisation', desc: 'Vous placez vous-même les jours sur deux semaines.', thumb: 'xxxxxxxxxxxxxx' },
+// Libellés traduits au rendu : onboarding.wizard.patterns.<key>Title / <key>Desc.
+const PATTERNS: { value: Pattern; key: string; thumb: string }[] = [
+  { value: 'alternate_weeks', key: 'alternateWeeks', thumb: 'aaaaaaabbbbbbb' },
+  { value: 'every_other_weekend', key: 'everyOtherWeekend', thumb: 'bbbbaaabbbbbbb' },
+  { value: 'two_two_three', key: 'twoTwoThree', thumb: 'aabbaaabbaabbb' },
+  { value: 'custom', key: 'custom', thumb: 'xxxxxxxxxxxxxx' },
 ]
-const DAY_SHORT = ['L', 'M', 'M', 'J', 'V', 'S', 'D']
-const DAY_LONG = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche']
+/** Nom du jour dans la langue de l'app : « L » / « lundi » (narrow / long). */
+const dayName = (iso: string, style: 'narrow' | 'long') => parseIso(iso).toLocaleDateString(intlLocale(), { weekday: style })
 const DEFAULT_CUSTOM: Side[] = Array.from({ length: 14 }, (_, i) => (i < 7 ? 'ref' : 'other'))
 const TIME = /^([01]\d|2[0-3]):[0-5]\d$/
 
@@ -38,6 +41,7 @@ export function RuleWizard({ members, myId, childNames, busy, stepOffset, stepTo
   stepTotal: number
   onSubmit: (value: RuleValue) => void
 }) {
+  const { t } = useTranslation()
   const me = members.find((m) => m.id === myId)
   const other = members.find((m) => m.id !== myId)
   const [step, setStep] = useState(0)
@@ -54,14 +58,18 @@ export function RuleWizard({ members, myId, childNames, busy, stepOffset, stepTo
   const [evenParent, setEvenParent] = useState(v?.even_year_first_half_parent_id ?? myId)
   const [adjust, setAdjust] = useState<{ day: string; before: { pattern: Pattern; customWeeks: Side[] } } | null>(null)
 
-  const kids = childNames.length === 1 ? childNames[0] : childNames.length > 1 ? 'les enfants' : 'l’enfant'
+  const kids = childNames.length === 1
+    ? childNames[0]
+    : childNames.length > 1 ? t('onboarding.wizard.kidsMany') : t('onboarding.wizard.kidsUnknown')
   const rule = { pattern, start_date: startDate, handover_day: handoverDay, custom_weeks: customWeeks }
   const memberOf = (side: Side) => members.find((m) => (side === 'ref' ? m.id === referenceParent : m.id !== referenceParent))
   const colorOf = (side: Side) => memberOf(side)?.color ?? (side === 'ref' ? colors.pine : colors.terra)
   const nameOf = (side: Side) => {
     const m = memberOf(side)
-    if (!m) return 'l’autre parent'
-    return m.id === myId ? `${m.display_name} (vous)` : m.is_placeholder ? 'l’autre parent' : m.display_name
+    if (!m) return t('common.otherParent')
+    return m.id === myId
+      ? t('common.youSuffix', { name: m.display_name })
+      : m.is_placeholder ? t('common.otherParent') : m.display_name
   }
   const thisMonday = mondayOf(todayIso())
   const weeks = [0, 1].map((w) => Array.from({ length: 7 }, (_, i) => addDays(thisMonday, w * 7 + i)))
@@ -71,12 +79,12 @@ export function RuleWizard({ members, myId, childNames, busy, stepOffset, stepTo
     switch (pattern) {
       case 'alternate_weeks': {
         const offset = (((weekday(startDate) - handoverDay) % 7) + 7) % 7
-        return `Qui a ${kids} la semaine qui commence le ${formatLong(addDays(startDate, -offset))} ?`
+        return t('onboarding.wizard.whoWeek', { kids, date: formatLong(addDays(startDate, -offset)) })
       }
       case 'every_other_weekend':
-        return `Qui accueille ${kids} le week-end du ${formatLong(addDays(mondayOf(startDate), 5))} ?`
+        return t('onboarding.wizard.whoWeekend', { kids, date: formatLong(addDays(mondayOf(startDate), 5)) })
       default:
-        return `Qui a ${kids} le ${formatLong(mondayOf(startDate))} ?`
+        return t('onboarding.wizard.whoDay', { kids, date: formatLong(mondayOf(startDate)) })
     }
   }
 
@@ -126,9 +134,9 @@ export function RuleWizard({ members, myId, childNames, busy, stepOffset, stepTo
             style={[s.who, compact && { paddingVertical: 12 }, selected && s.whoOn]}
           >
             {!compact ? <Avatar name={m.is_placeholder ? '?' : m.display_name} color={m.color} size={40} /> : null}
-            <Text style={s.whoTitle}>{m.id === myId ? 'Moi' : 'L’autre parent'}</Text>
+            <Text style={s.whoTitle}>{m.id === myId ? t('onboarding.wizard.me') : t('common.otherParentTitle')}</Text>
             {!compact ? (
-              <Text style={s.whoSub}>{m.id === myId ? m.display_name : m.is_placeholder ? 'pas encore invité' : m.display_name}</Text>
+              <Text style={s.whoSub}>{m.id === myId ? m.display_name : m.is_placeholder ? t('onboarding.wizard.notInvited') : m.display_name}</Text>
             ) : null}
           </Pressable>
         )
@@ -140,21 +148,21 @@ export function RuleWizard({ members, myId, childNames, busy, stepOffset, stepTo
     <View style={s.previewCard}>
       {weeks.map((week, w) => (
         <View key={w} style={{ gap: 6 }}>
-          <Text style={s.weekLabel}>Semaine du {formatLong(week[0])}</Text>
+          <Text style={s.weekLabel}>{t('onboarding.wizard.weekOf', { date: formatLong(week[0]) })}</Text>
           <View style={{ flexDirection: 'row', gap: 4 }}>
             {week.map((day, i) => {
               const side = sideOn(rule, day)
-              const label = `${DAY_LONG[i]} ${parseIso(day).getDate()} : ${nameOf(side)}`
+              const label = t('onboarding.wizard.dayLabel', { day: dayName(day, 'long'), date: parseIso(day).getDate(), name: nameOf(side) })
               return (
                 <Pressable
                   key={day}
                   disabled={!editable}
                   accessibilityRole={editable ? 'button' : 'text'}
-                  accessibilityLabel={editable ? `${label}. Toucher pour changer de parent` : label}
+                  accessibilityLabel={editable ? t('onboarding.wizard.dayTapHint', { label }) : label}
                   onPress={() => flip(day)}
                   style={[s.day, { backgroundColor: tint(colorOf(side), 0.32) }, adjust?.day === day && editable && s.dayTouched]}
                 >
-                  <Text style={s.dayDow}>{DAY_SHORT[i]}</Text>
+                  <Text style={s.dayDow}>{dayName(day, 'narrow')}</Text>
                   <Text style={s.dayNum}>{parseIso(day).getDate()}</Text>
                   <View style={[s.dayStrip, { backgroundColor: colorOf(side) }]} />
                 </Pressable>
@@ -171,26 +179,26 @@ export function RuleWizard({ members, myId, childNames, busy, stepOffset, stepTo
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
         {step > 0 ? (
           <Text accessibilityRole="button" onPress={back} style={s.back}>
-            ← Retour
+            ← {t('common.back')}
           </Text>
         ) : null}
         <View style={{ flex: 1 }}>
-          <Progress step={stepOffset + step + 1} total={stepTotal} label={`Votre rythme · ${step + 1}/4`} />
+          <Progress step={stepOffset + step + 1} total={stepTotal} label={t('onboarding.wizard.progress', { step: step + 1 })} />
         </View>
       </View>
 
       {step === 0 && (
         <>
           <View style={{ gap: 6 }}>
-            <Title>Comment se passe la garde aujourd’hui ?</Title>
-            <Body muted>Choisissez ce qui ressemble le plus à votre organisation. Vous ajusterez jour par jour juste après.</Body>
+            <Title>{t('onboarding.wizard.patternTitle')}</Title>
+            <Body muted>{t('onboarding.wizard.patternIntro')}</Body>
           </View>
           <View style={{ gap: 8 }} accessibilityRole="radiogroup">
             {PATTERNS.map((p) => (
               <ChoiceCard
                 key={p.value}
-                title={p.title}
-                description={p.desc}
+                title={t(`onboarding.wizard.patterns.${p.key}Title`)}
+                description={t(`onboarding.wizard.patterns.${p.key}Desc`)}
                 selected={pattern === p.value}
                 onPress={() => {
                   setPattern(p.value)
@@ -207,45 +215,45 @@ export function RuleWizard({ members, myId, childNames, busy, stepOffset, stepTo
         <>
           <Title style={{ fontSize: 24, lineHeight: 30 }}>{whoQuestion()}</Title>
           {pattern === 'every_other_weekend' ? (
-            <Body muted>Le reste du temps, {kids} vit chez l’autre parent. Les week-ends s’alternent ensuite tout seuls.</Body>
+            <Body muted>{t('onboarding.wizard.weekendRest', { kids, count: Math.max(childNames.length, 1) })}</Body>
           ) : null}
           {whoButtons(false, referenceParent, setReferenceParent)}
           {pattern === 'alternate_weeks' ? (
             <>
               <Segmented
-                label="Jour de passage"
+                label={t('onboarding.wizard.handoverDay')}
                 value={handoverDay}
                 onChange={setHandoverDay}
-                options={DAY_SHORT.map((d, i) => ({ value: i, label: d }))}
+                options={weeks[0].map((d, i) => ({ value: i, label: dayName(d, 'narrow') }))}
               />
               <View style={{ gap: 8 }}>
-                <Text style={s.label}>Heure de passage</Text>
+                <Text style={s.label}>{t('onboarding.wizard.handoverTime')}</Text>
                 <TextInput
-                  accessibilityLabel="Heure de passage (HH:MM)"
+                  accessibilityLabel={t('onboarding.wizard.handoverTimeA11y')}
                   value={handoverTime}
                   onChangeText={setHandoverTime}
                   keyboardType="numbers-and-punctuation"
                   maxLength={5}
                   style={[s.input, !timeValid && { borderColor: colors.danger }]}
                 />
-                {!timeValid ? <Text style={s.error}>Format attendu : 18:00</Text> : null}
+                {!timeValid ? <Text style={s.error}>{t('onboarding.wizard.timeFormat')}</Text> : null}
               </View>
             </>
           ) : null}
           <View style={{ gap: 8 }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-              <Text style={s.label}>Aperçu</Text>
-              <Text style={s.hint}>mis à jour en direct</Text>
+              <Text style={s.label}>{t('onboarding.wizard.preview')}</Text>
+              <Text style={s.hint}>{t('onboarding.wizard.live')}</Text>
             </View>
             {preview(false)}
           </View>
           {showDate ? (
-            <DateField label="Date de départ" value={startDate} onChange={setStartDate} />
+            <DateField label={t('onboarding.wizard.startDate')} value={startDate} onChange={setStartDate} />
           ) : (
             <Body muted style={{ fontSize: 14 }}>
-              Ce n’est pas la bonne semaine de départ ?{' '}
+              {t('onboarding.wizard.wrongWeek')}{' '}
               <Text accessibilityRole="button" onPress={() => setShowDate(true)} style={s.link}>
-                Choisir une autre date
+                {t('onboarding.wizard.pickDate')}
               </Text>
             </Body>
           )}
@@ -255,8 +263,8 @@ export function RuleWizard({ members, myId, childNames, busy, stepOffset, stepTo
       {step === 2 && (
         <>
           <View style={{ gap: 6 }}>
-            <Title>Ça correspond à votre organisation ?</Title>
-            <Body muted>Un jour ne colle pas ? Touchez-le pour le donner à l’autre parent. Le cycle se répète ensuite toutes les deux semaines.</Body>
+            <Title>{t('onboarding.wizard.checkTitle')}</Title>
+            <Body muted>{t('onboarding.wizard.checkIntro')}</Body>
           </View>
           <View style={{ flexDirection: 'row', gap: 16, flexWrap: 'wrap' }}>
             {(['ref', 'other'] as Side[]).map((side) => (
@@ -273,10 +281,10 @@ export function RuleWizard({ members, myId, childNames, busy, stepOffset, stepTo
             <View accessibilityRole="alert" style={s.toast}>
               <View style={{ flex: 1, gap: 2 }}>
                 <Text style={{ fontFamily: fonts.bodySemiBold, fontSize: 14, color: '#fff' }}>
-                  Le {formatLong(adjust.day)} passe chez {nameOf(sideOn(rule, adjust.day))}.
+                  {t('onboarding.wizard.movedDay', { date: formatLong(adjust.day), name: nameOf(sideOn(rule, adjust.day)) })}
                 </Text>
                 <Text style={{ fontFamily: fonts.body, fontSize: 13, color: 'rgba(255,255,255,0.85)' }}>
-                  Votre rythme devient « personnalisé ».
+                  {t('onboarding.wizard.nowCustom')}
                 </Text>
               </View>
               <Text
@@ -288,7 +296,7 @@ export function RuleWizard({ members, myId, childNames, busy, stepOffset, stepTo
                 }}
                 style={{ fontFamily: fonts.bodyBold, fontSize: 14, color: '#fff', padding: 8 }}
               >
-                Annuler
+                {t('common.cancel')}
               </Text>
             </View>
           ) : null}
@@ -297,7 +305,7 @@ export function RuleWizard({ members, myId, childNames, busy, stepOffset, stepTo
 
       {step === 3 && (
         <>
-          <Title>Et pendant les vacances scolaires ?</Title>
+          <Title>{t('onboarding.wizard.vacationTitle')}</Title>
           <View style={{ gap: 8 }} accessibilityRole="radiogroup">
             {(['split_half', 'alternate_full'] as const).map((mode) => {
               const first = colorOf(thisYearParent === referenceParent ? 'ref' : 'other')
@@ -305,11 +313,11 @@ export function RuleWizard({ members, myId, childNames, busy, stepOffset, stepTo
               return (
                 <ChoiceCard
                   key={mode}
-                  title={mode === 'split_half' ? 'Moitié chacun' : 'Toutes les vacances, une année sur deux'}
+                  title={mode === 'split_half' ? t('onboarding.wizard.splitHalfTitle') : t('onboarding.wizard.alternateFullTitle')}
                   description={
                     mode === 'split_half'
-                      ? 'Chaque période est coupée en deux. L’ordre s’inverse chaque année.'
-                      : 'Toute la période chez un parent, puis chez l’autre l’année suivante.'
+                      ? t('onboarding.wizard.splitHalfDesc')
+                      : t('onboarding.wizard.alternateFullDesc')
                   }
                   selected={vacMode === mode}
                   onPress={() => setVacMode(mode)}
@@ -338,30 +346,30 @@ export function RuleWizard({ members, myId, childNames, busy, stepOffset, stepTo
           </View>
           <Text style={s.question}>
             {vacMode === 'split_half'
-              ? `Cette année (${year}), qui a la première moitié ?`
-              : `Cette année (${year}), qui a les vacances ?`}
+              ? t('onboarding.wizard.firstHalfQuestion', { year })
+              : t('onboarding.wizard.fullQuestion', { year })}
           </Text>
           {whoButtons(true, thisYearParent, setThisYearParent)}
           <Body muted style={{ fontSize: 14 }}>
             {vacMode === 'split_half'
               ? thisYearParent === myId
-                ? 'Exemple : aux prochaines vacances, vous avez la première moitié, l’autre parent la seconde. L’an prochain, c’est l’inverse.'
-                : 'Exemple : aux prochaines vacances, l’autre parent a la première moitié, vous la seconde. L’an prochain, c’est l’inverse.'
+                ? t('onboarding.wizard.exampleSplitMe')
+                : t('onboarding.wizard.exampleSplitOther')
               : thisYearParent === myId
-                ? 'Exemple : cette année, les vacances sont chez vous ; l’an prochain, chez l’autre parent.'
-                : 'Exemple : cette année, les vacances sont chez l’autre parent ; l’an prochain, chez vous.'}
+                ? t('onboarding.wizard.exampleFullMe')
+                : t('onboarding.wizard.exampleFullOther')}
           </Body>
         </>
       )}
 
       {step < 3 ? (
         <Button
-          title={step === 2 ? 'C’est bon, continuer' : 'Continuer'}
+          title={step === 2 ? t('onboarding.wizard.confirm') : t('common.continue')}
           onPress={next}
           disabled={step === 1 && pattern === 'alternate_weeks' && !timeValid}
         />
       ) : (
-        <Button title={submitLabel ?? 'Générer le calendrier'} onPress={submit} loading={busy} />
+        <Button title={submitLabel ?? t('onboarding.wizard.generate')} onPress={submit} loading={busy} />
       )}
     </View>
   )

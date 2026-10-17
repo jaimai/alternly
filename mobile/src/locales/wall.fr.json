@@ -1,0 +1,71 @@
+{
+  "kinds": {
+    "message": "Info",
+    "task": "Tâche",
+    "question": "Question"
+  },
+  "card": {
+    "overdue": "En retard",
+    "dueOn": "pour le {{date}}",
+    "assignedTo": "pour {{name}}",
+    "reopen": "Rouvrir",
+    "markDone": "Marquer fait",
+    "markResolved": "Marquer résolu",
+    "replies_one": "{{count}} réponse",
+    "replies_other": "{{count}} réponses"
+  },
+  "tab": {
+    "title": "Tableau",
+    "newPost": "Nouveau post",
+    "paywallTitle": "Le tableau, avec Premium",
+    "paywallIntro": "Infos, tâches et questions entre parents, au même endroit, sans passer par les textos. Un seul abonnement suffit pour les deux parents.",
+    "segments": {
+      "todo": "À faire",
+      "questions": "Questions",
+      "infos": "Infos",
+      "all": "Tout"
+    },
+    "empty": {
+      "todo": "Rien à faire : tout est à jour.",
+      "questions": "Aucune question en attente.",
+      "infos": "Rien ici pour l’instant.",
+      "all": "Rien ici pour l’instant."
+    },
+    "searchPlaceholder": "Rechercher dans le tableau…",
+    "searchLabel": "Rechercher",
+    "noResults": "Aucun résultat pour cette recherche.",
+    "doneCount_one": "{{count}} terminée",
+    "doneCount_other": "{{count}} terminées",
+    "resolvedCount_one": "{{count}} résolue",
+    "resolvedCount_other": "{{count}} résolues"
+  },
+  "detail": {
+    "notFoundTitle": "Post introuvable",
+    "notFoundBody": "Il a peut-être été supprimé par son auteur.",
+    "deletePostTitle": "Supprimer ce post ?",
+    "deletePostBody": "Il disparaîtra du tableau pour les deux parents, avec ses réponses.",
+    "deleteReplyTitle": "Supprimer cette réponse ?",
+    "replies": "Réponses",
+    "longPressHint": "Appui long pour supprimer",
+    "replyPlaceholder": "Répondre…",
+    "replyLabel": "Votre réponse",
+    "deletePost": "Supprimer le post"
+  },
+  "new": {
+    "type": "Type",
+    "placeholders": {
+      "message": "Une info à partager…",
+      "task": "Ce qu’il y a à faire…",
+      "question": "Votre question à l’autre parent…"
+    },
+    "messageLabel": "Message",
+    "child": "Enfant concerné",
+    "for": "Pour",
+    "either": "L’un ou l’autre",
+    "due": "Échéance",
+    "noDue": "Aucune",
+    "pickDate": "Choisir une date",
+    "date": "Date",
+    "publish": "Publier"
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "cancel": "Cancel",
+  "delete": "Delete",
+  "save": "Save",
+  "retry": "Try again",
+  "back": "Back",
+  "close": "Close",
+  "continue": "Continue",
+  "add": "Add",
+  "send": "Send",
+  "later": "Later",
+  "you": "you",
+  "youTitle": "You",
+  "youSuffix": "{{name}} (you)",
+  "everyone": "Everyone",
+  "none": "None",
+  "otherParent": "the other parent",
+  "otherParentTitle": "The other parent",
+  "errorGeneric": "Something went wrong.",
+  "network": "Can’t connect. Check your network.",
+  "sessionExpired": "Session expired, please sign in again.",
+  "terms": "Terms of use",
+  "privacy": "Privacy policy",
+  "ago": {
+    "now": "just now",
+    "minutes": "{{count}} min ago",
+    "hours": "{{count}} h ago",
+    "yesterday": "yesterday"
+  },
+  "crash": {
+    "title": "Oops, something went wrong",
+    "body": "The team has been notified. Your data is safe."
+  },
+  "colors": {
+    "pine": "Pine",
+    "terracotta": "Terracotta",
+    "slate": "Slate",
+    "mustard": "Mustard",
+    "plum": "Plum",
+    "lagoon": "Lagoon"
+  }
+}
