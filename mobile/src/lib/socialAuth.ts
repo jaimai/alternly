@@ -100,7 +100,13 @@ async function signInWithAppleNative(): Promise<TokenResponse> {
   }
   if (!credential.identityToken) throw new Error('Apple n’a pas confirmé votre identité. Réessayez.')
   // Le prénom n'est transmis qu'à la toute première autorisation.
-  return api.appleLogin(credential.identityToken, nonce.raw, credential.fullName?.givenName ?? undefined)
+  // Code d'autorisation : le backend en tire un refresh token, révoqué si le compte est supprimé.
+  return api.appleLogin(
+    credential.identityToken,
+    nonce.raw,
+    credential.fullName?.givenName ?? undefined,
+    credential.authorizationCode ?? undefined,
+  )
 }
 
 /**
@@ -134,7 +140,7 @@ async function signInWithAppleWeb(): Promise<TokenResponse> {
   if (param('error') === 'user_cancelled_authorize') throw new SignInCancelled()
   const idToken = param('id_token')
   if (!idToken) throw new Error('Apple n’a pas confirmé votre identité. Réessayez.')
-  return api.appleLogin(idToken, nonce.raw, param('given_name'))
+  return api.appleLogin(idToken, nonce.raw, param('given_name'), param('code'))
 }
 
 function randomHex(bytes: number): string {

@@ -28,5 +28,6 @@
   "calendar.legendYou": "{{name}} (you)",
   "calendar.legendHandover": "Handover day",
   "calendar.legendProposedExchange": "Proposed swap",
-  "calendar.alreadyMember": "You're already part of this household — here's your shared calendar."
+  "calendar.alreadyMember": "You're already part of this household — here's your shared calendar.",
+  "calendar.premiumActivated": "Thank you! Premium is on: reminders, expenses, wall and history are unlocked."
 }

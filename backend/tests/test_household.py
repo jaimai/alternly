@@ -116,3 +116,29 @@ class TestChildren:
 
         assert client.delete(f"/api/households/{h['id']}/children/{child_id}", headers=headers).status_code == 204
         assert client.get(f"/api/households/{h['id']}/children", headers=headers).json() == []
+
+
+class TestPlaceholderColor:
+    """Le placeholder « L'autre parent » ne doit jamais avoir la couleur du parent réel."""
+
+    def _colors(self, h):
+        real = next(m for m in h["members"] if not m["is_placeholder"])
+        ghost = next(m for m in h["members"] if m["is_placeholder"])
+        return real["color"], ghost["color"]
+
+    def test_default_placeholder_color(self, client, auth_headers):
+        headers, _ = auth_headers(color="#2f6b57")
+        assert self._colors(create_household(client, headers)) == ("#2f6b57", "#c9784f")
+
+    def test_terracotta_parent_gets_distinct_placeholder(self, client, auth_headers):
+        # bug vu en replay : terracotta (#c96f4a) ≈ placeholder (#c9784f) → deux parents identiques
+        headers, _ = auth_headers(color="#c96f4a")
+        assert self._colors(create_household(client, headers)) == ("#c96f4a", "#2f6b57")
+
+    def test_existing_clash_repaired_on_fetch(self, client, auth_headers):
+        headers, _ = auth_headers(color="#2f6b57")
+        create_household(client, headers)
+        # le parent passe ensuite en terracotta : le placeholder est recoloré
+        assert client.patch("/api/auth/me", json={"color": "#c96f4a"}, headers=headers).status_code == 200
+        h = client.get("/api/households/mine", headers=headers).json()
+        assert self._colors(h) == ("#c96f4a", "#2f6b57")

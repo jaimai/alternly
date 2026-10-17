@@ -41,6 +41,10 @@ class User(Base):
     google_sub: Mapped[str | None] = mapped_column(String, nullable=True, unique=True, index=True)
     # Identifiant Apple (claim « sub ») quand le compte est relié à « Se connecter avec Apple ».
     apple_sub: Mapped[str | None] = mapped_column(String, nullable=True, unique=True, index=True)
+    # Refresh token Apple chiffré (services/apple_tokens.py), révoqué à la suppression du
+    # compte ; et l'ID client qui l'a obtenu (bundle iOS ou Services ID web).
+    apple_refresh_token: Mapped[str | None] = mapped_column(Text, nullable=True)
+    apple_client_id: Mapped[str | None] = mapped_column(String, nullable=True)
     # Abonnement Paddle. status : trialing | active | past_due | canceled | none.
     subscription_status: Mapped[str] = mapped_column(String, default="trialing")
     trial_ends_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
@@ -55,6 +59,14 @@ class User(Base):
     # Consentement à la mesure d'audience (PostHog) : None = pas encore répondu,
     # True = accepté (événements rattachés au compte), False = refusé (anonyme).
     analytics_consent: Mapped[bool | None] = mapped_column(Boolean, nullable=True, default=None)
+
+    @property
+    def is_internal(self) -> bool:
+        """Compte de l'équipe (INTERNAL_EMAILS) : exclu des statistiques."""
+        from .config import settings
+
+        emails = {e.strip().lower() for e in settings.internal_emails.split(",") if e.strip()}
+        return bool(self.email) and self.email.lower() in emails
 
     @property
     def has_password(self) -> bool:
@@ -172,6 +184,11 @@ class ScheduleException(Base):
     response_note: Mapped[str] = mapped_column(String, default="")
     replaces_id: Mapped[int | None] = mapped_column(ForeignKey("schedule_exceptions.id"), nullable=True)
     reminder_sent_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    # exchange : échange de garde (dialogue jour) ; adjustment : jour personnalisé
+    # posé depuis « Ajuster mon planning » (un jour par ligne, sans toucher au rythme).
+    kind: Mapped[str] = mapped_column(String, default="exchange")
+    # Ajustements proposés ensemble à l'autre parent (même enregistrement).
+    group_id: Mapped[str | None] = mapped_column(String, nullable=True)
 
 
 class Expense(Base):

@@ -2,6 +2,7 @@
 import hmac
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
+from fastapi.responses import JSONResponse
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -12,7 +13,7 @@ from ..db import get_db
 from ..deps import household_members, user_has_premium
 from ..models import HouseholdMember, PaddleEvent, RevenueCatEvent, User, utcnow
 from ..ratelimit import HOUR, rate_limit
-from ..schemas import ChangePlanIn
+from ..schemas import ChangePlanIn, CheckoutSyncIn
 from ..services import analytics, audit, billing, paddle_api, store_billing
 
 router = APIRouter(prefix="/api/billing", tags=["billing"])
@@ -281,6 +282,34 @@ def _find_user(db: Session, data: dict) -> User | None:
     return None
 
 
+def _apply_subscription(db: Session, user: User, data: dict, canceled: bool = False) -> list[tuple[User, str, dict]]:
+    """Reporte un abonnement Paddle (webhook ou lecture API) sur le compte. Sans commit.
+    Renvoie les événements analytics à émettre après le commit."""
+    tracked: list[tuple[User, str, dict]] = []
+    user.paddle_subscription_id = data.get("id") or user.paddle_subscription_id
+    user.paddle_customer_id = data.get("customer_id") or user.paddle_customer_id
+    previous = user.subscription_status
+    user.subscription_status = "canceled" if canceled else billing.map_status(data.get("status", ""))
+    if user.subscription_status != previous:
+        _journal(db, user, "subscription.status", {"before": previous, "after": user.subscription_status})
+        event_name = _STATUS_EVENTS.get(user.subscription_status)
+        # Une réactivation après impayé n'est pas une nouvelle souscription.
+        if event_name and not (event_name == "subscription_activated" and previous in ("active", "trialing", "past_due")):
+            tracked.append((user, event_name, data))
+    period = data.get("current_billing_period") or {}
+    ends = billing.parse_iso(period.get("ends_at"))
+    if ends is not None:
+        user.subscription_ends_at = ends
+    # Essai Paddle : fin d'essai = trial_dates de l'article, sinon fin de la
+    # période en cours (pendant l'essai, la période couvre l'essai).
+    if user.subscription_status == "trialing":
+        item = (data.get("items") or [{}])[0] or {}
+        trial_end = billing.parse_iso((item.get("trial_dates") or {}).get("ends_at")) or ends
+        if trial_end is not None:
+            user.trial_ends_at = trial_end
+    return tracked
+
+
 @router.post("/webhook")
 async def paddle_webhook(
     request: Request,
@@ -315,30 +344,7 @@ async def paddle_webhook(
     if etype.startswith("subscription.") and not stale:
         user = _find_user(db, data)
         if user is not None:
-            user.paddle_subscription_id = data.get("id") or user.paddle_subscription_id
-            user.paddle_customer_id = data.get("customer_id") or user.paddle_customer_id
-            previous = user.subscription_status
-            if etype == "subscription.canceled":
-                user.subscription_status = "canceled"
-            else:
-                user.subscription_status = billing.map_status(data.get("status", ""))
-            if user.subscription_status != previous:
-                _journal(db, user, "subscription.status", {"before": previous, "after": user.subscription_status})
-                event_name = _STATUS_EVENTS.get(user.subscription_status)
-                # Une réactivation après impayé n'est pas une nouvelle souscription.
-                if event_name and not (event_name == "subscription_activated" and previous in ("active", "trialing", "past_due")):
-                    tracked.append((user, event_name, data))
-            period = data.get("current_billing_period") or {}
-            ends = billing.parse_iso(period.get("ends_at"))
-            if ends is not None:
-                user.subscription_ends_at = ends
-            # Essai Paddle : fin d'essai = trial_dates de l'article, sinon fin de la
-            # période en cours (pendant l'essai, la période couvre l'essai).
-            if user.subscription_status == "trialing":
-                item = (data.get("items") or [{}])[0] or {}
-                trial_end = billing.parse_iso((item.get("trial_dates") or {}).get("ends_at")) or ends
-                if trial_end is not None:
-                    user.trial_ends_at = trial_end
+            tracked.extend(_apply_subscription(db, user, data, canceled=etype == "subscription.canceled"))
 
     # Renouvellement : transaction récurrente payée (si la destination Paddle
     # envoie aussi les événements transaction.*).
@@ -357,3 +363,33 @@ async def paddle_webhook(
     for u, name, payload in tracked:
         _track_billing(db, u, name, payload)
     return {"ok": True, "stale": True} if stale else {"ok": True}
+
+
+@router.post("/sync-checkout", dependencies=[Depends(rate_limit("billing_sync", 30, HOUR))])
+def sync_checkout(
+    data: CheckoutSyncIn,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Juste après le paiement : lit la transaction et l'abonnement chez Paddle et
+    active l'accès sans attendre le webhook (qui reste la source pour la suite :
+    renouvellements, impayés, résiliation). 202 tant que l'abonnement n'existe pas."""
+    try:
+        tx = paddle_api.get_transaction(data.transaction_id)
+    except paddle_api.PaddleUnavailable:
+        raise HTTPException(status_code=503, detail="Paddle injoignable, réessayez dans un instant")
+    owner = str((tx.get("custom_data") or {}).get("user_id") or "")
+    if owner != str(user.id):
+        raise HTTPException(status_code=403, detail="Cette transaction ne correspond pas à votre compte")
+    sub_id = tx.get("subscription_id")
+    if not sub_id:
+        return JSONResponse(status_code=202, content={"status": "pending"})
+    try:
+        sub = paddle_api.get_subscription(sub_id)
+    except paddle_api.PaddleUnavailable:
+        raise HTTPException(status_code=503, detail="Paddle injoignable, réessayez dans un instant")
+    tracked = _apply_subscription(db, user, sub, canceled=sub.get("status") == "canceled")
+    db.commit()
+    for u, name, payload in tracked:
+        _track_billing(db, u, name, payload)
+    return {"status": user.subscription_status}

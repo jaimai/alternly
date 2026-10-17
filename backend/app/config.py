@@ -15,6 +15,9 @@ class Settings(BaseSettings):
     # Boîte qui reçoit les signalements « Signaler un problème / Une idée ».
     # Vide → signalements enregistrés en base seulement (table feedback).
     feedback_email: str = ""
+    # Comptes de l'équipe (e-mails séparés par des virgules) : leurs événements portent
+    # is_internal=true pour être exclus des statistiques PostHog.
+    internal_emails: str = ""
     # URL publique du site (Vercel sert la landing en / et l'app). Utilisée pour
     # les liens absolus des e-mails et le canonical/OG (la landing est proxifiée,
     # donc request.url refléterait l'URL interne Railway).
@@ -37,6 +40,14 @@ class Settings(BaseSettings):
     # Développement seulement : accepter le retour vers Expo Go (exp://…) après la page web
     # d'Apple. Jamais en production : n'importe quel serveur exp:// recevrait le jeton.
     apple_allow_expo_go: bool = False
+    # Révocation du jeton Apple à la suppression du compte (App Store 5.1.1(v)) : clé
+    # « Sign in with Apple » (developer.apple.com › Keys). Vides → révocation désactivée.
+    apple_team_id: str = ""
+    apple_key_id: str = ""
+    apple_private_key: str = ""  # contenu du .p8 (les « \n » littéraux sont acceptés)
+    # Return URL déclarée sur le Services ID (parcours web Android), ex.
+    # https://<api>/api/auth/apple/callback : Apple l'exige pour échanger un code web.
+    apple_web_redirect_uri: str = ""
     public_site_url: str = "http://localhost:8000"
     # Origines autorisées à appeler l'API (CORS), séparées par des virgules.
     cors_origins: str = "http://localhost:5173"

@@ -8,6 +8,8 @@ import { addDays, daysBetween, parseIso, todayIso } from '../dates'
 import { useFormat } from '../format'
 import type { CustodyRule, Member, Pattern, VacationRule } from '../types'
 import type { RuleFormValue } from './RuleForm'
+import { CycleDrawer, MonthCheck, TEMPLATES, TemplatePicker, templateCells } from './CustomRhythm'
+import type { Cell } from './CustomRhythm'
 
 // Ordre de présentation : du plus courant au plus libre (« Autre organisation »).
 const PATTERNS: Pattern[] = ['alternate_weeks', 'every_other_weekend', 'two_two_three', 'custom']
@@ -67,6 +69,13 @@ export default function RuleWizard({ members, myId, childNames, initialCustody, 
     day: string
     before: { pattern: Pattern; customWeeks: Side[] }
   } | null>(null)
+  // « Autre organisation » : modèle proche (étape 2), puis grille à corriger et aperçu du mois (étape 3).
+  const [customFlow, setCustomFlow] = useState(false)
+  const [template, setTemplate] = useState(0)
+  const [cells, setCells] = useState<Cell[]>(() => templateCells(0))
+  const [cellsFrom, setCellsFrom] = useState<number | null>(null)
+  const [brush, setBrush] = useState<Side>('other')
+  const [monthView, setMonthView] = useState(false)
 
   const kids = childNames.length === 1 ? childNames[0] : childNames.length > 1 ? t('wizard.theChildren') : t('wizard.theChild')
 
@@ -147,14 +156,57 @@ export default function RuleWizard({ members, myId, childNames, initialCustody, 
     })
   }
 
+  function customStepName() {
+    if (step === 1) return 'template'
+    if (step === 2) return monthView ? 'month' : 'draw'
+    return 'vacations'
+  }
+
   function next() {
+    if (customFlow && step > 0) {
+      track(EV.ruleWizardStep, { step: customStepName(), pattern, template: TEMPLATES[template].id })
+      if (step === 1) {
+        // Le parent qui s'inscrit est le côté « ref » de la grille.
+        if (cellsFrom !== template) {
+          setCells(templateCells(template))
+          setCellsFrom(template)
+          setBrush(TEMPLATES[template].id === 'blank' ? 'ref' : 'other')
+        }
+        setMonthView(false)
+        setStep(2)
+      } else if (step === 2 && !monthView) {
+        if (cells.some((c) => c === null)) return
+        setCustomWeeks(cells as Side[])
+        setMonthView(true)
+      } else {
+        setStep(step + 1)
+      }
+      return
+    }
     track(EV.ruleWizardStep, { step: ['pattern', 'who', 'check', 'vacations'][step], pattern })
-    // « Autre organisation » : pas de question « qui a l'enfant », on place les jours directement.
-    setStep(step === 0 && pattern === 'custom' ? 2 : step + 1)
+    if (step === 0) {
+      const custom = pattern === 'custom'
+      setCustomFlow(custom)
+      if (custom) setReferenceParent(myId)
+    }
+    setStep(step + 1)
   }
 
   function back() {
-    setStep(step === 2 && pattern === 'custom' && !adjust ? 0 : step - 1)
+    if (customFlow && step === 2 && monthView) setMonthView(false)
+    else setStep(step - 1)
+  }
+
+  const atLabel = (side: Side) => {
+    const m = memberOf(side)
+    if (m?.id === myId) return t('wizard.customAtYou')
+    return m && !m.is_placeholder ? t('wizard.customAtName', { name: m.display_name }) : t('wizard.customAtOther')
+  }
+
+  function footerLabel() {
+    if (customFlow && step === 1) return t('wizard.customUseTemplate')
+    if (customFlow && step === 2) return monthView ? t('wizard.checkContinue') : t('wizard.customSeeMonth')
+    return step === 2 ? t('wizard.checkContinue') : t('onboarding.continue')
   }
 
   const thumb = (p: Pattern) =>
@@ -272,7 +324,28 @@ export default function RuleWizard({ members, myId, childNames, initialCustody, 
         </>
       )}
 
-      {step === 1 && (
+      {customFlow && step === 1 && <TemplatePicker template={template} onPick={setTemplate} colorOf={colorOf} atLabel={atLabel} />}
+
+      {customFlow && step === 2 && !monthView && (
+        <CycleDrawer
+          cells={cells}
+          onChange={setCells}
+          brush={brush}
+          onBrush={setBrush}
+          startDate={startDate}
+          onStartDate={setStartDate}
+          template={template}
+          onReset={() => setCells(templateCells(template))}
+          colorOf={colorOf}
+          atLabel={atLabel}
+        />
+      )}
+
+      {customFlow && step === 2 && monthView && (
+        <MonthCheck cells={customWeeks} startDate={startDate} colorOf={colorOf} atLabel={atLabel} />
+      )}
+
+      {!customFlow && step === 1 && (
         <>
           <h2 className="wz-title">{whoQuestion()}</h2>
           {pattern === 'every_other_weekend' && <p className="wz-sub">{t('wizard.weekendSub', { child: kids })}</p>}
@@ -334,7 +407,7 @@ export default function RuleWizard({ members, myId, childNames, initialCustody, 
         </>
       )}
 
-      {step === 2 && (
+      {!customFlow && step === 2 && (
         <>
           <h2 className="wz-title">{t('wizard.checkTitle')}</h2>
           <p className="wz-sub">{t('wizard.checkSub')}</p>
@@ -418,9 +491,21 @@ export default function RuleWizard({ members, myId, childNames, initialCustody, 
 
       <div className="wz-footer">
         {step < 3 ? (
-          <button type="button" onClick={next} style={{ width: '100%' }}>
-            {step === 2 ? t('wizard.checkContinue') : t('onboarding.continue')}
-          </button>
+          <>
+            <button
+              type="button"
+              onClick={next}
+              disabled={customFlow && step === 2 && !monthView && cells.some((c) => c === null)}
+              style={{ width: '100%' }}
+            >
+              {footerLabel()}
+            </button>
+            {customFlow && step === 2 && monthView && (
+              <button type="button" className="link cr-again" onClick={() => setMonthView(false)}>
+                {t('wizard.customFixAgain')}
+              </button>
+            )}
+          </>
         ) : (
           <button type="button" onClick={submit} disabled={busy} style={{ width: '100%' }}>
             {busy ? t('rules.saving') : t('onboarding.generateCalendar')}

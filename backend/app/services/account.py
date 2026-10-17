@@ -40,7 +40,7 @@ from ..models import (
 )
 
 # Colonnes jamais exportées (secrets / internes).
-_USER_PRIVATE = {"password_hash", "ical_token", "token_version"}
+_USER_PRIVATE = {"password_hash", "ical_token", "token_version", "apple_refresh_token"}
 
 
 def _row(obj, exclude: set[str] = frozenset()) -> dict:
@@ -165,6 +165,8 @@ def _anonymize(db: Session, user: User) -> None:
     user.password_hash = ""  # inutilisable : plus aucune connexion possible
     user.google_sub = None  # plus de connexion via Google non plus
     user.apple_sub = None  # ni via Apple
+    user.apple_refresh_token = None  # déjà révoqué chez Apple (routers/auth.delete_me)
+    user.apple_client_id = None
     user.display_name = "Ancien parent"
     user.is_placeholder = True
     user.email_opt_in = False

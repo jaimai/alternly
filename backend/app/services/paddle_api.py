@@ -32,6 +32,34 @@ def get_subscription(subscription_id: str) -> dict:
     return _request("GET", f"/subscriptions/{subscription_id}")
 
 
+def list_subscriptions(max_pages: int = 20) -> list[dict]:
+    """Tous les abonnements du compte Paddle (pagination par curseur `after`)."""
+    if not settings.paddle_api_key:
+        raise PaddleUnavailable("clé API Paddle absente")
+    out: list[dict] = []
+    params: dict[str, str] = {"per_page": "200"}
+    try:
+        with httpx.Client(timeout=20) as client:
+            for _ in range(max_pages):
+                resp = client.get(f"{settings.paddle_api_base}/subscriptions", headers=_headers(), params=params)
+                resp.raise_for_status()
+                body = resp.json()
+                page = body.get("data") or []
+                out.extend(page)
+                pagination = (body.get("meta") or {}).get("pagination") or {}
+                if not pagination.get("has_more") or not page:
+                    break
+                params = {"per_page": "200", "after": page[-1]["id"]}
+    except httpx.HTTPError as e:
+        raise PaddleUnavailable(f"appel Paddle échoué : {e}") from e
+    return out
+
+
+def get_transaction(transaction_id: str) -> dict:
+    """Transaction du checkout (custom_data, subscription_id une fois l'abonnement créé)."""
+    return _request("GET", f"/transactions/{transaction_id}", timeout=8)
+
+
 def cancel_subscription(subscription_id: str) -> dict:
     """Résiliation en fin de période payée (l'accès est conservé jusque-là)."""
     return _request(

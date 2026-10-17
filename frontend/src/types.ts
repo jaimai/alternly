@@ -14,6 +14,8 @@ export interface User {
   /** Consentement à la mesure d'audience (null = jamais répondu). */
   analytics_consent?: boolean | null
   created_at?: string | null
+  /** Compte de l'équipe : événements marqués is_internal (exclus des stats). */
+  is_internal?: boolean
 }
 
 export interface BillingStatus {
@@ -114,7 +116,7 @@ export interface Household {
 export interface CalendarDay {
   date: string
   parent_id: number
-  source: 'rule' | 'vacation' | 'special' | 'exception'
+  source: 'rule' | 'vacation' | 'special' | 'exception' | 'adjustment'
 }
 
 export interface PendingExchange {
@@ -124,6 +126,7 @@ export interface PendingExchange {
   proposed_parent_id: number
   proposed_by: number
   note: string
+  kind?: 'exchange' | 'adjustment'
 }
 
 export interface WallTask {
@@ -184,6 +187,15 @@ export interface ScheduleException {
   resolved_at: string | null
   response_note: string
   replaces_id: number | null
+  /** exchange : échange ; adjustment : jour personnalisé (« Ajuster mon planning »). */
+  kind?: 'exchange' | 'adjustment'
+  group_id?: string | null
+}
+
+export interface AdjustmentsResult {
+  status: 'applied' | 'proposed' | 'pending_consent'
+  created: number
+  cleared: number
 }
 
 export interface Notification {

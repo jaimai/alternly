@@ -84,6 +84,8 @@ class AppleLoginIn(BaseModel):
     nonce: str = Field(min_length=16, max_length=128)
     # Prénom : Apple ne le transmet qu'à la toute première autorisation, et hors du jeton.
     given_name: str | None = Field(default=None, max_length=50)
+    # Code d'autorisation Apple : échangé contre un refresh token, révoqué à la suppression.
+    authorization_code: str | None = Field(default=None, max_length=1024)
     locale: Literal["fr", "en"] | None = None
     analytics_consent: bool | None = None
     via_invite: bool = False
@@ -109,6 +111,8 @@ class UserOut(ORMModel):
     # Consentement à la mesure d'audience : None = jamais répondu.
     analytics_consent: bool | None = None
     created_at: datetime | None = None
+    # Compte de l'équipe : le navigateur marque ses événements pour les exclure des stats.
+    is_internal: bool = False
 
 
 class UserUpdate(BaseModel):
@@ -132,6 +136,10 @@ class MemberOut(ORMModel):
     color: str
     role: str
     is_placeholder: bool = False
+
+
+class CheckoutSyncIn(BaseModel):
+    transaction_id: str = Field(min_length=3, max_length=80, pattern=r"^txn_[A-Za-z0-9]+$")
 
 
 class ChangePlanIn(BaseModel):
@@ -263,6 +271,8 @@ class ExceptionOut(ORMModel):
     resolved_at: datetime | None
     response_note: str
     replaces_id: int | None
+    kind: str = "exchange"
+    group_id: str | None = None
 
 
 class PendingExchange(BaseModel):
@@ -272,6 +282,25 @@ class PendingExchange(BaseModel):
     proposed_parent_id: int
     proposed_by: int
     note: str
+    kind: str = "exchange"
+
+
+class AdjustmentDay(BaseModel):
+    date: date
+    parent_id: int
+
+
+class AdjustmentsIn(BaseModel):
+    """« Ajuster mon planning » : jours à personnaliser et jours à rendre au rythme."""
+    set: list[AdjustmentDay] = Field(default_factory=list, max_length=62)
+    clear: list[int] = Field(default_factory=list, max_length=62)
+    note: str = Field(default="", max_length=NOTE_MAX)
+
+
+class AdjustmentsOut(BaseModel):
+    status: str  # applied | proposed | pending_consent
+    created: int
+    cleared: int
 
 
 class InvitationOut(BaseModel):
@@ -326,7 +355,7 @@ class InvitationSchedulePreview(BaseModel):
 class CalendarDay(BaseModel):
     date: date
     parent_id: int
-    source: str  # rule | vacation | special | exception
+    source: str  # rule | vacation | special | exception | adjustment
 
 
 class LabeledDate(BaseModel):

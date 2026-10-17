@@ -1,4 +1,5 @@
 import type {
+  AdjustmentsResult,
   Balance,
   BillingStatus,
   CalendarResponse,
@@ -322,6 +323,15 @@ export const api = {
     ),
   withdrawExchange: (householdId: number, id: number) =>
     ev(request<ScheduleException>(`/households/${householdId}/exceptions/${id}/withdraw`, { method: 'POST' }), EV.exchangeWithdrawn),
+  /** « Ajuster mon planning » : jours personnalisés à poser / à rendre au rythme. */
+  saveAdjustments: (
+    householdId: number,
+    data: { set: { date: string; parent_id: number }[]; clear: number[]; note?: string },
+  ) =>
+    request<AdjustmentsResult>(`/households/${householdId}/adjustments`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
   deleteException: (householdId: number, id: number) =>
     evChange(
       request<PendingChange | undefined>(`/households/${householdId}/exceptions/${id}`, { method: 'DELETE' }),
@@ -404,6 +414,12 @@ export const api = {
     request<void>(`/households/${householdId}/replies/${replyId}`, { method: 'DELETE' }),
 
   billingStatus: () => request<BillingStatus>('/billing/status'),
+  /** Après paiement : active l'accès en lisant l'abonnement chez Paddle (sans attendre le webhook). */
+  syncCheckout: (transactionId: string) =>
+    request<{ status: string }>('/billing/sync-checkout', {
+      method: 'POST',
+      body: JSON.stringify({ transaction_id: transactionId }),
+    }),
   subscription: () => request<SubscriptionInfo>('/billing/subscription'),
   cancelSubscription: () =>
     ev(request<{ ok: boolean }>('/billing/cancel', { method: 'POST' }), EV.subscriptionCancelRequested),

@@ -1,13 +1,14 @@
 import { router } from 'expo-router'
 import { useMemo, useState } from 'react'
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { CalendarNotices } from '@/components/CalendarNotices'
 import { Icon } from '@/components/Icon'
 import { Button, Card, ErrorState, Loading } from '@/components/ui'
 import { ApiError } from '@/lib/api'
 import { memberById, pendingOn, publicHolidayOn, schoolHolidayOn, whoName } from '@/lib/custody'
 import { addMonths, formatLong, formatMonth, formatRange, monthGrid, monthStart, parseIso, todayIso } from '@/lib/dates'
-import { useCalendar, useHousehold, useMe, useWithdrawExchange } from '@/lib/queries'
+import { useAcceptedExchanges, useCalendar, useCancelExchange, useHousehold, useMe, useWithdrawExchange } from '@/lib/queries'
 import { colors, fonts, tint } from '@/lib/theme'
 import type { CalendarResponse } from '@/lib/types'
 
@@ -50,13 +51,14 @@ export default function CalendarScreen() {
         <ErrorState
           message={
             calendar.error instanceof ApiError && calendar.error.status === 409
-              ? 'Aucun rythme de garde défini. Configurez-le sur alternly.com.'
+              ? 'Aucun rythme de garde défini. Choisissez-le dans Réglages › Garde et vacances.'
               : calendar.error.message
           }
           onRetry={() => calendar.refetch()}
         />
       ) : (
         <ScrollView contentContainerStyle={{ paddingHorizontal: 12, paddingBottom: 24, gap: 12 }}>
+          <CalendarNotices cal={calendar.data} />
           <View style={s.legendRow}>
             {calendar.data.members.map((m) => (
               <Legend key={m.id} color={m.color} label={m.id === meId ? 'Vous' : m.display_name} />
@@ -133,12 +135,31 @@ function DayCell({ date, cal, inMonth, isToday, isSelected, onPress }: {
 
 function DayDetail({ date, cal, meId, householdId }: { date: string; cal: CalendarResponse; meId?: number; householdId?: number }) {
   const withdraw = useWithdrawExchange(householdId)
+  const accepted = useAcceptedExchanges(householdId).data ?? []
+  const [cancelNotice, setCancelNotice] = useState<string | null>(null)
+  const cancel = useCancelExchange(householdId, (pending) =>
+    setCancelNotice(pending ? 'Demande envoyée : l’échange sera annulé quand l’autre parent l’acceptera.' : 'Échange annulé.'),
+  )
   const day = cal.days.find((d) => d.date === date)
   const member = memberById(cal.members, day?.parent_id)
   const vacation = schoolHolidayOn(cal, date)
   const holiday = publicHolidayOn(cal, date)
   const pending = pendingOn(cal, date)
   const who = (id?: number) => whoName(cal.members, id, meId)
+  // Échange accepté qui couvre ce jour (annulable tant qu'il n'est pas passé).
+  const exchange = accepted.find((e) => e.date_start <= date && date <= e.date_end)
+
+  function confirmCancel() {
+    if (!exchange) return
+    Alert.alert(
+      'Annuler cet échange ?',
+      `${formatRange(exchange.date_start, exchange.date_end)} : le rythme habituel reprend.${cal.members.length > 1 ? ' Avec deux parents, l’autre doit accepter l’annulation.' : ''}`,
+      [
+        { text: 'Garder', style: 'cancel' },
+        { text: 'Annuler l’échange', style: 'destructive', onPress: () => cancel.mutate(exchange.id) },
+      ],
+    )
+  }
 
   return (
     <Card>
@@ -183,6 +204,11 @@ function DayDetail({ date, cal, meId, householdId }: { date: string; cal: Calend
         />
       ) : null}
       {withdraw.error ? <Text style={[s.detailSub, { color: colors.danger }]}>{withdraw.error.message}</Text> : null}
+      {exchange && exchange.date_end >= todayIso() ? (
+        <Button title="Annuler cet échange" variant="ghost" onPress={confirmCancel} loading={cancel.isPending} />
+      ) : null}
+      {cancel.error ? <Text style={[s.detailSub, { color: colors.danger }]}>{cancel.error.message}</Text> : null}
+      {cancelNotice ? <Text style={s.detailSub}>{cancelNotice}</Text> : null}
       {!pending && date >= todayIso() ? (
         <Button
           title="Proposer un échange"

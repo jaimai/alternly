@@ -44,6 +44,14 @@ class TestSignature:
     def test_bad_signature(self):
         assert billing.verify_signature(b"{}", "ts=1;h1=deadbeef", "sk_test") is False
 
+    def test_rotation_and_pasted_whitespace(self):
+        secret = "pdl_ntfset_01abc_secret"
+        body = b'{"a":1}'
+        ts = "1720000000"
+        h1 = hmac.new(secret.encode(), f"{ts}:".encode() + body, hashlib.sha256).hexdigest()
+        # deux h1 (rotation du secret) et secret collé avec un retour à la ligne
+        assert billing.verify_signature(body, f"ts={ts};h1=deadbeef;h1={h1}", secret + "\n") is True
+
     def test_no_secret(self):
         assert billing.verify_signature(b"{}", "ts=1;h1=x", "") is False
 

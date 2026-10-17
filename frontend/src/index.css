@@ -2330,3 +2330,142 @@ button.wz-day, .wz-day {
 @media (prefers-reduced-motion: reduce) {
   .wz-day.editable, .wz-progress span { transition: none; }
 }
+
+/* Inscription : Google proposé d'abord, formulaire e-mail à la demande */
+.signup-fastest {
+  text-align: center;
+  margin: 0 0 12px;
+}
+
+/* ---------- « Ajuster mon planning » : jours personnalisés ---------- */
+.adjust-entry { display: flex; flex-direction: column; gap: 10px; margin: 4px 0 12px; }
+.adjust-entry > button { align-self: flex-start; }
+.adjust-hint {
+  display: flex; gap: 10px; align-items: flex-start;
+  background: var(--pine-soft); color: var(--pine-deep);
+  border-radius: 14px; padding: 12px 14px; margin: 4px 0 12px;
+}
+.adjust-hint > svg { flex: none; margin-top: 2px; }
+.adjust-hint p { margin: 2px 0 0; color: var(--ink); font-size: 0.92rem; }
+.calendar-shell.is-adjusting .fc-daygrid-day { cursor: pointer; }
+.fc td.adjusted .fc-daygrid-day-frame,
+.fc td.adj-pending .fc-daygrid-day-frame { position: relative; }
+.fc td.adjusted .fc-daygrid-day-frame::after {
+  content: ''; position: absolute; top: 6px; right: 6px;
+  width: 7px; height: 7px; border-radius: 50%; background: var(--ink);
+}
+.fc td.adj-pending .fc-daygrid-day-frame,
+.fc td.adj-pending:hover .fc-daygrid-day-frame { box-shadow: inset 0 0 0 2.5px var(--ink); }
+.dot.adjusted-dot { width: 7px; height: 7px; background: var(--ink); }
+.tag-adjusted { background: var(--ink); color: #fff; }
+.adjust-bar {
+  position: sticky; bottom: 12px; z-index: 20;
+  max-width: 720px; margin: 12px auto 0; padding: 0 12px;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.adjust-recap {
+  list-style: none; margin: 0; padding: 8px 10px; display: flex; flex-direction: column; gap: 2px;
+  background: #fff; border: 1px solid var(--line); border-radius: 14px;
+  max-height: 168px; overflow-y: auto;
+}
+.adjust-recap li { display: flex; align-items: center; gap: 8px; font-size: 0.92rem; min-height: 36px; }
+.adjust-recap .dot { flex: none; margin: 0; }
+.adjust-recap-text { flex: 1; }
+.adjust-recap .icon-btn {
+  width: 36px; height: 36px; display: grid; place-items: center; flex: none;
+  border: 0; border-radius: 10px; background: transparent; color: var(--ink-soft); cursor: pointer; padding: 0;
+}
+.adjust-recap .icon-btn:hover { background: var(--paper-deep, #f3ecdf); color: var(--ink); }
+.adjust-actions {
+  display: flex; align-items: center; gap: 8px;
+  background: #fff; border: 1px solid var(--line); border-radius: 18px; padding: 10px 12px;
+  box-shadow: 0 8px 24px -12px rgba(36, 49, 43, 0.35);
+}
+.adjust-count { flex: 1; font-weight: 600; font-size: 0.95rem; }
+@media (max-width: 640px) {
+  .adjust-bar { bottom: calc(76px + env(safe-area-inset-bottom)); padding: 0; }
+  .adjust-entry > button { align-self: stretch; justify-content: center; }
+}
+.adjust-recap .dot { width: 12px; height: 12px; border-radius: 4px; display: inline-block; }
+/* Pendant l'ajustement, la bulle d'avis ne masque pas « Enregistrer ». */
+body:has(.adjust-bar) .feedback-fab { display: none; }
+
+/* ---------- Écran de chargement de l'app ---------- */
+.app-splash {
+  min-height: 100vh; display: grid; place-items: center;
+  background: var(--paper, #faf6ef); padding: 24px;
+}
+.app-splash.is-overlay { position: fixed; inset: 0; z-index: 200; min-height: 0; }
+.app-splash.is-leaving { opacity: 0; transition: opacity 240ms ease; pointer-events: none; }
+.app-splash-inner { display: flex; flex-direction: column; align-items: center; gap: 18px; }
+.app-splash .wordmark { font-size: 2rem; }
+.app-splash p { margin: 0; color: var(--ink-soft); font-size: 0.95rem; }
+.app-splash-grid { display: grid; grid-template-columns: repeat(7, 22px); gap: 5px; }
+.app-splash-grid span {
+  height: 22px; border-radius: 6px; background: var(--line, #e7dfd0);
+  animation: splash-tile 1.4s ease-in-out infinite;
+}
+.app-splash-grid span:nth-child(7n + 1), .app-splash-grid span:nth-child(7n + 2),
+.app-splash-grid span:nth-child(7n + 3) { animation-name: splash-tile-pine; }
+@keyframes splash-tile { 0%, 100% { opacity: 0.45; } 50% { opacity: 1; background: color-mix(in srgb, var(--terra, #c96f4a) 45%, white); } }
+@keyframes splash-tile-pine { 0%, 100% { opacity: 0.45; } 50% { opacity: 1; background: color-mix(in srgb, var(--pine, #1f4d3f) 40%, white); } }
+@media (prefers-reduced-motion: reduce) {
+  .app-splash-grid span { animation: none; opacity: 0.8; }
+  .app-splash.is-leaving { transition: none; }
+}
+
+/* « Autre organisation » à l'inscription : modèles, grille à corriger, aperçu du mois */
+.cr-templates .wz-thumb-cell.a { background: var(--cr-a, var(--pine)); }
+.cr-templates .wz-thumb-cell.b { background: var(--cr-b, var(--terra)); }
+.cr-brushes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+button.cr-brush {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 56px;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--paper);
+  color: var(--ink);
+  text-align: left;
+  box-shadow: none;
+}
+button.cr-brush.selected { background: var(--surface); border-width: 2.5px; padding: 6.5px 10.5px; }
+.cr-brush-dot { width: 22px; height: 22px; border-radius: 7px; flex: none; }
+button.cr-brush strong { font-size: 0.95rem; line-height: 1.2; }
+button.wz-day.cr-unset {
+  background: transparent;
+  color: var(--ink-soft);
+  text-shadow: none;
+  border: 1.5px dashed color-mix(in srgb, var(--ink-soft) 55%, transparent);
+}
+.cr-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--pine-soft);
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+.cr-summary > span { color: var(--ink-soft); }
+button.cr-reset, button.cr-again { align-self: center; min-height: 44px; font-weight: 600; color: var(--ink); }
+button.cr-again { display: block; width: 100%; margin-top: 6px; }
+.cr-month { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.cr-month-head { font-size: 0.75rem; font-weight: 600; color: var(--ink-soft); text-align: center; }
+.cr-month-day {
+  display: grid;
+  place-items: center;
+  height: 42px;
+  border-radius: 9px;
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.9rem;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.25);
+}
+.cr-month-day.today { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--ink); }
+@media (hover: hover) {
+  button.cr-brush:hover { background: var(--pine-soft); }
+}

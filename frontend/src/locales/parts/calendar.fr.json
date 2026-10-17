@@ -28,5 +28,6 @@
   "calendar.legendYou": "{{name}} (vous)",
   "calendar.legendHandover": "Jour de passage",
   "calendar.legendProposedExchange": "Échange proposé",
-  "calendar.alreadyMember": "Vous faites déjà partie de ce foyer : voici votre calendrier partagé."
+  "calendar.alreadyMember": "Vous faites déjà partie de ce foyer : voici votre calendrier partagé.",
+  "calendar.premiumActivated": "Merci ! Premium est activé : rappels, dépenses, mur et historique sont débloqués."
 }

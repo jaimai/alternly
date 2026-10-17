@@ -51,5 +51,6 @@
   "common.notifChangeAccepted": "Your request was accepted: {{summary}}",
   "common.notifChangeRefused": "Your request was declined: {{summary}}",
   "common.notifPaymentFailed": "Your subscription payment failed: please update your payment method",
-  "common.notifInviteReminder": "Your co-parent hasn't joined the calendar yet. Resend the invitation in one tap."
+  "common.notifInviteReminder": "Your co-parent hasn't joined the calendar yet. Resend the invitation in one tap.",
+  "common.loadingCalendar": "Loading your calendar…"
 }

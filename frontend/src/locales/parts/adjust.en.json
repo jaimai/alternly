@@ -1,0 +1,23 @@
+{
+  "adjust.open": "Adjust my schedule",
+  "adjust.hintTitle": "Tap a day to move it to the other parent.",
+  "adjust.hintBody": "These are one-off adjustments: your usual schedule stays the same. Tap a customised day to put it back on schedule.",
+  "adjust.you": "you",
+  "adjust.countNone": "No day changed",
+  "adjust.count_one": "{{count}} day changed",
+  "adjust.count_other": "{{count}} days changed",
+  "adjust.cancel": "Cancel",
+  "adjust.save": "Save",
+  "adjust.propose": "Propose",
+  "adjust.noticeApplied_one": "{{count}} day customised. Your usual schedule then resumes on its own.",
+  "adjust.noticeApplied_other": "{{count}} days customised. Your usual schedule then resumes on its own.",
+  "adjust.noticeProposed_one": "{{count}} day proposed to {{name}}: it applies once they agree.",
+  "adjust.noticeProposed_other": "{{count}} days proposed to {{name}}: they apply once they agree.",
+  "adjust.noticeConsent": "Request sent to {{name}} to go back to the usual schedule.",
+  "adjust.tag": "Customised day",
+  "adjust.backToRhythm": "Back to the usual schedule",
+  "calendar.legendAdjusted": "Customised day",
+  "adjust.recapLabel": "Changed days",
+  "adjust.recapLine": "{{dates}} · with {{name}}",
+  "adjust.recapRemove": "Remove {{dates}}"
+}

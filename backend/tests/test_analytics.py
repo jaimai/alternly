@@ -268,3 +268,12 @@ class TestMarketingSnippet:
         r = client.get("/static/analytics.js")
         assert r.status_code == 200
         assert "alternly_consent" in r.text and "cookieless_mode" in r.text
+
+
+def test_internal_accounts_are_flagged(client, auth_headers, monkeypatch):
+    from app.config import settings
+    monkeypatch.setattr(settings, "internal_emails", " Equipe@Test.fr , autre@test.fr", raising=False)
+    headers, _ = auth_headers(email="equipe@test.fr")
+    assert client.get("/api/auth/me", headers=headers).json()["is_internal"] is True
+    other, _ = auth_headers(email="parent@test.fr")
+    assert client.get("/api/auth/me", headers=other).json()["is_internal"] is False

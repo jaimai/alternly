@@ -23,6 +23,7 @@ export default function PlanCheckout({
   const [plan, setPlan] = useState<Plan>('annual')
   const [busy, setBusy] = useState(false)
   const [done, setDone] = useState(false)
+  const [failed, setFailed] = useState(false)
 
   useEffect(() => {
     loadPlans().then(setPlans)
@@ -33,16 +34,17 @@ export default function PlanCheckout({
 
   async function subscribe() {
     setBusy(true)
+    setFailed(false)
     await openCheckout(
       user,
       () => {
         setDone(true)
         onSubscribed()
-        window.setTimeout(onSubscribed, 4000)
       },
       plan,
       source,
       plan === 'annual' ? discountCode : undefined,
+      () => setFailed(true),
     )
     setBusy(false)
   }
@@ -89,6 +91,7 @@ export default function PlanCheckout({
         </div>
       )}
       {done && <div className="info-banner">{t('paywall.activating')}</div>}
+      {failed && <div className="error" role="alert">{t('paywall.checkoutFailed')}</div>}
       <button onClick={subscribe} disabled={busy || !plans} style={{ width: '100%' }}>
         {busy
           ? t('paywall.opening')
