@@ -85,5 +85,7 @@
   "wizard.customMonthCount_one": "{{where}} · 1 jour",
   "wizard.customMonthCount_other": "{{where}} · {{count}} jours",
   "wizard.customNextHandover": "Prochain passage : {{date}}, {{where}}.",
-  "wizard.customFixAgain": "Corriger encore"
+  "wizard.customFixAgain": "Corriger encore",
+  "wizard.tplCurrentTitle": "Mon rythme actuel",
+  "wizard.tplCurrentDesc": "Repartir de vos deux semaines enregistrées."
 }

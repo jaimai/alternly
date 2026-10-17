@@ -4,7 +4,7 @@ import { colors } from '@/lib/theme'
 
 export type IconName =
   | 'home' | 'calendar' | 'wall' | 'wallet' | 'settings' | 'bell' | 'back' | 'chevron'
-  | 'swap' | 'check' | 'close' | 'eye' | 'mail' | 'logout' | 'plus' | 'receipt'
+  | 'swap' | 'check' | 'close' | 'eye' | 'mail' | 'logout' | 'plus' | 'receipt' | 'pencil'
 
 const paths: Record<IconName, React.ReactNode> = {
   home: <Path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z" />,
@@ -15,6 +15,7 @@ const paths: Record<IconName, React.ReactNode> = {
     </>
   ),
   wall: <Path d="M4 5h16v11H9l-5 4z" />,
+  pencil: <Path d="M4 20h4L19 9l-4-4L4 16zM14 6l4 4" />,
   wallet: (
     <>
       <Rect x={3} y={6} width={18} height={14} rx={2} />

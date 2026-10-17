@@ -8,6 +8,7 @@ export const keys = {
   me: ['me'] as const,
   household: ['household'] as const,
   calendar: (hid: number, start: string, end: string) => ['calendar', hid, start, end] as const,
+  exceptions: (hid: number) => ['exceptions', hid] as const,
   notifications: ['notifications'] as const,
   pushPrefs: ['pushPrefs'] as const,
   expenses: ['expenses'] as const,
@@ -83,6 +84,29 @@ export function useWithdrawExchange(householdId: number | undefined) {
   return useMutation({
     mutationFn: (id: number) => api.withdrawExchange(householdId!, id),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['calendar'] }),
+  })
+}
+
+/** Échanges et jours personnalisés du foyer (pour retrouver l'id d'un jour ajusté). */
+export function useExceptions(householdId: number | undefined) {
+  return useQuery({
+    queryKey: keys.exceptions(householdId ?? 0),
+    queryFn: () => api.exceptions(householdId!),
+    enabled: householdId !== undefined,
+  })
+}
+
+/** « Ajuster mon planning » : applique (solo) ou propose (deux parents) des jours personnalisés. */
+export function useSaveAdjustments(householdId: number | undefined) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (data: { set: { date: string; parent_id: number }[]; clear: number[] }) =>
+      api.saveAdjustments(householdId!, data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['calendar'] })
+      qc.invalidateQueries({ queryKey: ['exceptions'] })
+      qc.invalidateQueries({ queryKey: keys.changeRequests })
+    },
   })
 }
 

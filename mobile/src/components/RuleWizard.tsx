@@ -1,11 +1,13 @@
 // Règle de garde en 4 petites étapes (portage de frontend/src/components/RuleWizard.tsx) :
 // rythme → qui a les enfants à une date précise → vérifier/ajuster jour par jour → vacances.
+// « Autre organisation » : modèle proche → grille à corriger → aperçu du mois → vacances.
 import { useState } from 'react'
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native'
 import { flipDay, mondayOf, sideOn, weekday, type Pattern, type Side } from '@/lib/custodyPreview'
 import { addDays, formatLong, parseIso, todayIso } from '@/lib/dates'
 import { colors, fonts, tint } from '@/lib/theme'
 import type { CustodyRule, Member, VacationRule } from '@/lib/types'
+import { CURRENT, CycleDrawer, MonthCheck, TEMPLATES, TemplatePicker, Thumb, templateCells, type Cell } from './CustomRhythm'
 import { ChoiceCard, DateField, Progress, Segmented } from './form'
 import { Avatar, Body, Button, Title } from './ui'
 
@@ -13,7 +15,7 @@ const PATTERNS: { value: Pattern; title: string; desc: string; thumb: string }[]
   { value: 'alternate_weeks', title: 'Semaine / semaine', desc: 'Une semaine chez chacun, avec un jour de passage fixe.', thumb: 'aaaaaaabbbbbbb' },
   { value: 'every_other_weekend', title: 'Un week-end sur deux', desc: 'L’enfant vit chez un parent ; l’autre l’accueille un week-end sur deux.', thumb: 'bbbbaaabbbbbbb' },
   { value: 'two_two_three', title: '2-2-3', desc: '2 jours chacun, puis 3 jours. Souvent choisi pour les tout-petits.', thumb: 'aabbaaabbaabbb' },
-  { value: 'custom', title: 'Autre organisation', desc: 'Vous placez vous-même les jours sur deux semaines.', thumb: 'xxxxxxxxxxxxxx' },
+  { value: 'custom', title: 'Autre organisation', desc: 'Partez d’un modèle proche, puis corrigez les jours qui diffèrent.', thumb: 'xxxxxxxxxxxxxx' },
 ]
 const DAY_SHORT = ['L', 'M', 'M', 'J', 'V', 'S', 'D']
 const DAY_LONG = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche']
@@ -53,6 +55,18 @@ export function RuleWizard({ members, myId, childNames, busy, stepOffset, stepTo
   const [vacMode, setVacMode] = useState<'split_half' | 'alternate_full'>(v?.mode ?? 'split_half')
   const [evenParent, setEvenParent] = useState(v?.even_year_first_half_parent_id ?? myId)
   const [adjust, setAdjust] = useState<{ day: string; before: { pattern: Pattern; customWeeks: Side[] } } | null>(null)
+  // Rythme personnalisé déjà enregistré, vu depuis « vous » (côté ref = le parent connecté).
+  const [currentCells] = useState<Cell[] | null>(() =>
+    c?.pattern === 'custom' && c.custom_weeks?.length === 14
+      ? (c.custom_weeks as Side[]).map((x) => (c.reference_parent_id === myId ? x : x === 'ref' ? 'other' : 'ref'))
+      : null,
+  )
+  const [customFlow, setCustomFlow] = useState(false)
+  const [template, setTemplate] = useState(currentCells ? CURRENT : 0)
+  const [cells, setCells] = useState<Cell[]>(() => currentCells ?? templateCells(0))
+  const [cellsFrom, setCellsFrom] = useState<number | null>(null)
+  const [monthView, setMonthView] = useState(false)
+  const cellsOf = (i: number) => (i === CURRENT && currentCells ? currentCells : templateCells(i))
 
   const kids = childNames.length === 1 ? childNames[0] : childNames.length > 1 ? 'les enfants' : 'l’enfant'
   const rule = { pattern, start_date: startDate, handover_day: handoverDay, custom_weeks: customWeeks }
@@ -95,8 +109,45 @@ export function RuleWizard({ members, myId, childNames, busy, stepOffset, stepTo
   const thisYearParent = evenYear ? evenParent : otherId(evenParent)
   const setThisYearParent = (id: number) => setEvenParent(evenYear ? id : otherId(id))
 
-  const next = () => setStep(step === 0 && pattern === 'custom' ? 2 : step + 1)
-  const back = () => setStep(step === 2 && pattern === 'custom' && !adjust ? 0 : step - 1)
+  const atLabel = (side: Side) => {
+    const m = memberOf(side)
+    if (m?.id === myId) return 'chez vous'
+    return m && !m.is_placeholder ? `chez ${m.display_name}` : 'chez l’autre parent'
+  }
+  const missing = cells.some((x) => x === null)
+
+  function next() {
+    if (customFlow && step === 1) {
+      if (cellsFrom !== template) {
+        setCells(cellsOf(template))
+        setCellsFrom(template)
+      }
+      setMonthView(false)
+      setStep(2)
+    } else if (customFlow && step === 2 && !monthView) {
+      if (missing) return
+      setCustomWeeks(cells as Side[])
+      setMonthView(true)
+    } else {
+      if (step === 0) {
+        const custom = pattern === 'custom'
+        setCustomFlow(custom)
+        if (custom) setReferenceParent(myId)
+      }
+      setStep(step + 1)
+    }
+  }
+
+  function back() {
+    if (customFlow && step === 2 && monthView) setMonthView(false)
+    else setStep(step - 1)
+  }
+
+  function nextLabel() {
+    if (customFlow && step === 1) return 'Partir de ce modèle'
+    if (customFlow && step === 2) return monthView ? 'C’est bon, continuer' : 'Voir le résultat sur un mois'
+    return step === 2 ? 'C’est bon, continuer' : 'Continuer'
+  }
 
   function submit() {
     if (busy) return
@@ -203,7 +254,29 @@ export function RuleWizard({ members, myId, childNames, busy, stepOffset, stepTo
         </>
       )}
 
-      {step === 1 && (
+      {customFlow && step === 1 ? (
+        <TemplatePicker template={template} onPick={setTemplate} current={currentCells} colorOf={colorOf} atLabel={atLabel} />
+      ) : null}
+
+      {customFlow && step === 2 && !monthView ? (
+        <CycleDrawer
+          key={cellsFrom ?? 'none'}
+          cells={cells}
+          onChange={setCells}
+          startDate={startDate}
+          onStartDate={setStartDate}
+          blank={template !== CURRENT && TEMPLATES[template].id === 'blank'}
+          onReset={() => setCells(cellsOf(template))}
+          colorOf={colorOf}
+          atLabel={atLabel}
+        />
+      ) : null}
+
+      {customFlow && step === 2 && monthView ? (
+        <MonthCheck cells={customWeeks} startDate={startDate} colorOf={colorOf} atLabel={atLabel} />
+      ) : null}
+
+      {!customFlow && step === 1 && (
         <>
           <Title style={{ fontSize: 24, lineHeight: 30 }}>{whoQuestion()}</Title>
           {pattern === 'every_other_weekend' ? (
@@ -252,7 +325,7 @@ export function RuleWizard({ members, myId, childNames, busy, stepOffset, stepTo
         </>
       )}
 
-      {step === 2 && (
+      {!customFlow && step === 2 && (
         <>
           <View style={{ gap: 6 }}>
             <Title>Ça correspond à votre organisation ?</Title>
@@ -355,30 +428,22 @@ export function RuleWizard({ members, myId, childNames, busy, stepOffset, stepTo
       )}
 
       {step < 3 ? (
-        <Button
-          title={step === 2 ? 'C’est bon, continuer' : 'Continuer'}
-          onPress={next}
-          disabled={step === 1 && pattern === 'alternate_weeks' && !timeValid}
-        />
+        <>
+          <Button
+            title={nextLabel()}
+            onPress={next}
+            disabled={
+              (!customFlow && step === 1 && pattern === 'alternate_weeks' && !timeValid)
+              || (customFlow && step === 2 && !monthView && missing)
+            }
+          />
+          {customFlow && step === 2 && monthView ? (
+            <Button title="Corriger encore" variant="ghost" onPress={() => setMonthView(false)} />
+          ) : null}
+        </>
       ) : (
         <Button title={submitLabel ?? 'Générer le calendrier'} onPress={submit} loading={busy} />
       )}
-    </View>
-  )
-}
-
-/** Vignette 2 semaines : a = un parent, b = l'autre, x = à définir. */
-function Thumb({ code }: { code: string }) {
-  const color = (c: string) => (c === 'a' ? colors.pine : c === 'b' ? colors.terra : colors.line)
-  return (
-    <View style={{ gap: 2, width: 84 }} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-      {[0, 1].map((w) => (
-        <View key={w} style={{ flexDirection: 'row', gap: 2 }}>
-          {code.slice(w * 7, w * 7 + 7).split('').map((c, i) => (
-            <View key={i} style={{ flex: 1, height: 14, borderRadius: 3, backgroundColor: color(c) }} />
-          ))}
-        </View>
-      ))}
     </View>
   )
 }

@@ -85,5 +85,7 @@
   "wizard.customMonthCount_one": "{{where}} · 1 day",
   "wizard.customMonthCount_other": "{{where}} · {{count}} days",
   "wizard.customNextHandover": "Next handover: {{date}}, {{where}}.",
-  "wizard.customFixAgain": "Fix again"
+  "wizard.customFixAgain": "Fix again",
+  "wizard.tplCurrentTitle": "My current schedule",
+  "wizard.tplCurrentDesc": "Start again from your saved two weeks."
 }

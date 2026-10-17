@@ -719,6 +719,8 @@
   "wizard.thumbLegend": "Vignettes : deux semaines, du lundi au dimanche ; une couleur par parent.",
   "wizard.tplBlankDesc": "Vous placez chaque jour vous-même.",
   "wizard.tplBlankTitle": "Je pars d’une grille vide",
+  "wizard.tplCurrentDesc": "Repartir de vos deux semaines enregistrées.",
+  "wizard.tplCurrentTitle": "Mon rythme actuel",
   "wizard.tplTwoTwoFiveFiveDesc": "Lun-mar chez vous, mer-jeu chez l’autre, les week-ends en alternance.",
   "wizard.tplTwoTwoFiveFiveTitle": "2-2-5-5",
   "wizard.tplWeekdaysWeekendsDesc": "Du lundi au jeudi chez vous, du vendredi au dimanche chez l’autre.",
