@@ -109,6 +109,8 @@ class UserOut(ORMModel):
     # Consentement à la mesure d'audience : None = jamais répondu.
     analytics_consent: bool | None = None
     created_at: datetime | None = None
+    # Compte de l'équipe : le navigateur marque ses événements pour les exclure des stats.
+    is_internal: bool = False
 
 
 class UserUpdate(BaseModel):

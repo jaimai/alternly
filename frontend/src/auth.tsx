@@ -1,9 +1,10 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Navigate } from 'react-router-dom'
-import { invalidateAllCalendars, prefetchCurrentMonth } from './calendarCache'
+import { invalidateAllCalendars, lastHousehold, prefetchCurrentMonth, prefetchStatus, rememberHousehold } from './calendarCache'
+import AppSplash from './components/AppSplash'
 import { api, ApiError, getToken, setToken } from './api'
-import { resetIdentity } from './analytics'
+import { markInternalDevice, resetIdentity } from './analytics'
 import Spinner from './components/Spinner'
 import i18n, { langExplicitlyChosen } from './i18n'
 import type { BillingStatus, Household, User } from './types'
@@ -42,6 +43,13 @@ if (getToken()) {
   bootBilling = api.billingStatus()
   bootHousehold.catch(() => {})
   bootBilling.catch(() => {})
+  // Foyer déjà connu sur cet appareil : calendrier et carte du jour partent aussi
+  // tout de suite (en parallèle du compte et du foyer).
+  const hid = lastHousehold()
+  if (hid !== null && window.location.pathname.startsWith('/app')) {
+    prefetchCurrentMonth(hid)
+    prefetchStatus(hid)
+  }
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -61,13 +69,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // pages est instantanée (plus de re-fetch à chaque montage).
   const refreshHousehold = useCallback(async () => {
     // Le foyer a pu changer (règles, zone, membres) : le calendrier en cache aussi.
-    invalidateAllCalendars()
+    // Sauf au démarrage, où le calendrier vient d'être préchargé en parallèle.
+    if (bootHousehold === null) invalidateAllCalendars()
     try {
       const pending = bootHousehold ?? api.myHousehold()
       bootHousehold = null
       const h = await pending
       // Le mois en cours est demandé tout de suite, sans attendre l'affichage du calendrier.
-      if (h.custody_rule) prefetchCurrentMonth(h.id)
+      if (h.custody_rule) {
+        prefetchCurrentMonth(h.id)
+        prefetchStatus(h.id)
+      }
+      rememberHousehold(h.id)
       setHousehold(h)
     } catch (err) {
       if (err instanceof ApiError && err.status === 404) setHousehold(null)
@@ -91,6 +104,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Foyer et abonnement suivent le compte connecté : chargés à chaque changement
   // de compte (au démarrage, mais aussi après connexion, inscription, Google,
   // invitation ou réinitialisation, qui appellent setUser sans recharger la page).
+  useEffect(() => {
+    if (user?.is_internal) markInternalDevice()
+  }, [user?.is_internal])
+
   const userId = user?.id ?? null
   useEffect(() => {
     setHousehold(null)
@@ -132,7 +149,7 @@ export function useAuth() {
 
 export function RequireAuth({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth()
-  if (loading) return <Spinner />
+  if (loading) return <AppSplash />
   if (!user) return <Navigate to="/login" replace />
   // Freemium : l'app (calendrier) est toujours accessible. Les fonctions premium
   // sont protégées séparément par <PremiumGate>.

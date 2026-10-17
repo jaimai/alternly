@@ -2389,3 +2389,27 @@ button.wz-day, .wz-day {
 .adjust-recap .dot { width: 12px; height: 12px; border-radius: 4px; display: inline-block; }
 /* Pendant l'ajustement, la bulle d'avis ne masque pas « Enregistrer ». */
 body:has(.adjust-bar) .feedback-fab { display: none; }
+
+/* ---------- Écran de chargement de l'app ---------- */
+.app-splash {
+  min-height: 100vh; display: grid; place-items: center;
+  background: var(--paper, #faf6ef); padding: 24px;
+}
+.app-splash.is-overlay { position: fixed; inset: 0; z-index: 200; min-height: 0; }
+.app-splash.is-leaving { opacity: 0; transition: opacity 240ms ease; pointer-events: none; }
+.app-splash-inner { display: flex; flex-direction: column; align-items: center; gap: 18px; }
+.app-splash .wordmark { font-size: 2rem; }
+.app-splash p { margin: 0; color: var(--ink-soft); font-size: 0.95rem; }
+.app-splash-grid { display: grid; grid-template-columns: repeat(7, 22px); gap: 5px; }
+.app-splash-grid span {
+  height: 22px; border-radius: 6px; background: var(--line, #e7dfd0);
+  animation: splash-tile 1.4s ease-in-out infinite;
+}
+.app-splash-grid span:nth-child(7n + 1), .app-splash-grid span:nth-child(7n + 2),
+.app-splash-grid span:nth-child(7n + 3) { animation-name: splash-tile-pine; }
+@keyframes splash-tile { 0%, 100% { opacity: 0.45; } 50% { opacity: 1; background: color-mix(in srgb, var(--terra, #c96f4a) 45%, white); } }
+@keyframes splash-tile-pine { 0%, 100% { opacity: 0.45; } 50% { opacity: 1; background: color-mix(in srgb, var(--pine, #1f4d3f) 40%, white); } }
+@media (prefers-reduced-motion: reduce) {
+  .app-splash-grid span { animation: none; opacity: 0.8; }
+  .app-splash.is-leaving { transition: none; }
+}

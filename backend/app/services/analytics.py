@@ -117,6 +117,8 @@ def capture_for_user(
     """
     if not enabled():
         return
+    if user is not None and getattr(user, "is_internal", False):
+        properties = {**(properties or {}), "is_internal": True}
     if user is not None and getattr(user, "analytics_consent", None) is True:
         groups = {"household": str(household_id)} if household_id is not None else None
         capture(str(user.id), event, properties, groups)

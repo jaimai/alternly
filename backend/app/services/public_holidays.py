@@ -60,8 +60,33 @@ def commit_cache(db: Session) -> None:
 
 _memo = NegativeCache()
 
+# Lectures du cache DB gardées en mémoire (par processus) : ces données ne changent
+# pas, et la base est distante (un aller-retour réseau par requête à chaque calendrier).
+_HIT_TTL = 6 * 3600
+_hits: dict[tuple, tuple[float, object]] = {}
+
+
+def memory_get(key: tuple):
+    hit = _hits.get(key)
+    if hit and hit[0] > time.monotonic():
+        return hit[1]
+    return None
+
+
+def memory_set(key: tuple, value) -> None:
+    if len(_hits) > 512:
+        _hits.clear()
+    _hits[key] = (time.monotonic() + _HIT_TTL, value)
+
+
+def clear_memory_cache() -> None:
+    _hits.clear()
+
 
 def get(db: Session, year: int, client: httpx.Client | None = None) -> dict[date, str]:
+    mem = memory_get(("public", year))
+    if mem is not None:
+        return dict(mem)
     cached = db.scalars(
         select(PublicHolidayCache).where(
             PublicHolidayCache.date >= date(year, 1, 1),
@@ -69,7 +94,9 @@ def get(db: Session, year: int, client: httpx.Client | None = None) -> dict[date
         )
     ).all()
     if cached:
-        return {row.date: row.label for row in cached}
+        result = {row.date: row.label for row in cached}
+        memory_set(("public", year), result)
+        return dict(result)
 
     key = ("public", year)
     memo = _memo.get(key)

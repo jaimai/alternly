@@ -112,8 +112,27 @@ function scrubProps(props: Properties | undefined) {
   }
 }
 
+// Appareil de l'équipe (un compte interne s'y est connecté) : tous ses événements,
+// connecté ou non, portent is_internal=true et sont exclus des statistiques.
+const INTERNAL_KEY = 'alternly_internal'
+export function markInternalDevice() {
+  try {
+    localStorage.setItem(INTERNAL_KEY, '1')
+  } catch {
+    // stockage indisponible
+  }
+}
+function isInternalDevice(): boolean {
+  try {
+    return localStorage.getItem(INTERNAL_KEY) === '1'
+  } catch {
+    return false
+  }
+}
+
 function beforeSend(cr: CaptureResult | null): CaptureResult | null {
   if (!cr) return cr
+  if (isInternalDevice()) cr.properties = { ...cr.properties, is_internal: true }
   scrubProps(cr.properties)
   scrubProps(cr.$set)
   scrubProps(cr.$set_once)

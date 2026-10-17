@@ -13,7 +13,16 @@ import Icon from '../components/Icon'
 import InviteShare from '../components/InviteShare'
 import Modal from '../components/Modal'
 import Spinner from '../components/Spinner'
-import { cachedCalendar, cachedExceptions, fetchCalendar, fetchExceptions, invalidateCalendar } from '../calendarCache'
+import {
+  cachedCalendar,
+  cachedExceptions,
+  fetchCalendar,
+  fetchExceptions,
+  invalidateCalendar,
+  monthGridRange,
+  statusRange,
+} from '../calendarCache'
+import AppSplash from '../components/AppSplash'
 import StatusCard from '../components/StatusCard'
 import TopBar from '../components/TopBar'
 import { addDays, todayIso } from '../dates'
@@ -28,7 +37,14 @@ export default function CalendarPage() {
   const [data, setData] = useState<CalendarResponse | null>(null)
   const [loading, setLoading] = useState(false)
   const [exceptions, setExceptions] = useState<ScheduleException[]>([])
-  const [range, setRange] = useState<{ start: string; end: string } | null>(null)
+  // Même plage que la vue mois de FullCalendar : le chargement démarre sans attendre
+  // que le calendrier soit monté (il confirme ensuite la même plage).
+  const [range, setRange] = useState<{ start: string; end: string } | null>(() => monthGridRange())
+  // Écran de chargement tant que le mois et la carte du jour ne sont pas là (6 s au plus) :
+  // la page apparaît d'un bloc au lieu d'éléments qui arrivent un par un.
+  const [statusReady, setStatusReady] = useState(false)
+  const [splashTimedOut, setSplashTimedOut] = useState(false)
+  const [splashGone, setSplashGone] = useState(false)
   const [selectedDay, setSelectedDay] = useState<string | null>(null)
   const [inviteOpen, setInviteOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -80,6 +96,30 @@ export default function CalendarPage() {
   }, [household, range, t])
 
   useEffect(loadCalendar, [loadCalendar])
+
+  useEffect(() => {
+    if (!household?.custody_rule) return
+    const { start, end } = statusRange()
+    if (cachedCalendar(household.id, start, end)) {
+      setStatusReady(true)
+      return
+    }
+    fetchCalendar(household.id, start, end)
+      .catch(() => {})
+      .finally(() => setStatusReady(true))
+  }, [household?.id, household?.custody_rule])
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setSplashTimedOut(true), 6000)
+    return () => window.clearTimeout(timer)
+  }, [])
+
+  const pageReady = (data !== null && statusReady) || error !== null || splashTimedOut
+  useEffect(() => {
+    if (!pageReady || splashGone) return
+    const timer = window.setTimeout(() => setSplashGone(true), 250) // fondu de sortie
+    return () => window.clearTimeout(timer)
+  }, [pageReady, splashGone])
 
   const onChanged = useCallback(() => {
     if (household) invalidateCalendar(household.id)
@@ -188,6 +228,7 @@ export default function CalendarPage() {
 
   return (
     <>
+      {!splashGone && <AppSplash overlay leaving={pageReady} />}
       <TopBar householdName={household?.name} />
       <div className="layout">
         {error && <div className="error">{error}</div>}
