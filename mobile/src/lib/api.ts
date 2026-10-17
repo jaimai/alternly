@@ -12,6 +12,7 @@ import type {
   DepartureReason,
   Expense,
   ExpenseInput,
+  HistoryEntry,
   Household,
   Invitation,
   InvitationPreview,
@@ -19,6 +20,7 @@ import type {
   PendingChange,
   PushPrefs,
   ScheduleException,
+  SchoolVacation,
   Settlement,
   SpecialDayRule,
   TokenResponse,
@@ -140,10 +142,10 @@ export const api = {
     request<TokenResponse>('/auth/register', { method: 'POST', body: { ...data, locale: 'fr', via_invite: hasPendingInvite() } }),
   googleLogin: (credential: string) =>
     request<TokenResponse>('/auth/google', { method: 'POST', body: { credential, locale: 'fr', via_invite: hasPendingInvite() } }),
-  appleLogin: (identity_token: string, nonce: string, given_name?: string) =>
+  appleLogin: (identity_token: string, nonce: string, given_name?: string, authorization_code?: string) =>
     request<TokenResponse>('/auth/apple', {
       method: 'POST',
-      body: { identity_token, nonce, given_name, locale: 'fr', via_invite: hasPendingInvite() },
+      body: { identity_token, nonce, given_name, authorization_code, locale: 'fr', via_invite: hasPendingInvite() },
     }),
   resetPassword: (token: string, password: string) =>
     request<TokenResponse>('/auth/password/reset', { method: 'POST', body: { token, password } }),
@@ -161,6 +163,12 @@ export const api = {
   /** Révoque les autres sessions : renvoie un nouveau jeton pour ce téléphone. */
   changePassword: (current_password: string, new_password: string) =>
     request<TokenResponse>('/auth/password/change', { method: 'POST', body: { current_password, new_password } }),
+  /** Révoque toutes les sessions, y compris celle de ce téléphone. */
+  logoutAll: () => request<void>('/auth/logout-all', { method: 'POST' }),
+  /** Export RGPD : profil, foyer, calendrier, dépenses, tableau (JSON). */
+  exportData: () => request<unknown>('/auth/me/export'),
+  sendFeedback: (data: { kind: 'problem' | 'idea' | 'question'; message: string; page: string }) =>
+    request<unknown>('/feedback', { method: 'POST', body: { ...data, source: 'settings', locale: 'fr' } }),
   deleteAccount: (reason: DepartureReason | null, comment: string) =>
     request<void>('/auth/me', { method: 'DELETE', body: { reason, comment } }),
 
@@ -208,6 +216,11 @@ export const api = {
     request<PendingChange | undefined>(`/households/${householdId}/children/${childId}`, { method: 'DELETE' }),
   updateHousehold: (householdId: number, data: { name?: string; school_zone?: 'A' | 'B' | 'C' }) =>
     request<Household>(`/households/${householdId}`, { method: 'PATCH', body: data }),
+  history: (householdId: number, beforeId?: number) =>
+    request<HistoryEntry[]>(`/households/${householdId}/history?limit=50${beforeId ? `&before_id=${beforeId}` : ''}`),
+  // Flux d'agenda privé (Premium) : lire le lien ne le change pas ; régénérer coupe l'ancien.
+  icalLink: () => request<{ ical_token: string }>('/ical/link'),
+  regenerateIcal: () => request<{ ical_token: string }>('/ical/regenerate', { method: 'POST' }),
   changeRequests: (householdId: number) =>
     request<ChangeRequest[]>(`/households/${householdId}/change-requests?status=pending`),
   answerChange: (householdId: number, id: number, action: 'accept' | 'refuse' | 'withdraw') =>
@@ -218,7 +231,21 @@ export const api = {
     request<Invitation>(`/households/${householdId}/invitations`, { method: 'POST' }),
   calendar: (householdId: number, start: string, end: string) =>
     request<CalendarResponse>(`/households/${householdId}/calendar?start=${start}&end=${end}`),
-  exceptions: (householdId: number) => request<ScheduleException[]>(`/households/${householdId}/exceptions`),
+  exceptions: (householdId: number, status?: 'pending' | 'accepted') =>
+    request<ScheduleException[]>(`/households/${householdId}/exceptions${status ? `?status=${status}` : ''}`),
+  /** Annule un échange (accepté : demande d'accord à l'autre parent si deux parents → 202). */
+  deleteException: (householdId: number, id: number) =>
+    request<PendingChange | undefined>(`/households/${householdId}/exceptions/${id}`, { method: 'DELETE' }),
+  addSchoolVacation: (householdId: number, data: { label: string; start: string; end: string }) =>
+    request<SchoolVacation>(`/households/${householdId}/school-vacations`, { method: 'POST', body: data }),
+  deleteSchoolVacation: (householdId: number, periodId: number) =>
+    request<void>(`/households/${householdId}/school-vacations/${periodId}`, { method: 'DELETE' }),
+  /** Nomme le second parent tant qu'il n'a pas de compte. */
+  renamePartner: (householdId: number, display_name: string) =>
+    request<unknown>(`/households/${householdId}/partner`, { method: 'PATCH', body: { display_name } }),
+  /** Invitation envoyée par e-mail par Alternly. */
+  emailInvitation: (householdId: number, email: string) =>
+    request<Invitation>(`/households/${householdId}/invitations/email`, { method: 'POST', body: { email, locale: 'fr' } }),
   createException: (
     householdId: number,
     data: { date_start: string; date_end: string; parent_id: number; note: string; replaces_id?: number },

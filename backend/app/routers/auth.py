@@ -30,7 +30,7 @@ from ..schemas import (
     UserOut,
     UserUpdate,
 )
-from ..services import account, analytics, apple_auth, google_auth, lifecycle, paddle_api
+from ..services import account, analytics, apple_auth, apple_tokens, google_auth, lifecycle, paddle_api
 from ..services import email as email_service
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
@@ -232,7 +232,7 @@ def apple_login(
     if identity.email and not identity.email_verified:
         # Même règle que Google : jamais de liaison sur un e-mail non vérifié.
         raise HTTPException(status_code=401, detail="Adresse e-mail Apple non vérifiée")
-    return _social_login(
+    token = _social_login(
         db,
         background,
         provider="apple",
@@ -243,6 +243,15 @@ def apple_login(
         analytics_consent=data.analytics_consent,
         via_invite=data.via_invite,
     )
+    # Refresh token gardé (chiffré) pour révoquer l'autorisation à la suppression du compte.
+    if data.authorization_code:
+        refresh = apple_tokens.exchange_code(data.authorization_code, identity.audience)
+        user = db.scalar(select(User).where(User.apple_sub == identity.sub))
+        if refresh and user is not None:
+            user.apple_refresh_token = apple_tokens.encrypt(refresh)
+            user.apple_client_id = identity.audience
+            db.commit()
+    return token
 
 
 # Retour autorisé après la page web d'Apple : l'app installée (alternly://), jamais une
@@ -259,6 +268,7 @@ def _apple_return_allowed(url: str) -> bool:
 def apple_web_callback(
     state: str = Form("", max_length=1024),
     id_token: str = Form("", max_length=4096),
+    code: str = Form("", max_length=1024),
     user: str = Form("", max_length=2048),
     error: str = Form("", max_length=100),
 ):
@@ -277,6 +287,9 @@ def apple_web_callback(
         params["error"] = error or "no_token"
     else:
         params["id_token"] = id_token
+        # Code d'autorisation : l'app le transmet à /auth/apple (révocation future du compte).
+        if code:
+            params["code"] = code
         # Prénom : transmis par Apple à la toute première autorisation seulement.
         try:
             given_name = (json.loads(user).get("name") or {}).get("firstName") if user else None
@@ -399,6 +412,11 @@ def delete_me(
     db: Session = Depends(get_db),
 ):
     """Supprime le compte et les données personnelles (droit à l'effacement)."""
+    # « Se connecter avec Apple » : l'autorisation est révoquée chez Apple (App Store 5.1.1(v)).
+    if user.apple_refresh_token and user.apple_client_id:
+        refresh = apple_tokens.decrypt(user.apple_refresh_token)
+        if refresh:
+            apple_tokens.revoke(refresh, user.apple_client_id)
     # Résilie au mieux l'abonnement Paddle pour ne plus facturer un compte supprimé.
     if user.paddle_subscription_id:
         try:

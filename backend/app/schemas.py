@@ -84,6 +84,8 @@ class AppleLoginIn(BaseModel):
     nonce: str = Field(min_length=16, max_length=128)
     # Prénom : Apple ne le transmet qu'à la toute première autorisation, et hors du jeton.
     given_name: str | None = Field(default=None, max_length=50)
+    # Code d'autorisation Apple : échangé contre un refresh token, révoqué à la suppression.
+    authorization_code: str | None = Field(default=None, max_length=1024)
     locale: Literal["fr", "en"] | None = None
     analytics_consent: bool | None = None
     via_invite: bool = False

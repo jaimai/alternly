@@ -61,6 +61,8 @@ export interface Household {
   custody_rule: CustodyRule | null
   vacation_rule: VacationRule | null
   special_day_rules: SpecialDayRule[]
+  /** Congés scolaires saisis à la main (foyers US : pas de calendrier national). */
+  school_vacations: SchoolVacation[]
   my_role: string | null
 }
 
@@ -246,4 +248,20 @@ export interface BillingStatus {
   /** Vrai si c'est l'abonnement de ce parent (et non celui de l'autre parent). */
   is_payer: boolean
   manage_url: string | null
+}
+
+export interface SchoolVacation {
+  id: number
+  label: string
+  start: string
+  end: string
+}
+
+/** Entrée du journal (immuable) des modifications du foyer. */
+export interface HistoryEntry {
+  id: number
+  actor_id: number | null
+  action: string
+  summary: string
+  created_at: string
 }

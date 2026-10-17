@@ -1,13 +1,16 @@
 import { router } from 'expo-router'
 import { useMemo, useState } from 'react'
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { CalendarNotices } from '@/components/CalendarNotices'
 import { Icon } from '@/components/Icon'
 import { Body, Button, Card, ErrorState, Loading } from '@/components/ui'
 import { ApiError } from '@/lib/api'
 import { isSolo, memberById, pendingOn, publicHolidayOn, schoolHolidayOn, whoName } from '@/lib/custody'
 import { addDays, addMonths, formatLong, formatMonth, formatRange, monthGrid, monthStart, parseIso, todayIso } from '@/lib/dates'
-import { useCalendar, useExceptions, useHousehold, useMe, useSaveAdjustments, useWithdrawExchange } from '@/lib/queries'
+import {
+  useAcceptedExchanges, useCalendar, useCancelExchange, useHousehold, useMe, useSaveAdjustments, useWithdrawExchange,
+} from '@/lib/queries'
 import { colors, fonts, tint } from '@/lib/theme'
 import type { CalendarResponse, ScheduleException } from '@/lib/types'
 
@@ -39,7 +42,7 @@ export default function CalendarScreen() {
   const household = useHousehold().data ?? undefined
   const meId = useMe().data?.id
   const calendar = useCalendar(household?.id, grid[0], grid[grid.length - 1])
-  const exceptions = useExceptions(household?.id).data ?? []
+  const exceptions = useAcceptedExchanges(household?.id).data ?? []
   const save = useSaveAdjustments(household?.id)
   const [adjusting, setAdjusting] = useState(false)
   const [flips, setFlips] = useState<Record<string, Flip>>({})
@@ -144,6 +147,7 @@ export default function CalendarScreen() {
       ) : (
         <>
         <ScrollView contentContainerStyle={{ paddingHorizontal: 12, paddingBottom: 24, gap: 12 }}>
+          <CalendarNotices cal={calendar.data} />
           <View style={s.legendRow}>
             {calendar.data.members.map((m) => (
               <Legend key={m.id} color={m.color} label={m.id === meId ? 'Vous' : m.display_name} />
@@ -332,12 +336,32 @@ function DayDetail({ date, cal, meId, householdId, adjustment, onBackToRhythm, b
   busy: boolean
 }) {
   const withdraw = useWithdrawExchange(householdId)
+  const accepted = useAcceptedExchanges(householdId).data ?? []
+  const [cancelNotice, setCancelNotice] = useState<string | null>(null)
+  const cancel = useCancelExchange(householdId, (pending) =>
+    setCancelNotice(pending ? 'Demande envoyée : l’échange sera annulé quand l’autre parent l’acceptera.' : 'Échange annulé.'),
+  )
   const day = cal.days.find((d) => d.date === date)
   const member = memberById(cal.members, day?.parent_id)
   const vacation = schoolHolidayOn(cal, date)
   const holiday = publicHolidayOn(cal, date)
   const pending = pendingOn(cal, date)
   const who = (id?: number) => whoName(cal.members, id, meId)
+  // Échange accepté qui couvre ce jour (annulable tant qu'il n'est pas passé) ; un jour
+  // personnalisé se rend au rythme avec son propre bouton.
+  const exchange = accepted.find((e) => e.kind !== 'adjustment' && e.date_start <= date && date <= e.date_end)
+
+  function confirmCancel() {
+    if (!exchange) return
+    Alert.alert(
+      'Annuler cet échange ?',
+      `${formatRange(exchange.date_start, exchange.date_end)} : le rythme habituel reprend.${cal.members.length > 1 ? ' Avec deux parents, l’autre doit accepter l’annulation.' : ''}`,
+      [
+        { text: 'Garder', style: 'cancel' },
+        { text: 'Annuler l’échange', style: 'destructive', onPress: () => cancel.mutate(exchange.id) },
+      ],
+    )
+  }
 
   return (
     <Card>
@@ -385,6 +409,11 @@ function DayDetail({ date, cal, meId, householdId, adjustment, onBackToRhythm, b
       {day?.source === 'adjustment' && adjustment ? (
         <Button title="Revenir au rythme habituel" variant="ghost" onPress={() => onBackToRhythm(adjustment.id)} loading={busy} />
       ) : null}
+      {exchange && exchange.date_end >= todayIso() ? (
+        <Button title="Annuler cet échange" variant="ghost" onPress={confirmCancel} loading={cancel.isPending} />
+      ) : null}
+      {cancel.error ? <Text style={[s.detailSub, { color: colors.danger }]}>{cancel.error.message}</Text> : null}
+      {cancelNotice ? <Text style={s.detailSub}>{cancelNotice}</Text> : null}
       {!pending && date >= todayIso() ? (
         <Button
           title="Proposer un échange"

@@ -30,6 +30,8 @@ class AppleIdentity:
     # Vide si Apple ne l'a pas transmis (rare : l'e-mail figure normalement à chaque connexion).
     email: str
     email_verified: bool
+    # ID client pour lequel Apple a émis le jeton (bundle iOS ou Services ID web).
+    audience: str = ""
 
 
 def _audiences() -> list[str]:
@@ -68,4 +70,5 @@ def verify_identity_token(identity_token: str, raw_nonce: str) -> AppleIdentity:
         email=(claims.get("email") or "").lower(),
         # Apple envoie « true » en chaîne ; les adresses relais (privaterelay) sont vérifiées.
         email_verified=claims.get("email_verified") in (True, "true"),
+        audience=str(claims["aud"]),
     )

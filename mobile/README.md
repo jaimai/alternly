@@ -114,7 +114,8 @@ src/app/            routes Expo Router (1 fichier = 1 écran)
   (app)/exchange/   new (proposer / contre-proposer), [id] (répondre)
   (app)/expense/    [id] (détail, actions), edit (ajouter / modifier), settle (remboursement)
   (app)/wall/       [id] (post et réponses), new (info, tâche, question)
-  (app)/settings/   profile, household (enfants, zone), rules, special-days, account
+  (app)/settings/   profile, household (enfants, zone), rules, special-days, account,
+                    calendar-sync (agenda iPhone / Google), history
   (app)/…           notifications, notification-settings (préférences push), premium (achat)
 src/components/     briques d'interface (charte « papier chaleureux »)
 src/lib/            client API, session, requêtes, dates, logique calendrier (+ tests)
@@ -138,4 +139,4 @@ notifications in-app ; **achats intégrés** (Premium partagé avec le web) ; **
 jours de fête, demandes de changement à accepter, mot de passe, suppression du compte),
 déconnexion.
 
-À venir : synchronisation d'agenda (iCal), historique des changements.
+**synchronisation d'agenda** (Calendrier iPhone, Google Agenda ; Premium) ; **historique du foyer**.

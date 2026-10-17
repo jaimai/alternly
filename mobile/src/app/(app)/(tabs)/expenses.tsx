@@ -96,10 +96,12 @@ function Content({ household, meId, expenses, settlements, balance }: {
       </Card>
 
       {partner?.is_placeholder ? (
-        <Body muted style={{ fontSize: 14 }}>
-          {partner.display_name} n’a pas encore de compte. Vous pouvez déjà lui attribuer des dépenses : elles seront à son
-          nom dès qu’il ou elle rejoindra le foyer.
-        </Body>
+        <Card>
+          <Body style={{ fontSize: 14 }}>
+            {`${partner.display_name} n’a pas encore de compte. Vous pouvez déjà lui attribuer des dépenses : elles seront à son nom dès qu’il ou elle rejoindra le foyer.`}
+          </Body>
+          <Button title="Lui donner un prénom" variant="secondary" onPress={() => router.push('/settings/household')} />
+        </Card>
       ) : null}
 
       {expenses.length === 0 ? (
