@@ -61,6 +61,8 @@ Toutes lues par `backend/app/config.py` (insensibles à la casse).
 | `PADDLE_WEBHOOK_SECRET` | vide | Secret de signature des webhooks (*Notifications → destination*). Vide → webhook refusé (403). |
 | `REVENUECAT_WEBHOOK_SECRET` | vide | Achats intégrés : valeur exacte de l'en-tête `Authorization` du webhook RevenueCat (`/api/billing/revenuecat-webhook`). Vide → webhook refusé (503). |
 | `REVENUECAT_API_KEY` | vide | Clé secrète RevenueCat (`sk_…`) : resynchronisation après achat et « Restaurer les achats » (`/api/billing/store-sync`). Vide → seul le webhook alimente l'accès. |
+| `APPLE_TEAM_ID` / `APPLE_KEY_ID` / `APPLE_PRIVATE_KEY` | vide | Clé « Sign in with Apple » (.p8, `\n` littéraux acceptés) : à la connexion, le code Apple est échangé contre un refresh token (stocké chiffré avec `SECRET_KEY`), révoqué à la suppression du compte (exigé par l'App Store). Vide → pas de révocation. |
+| `APPLE_WEB_REDIRECT_URI` | vide | Return URL du Services ID (`<API>/api/auth/apple/callback`) : requise pour échanger un code obtenu par la page web d'Apple (Android). |
 | `REVENUECAT_ENTITLEMENT` | `premium` | Entitlement RevenueCat qui donne Premium ; les autres produits du projet sont ignorés. |
 | `REVENUECAT_ALLOW_SANDBOX` | `false` | Achats de test (TestFlight, testeurs Play, gratuits) pris en compte. `true` seulement sur un backend de recette, jamais en production. |
 | `PADDLE_API_KEY` | vide | Appels serveur (détail, résiliation, changement d'offre). Vide → gestion d'abonnement indisponible (502/`plan: null`). |

@@ -34,6 +34,8 @@ _ADD_COLUMNS: dict[str, dict[str, str]] = {
         "token_version": "INTEGER",
         "google_sub": "VARCHAR",
         "apple_sub": "VARCHAR",
+        "apple_refresh_token": "TEXT",
+        "apple_client_id": "VARCHAR",
         "analytics_consent": "BOOLEAN",
         "invite_nudge_sent_at": "TIMESTAMP",
         "push_prefs": "JSON",

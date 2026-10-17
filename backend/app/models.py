@@ -41,6 +41,10 @@ class User(Base):
     google_sub: Mapped[str | None] = mapped_column(String, nullable=True, unique=True, index=True)
     # Identifiant Apple (claim « sub ») quand le compte est relié à « Se connecter avec Apple ».
     apple_sub: Mapped[str | None] = mapped_column(String, nullable=True, unique=True, index=True)
+    # Refresh token Apple chiffré (services/apple_tokens.py), révoqué à la suppression du
+    # compte ; et l'ID client qui l'a obtenu (bundle iOS ou Services ID web).
+    apple_refresh_token: Mapped[str | None] = mapped_column(Text, nullable=True)
+    apple_client_id: Mapped[str | None] = mapped_column(String, nullable=True)
     # Abonnement Paddle. status : trialing | active | past_due | canceled | none.
     subscription_status: Mapped[str] = mapped_column(String, default="trialing")
     trial_ends_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
