@@ -1,0 +1,96 @@
+{
+  "categories": {
+    "sante": "Health",
+    "ecole": "School",
+    "activites": "Activities",
+    "vetements": "Clothing",
+    "cantine": "School meals",
+    "autre": "Other"
+  },
+  "balance": {
+    "settled": "All settled up",
+    "youOwe": "You owe {{name}} {{amount}}",
+    "owesYou": "{{name}} owes you {{amount}}",
+    "owes": "{{debtor}} owes {{creditor}} {{amount}}"
+  },
+  "share": {
+    "half": "50 / 50",
+    "mine": "On me",
+    "theirs": "On {{name}}"
+  },
+  "fields": {
+    "amount": "Amount ({{symbol}})",
+    "amountPlaceholder": "24.50",
+    "date": "Date",
+    "category": "Category",
+    "child": "Child",
+    "paidBy": "Paid by",
+    "split": "Split"
+  },
+  "status": {
+    "disputed": "Disputed",
+    "settled": "Reimbursed"
+  },
+  "tab": {
+    "title": "Expenses",
+    "add": "Add an expense",
+    "paywallTitle": "Expenses, with Premium",
+    "paywallIntro": "Log what you pay for the kids: Alternly keeps the balance up to date for both of you. One subscription covers both parents.",
+    "owedToMe": "Owed to me",
+    "iOwe": "I owe",
+    "balanceNote": "Based on open expenses (excluding reimbursed and disputed ones).",
+    "recordSettlement": "Record a reimbursement",
+    "placeholderPartner": "{{name}} doesn’t have an account yet. You can already assign expenses to them: they’ll be under their name as soon as they join the household.",
+    "namePartner": "Give them a name",
+    "emptyTitle": "No expenses yet",
+    "emptyBody": "School meals, glasses, soccer fees… Log what you pay for the kids: Alternly keeps the balance up to date for both of you.",
+    "addFirst": "Add the first expense",
+    "settledSection": "Reimbursed ({{count}})",
+    "settlements": "Reimbursements",
+    "paidBy": "paid by {{name}}",
+    "split": "split {{payer}}/{{other}}"
+  },
+  "detail": {
+    "notFoundTitle": "Expense not found",
+    "notFoundBody": "The other parent may have deleted it.",
+    "deleteTitle": "Delete this expense?",
+    "deleteBody": "“{{label}}” ({{amount}}) will be removed from the balance.",
+    "splitValue": "{{payer}}% payer · {{other}}% other parent",
+    "payerShare": "{{name}}’s share: {{amount}}",
+    "disputeReason": "Reason for the dispute",
+    "quoted": "“{{text}}”",
+    "disputeTitle": "Dispute this expense",
+    "disputeBody": "It stays visible but is left out of the balance. The other parent is notified and can correct it.",
+    "disputePlaceholder": "e.g. amount doesn’t match the receipt, expense not agreed on…",
+    "disputeReasonLabel": "Reason",
+    "dispute": "Dispute",
+    "markSettled": "Mark as reimbursed",
+    "unsettle": "Undo reimbursement",
+    "resolve": "Resolve dispute",
+    "edit": "Edit"
+  },
+  "form": {
+    "titleEdit": "Edit expense",
+    "titleNew": "New expense",
+    "label": "Description",
+    "labelPlaceholder": "e.g. Leo’s glasses",
+    "splitOther": "Other",
+    "splitSummary": "Payer {{payer}}% · other parent {{other}}%",
+    "disputeStillOpen": "The dispute is still open: the other parent is notified of the change and can resolve it.",
+    "payerShare": "Payer’s share: {{value}}%",
+    "percent": "{{value}}%",
+    "decrease": "Decrease by 5%",
+    "increase": "Increase by 5%"
+  },
+  "settle": {
+    "title": "Reimbursement",
+    "intro": "A transfer or cash between you: the balance takes it into account.",
+    "who": "Who is paying back?",
+    "note": "Note (optional)",
+    "notePlaceholder": "e.g. bank transfer",
+    "notFound": "Reimbursement not found",
+    "deleteTitle": "Delete this reimbursement?",
+    "deleteBody": "The balance will be recalculated without it.",
+    "onlyAuthor": "Only the parent who recorded it can delete it."
+  }
+}

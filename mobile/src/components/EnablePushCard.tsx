@@ -2,6 +2,7 @@
 // Affichée sur l'accueil tant que la permission n'a été ni accordée, ni refusée, ni écartée.
 import * as SecureStore from 'expo-secure-store'
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Text, View } from 'react-native'
 import { enablePush, pushStatus } from '@/lib/push'
 import { colors, fonts } from '@/lib/theme'
@@ -11,6 +12,7 @@ import { Button, Card } from './ui'
 const DISMISSED_KEY = 'alternly_push_card_dismissed'
 
 export function EnablePushCard() {
+  const { t } = useTranslation()
   const [visible, setVisible] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -35,7 +37,7 @@ export function EnablePushCard() {
       const status = await enablePush()
       if (status !== 'undetermined') setVisible(false)
     } catch {
-      setError('Activation impossible pour le moment. Réessayez depuis Réglages › Notifications.')
+      setError(t('notifications.pushCard.error'))
     } finally {
       setBusy(false)
     }
@@ -53,16 +55,16 @@ export function EnablePushCard() {
           <Icon name="bell" size={20} color={colors.pine} />
         </View>
         <View style={{ flex: 1, gap: 4 }}>
-          <Text style={{ fontFamily: fonts.bodySemiBold, fontSize: 15, color: colors.ink }}>Ne ratez plus une passation</Text>
+          <Text style={{ fontFamily: fonts.bodySemiBold, fontSize: 15, color: colors.ink }}>{t('notifications.pushCard.title')}</Text>
           <Text style={{ fontFamily: fonts.body, fontSize: 14, lineHeight: 20, color: colors.inkSoft }}>
-            Rappel la veille, échanges à valider, dépenses et messages de l’autre parent. Vous choisissez quoi recevoir.
+            {t('notifications.pushCard.body')}
           </Text>
         </View>
       </View>
       {error ? <Text style={{ fontFamily: fonts.body, fontSize: 13, color: colors.danger }}>{error}</Text> : null}
       <View style={{ flexDirection: 'row', gap: 8 }}>
-        <Button title="Activer" onPress={enable} loading={busy} style={{ flex: 1 }} />
-        <Button title="Plus tard" variant="ghost" onPress={dismiss} />
+        <Button title={t('notifications.pushCard.enable')} onPress={enable} loading={busy} style={{ flex: 1 }} />
+        <Button title={t('common.later')} variant="ghost" onPress={dismiss} />
       </View>
     </Card>
   )

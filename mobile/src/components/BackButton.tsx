@@ -1,13 +1,15 @@
 import { router } from 'expo-router'
+import { useTranslation } from 'react-i18next'
 import { Pressable } from 'react-native'
 import { colors } from '@/lib/theme'
 import { Icon } from './Icon'
 
 export function BackButton({ onPress }: { onPress?: () => void }) {
+  const { t } = useTranslation()
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel="Retour"
+      accessibilityLabel={t('common.back')}
       hitSlop={8}
       onPress={onPress ?? (() => router.back())}
       style={({ pressed }) => ({

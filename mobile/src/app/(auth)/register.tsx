@@ -1,6 +1,7 @@
 import { useMutation } from '@tanstack/react-query'
 import { Link } from 'expo-router'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Linking, Pressable, Text, View } from 'react-native'
 import { BackButton } from '@/components/BackButton'
 import { Icon } from '@/components/Icon'
@@ -8,12 +9,13 @@ import { SocialSignIn } from '@/components/SocialSignIn'
 import { Body, Button, ErrorBanner, Field, Screen, Title } from '@/components/ui'
 import { api } from '@/lib/api'
 import { useAuth } from '@/lib/auth'
-import { DEFAULT_PARENT_COLOR, PARENT_COLORS, WEB_URL } from '@/lib/colors'
+import { DEFAULT_PARENT_COLOR, PARENT_COLORS, WEB_URL, colorLabel } from '@/lib/colors'
 import { colors, fonts } from '@/lib/theme'
 
 const MIN_PASSWORD = 8
 
 export default function Register() {
+  const { t } = useTranslation()
   const { signIn } = useAuth()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
@@ -26,24 +28,24 @@ export default function Register() {
     onSuccess: signIn,
   })
 
-  const passwordError = password.length > 0 && password.length < MIN_PASSWORD ? `${MIN_PASSWORD} caractères minimum` : null
+  const passwordError = password.length > 0 && password.length < MIN_PASSWORD ? t('auth.minChars', { min: MIN_PASSWORD }) : null
   const canSubmit = name.trim().length > 0 && email.trim().length > 3 && password.length >= MIN_PASSWORD && consent
 
   return (
     <Screen edges={['top', 'bottom']}>
       <BackButton />
       <View style={{ gap: 6 }}>
-        <Title>Créer un compte</Title>
-        <Body muted>Gratuit. Valable sur l’app et sur le web.</Body>
+        <Title>{t('auth.createAccount')}</Title>
+        <Body muted>{t('auth.register.subtitle')}</Body>
       </View>
 
       <SocialSignIn mode="register" />
 
       <ErrorBanner message={register.error?.message} />
 
-      <Field label="Votre prénom" value={name} onChangeText={setName} autoComplete="given-name" textContentType="givenName" />
+      <Field label={t('auth.register.firstName')} value={name} onChangeText={setName} autoComplete="given-name" textContentType="givenName" />
       <Field
-        label="E-mail"
+        label={t('auth.email')}
         value={email}
         onChangeText={setEmail}
         autoCapitalize="none"
@@ -52,7 +54,7 @@ export default function Register() {
         textContentType="emailAddress"
       />
       <Field
-        label={`Mot de passe (${MIN_PASSWORD} caractères min.)`}
+        label={t('auth.register.password', { min: MIN_PASSWORD })}
         value={password}
         onChangeText={setPassword}
         secureTextEntry
@@ -62,7 +64,7 @@ export default function Register() {
       />
 
       <View style={{ gap: 8 }}>
-        <Text style={{ fontFamily: fonts.bodySemiBold, fontSize: 13, color: colors.inkSoft }}>Votre couleur dans le calendrier</Text>
+        <Text style={{ fontFamily: fonts.bodySemiBold, fontSize: 13, color: colors.inkSoft }}>{t('auth.register.colorLabel')}</Text>
         <View style={{ flexDirection: 'row', gap: 10, flexWrap: 'wrap' }} accessibilityRole="radiogroup">
           {PARENT_COLORS.map((c) => {
             const selected = c.value === color
@@ -70,7 +72,7 @@ export default function Register() {
               <Pressable
                 key={c.value}
                 accessibilityRole="radio"
-                accessibilityLabel={c.label}
+                accessibilityLabel={colorLabel(c)}
                 accessibilityState={{ selected }}
                 onPress={() => setColor(c.value)}
                 style={{
@@ -108,23 +110,23 @@ export default function Register() {
           {consent ? <Icon name="check" size={16} color="#fff" strokeWidth={3} /> : null}
         </View>
         <Body style={{ flex: 1, fontSize: 14 }}>
-          J’accepte les{' '}
+          {t('auth.register.consentPrefix')}{' '}
           <Text style={{ color: colors.pine, textDecorationLine: 'underline' }} onPress={() => Linking.openURL(`${WEB_URL}/terms`)}>
-            conditions d’utilisation
+            {t('auth.register.terms')}
           </Text>{' '}
-          et la{' '}
+          {t('auth.register.and')}{' '}
           <Text style={{ color: colors.pine, textDecorationLine: 'underline' }} onPress={() => Linking.openURL(`${WEB_URL}/privacy`)}>
-            politique de confidentialité
+            {t('auth.register.privacy')}
           </Text>
-          .
+          {t('auth.register.consentSuffix')}
         </Body>
       </Pressable>
 
-      <Button title="Créer mon compte" onPress={() => register.mutate()} loading={register.isPending} disabled={!canSubmit} />
+      <Button title={t('auth.register.submit')} onPress={() => register.mutate()} loading={register.isPending} disabled={!canSubmit} />
       <Body muted style={{ textAlign: 'center' }}>
-        Déjà inscrit·e ?{' '}
+        {t('auth.register.alreadyRegistered')}{' '}
         <Link href="/login" style={{ fontFamily: fonts.bodySemiBold, color: colors.pine }}>
-          Se connecter
+          {t('auth.register.signIn')}
         </Link>
       </Body>
     </Screen>

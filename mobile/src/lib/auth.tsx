@@ -4,6 +4,7 @@ import { ApiError, api, loadToken, saveToken, setUnauthorizedHandler } from './a
 import { forgetPurchaser } from './purchases'
 import { unregisterPush } from './push'
 import { setErrorUser } from './sentry'
+import { appLanguage, setAppLanguage } from './i18n'
 import { forgetGoogleAccount } from './socialAuth'
 import type { TokenResponse, User } from './types'
 
@@ -76,6 +77,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [signOut])
 
   useEffect(() => setErrorUser(user?.id ?? null), [user?.id])
+
+  // La langue du compte (choisie dans le profil, ou à l'inscription) prime sur celle du téléphone.
+  const userLocale = user?.locale
+  useEffect(() => {
+    if (userLocale && userLocale !== appLanguage()) void setAppLanguage(userLocale)
+  }, [userLocale])
 
   const value = useMemo(() => ({ status, user, signIn, signOut }), [status, user, signIn, signOut])
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

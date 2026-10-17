@@ -1,17 +1,20 @@
 import { Tabs } from 'expo-router'
+import { useTranslation } from 'react-i18next'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Icon, type IconName } from '@/components/Icon'
 import { colors, fonts } from '@/lib/theme'
 
-const TABS: { name: string; title: string; icon: IconName }[] = [
-  { name: 'index', title: 'Accueil', icon: 'home' },
-  { name: 'calendar', title: 'Calendrier', icon: 'calendar' },
-  { name: 'wall', title: 'Tableau', icon: 'wall' },
-  { name: 'expenses', title: 'Dépenses', icon: 'wallet' },
-  { name: 'settings', title: 'Réglages', icon: 'settings' },
+// Titres traduits au rendu : clés calendar.tabs.*
+const TABS: { name: string; titleKey: string; icon: IconName }[] = [
+  { name: 'index', titleKey: 'home', icon: 'home' },
+  { name: 'calendar', titleKey: 'calendar', icon: 'calendar' },
+  { name: 'wall', titleKey: 'board', icon: 'wall' },
+  { name: 'expenses', titleKey: 'expenses', icon: 'wallet' },
+  { name: 'settings', titleKey: 'settings', icon: 'settings' },
 ]
 
 export default function TabsLayout() {
+  const { t } = useTranslation()
   const insets = useSafeAreaInsets()
   return (
     <Tabs
@@ -31,13 +34,13 @@ export default function TabsLayout() {
         sceneStyle: { backgroundColor: colors.paper },
       }}
     >
-      {TABS.map((t) => (
+      {TABS.map((tab) => (
         <Tabs.Screen
-          key={t.name}
-          name={t.name}
+          key={tab.name}
+          name={tab.name}
           options={{
-            title: t.title,
-            tabBarIcon: ({ color, size }) => <Icon name={t.icon} color={color} size={size} />,
+            title: t(`calendar.tabs.${tab.titleKey}`),
+            tabBarIcon: ({ color, size }) => <Icon name={tab.icon} color={color} size={size} />,
           }}
         />
       ))}

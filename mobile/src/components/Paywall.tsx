@@ -3,6 +3,7 @@
 // paiement web (règles Apple). Le statut Premium vient toujours du backend.
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Linking, Platform, Pressable, StyleSheet, Text, View } from 'react-native'
 import type { PurchasesPackage } from 'react-native-purchases'
 import { WEB_URL } from '@/lib/colors'
@@ -13,18 +14,14 @@ import type { BillingStatus } from '@/lib/types'
 import { Icon } from './Icon'
 import { Body, Button, Card, ErrorBanner, ErrorState, Loading, Title } from './ui'
 
-const FEATURES = [
-  'Dépenses partagées : solde, remboursements, contestations',
-  'Tableau entre parents : infos, tâches, questions',
-  'Rappels par e-mail des échanges à valider',
-  'Synchronisation avec votre agenda',
-]
+// Libellés : premium.features.<clé>
+const FEATURES = ['expenses', 'wall', 'reminders', 'calendar'] as const
 
 /**
  * Offres Premium du store, achat et « Restaurer mes achats ». S'insère dans un écran
  * (onglet verrouillé, fin d'onboarding, Réglages) ; `onSkip` ajoute « Plus tard ».
  */
-export function Paywall({ title = 'Alternly Premium', intro, onPurchased, onSkip, skipLabel = 'Plus tard' }: {
+export function Paywall({ title = 'Alternly Premium', intro, onPurchased, onSkip, skipLabel }: {
   title?: string
   intro?: string
   /** Appelé quand le foyer devient Premium (achat ou restauration). */
@@ -32,6 +29,7 @@ export function Paywall({ title = 'Alternly Premium', intro, onPurchased, onSkip
   onSkip?: () => void
   skipLabel?: string
 }) {
+  const { t } = useTranslation()
   const available = iapAvailable()
   const packages = useQuery({ queryKey: ['iapPackages'], queryFn: loadPackages, enabled: available, staleTime: 5 * 60_000 })
   const [selected, setSelected] = useState<string | null>(null)
@@ -48,27 +46,27 @@ export function Paywall({ title = 'Alternly Premium', intro, onPurchased, onSkip
     <View style={{ gap: 16 }}>
       <View style={{ gap: 6 }}>
         <Title>{title}</Title>
-        <Body muted>{intro ?? 'Un seul abonnement suffit pour les deux parents.'}</Body>
+        <Body muted>{intro ?? t('premium.intro')}</Body>
       </View>
 
       <Card>
         {FEATURES.map((f) => (
           <View key={f} style={{ flexDirection: 'row', gap: 10, alignItems: 'flex-start' }}>
             <Icon name="check" size={18} color={colors.pine} strokeWidth={2.4} />
-            <Body style={{ flex: 1, fontSize: 15 }}>{f}</Body>
+            <Body style={{ flex: 1, fontSize: 15 }}>{t(`premium.features.${f}`)}</Body>
           </View>
         ))}
       </Card>
 
       <ErrorBanner message={error} />
-      {restored === false ? <Body muted>Aucun abonnement à restaurer pour ce compte.</Body> : null}
+      {restored === false ? <Body muted>{t('premium.noRestore')}</Body> : null}
 
       {!available ? (
-        <Body muted>Les achats intégrés ne sont pas disponibles sur cet appareil.</Body>
+        <Body muted>{t('premium.iapUnavailable')}</Body>
       ) : packages.isPending ? (
         <Loading />
       ) : packages.isError || list.length === 0 ? (
-        <ErrorState message="Offres indisponibles pour le moment." onRetry={() => packages.refetch()} />
+        <ErrorState message={t('premium.offersUnavailable')} onRetry={() => packages.refetch()} />
       ) : (
         <>
           <View style={{ gap: 10 }} accessibilityRole="radiogroup">
@@ -77,7 +75,7 @@ export function Paywall({ title = 'Alternly Premium', intro, onPurchased, onSkip
             ))}
           </View>
           <Button
-            title="S’abonner"
+            title={t('premium.subscribe')}
             onPress={() => chosen && buy.mutate(chosen, { onSuccess: done })}
             loading={buy.isPending}
             disabled={!chosen || restoreAction.isPending}
@@ -87,7 +85,7 @@ export function Paywall({ title = 'Alternly Premium', intro, onPurchased, onSkip
 
       {available ? (
         <Button
-          title="Restaurer mes achats"
+          title={t('premium.restore')}
           variant="ghost"
           loading={restoreAction.isPending}
           disabled={buy.isPending}
@@ -101,20 +99,20 @@ export function Paywall({ title = 'Alternly Premium', intro, onPurchased, onSkip
           }
         />
       ) : null}
-      {onSkip ? <Button title={skipLabel} variant="ghost" onPress={onSkip} disabled={buy.isPending} /> : null}
+      {onSkip ? <Button title={skipLabel ?? t('common.later')} variant="ghost" onPress={onSkip} disabled={buy.isPending} /> : null}
 
       <Text style={s.legal}>
-        Renouvellement automatique à la fin de chaque période, sauf résiliation au moins 24 h avant, dans les réglages de
-        votre compte {Platform.OS === 'ios' ? 'Apple' : 'Google Play'}. Le paiement est prélevé par le store.{' '}
-        <Text style={s.link} onPress={() => Linking.openURL(`${WEB_URL}/terms`)}>Conditions d’utilisation</Text>
+        {t('premium.legal', { store: Platform.OS === 'ios' ? 'Apple' : 'Google Play' })}{' '}
+        <Text style={s.link} onPress={() => Linking.openURL(`${WEB_URL}/terms`)}>{t('common.terms')}</Text>
         {' · '}
-        <Text style={s.link} onPress={() => Linking.openURL(`${WEB_URL}/privacy`)}>Confidentialité</Text>
+        <Text style={s.link} onPress={() => Linking.openURL(`${WEB_URL}/privacy`)}>{t('premium.privacy')}</Text>
       </Text>
     </View>
   )
 }
 
 function Offer({ pkg, selected, onPress }: { pkg: PurchasesPackage; selected: boolean; onPress: () => void }) {
+  const { t } = useTranslation()
   const annual = pkg.packageType === 'ANNUAL'
   const intro = pkg.product.introPrice
   return (
@@ -125,22 +123,30 @@ function Offer({ pkg, selected, onPress }: { pkg: PurchasesPackage; selected: bo
       style={[s.offer, selected && s.offerOn]}
     >
       <View style={{ flex: 1, gap: 2 }}>
-        <Text style={s.offerTitle}>{annual ? 'Annuel' : pkg.packageType === 'MONTHLY' ? 'Mensuel' : pkg.product.title}</Text>
+        <Text style={s.offerTitle}>{annual ? t('premium.annual') : pkg.packageType === 'MONTHLY' ? t('premium.monthly') : pkg.product.title}</Text>
         {intro ? (
           <Text style={s.offerHint}>
-            {`${intro.price === 0 ? 'Essai gratuit' : `Offre de lancement à ${intro.priceString}`} : ${intro.periodNumberOfUnits} ${unitLabel(intro.periodUnit, intro.periodNumberOfUnits)}`}
+            {t('premium.introOffer', {
+              offer: intro.price === 0 ? t('premium.freeTrial') : t('premium.launchOffer', { price: intro.priceString }),
+              duration: t(`premium.units.${unitKey(intro.periodUnit)}`, { count: intro.periodNumberOfUnits }),
+            })}
           </Text>
         ) : null}
       </View>
-      <Text style={s.offerPrice}>{`${pkg.product.priceString}${annual ? ' / an' : pkg.packageType === 'MONTHLY' ? ' / mois' : ''}`}</Text>
+      <Text style={s.offerPrice}>
+        {annual
+          ? t('premium.perYear', { price: pkg.product.priceString })
+          : pkg.packageType === 'MONTHLY'
+            ? t('premium.perMonth', { price: pkg.product.priceString })
+            : pkg.product.priceString}
+      </Text>
     </Pressable>
   )
 }
 
-function unitLabel(unit: string, n: number): string {
-  const labels: Record<string, [string, string]> = { DAY: ['jour', 'jours'], WEEK: ['semaine', 'semaines'], MONTH: ['mois', 'mois'], YEAR: ['an', 'ans'] }
-  const [one, many] = labels[unit] ?? ['période', 'périodes']
-  return n > 1 ? many : one
+/** Unité de l'offre d'introduction (store : DAY / WEEK / MONTH / YEAR) : clé de premium.units. */
+function unitKey(unit: string): string {
+  return ['DAY', 'WEEK', 'MONTH', 'YEAR'].includes(unit) ? unit : 'PERIOD'
 }
 
 const s = StyleSheet.create({

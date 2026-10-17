@@ -1,5 +1,6 @@
 // Dates « calendaires » (YYYY-MM-DD) en heure locale — même logique que frontend/src/dates.ts.
 // Ne jamais passer par toISOString() : en Europe/Paris elle recule d'un jour entre minuit et 2 h.
+import { intlLocale, t } from './i18n'
 
 export function isoLocal(d: Date): string {
   const y = d.getFullYear()
@@ -63,41 +64,40 @@ export function monthGrid(iso: string): string[] {
   return days
 }
 
-const LOCALE = 'fr-FR'
 
 /** « vendredi 9 octobre » */
 export function formatLong(iso: string): string {
-  return parseIso(iso).toLocaleDateString(LOCALE, { weekday: 'long', day: 'numeric', month: 'long' })
+  return parseIso(iso).toLocaleDateString(intlLocale(), { weekday: 'long', day: 'numeric', month: 'long' })
 }
 
 /** « ven. 9 oct. » */
 export function formatShort(iso: string): string {
-  return parseIso(iso).toLocaleDateString(LOCALE, { weekday: 'short', day: 'numeric', month: 'short' })
+  return parseIso(iso).toLocaleDateString(intlLocale(), { weekday: 'short', day: 'numeric', month: 'short' })
 }
 
 /** « octobre 2026 » */
 export function formatMonth(iso: string): string {
-  return parseIso(iso).toLocaleDateString(LOCALE, { month: 'long', year: 'numeric' })
+  return parseIso(iso).toLocaleDateString(intlLocale(), { month: 'long', year: 'numeric' })
 }
 
 /** « 9 → 12 oct. » ou « 30 sept. → 2 oct. » */
 export function formatRange(start: string, end: string): string {
-  if (start === end) return parseIso(start).toLocaleDateString(LOCALE, { day: 'numeric', month: 'short' })
+  if (start === end) return parseIso(start).toLocaleDateString(intlLocale(), { day: 'numeric', month: 'short' })
   const sameMonth = start.slice(0, 7) === end.slice(0, 7)
-  const a = parseIso(start).toLocaleDateString(LOCALE, sameMonth ? { day: 'numeric' } : { day: 'numeric', month: 'short' })
-  const b = parseIso(end).toLocaleDateString(LOCALE, { day: 'numeric', month: 'short' })
+  const a = parseIso(start).toLocaleDateString(intlLocale(), sameMonth ? { day: 'numeric' } : { day: 'numeric', month: 'short' })
+  const b = parseIso(end).toLocaleDateString(intlLocale(), { day: 'numeric', month: 'short' })
   return `${a} → ${b}`
 }
 
-/** Horodatage relatif court : « à l'instant », « il y a 2 h », « hier », « 3 oct. ». */
+/** Horodatage relatif court : « à l'instant », « il y a 2 h », « hier », « 3 oct. » (selon la langue). */
 export function formatAgo(ts: string, now: Date = new Date()): string {
   const d = parseTimestamp(ts)
   const min = Math.round((now.getTime() - d.getTime()) / 60_000)
-  if (min < 1) return "à l'instant"
-  if (min < 60) return `il y a ${min} min`
+  if (min < 1) return t('common.ago.now')
+  if (min < 60) return t('common.ago.minutes', { count: min })
   const h = Math.round(min / 60)
-  if (h < 24 && isoLocal(d) === isoLocal(now)) return `il y a ${h} h`
+  if (h < 24 && isoLocal(d) === isoLocal(now)) return t('common.ago.hours', { count: h })
   const days = daysBetween(isoLocal(d), isoLocal(now))
-  if (days === 1) return 'hier'
-  return d.toLocaleDateString(LOCALE, { day: 'numeric', month: 'short' })
+  if (days === 1) return t('common.ago.yesterday')
+  return d.toLocaleDateString(intlLocale(), { day: 'numeric', month: 'short' })
 }

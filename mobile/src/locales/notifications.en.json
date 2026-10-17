@@ -1,0 +1,75 @@
+{
+  "messages": {
+    "exchangeProposed": "New swap proposed ({{range}}) — accept or decline",
+    "exchangeProposedNote": "New swap proposed ({{range}}) — “{{note}}” — accept or decline",
+    "exchangeAccepted": "Your swap proposal was accepted ({{range}})",
+    "exchangeRefused": "Your swap proposal was declined ({{range}})",
+    "exchangeWithdrawn": "A swap proposal was withdrawn ({{range}})",
+    "exceptionDeleted": "Custody swap canceled ({{range}})",
+    "ruleChanged": "The custody rules were changed",
+    "inviteReminder": "The other parent hasn’t joined the calendar yet. Send them the invitation again.",
+    "parentJoined": "{{name}} joined the household",
+    "parentLeft": "{{name}} deleted their account",
+    "expenseAdded": "New expense “{{label}}” ({{amount}})",
+    "expenseUpdated": "The expense “{{label}}” was edited ({{amount}})",
+    "expenseDisputed": "Your expense “{{label}}” was disputed",
+    "expenseResolved": "The dispute on “{{label}}” was withdrawn",
+    "expenseSettled": "“{{label}}” was marked as reimbursed",
+    "settlementRecorded": "Reimbursement recorded ({{amount}})",
+    "changeRequested": "Change request to review: {{summary}}",
+    "changeAccepted": "Your request was accepted: {{summary}}",
+    "changeRefused": "Your request was declined: {{summary}}",
+    "paymentFailed": "Your subscription payment failed: please update your payment method",
+    "wallPostAdded": "New on the board: “{{body}}”",
+    "wallReplyAdded": "New reply: “{{body}}”",
+    "wallTaskAssigned": "A task was assigned to you: “{{body}}”",
+    "fallback": "New activity in your household"
+  },
+  "center": {
+    "title": "Notifications",
+    "unread_one": "{{count}} unread",
+    "unread_other": "{{count}} unread",
+    "markAll": "Mark all as read",
+    "empty": "No notifications yet.",
+    "itemUnread": "Unread. {{message}}"
+  },
+  "settings": {
+    "title": "Notifications",
+    "granted": "Enabled on this phone.",
+    "denied": "Notifications are turned off in your phone’s settings.",
+    "openSettings": "Open phone settings",
+    "undetermined": "Get a reminder the day before handovers, plus the other parent’s requests.",
+    "enable": "Turn on notifications",
+    "unavailable": "Push notifications are only available in the app installed on a phone.",
+    "sectionLabel": "Notify me about",
+    "footer": "These choices apply to all your phones. Everything stays visible in the app’s notification center.",
+    "categories": {
+      "handover": {
+        "title": "Handover reminder",
+        "desc": "The day before each change of parent"
+      },
+      "exchanges": {
+        "title": "Swaps and requests",
+        "desc": "Proposed, accepted, declined, withdrawn"
+      },
+      "expenses": {
+        "title": "Expenses",
+        "desc": "Added, disputed, reimbursed"
+      },
+      "wall": {
+        "title": "Board",
+        "desc": "Messages, replies, assigned tasks"
+      },
+      "household": {
+        "title": "Household",
+        "desc": "Rules changed, a parent joining or leaving"
+      }
+    }
+  },
+  "pushCard": {
+    "title": "Never miss a handover",
+    "body": "Day-before reminders, swaps to review, expenses and messages from the other parent. You choose what to get.",
+    "error": "Couldn’t turn them on right now. Try again from Settings › Notifications.",
+    "enable": "Turn on"
+  }
+}
