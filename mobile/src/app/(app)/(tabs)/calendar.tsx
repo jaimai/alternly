@@ -9,7 +9,8 @@ import { ApiError } from '@/lib/api'
 import { isSolo, memberById, pendingOn, publicHolidayOn, schoolHolidayOn, whoName } from '@/lib/custody'
 import { addDays, addMonths, formatLong, formatMonth, formatRange, monthGrid, monthStart, parseIso, todayIso } from '@/lib/dates'
 import {
-  useAcceptedExchanges, useCalendar, useCancelExchange, useHousehold, useMe, useSaveAdjustments, useWithdrawExchange,
+  useAcceptedExchanges, useCalendar, useCancelExchange, useHousehold, useMe, usePrefetchCalendars, useSaveAdjustments,
+  useWithdrawExchange,
 } from '@/lib/queries'
 import { colors, fonts, tint } from '@/lib/theme'
 import type { CalendarResponse, ScheduleException } from '@/lib/types'
@@ -42,6 +43,11 @@ export default function CalendarScreen() {
   const household = useHousehold().data ?? undefined
   const meId = useMe().data?.id
   const calendar = useCalendar(household?.id, grid[0], grid[grid.length - 1])
+  const neighbors = useMemo(
+    () => [-1, 1].map((d) => monthGrid(addMonths(month, d))).map((g) => ({ start: g[0], end: g[g.length - 1] })),
+    [month],
+  )
+  usePrefetchCalendars(household?.id, neighbors, calendar.isSuccess)
   const exceptions = useAcceptedExchanges(household?.id).data ?? []
   const save = useSaveAdjustments(household?.id)
   const [adjusting, setAdjusting] = useState(false)

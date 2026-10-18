@@ -20,6 +20,7 @@ import {
   fetchExceptions,
   invalidateCalendar,
   monthGridRange,
+  prefetchNeighbors,
   statusRange,
 } from '../calendarCache'
 import AppSplash from '../components/AppSplash'
@@ -89,6 +90,7 @@ export default function CalendarPage() {
       .then((d) => {
         setData(d)
         setError(null)
+        prefetchNeighbors(household.id, range.start, range.end)
       })
       .catch((err) => setError(err instanceof Error ? err.message : t('calendar.genericError')))
       .finally(() => setLoading(false))
