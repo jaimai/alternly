@@ -64,16 +64,28 @@ avec le web : le backend combine Paddle et stores, un parent abonné débloque l
 aucun des deux canaux ne propose un second abonnement (conception :
 `docs/mobile/architecture-technique.md` §7.3).
 
-1. App Store Connect / Play Console : créer les abonnements (annuel, mensuel) dans un même
-   groupe, avec les mêmes durées et essais que sur le web.
-2. RevenueCat : un projet avec les deux apps, un entitlement `premium`, une offre par
-   défaut contenant les paquets **Annual** et **Monthly**.
-3. Webhook RevenueCat → `<API>/api/billing/revenuecat-webhook`, en-tête `Authorization`
-   = `REVENUECAT_WEBHOOK_SECRET` (Railway). Clé secrète `sk_…` → `REVENUECAT_API_KEY`
-   (resynchronisation après achat et « Restaurer les achats »).
-4. App : `EXPO_PUBLIC_REVENUECAT_IOS_KEY` et `EXPO_PUBLIC_REVENUECAT_ANDROID_KEY` (clés
-   publiques). Expo Go fonctionne en mode aperçu (sans vrai achat) ; tester les achats sur
-   un build (TestFlight / test interne Play) avec des comptes de test.
+1. **Abonnements dans les stores**, avec ces identifiants exacts (le script les attend) :
+   - App Store Connect › l'app › Abonnements : un groupe « Alternly Premium », produits
+     `com.alternly.premium.annual` (1 an, 69 €) et `com.alternly.premium.monthly`
+     (1 mois, 8,99 €), essai identique au web ; nom, description et capture de revue.
+   - Play Console › Monétiser › Abonnements : abonnement `premium`, forfaits de base
+     `annual` (annuel) et `monthly` (mensuel), mêmes prix (une première version de l'app
+     doit avoir été envoyée sur une piste de test).
+2. **RevenueCat** : dans le projet, ajouter l'app iOS (bundle `com.alternly.app`, clé API
+   App Store Connect + clé In-App Purchase) et l'app Android (package `com.alternly.app`,
+   compte de service Play). Puis tout le reste en une commande (relançable, ne duplique rien) :
+   ```bash
+   REVENUECAT_V2_SECRET=sk_…  REVENUECAT_WEBHOOK_SECRET='Bearer <secret>' \
+     node scripts/revenuecat-setup.mjs
+   ```
+   Il crée les produits, l'entitlement `premium`, l'offre `default` (paquets `$rc_annual`
+   et `$rc_monthly`, offre courante) et le webhook vers `<API>/api/billing/revenuecat-webhook`,
+   puis affiche les clés publiques `appl_…` / `goog_…`.
+3. **Railway** : `REVENUECAT_WEBHOOK_SECRET` (la même valeur, `Bearer …` compris) et
+   `REVENUECAT_API_KEY` = clé secrète **v1** (resynchronisation via l'API v1 des abonnés).
+4. **App** : `EXPO_PUBLIC_REVENUECAT_IOS_KEY` et `EXPO_PUBLIC_REVENUECAT_ANDROID_KEY` (clés
+   publiques) dans les variables EAS. Expo Go fonctionne en mode aperçu (sans vrai achat) ;
+   tester les achats sur un build (TestFlight / test interne Play) avec des comptes de test.
 
 Paywall : dernière étape de l'onboarding (« Continuer avec la version gratuite » pour passer),
 onglets Dépenses et Tableau sans abonnement, et Réglages › Alternly Premium.
