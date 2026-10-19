@@ -72,6 +72,11 @@ export default function Settings() {
               value={household.custody_rule ? PATTERN_LABEL[household.custody_rule.pattern] : '—'}
               href="/settings/rules"
             />
+            <NavRow
+              label="Mon organisation"
+              value={household.recurring_rules?.length ? `${household.recurring_rules.length} règle${household.recurring_rules.length > 1 ? 's' : ''} en plus` : undefined}
+              href="/settings/organisation"
+            />
             <NavRow label="Jours de fête" value={enabledDays ? `${enabledDays} actif${enabledDays > 1 ? 's' : ''}` : 'Aucun'} href="/settings/special-days" />
           </View>
         </View>

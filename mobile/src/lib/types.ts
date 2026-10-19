@@ -45,6 +45,23 @@ export interface CustodyRule {
   custom_weeks: string[] | null
 }
 
+/** Règle qui se répète : jours de la semaine (weekly) ou période de l'année (yearly, « MM-DD »). */
+export interface RecurringRuleInput {
+  kind: 'weekly' | 'yearly'
+  parent_id: number
+  weekdays?: number[] | null // 0 = lundi
+  every_other_week?: boolean
+  anchor_date?: string | null
+  include_vacations?: boolean
+  start_md?: string | null
+  end_md?: string | null
+  alternate?: boolean
+}
+
+export interface RecurringRule extends RecurringRuleInput {
+  id: number
+}
+
 export type VacationMode = 'split_half' | 'alternate_full' | 'july_august' | 'weekly'
 export type VacationPeriodKind = 'toussaint' | 'noel' | 'hiver' | 'printemps' | 'ete'
 /** Réglage période par période ; `flip` inverse le parent qui commence pour cette période. */
@@ -67,6 +84,7 @@ export interface Household {
   custody_rule: CustodyRule | null
   vacation_rule: VacationRule | null
   special_day_rules: SpecialDayRule[]
+  recurring_rules?: RecurringRule[]
   /** Congés scolaires saisis à la main (foyers US : pas de calendrier national). */
   school_vacations: SchoolVacation[]
   my_role: string | null
@@ -94,7 +112,7 @@ export interface Invitation {
 export interface CalendarDay {
   date: string
   parent_id: number
-  source: 'rule' | 'vacation' | 'special' | 'exception' | 'adjustment'
+  source: 'rule' | 'vacation' | 'special' | 'exception' | 'adjustment' | 'recurring'
 }
 
 export interface AdjustmentsResult {

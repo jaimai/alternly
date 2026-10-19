@@ -2,19 +2,21 @@ import { router } from 'expo-router'
 import { useMemo, useState } from 'react'
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { AdjustTools, type AdjustTool } from '@/components/AdjustTools'
+import { AdjustTools, type AdjustTool, type PeriodRepeat } from '@/components/AdjustTools'
 import { CalendarNotices } from '@/components/CalendarNotices'
 import { Icon } from '@/components/Icon'
 import { Body, Button, Card, ErrorState, Loading } from '@/components/ui'
-import { ApiError, api } from '@/lib/api'
+import { ApiError, api, isPendingChange } from '@/lib/api'
+import { describeRule, ruleInput } from '@/lib/recurring'
 import { isSolo, memberById, pendingOn, publicHolidayOn, schoolHolidayOn, whoName } from '@/lib/custody'
 import { addDays, addMonths, formatLong, formatMonth, formatRange, monthGrid, monthStart, parseIso, todayIso } from '@/lib/dates'
 import {
-  useAcceptedExchanges, useCalendar, useCancelExchange, useHousehold, useMe, usePrefetchCalendars, useSaveAdjustments,
+  useAcceptedExchanges, useCalendar, useCancelExchange, useHousehold, useHouseholdAction, useMe, usePrefetchCalendars,
+  useSaveAdjustments,
   useWithdrawExchange,
 } from '@/lib/queries'
 import { colors, fonts, tint } from '@/lib/theme'
-import type { CalendarResponse, ScheduleException } from '@/lib/types'
+import type { CalendarResponse, RecurringRuleInput, ScheduleException } from '@/lib/types'
 
 const WEEKDAYS = ['LUN', 'MAR', 'MER', 'JEU', 'VEN', 'SAM', 'DIM']
 const SOURCE_LABEL: Record<string, string> = {
@@ -23,6 +25,7 @@ const SOURCE_LABEL: Record<string, string> = {
   special: 'Jour spécial',
   exception: 'Échange accepté',
   adjustment: 'Jour personnalisé',
+  recurring: 'Règle qui se répète',
 }
 
 /** Jour touché en mode « Ajuster » : parent visé, et jour personnalisé à rendre au rythme le cas échéant. */
@@ -57,6 +60,15 @@ export default function CalendarScreen() {
   // Pinceau : parent à qui va chaque jour touché ; outil jour par jour ou période.
   const [brush, setBrush] = useState<number | null>(null)
   const [tool, setTool] = useState<AdjustTool>('day')
+  // Règles qui se répètent ajoutées pendant l'ajustement, enregistrées avec les jours.
+  const [pendingRules, setPendingRules] = useState<RecurringRuleInput[]>([])
+  const saveRules = useHouseholdAction((rules: RecurringRuleInput[]) => api.setRecurringRules(household!.id, rules))
+  const otherOf = (id: number) => household?.members.find((m) => m.id !== id)?.id ?? id
+  const whoLabel = (id: number) => {
+    const m = household?.members.find((x) => x.id === id)
+    if (id === meId) return 'chez vous'
+    return m && !m.is_placeholder ? `chez ${m.display_name}` : 'chez l’autre parent'
+  }
   const solo = household ? isSolo(household.members) : true
   const otherName = household?.members.find((m) => m.id !== meId && !m.is_placeholder)?.display_name ?? 'l’autre parent'
   const flipCount = Object.keys(flips).length
@@ -90,8 +102,17 @@ export default function CalendarScreen() {
   }
 
   /** Une période d'un coup : seuls les jours qui changent de parent sont retenus. */
-  async function applyPeriod(start: string, end: string): Promise<string | null> {
+  async function applyPeriod(start: string, end: string, repeat: PeriodRepeat): Promise<string | null> {
     if (!household || brush === null) return null
+    if (repeat !== 'once') {
+      // Chaque année : une règle, pas des jours. En alternance, parent_id = parent des années paires.
+      const evenParent = repeat === 'alternate' && Number(start.slice(0, 4)) % 2 === 1 ? otherOf(brush) : brush
+      setPendingRules((r) => [
+        ...r,
+        { kind: 'yearly', parent_id: evenParent, start_md: start.slice(5), end_md: end.slice(5), alternate: repeat === 'alternate' },
+      ])
+      return null
+    }
     try {
       const cal = await api.calendar(household.id, start, end)
       setFlips((prev) => {
@@ -121,7 +142,29 @@ export default function CalendarScreen() {
     return `${days} personnalisé${count > 1 ? 's' : ''}. Votre rythme habituel reprend ensuite tout seul.`
   }
 
-  function saveAdjust() {
+  function addWeekly(rule: { weekdays: number[]; every_other_week: boolean; include_vacations: boolean }) {
+    if (brush === null) return
+    setPendingRules((r) => [...r, { kind: 'weekly', parent_id: brush, anchor_date: todayIso(), ...rule }])
+  }
+
+  async function saveAdjust() {
+    if (pendingRules.length && household) {
+      try {
+        const existing = (household.recurring_rules ?? []).map(ruleInput)
+        const res = await saveRules.mutateAsync([...existing, ...pendingRules.map(ruleInput)])
+        const msg = isPendingChange(res)
+          ? `Règles proposées à ${otherName} : elles s’appliqueront dès son accord.`
+          : `${pendingRules.length > 1 ? `${pendingRules.length} règles enregistrées` : 'Règle enregistrée'}.`
+        setPendingRules([])
+        if (flipCount === 0) {
+          setNotice(msg)
+          setAdjusting(false)
+          return
+        }
+      } catch {
+        return // l'erreur s'affiche sous le calendrier
+      }
+    }
     const set: { date: string; parent_id: number }[] = []
     const clear: number[] = []
     for (const [date, f] of Object.entries(flips)) {
@@ -192,6 +235,7 @@ export default function CalendarScreen() {
               brush={brush}
               onBrush={setBrush}
               onApplyPeriod={applyPeriod}
+              onAddWeekly={addWeekly}
             />
           ) : (
             <View style={{ gap: 8, paddingHorizontal: 4 }}>
@@ -208,6 +252,7 @@ export default function CalendarScreen() {
                   onPress={() => {
                     setAdjusting(true)
                     setTool('day')
+                    setPendingRules([])
                     setBrush(household?.members.find((m) => m.id !== meId)?.id ?? meId ?? null)
                     setFlips({})
                     setNotice(null)
@@ -253,12 +298,27 @@ export default function CalendarScreen() {
               busy={save.isPending}
             />
           ) : null}
+          {saveRules.error ? <Text style={[s.detailSub, { color: colors.danger, paddingHorizontal: 8 }]}>{saveRules.error.message}</Text> : null}
           {save.error ? <Text style={[s.detailSub, { color: colors.danger, paddingHorizontal: 8 }]}>{save.error.message}</Text> : null}
         </ScrollView>
         {adjusting ? (
           <View style={s.bar}>
-            {groups.length ? (
+            {groups.length || pendingRules.length ? (
               <View style={{ gap: 6 }} accessibilityLabel="Jours modifiés">
+                {pendingRules.map((r, i) => (
+                  <View key={`rule-${i}`} style={s.recapRow}>
+                    <View style={[s.recapDot, { backgroundColor: memberById(calendar.data.members, r.parent_id)?.color ?? colors.ink }]} />
+                    <Text style={[s.detailSub, { flex: 1, color: colors.ink }]}>{describeRule(r, whoLabel, otherOf)}</Text>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel="Retirer cette règle"
+                      onPress={() => setPendingRules((list) => list.filter((_, k) => k !== i))}
+                      hitSlop={10}
+                    >
+                      <Icon name="close" size={16} color={colors.inkSoft} />
+                    </Pressable>
+                  </View>
+                ))}
                 {groups.map((g) => (
                   <View key={g.start} style={s.recapRow}>
                     <View style={[s.recapDot, { backgroundColor: memberById(calendar.data.members, g.to)?.color ?? colors.ink }]} />
@@ -278,7 +338,14 @@ export default function CalendarScreen() {
               </View>
             ) : null}
             <Text style={s.detailSub}>
-              {flipCount === 0 ? 'Aucun jour modifié' : `${flipCount} ${flipCount > 1 ? 'jours modifiés' : 'jour modifié'}`}
+              {flipCount === 0 && pendingRules.length === 0
+                ? 'Aucun jour modifié'
+                : [
+                    flipCount ? `${flipCount} ${flipCount > 1 ? 'jours modifiés' : 'jour modifié'}` : '',
+                    pendingRules.length ? `${pendingRules.length} règle${pendingRules.length > 1 ? 's' : ''}` : '',
+                  ]
+                    .filter(Boolean)
+                    .join(' · ')}
             </Text>
             <View style={{ flexDirection: 'row', gap: 8 }}>
               <Button
@@ -287,6 +354,7 @@ export default function CalendarScreen() {
                 onPress={() => {
                   setAdjusting(false)
                   setFlips({})
+                  setPendingRules([])
                 }}
                 disabled={save.isPending}
                 style={{ flex: 1 }}
@@ -294,8 +362,8 @@ export default function CalendarScreen() {
               <Button
                 title={solo ? 'Enregistrer' : 'Proposer'}
                 onPress={saveAdjust}
-                loading={save.isPending}
-                disabled={flipCount === 0}
+                loading={save.isPending || saveRules.isPending}
+                disabled={flipCount === 0 && pendingRules.length === 0}
                 style={{ flex: 1 }}
               />
             </View>

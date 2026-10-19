@@ -29,6 +29,8 @@ import type {
   WallPost,
   WallReply,
   AdjustmentsResult,
+  RecurringRule,
+  RecurringRuleInput,
 } from './types'
 import { hasPendingInvite } from './pendingInvite'
 
@@ -212,6 +214,8 @@ export const api = {
     request<VacationRule | PendingChange>(`/households/${householdId}/vacation-rule`, { method: 'PUT', body: rule }),
   setSpecialDayRules: (householdId: number, rules: SpecialDayRule[]) =>
     request<SpecialDayRule[] | PendingChange>(`/households/${householdId}/special-day-rules`, { method: 'PUT', body: rules }),
+  setRecurringRules: (householdId: number, rules: RecurringRuleInput[]) =>
+    request<RecurringRule[] | PendingChange>(`/households/${householdId}/recurring-rules`, { method: 'PUT', body: rules }),
   deleteChild: (householdId: number, childId: number) =>
     request<PendingChange | undefined>(`/households/${householdId}/children/${childId}`, { method: 'DELETE' }),
   updateHousehold: (householdId: number, data: { name?: string; school_zone?: 'A' | 'B' | 'C' }) =>

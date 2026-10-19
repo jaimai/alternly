@@ -46,6 +46,7 @@ export default function AppLayout() {
           <Stack.Screen name="settings/account" />
           <Stack.Screen name="settings/calendar-sync" />
           <Stack.Screen name="settings/history" />
+          <Stack.Screen name="settings/organisation" />
           <Stack.Screen name="premium" options={{ presentation: 'modal' }} />
         </Stack.Protected>
       </Stack>
