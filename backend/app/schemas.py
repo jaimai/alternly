@@ -300,7 +300,7 @@ class AdjustmentDay(BaseModel):
 
 class AdjustmentsIn(BaseModel):
     """« Ajuster mon planning » : jours à personnaliser et jours à rendre au rythme."""
-    set: list[AdjustmentDay] = Field(default_factory=list, max_length=62)
+    set: list[AdjustmentDay] = Field(default_factory=list, max_length=120)
     clear: list[int] = Field(default_factory=list, max_length=62)
     note: str = Field(default="", max_length=NOTE_MAX)
 

@@ -23,6 +23,7 @@ import {
   prefetchNeighbors,
   statusRange,
 } from '../calendarCache'
+import AdjustTools, { type AdjustTool } from '../components/AdjustTools'
 import AppSplash from '../components/AppSplash'
 import StatusCard from '../components/StatusCard'
 import TopBar from '../components/TopBar'
@@ -55,6 +56,9 @@ export default function CalendarPage() {
   const [flips, setFlips] = useState<Record<string, { to: number; clearId: number | null }>>({})
   const [adjustBusy, setAdjustBusy] = useState(false)
   const [adjustNotice, setAdjustNotice] = useState<string | null>(null)
+  // Pinceau : parent à qui va chaque jour touché ; outil jour par jour ou période.
+  const [brush, setBrush] = useState<number | null>(null)
+  const [tool, setTool] = useState<AdjustTool>('day')
   const { range: fmtRange } = useFormat()
   // Incrémenté après chaque changement : recharge la carte de statut.
   const [refreshKey, setRefreshKey] = useState(0)
@@ -162,29 +166,44 @@ export default function CalendarPage() {
     return household?.members.find((m) => m.id === id)?.display_name ?? ''
   }
 
-  function toggleDay(date: string) {
+  /** Pinceau : le jour va chez le parent choisi ; s'il y est déjà, il n'est plus modifié. */
+  function paintDay(date: string) {
     const day = data?.days.find((d) => d.date === date)
-    if (!day || !household) return
+    if (!day || brush === null) return
     setAdjustNotice(null)
-    const next = { ...flips }
-    if (next[date]) {
-      delete next[date]
-      setFlips(next)
-      return
+    setFlips((prev) => {
+      const next = { ...prev }
+      if (day.parent_id === brush) delete next[date]
+      else next[date] = { to: brush, clearId: null }
+      return next
+    })
+  }
+
+  /** Une période d'un coup : seuls les jours qui changent de parent sont retenus. */
+  async function applyPeriod(start: string, end: string): Promise<string | null> {
+    if (!household || brush === null) return null
+    try {
+      const cal = await fetchCalendar(household.id, start, end)
+      setFlips((prev) => {
+        const next = { ...prev }
+        for (const d of cal.days) {
+          if (d.parent_id === brush) delete next[d.date]
+          else next[d.date] = { to: brush, clearId: null }
+        }
+        return next
+      })
+      track(EV.adjustPeriodApplied, { days: cal.days.length })
+      return null
+    } catch (err) {
+      return err instanceof Error ? err.message : t('calendar.genericError')
     }
-    const other = household.members.find((m) => m.id !== day.parent_id)?.id
-    if (other === undefined) return
-    // Jour déjà personnalisé : le toucher le rend à son rythme habituel.
-    const adj = day.source === 'adjustment'
-      ? exceptions.find((e) => e.kind === 'adjustment' && e.status === 'accepted' && e.date_start === date)
-      : undefined
-    next[date] = { to: other, clearId: adj?.id ?? null }
-    setFlips(next)
   }
 
   function startAdjust() {
     setAdjusting(true)
     setFlips({})
+    setTool('day')
+    setBrush(household?.members.find((m) => m.id !== user?.id)?.id ?? user?.id ?? null)
     setAdjustNotice(null)
     track(EV.adjustModeOpened, {})
   }
@@ -324,13 +343,15 @@ export default function CalendarPage() {
           </div>
         )}
         {adjusting && (
-          <div className="adjust-hint">
-            <Icon name="pencil" size={18} />
-            <div>
-              <strong>{t('adjust.hintTitle')}</strong>
-              <p>{t('adjust.hintBody')}</p>
-            </div>
-          </div>
+          <AdjustTools
+            members={household?.members ?? []}
+            myId={user?.id}
+            tool={tool}
+            onTool={setTool}
+            brush={brush}
+            onBrush={setBrush}
+            onApplyPeriod={applyPeriod}
+          />
         )}
         <ContextTips dayOpened={selectedDay !== null} />
         {household && (
@@ -348,7 +369,7 @@ export default function CalendarPage() {
                 tasks: [],
               }
             }
-            onDayClick={(date) => (adjusting ? toggleDay(date) : setSelectedDay(date))}
+            onDayClick={(date) => (adjusting ? paintDay(date) : setSelectedDay(date))}
             flips={adjusting ? flipTargets : undefined}
             adjusting={adjusting}
             onRangeChange={(start, end) =>

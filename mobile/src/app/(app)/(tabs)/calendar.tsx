@@ -2,10 +2,11 @@ import { router } from 'expo-router'
 import { useMemo, useState } from 'react'
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { AdjustTools, type AdjustTool } from '@/components/AdjustTools'
 import { CalendarNotices } from '@/components/CalendarNotices'
 import { Icon } from '@/components/Icon'
 import { Body, Button, Card, ErrorState, Loading } from '@/components/ui'
-import { ApiError } from '@/lib/api'
+import { ApiError, api } from '@/lib/api'
 import { isSolo, memberById, pendingOn, publicHolidayOn, schoolHolidayOn, whoName } from '@/lib/custody'
 import { addDays, addMonths, formatLong, formatMonth, formatRange, monthGrid, monthStart, parseIso, todayIso } from '@/lib/dates'
 import {
@@ -53,6 +54,9 @@ export default function CalendarScreen() {
   const [adjusting, setAdjusting] = useState(false)
   const [flips, setFlips] = useState<Record<string, Flip>>({})
   const [notice, setNotice] = useState<string | null>(null)
+  // Pinceau : parent à qui va chaque jour touché ; outil jour par jour ou période.
+  const [brush, setBrush] = useState<number | null>(null)
+  const [tool, setTool] = useState<AdjustTool>('day')
   const solo = household ? isSolo(household.members) : true
   const otherName = household?.members.find((m) => m.id !== meId && !m.is_placeholder)?.display_name ?? 'l’autre parent'
   const flipCount = Object.keys(flips).length
@@ -73,20 +77,35 @@ export default function CalendarScreen() {
     return out
   }, [flips])
 
-  function toggleDay(date: string) {
+  /** Pinceau : le jour va chez le parent choisi ; s'il y est déjà, il n'est plus modifié. */
+  function paintDay(date: string) {
     const day = calendar.data?.days.find((d) => d.date === date)
-    if (!day || !household) return
-    const next = { ...flips }
-    if (next[date]) {
-      delete next[date]
-    } else {
-      const other = household.members.find((m) => m.id !== day.parent_id)?.id
-      if (other === undefined) return
-      // Jour déjà personnalisé : le toucher le rend à son rythme habituel.
-      const adj = day.source === 'adjustment' ? adjustmentOn(exceptions, date) : undefined
-      next[date] = { to: other, clearId: adj?.id ?? null }
+    if (!day || brush === null) return
+    setFlips((prev) => {
+      const next = { ...prev }
+      if (day.parent_id === brush) delete next[date]
+      else next[date] = { to: brush, clearId: null }
+      return next
+    })
+  }
+
+  /** Une période d'un coup : seuls les jours qui changent de parent sont retenus. */
+  async function applyPeriod(start: string, end: string): Promise<string | null> {
+    if (!household || brush === null) return null
+    try {
+      const cal = await api.calendar(household.id, start, end)
+      setFlips((prev) => {
+        const next = { ...prev }
+        for (const d of cal.days) {
+          if (d.parent_id === brush) delete next[d.date]
+          else next[d.date] = { to: brush, clearId: null }
+        }
+        return next
+      })
+      return null
+    } catch (e) {
+      return e instanceof Error ? e.message : 'Impossible de calculer cette période.'
     }
-    setFlips(next)
   }
 
   function removeFlips(dates: string[]) {
@@ -165,15 +184,15 @@ export default function CalendarScreen() {
           </View>
 
           {adjusting ? (
-            <View style={s.hint}>
-              <Icon name="pencil" size={18} color={colors.pine} strokeWidth={2} />
-              <View style={{ flex: 1, gap: 2 }}>
-                <Text style={s.detailMain}>Touchez un jour pour le passer chez l’autre parent.</Text>
-                <Text style={s.detailSub}>
-                  Ce sont des ajustements ponctuels : votre rythme habituel ne change pas. Touchez un jour personnalisé pour le rendre au rythme.
-                </Text>
-              </View>
-            </View>
+            <AdjustTools
+              members={household?.members ?? []}
+              meId={meId}
+              tool={tool}
+              onTool={setTool}
+              brush={brush}
+              onBrush={setBrush}
+              onApplyPeriod={applyPeriod}
+            />
           ) : (
             <View style={{ gap: 8, paddingHorizontal: 4 }}>
               {notice ? (
@@ -188,6 +207,8 @@ export default function CalendarScreen() {
                   icon={<Icon name="pencil" size={18} color={colors.pine} strokeWidth={2} />}
                   onPress={() => {
                     setAdjusting(true)
+                    setTool('day')
+                    setBrush(household?.members.find((m) => m.id !== meId)?.id ?? meId ?? null)
                     setFlips({})
                     setNotice(null)
                   }}
@@ -215,7 +236,7 @@ export default function CalendarScreen() {
                 isToday={date === today}
                 isSelected={!adjusting && date === selected}
                 flipColor={flips[date] ? memberById(calendar.data.members, flips[date].to)?.color : undefined}
-                onPress={() => (adjusting ? toggleDay(date) : setSelected(date))}
+                onPress={() => (adjusting ? paintDay(date) : setSelected(date))}
               />
             ))}
           </View>

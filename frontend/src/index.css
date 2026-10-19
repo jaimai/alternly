@@ -2493,3 +2493,25 @@ button.vac-reset { align-self: flex-start; }
 @media (hover: hover) and (pointer: fine) {
   button.vac-more:hover, button.vac-flip:hover { background: var(--pine-soft); }
 }
+
+/* Ajuster : pinceau et outil période */
+.adjust-tools { display: flex; flex-direction: column; gap: 10px; padding: 12px; border-radius: 14px; background: var(--pine-soft); margin-bottom: 12px; }
+.adjust-tabs button { flex: 1; }
+.adjust-brushes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+button.adjust-brush {
+  display: flex; align-items: center; gap: 8px; min-height: 46px; padding: 0 12px; border-radius: 12px;
+  border: 1px solid var(--line); background: var(--paper); color: var(--ink); font-weight: 600; box-shadow: none; text-align: left;
+}
+button.adjust-brush.on { background: var(--surface); border-width: 2.5px; padding: 0 10.5px; }
+button.adjust-brush .dot { flex: none; width: 16px; height: 16px; border-radius: 5px; }
+.adjust-tools-hint { margin: 0; font-size: 0.88rem; color: var(--ink-soft); display: flex; gap: 6px; align-items: center; }
+.adjust-period { display: flex; flex-direction: column; gap: 10px; }
+.adjust-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+button.adjust-chip {
+  min-height: 36px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--line);
+  background: var(--surface); color: var(--ink); font-size: 0.88rem; font-weight: 600; box-shadow: none;
+}
+button.adjust-chip.on { border: 2px solid var(--pine); background: var(--pine-soft); color: var(--pine); padding: 0 11px; }
+@media (hover: hover) and (pointer: fine) {
+  button.adjust-brush:hover, button.adjust-chip:hover { background: var(--surface); }
+}
