@@ -239,6 +239,31 @@ def special_detail(ctx: Ctx, current: dict, items: list[dict]) -> str:
     return ", ".join(parts) or ctx.t("aucun changement", "no change")
 
 
+WEEKDAYS = {
+    "fr": ["lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche"],
+    "en": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
+}
+
+
+def recurring_detail(ctx: Ctx, items: list[dict]) -> str:
+    """FR « chaque mercredi chez Camille (hors vacances), 07-01 → 07-31 chez Alex, une année sur deux »"""
+    if not items:
+        return ctx.t("aucune", "none")
+    parts = []
+    for r in items:
+        who = ctx.t(f"chez {ctx.name(r['parent_id'])}", f"with {ctx.name(r['parent_id'])}")
+        if r["kind"] == "weekly":
+            days = ", ".join(WEEKDAYS[ctx.lang][d] for d in r.get("weekdays") or [])
+            freq = ctx.t("un " if r.get("every_other_week") else "chaque ", "every other " if r.get("every_other_week") else "every ")
+            tail = ctx.t(" sur deux", "") if r.get("every_other_week") else ""
+            vac = "" if r.get("include_vacations") else ctx.t(" (hors vacances)", " (outside school breaks)")
+            parts.append(f"{freq}{days}{tail} {who}{vac}")
+        else:
+            alt = ctx.t(", une année sur deux", ", every other year") if r.get("alternate") else ""
+            parts.append(f"{r['start_md']} → {r['end_md']} {who}{alt}")
+    return ", ".join(parts)
+
+
 def exchange_label(ctx: Ctx, snap: dict) -> str:
     """FR « jeu. 1 oct. chez Camille » ; EN « Thu, Oct 1 with Camille »"""
     return ctx.t("{r} chez {n}", "{r} with {n}").format(
@@ -257,6 +282,8 @@ def change_request_summary(ctx: Ctx, kind: str, context: dict | None) -> str:
         return ctx.t("Vacances : ", "Holidays: ") + vacation_detail(ctx, c.get("before"), c["after"])
     if kind == "special_day_rules":
         return ctx.t("Jours de fête : ", "Special days: ") + special_detail(ctx, c.get("before") or {}, c["after"])
+    if kind == "recurring_rules":
+        return ctx.t("Règles qui se répètent : ", "Repeating rules: ") + recurring_detail(ctx, c["after"])
     if kind == "delete_child":
         return ctx.t("Retirer l'enfant ", "Remove child ") + str(c.get("first_name", ""))
     if kind == "cancel_exchange":
@@ -355,6 +382,10 @@ def _render(ctx: Ctx, action: str, d: dict, db: Session) -> str:  # noqa: C901 �
         verb = t("a défini", "set") if d.get("before") is None else t("a modifié", "changed")
         return t(f"{verb} le partage des vacances : ", f"{verb} the holiday split: ") + vacation_detail(
             ctx, d.get("before"), d["after"]
+        )
+    if action == "recurring_rules.update":
+        return t("a modifié les règles qui se répètent : ", "changed the repeating rules: ") + recurring_detail(
+            ctx, d["after"]
         )
     if action == "special_day_rules.update":
         before = d.get("before") or []

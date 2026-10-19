@@ -4,7 +4,7 @@ d'échange — avec journal d'audit.
 Partagé entre l'application directe (routers/rules, routers/children) et
 l'acceptation d'une demande de changement (services/change_requests).
 """
-from datetime import date
+from datetime import date, timedelta
 
 from fastapi import HTTPException
 from sqlalchemy import select, update
@@ -15,6 +15,7 @@ from ..models import (
     Child,
     CustodyRule,
     Expense,
+    RecurringRule,
     ScheduleException,
     SpecialDayRule,
     VacationRule,
@@ -27,6 +28,7 @@ from ..schemas import (
     VACATION_MODES,
     VACATION_PERIOD_KINDS,
     CustodyRuleIn,
+    RecurringRuleIn,
     SpecialDayRuleIn,
     VacationRuleIn,
 )
@@ -208,6 +210,83 @@ def apply_special(db: Session, household_id: int, items: list[dict], actor_id: i
     audit.record(
         db, household_id, actor_id, "special_day_rules.update", "special_day_rules", None,
         {"before": list(current.values()), "after": items},
+    )
+
+
+# ---------- règles qui se répètent ----------
+
+YEARLY_MAX_DAYS = 120
+
+
+def _md(value: str) -> tuple[int, int]:
+    month, day = (int(x) for x in value.split("-"))
+    try:
+        date(2024, month, day)  # année bissextile : le 29 février est accepté
+    except ValueError:
+        raise HTTPException(status_code=422, detail="Date de période invalide")
+    return month, day
+
+
+def validate_recurring(db: Session, household_id: int, items: list[RecurringRuleIn]) -> list[dict]:
+    out = []
+    for item in items:
+        check_parent(db, household_id, item.parent_id)
+        rule = {
+            "kind": item.kind, "parent_id": item.parent_id, "weekdays": None, "every_other_week": False,
+            "anchor_date": None, "include_vacations": False, "start_md": None, "end_md": None, "alternate": False,
+        }
+        if item.kind == "weekly":
+            days = sorted(set(item.weekdays or []))
+            if not days or any(d < 0 or d > 6 for d in days):
+                raise HTTPException(status_code=422, detail="Choisissez au moins un jour de la semaine")
+            rule.update(weekdays=days, every_other_week=item.every_other_week,
+                        include_vacations=item.include_vacations)
+            if item.every_other_week:
+                anchor = item.anchor_date or date.today()
+                rule["anchor_date"] = (anchor - timedelta(days=anchor.weekday())).isoformat()
+        else:
+            if not item.start_md or not item.end_md:
+                raise HTTPException(status_code=422, detail="Période de l'année incomplète")
+            s, e = _md(item.start_md), _md(item.end_md)
+            # Longueur de la période (une période à cheval sur deux années boucle).
+            span = (date(2024, *e) - date(2024, *s)).days % 366 + 1
+            if span > YEARLY_MAX_DAYS:
+                raise HTTPException(status_code=422, detail=f"{YEARLY_MAX_DAYS} jours au plus par période")
+            rule.update(start_md=item.start_md, end_md=item.end_md, alternate=item.alternate)
+        out.append(rule)
+    return out
+
+
+def get_recurring(db: Session, household_id: int) -> list[RecurringRule]:
+    return list(db.scalars(
+        select(RecurringRule).where(RecurringRule.household_id == household_id).order_by(RecurringRule.position)
+    ))
+
+
+def recurring_snapshot(rules: list[RecurringRule]) -> list[dict]:
+    return [{
+        "kind": r.kind, "parent_id": r.parent_id, "weekdays": r.weekdays, "every_other_week": r.every_other_week,
+        "anchor_date": r.anchor_date.isoformat() if r.anchor_date else None,
+        "include_vacations": r.include_vacations, "start_md": r.start_md, "end_md": r.end_md,
+        "alternate": r.alternate,
+    } for r in rules]
+
+
+def apply_recurring(db: Session, household_id: int, items: list[dict], actor_id: int) -> None:
+    current = get_recurring(db, household_id)
+    before = recurring_snapshot(current)
+    for r in current:
+        db.delete(r)
+    db.flush()
+    for i, item in enumerate(items):
+        db.add(RecurringRule(
+            household_id=household_id, position=i,
+            **{**item, "anchor_date": date.fromisoformat(item["anchor_date"]) if item["anchor_date"] else None},
+        ))
+    db.flush()
+    audit.record(
+        db, household_id, actor_id, "recurring_rules.update", "recurring_rules", None,
+        {"before": before, "after": items},
     )
 
 

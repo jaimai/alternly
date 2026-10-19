@@ -12,6 +12,7 @@ import ColorPicker from '../components/ColorPicker'
 import Icon from '../components/Icon'
 import InviteShare from '../components/InviteShare'
 import Modal from '../components/Modal'
+import OrganisationCard from '../components/OrganisationCard'
 import RuleForm from '../components/RuleForm'
 import Spinner from '../components/Spinner'
 import type { RuleFormValue } from '../components/RuleForm'
@@ -279,7 +280,9 @@ export default function SettingsPage() {
           <SchoolBreaks household={household} onChanged={refresh} />
         )}
 
-        <div className="card">
+        <OrganisationCard household={household} myId={user.id} onChanged={refresh} />
+
+        <div className="card" id="special-days">
           <h2>{t('settings.holidays')}</h2>
           <p style={{ color: 'var(--ink-soft)', fontSize: '0.9rem' }}>
             {t('settings.holidaysHint')}
@@ -331,7 +334,7 @@ export default function SettingsPage() {
           ))}
         </div>
 
-        <div className="card">
+        <div className="card" id="rules-form">
           <RuleForm
             members={household.members}
             myId={user.id}

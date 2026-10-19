@@ -1,7 +1,8 @@
 """Moteur de garde : fonctions pures, aucune I/O.
 
 Les parents sont des identifiants opaques (str). La granularité est le jour.
-Priorité de résolution : exception > fête > vacances scolaires > rythme de base.
+Priorité de résolution : exception > fête > période annuelle > vacances scolaires
+> règle de la semaine > rythme de base.
 """
 import math
 from dataclasses import dataclass
@@ -22,7 +23,7 @@ class EngineRule:
 class DayAssignment:
     day: date
     parent: str
-    source: str  # rule | vacation | special | exception
+    source: str  # rule | vacation | special | exception | adjustment | recurring
 
 
 @dataclass
@@ -63,6 +64,51 @@ class EngineException:
     end: date
     parent: str
     kind: str = "exchange"  # exchange | adjustment (jour personnalisé)
+
+
+@dataclass
+class EngineRecurringRule:
+    """Règle qui se répète, en plus du rythme habituel.
+
+    weekly : certains jours de la semaine (toutes les semaines ou une sur deux à
+    partir de la semaine d'`anchor`), hors vacances sauf `include_vacations`.
+    yearly : une période fixe de l'année (`start_md` → `end_md`, mois et jour),
+    chez `parent`, ou une année sur deux en alternance (`parent` les années paires).
+    """
+    kind: str  # weekly | yearly
+    parent: str
+    other: str
+    weekdays: tuple[int, ...] = ()
+    every_other_week: bool = False
+    anchor: date | None = None
+    include_vacations: bool = False
+    start_md: tuple[int, int] | None = None
+    end_md: tuple[int, int] | None = None
+    alternate: bool = False
+
+    def weekly_parent(self, day: date) -> str | None:
+        if day.weekday() not in self.weekdays:
+            return None
+        if self.every_other_week and self.anchor is not None:
+            if ((anchor_monday(day) - anchor_monday(self.anchor)).days // 7) % 2:
+                return None
+        return self.parent
+
+    def yearly_parent(self, day: date) -> str | None:
+        if self.start_md is None or self.end_md is None:
+            return None
+        md = (day.month, day.day)
+        if self.start_md <= self.end_md:
+            if not (self.start_md <= md <= self.end_md):
+                return None
+            year = day.year
+        else:  # période à cheval sur deux années (ex. 20 déc. → 5 janv.)
+            if self.end_md < md < self.start_md:
+                return None
+            year = day.year if md >= self.start_md else day.year - 1
+        if self.alternate and year % 2:
+            return self.other
+        return self.parent
 
 
 # Motif 2-2-3 standard sur 14 jours, ancré au lundi :
@@ -235,11 +281,12 @@ def resolve_calendar(
     start: date,
     end: date,
     country: str = "FR",
+    recurring_rules: list[EngineRecurringRule] | None = None,
 ) -> list[DayAssignment]:
     """Attribue chaque jour de [start, end] (bornes incluses) à un parent.
 
-    Priorité : exception > fête > vacances scolaires > rythme de base.
-    `country` fixe les dates dépendant du pays (Mother's Day, Thanksgiving…).
+    Priorité : exception > fête > période annuelle > vacances scolaires
+    > règle de la semaine > rythme de base. `country` fixe les dates dépendant du pays (Mother's Day, Thanksgiving…).
     """
     other_parent_of = {
         rule.reference_parent: rule.other_parent,
@@ -253,6 +300,9 @@ def resolve_calendar(
         for year in range(start.year - 1, end.year + 2):
             special_dates[special_day_date(sp.kind, year, country)] = sp.parent_for_year(year)
 
+    yearly = [r for r in recurring_rules or [] if r.kind == "yearly"]
+    weekly = [r for r in recurring_rules or [] if r.kind == "weekly"]
+
     result: list[DayAssignment] = []
     day = start
     while day <= end:
@@ -264,11 +314,29 @@ def resolve_calendar(
                 break
         if assignment is None and day in special_dates:
             assignment = DayAssignment(day, special_dates[day], "special")
+        if assignment is None:
+            for rr in yearly:
+                parent = rr.yearly_parent(day)
+                if parent is not None:
+                    assignment = DayAssignment(day, parent, "recurring")
+                    break
+        # Sans règle de vacances, le rythme habituel continue : les règles de la semaine aussi.
+        in_vacation = vacation_rule is not None and any(p.start <= day <= p.end for p in school_periods)
+        if assignment is None and in_vacation:
+            for rr in weekly:
+                if rr.include_vacations and (parent := rr.weekly_parent(day)) is not None:
+                    assignment = DayAssignment(day, parent, "recurring")
+                    break
         if assignment is None and vacation_rule is not None:
             for period in school_periods:
                 if period.start <= day <= period.end:
                     parent = _vacation_parent(vacation_rule, period, day, other_parent_of)
                     assignment = DayAssignment(day, parent, "vacation")
+                    break
+        if assignment is None and not in_vacation:
+            for rr in weekly:
+                if (parent := rr.weekly_parent(day)) is not None:
+                    assignment = DayAssignment(day, parent, "recurring")
                     break
         if assignment is None:
             assignment = DayAssignment(day, base_pattern_parent(rule, day), "rule")

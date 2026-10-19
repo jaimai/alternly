@@ -21,6 +21,7 @@ from ..models import (
     Household,
     HouseholdMember,
     Invitation,
+    RecurringRule,
     SchoolVacationPeriod,
     SpecialDayRule,
     User,
@@ -102,6 +103,9 @@ def _household_out(db: Session, household: Household, my_user_id: int) -> Househ
         vacation_rule=db.scalar(select(VacationRule).where(VacationRule.household_id == household.id)),
         special_day_rules=db.scalars(
             select(SpecialDayRule).where(SpecialDayRule.household_id == household.id)
+        ).all(),
+        recurring_rules=db.scalars(
+            select(RecurringRule).where(RecurringRule.household_id == household.id).order_by(RecurringRule.position)
         ).all(),
         school_vacations=db.scalars(
             select(SchoolVacationPeriod)

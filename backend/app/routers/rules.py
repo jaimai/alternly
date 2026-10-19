@@ -23,6 +23,8 @@ from ..schemas import (
     ExchangeResponseIn,
     SpecialDayRulesIn,
     SpecialDayRuleOut,
+    RecurringRuleOut,
+    RecurringRulesIn,
     VacationRuleIn,
     VacationRuleOut,
 )
@@ -101,6 +103,31 @@ def upsert_special_day_rules(
     notify(db, other_parent_id(db, hid, member.user_id), "rule_changed", {"what": "special_days"})
     db.commit()
     return rules_service.get_special(db, hid)
+
+
+@router.put("/recurring-rules", response_model=list[RecurringRuleOut])
+def replace_recurring_rules(
+    data: RecurringRulesIn,
+    member: HouseholdMember = Depends(get_membership),
+    db: Session = Depends(get_db),
+):
+    """Remplace les règles qui se répètent (« chaque mercredi », « juillet une année sur deux »)."""
+    hid = member.household_id
+    items = rules_service.validate_recurring(db, hid, data)
+    current = rules_service.recurring_snapshot(rules_service.get_recurring(db, hid))
+    if current == items:
+        return rules_service.get_recurring(db, hid)
+    if cr_service.needs_consent(db, member):
+        cr = cr_service.create_request(
+            db, member, "recurring_rules", {"items": items}, {"before": current, "after": items}
+        )
+        db.commit()
+        return cr_service.pending_response(db, member, cr)
+    rules_service.apply_recurring(db, hid, items, member.user_id)
+    notify(db, other_parent_id(db, hid, member.user_id), "rule_changed", {"what": "recurring"})
+    analytics.capture_for_member(db, member, "recurring_rules_set", {"count": len(items)})
+    db.commit()
+    return rules_service.get_recurring(db, hid)
 
 
 def _is_expired(exc: ScheduleException) -> bool:

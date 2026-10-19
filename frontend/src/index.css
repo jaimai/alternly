@@ -2515,3 +2515,25 @@ button.adjust-chip.on { border: 2px solid var(--pine); background: var(--pine-so
 @media (hover: hover) and (pointer: fine) {
   button.adjust-brush:hover, button.adjust-chip:hover { background: var(--surface); }
 }
+.adjust-weekdays { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
+.adjust-weekdays button {
+  min-height: 42px; padding: 0; border-radius: 10px; border: 1px solid var(--line);
+  background: var(--surface); color: var(--ink); font-weight: 700; box-shadow: none;
+}
+.adjust-weekdays button.on { background: var(--pine); border-color: var(--pine); color: #fff; }
+.adjust-tools label.check, .adjust-repeat label.check { display: flex; align-items: center; gap: 8px; min-height: 40px; font-weight: 500; }
+.adjust-tools label.check input { width: 18px; height: 18px; margin: 0; accent-color: var(--pine); }
+.adjust-repeat { margin: 0; padding: 0; border: 0; }
+.adjust-repeat legend { padding: 0 0 4px; font-size: 0.85rem; font-weight: 600; color: var(--ink-soft); }
+
+/* Réglages : Mon organisation */
+.org-layers { list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.org-layers > li { display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
+.org-layers > li > a { flex: none; font-weight: 600; font-size: 0.9rem; }
+.org-rank { flex: none; width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; font-weight: 700; font-size: 0.85rem; background: var(--paper-deep, #f3ecdf); }
+.org-rank.base { background: var(--ink); color: var(--paper); }
+.org-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.org-kind { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; color: var(--ink-soft); }
+.org-detail { font-size: 0.85rem; color: var(--ink-soft); }
+.org-rules { list-style: none; margin: 4px 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.org-rules li { display: flex; gap: 8px; align-items: center; justify-content: space-between; font-weight: 600; font-size: 0.92rem; }

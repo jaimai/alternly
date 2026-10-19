@@ -167,6 +167,25 @@ class SpecialDayRule(Base):
     enabled: Mapped[bool] = mapped_column(Boolean, default=True)
 
 
+class RecurringRule(Base):
+    """Règle qui se répète en plus du rythme : jours de la semaine ou période de l'année."""
+    __tablename__ = "recurring_rules"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    household_id: Mapped[int] = mapped_column(ForeignKey("households.id"), index=True)
+    kind: Mapped[str] = mapped_column(String)  # weekly | yearly
+    # Parent concerné (yearly alterné : parent des années paires).
+    parent_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    weekdays: Mapped[list | None] = mapped_column(JSON, nullable=True)  # 0 = lundi
+    every_other_week: Mapped[bool] = mapped_column(Boolean, default=False)
+    anchor_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    include_vacations: Mapped[bool] = mapped_column(Boolean, default=False)
+    start_md: Mapped[str | None] = mapped_column(String, nullable=True)  # "MM-DD"
+    end_md: Mapped[str | None] = mapped_column(String, nullable=True)
+    alternate: Mapped[bool] = mapped_column(Boolean, default=False)
+    position: Mapped[int] = mapped_column(Integer, default=0)
+
+
 class ScheduleException(Base):
     __tablename__ = "schedule_exceptions"
 

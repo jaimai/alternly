@@ -3,7 +3,7 @@ import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { track } from '../analytics'
 import { EV } from '../analyticsEvents'
-import { api } from '../api'
+import { api, isPendingChange } from '../api'
 import { useAuth } from '../auth'
 import CalendarView from '../components/CalendarView'
 import ChangeRequests from '../components/ChangeRequests'
@@ -23,19 +23,20 @@ import {
   prefetchNeighbors,
   statusRange,
 } from '../calendarCache'
-import AdjustTools, { type AdjustTool } from '../components/AdjustTools'
+import AdjustTools, { type AdjustTool, type PeriodRepeat } from '../components/AdjustTools'
 import AppSplash from '../components/AppSplash'
 import StatusCard from '../components/StatusCard'
 import TopBar from '../components/TopBar'
 import { addDays, todayIso } from '../dates'
 import { useFormat } from '../format'
 import { isSolo } from '../members'
-import type { CalendarResponse, ScheduleException } from '../types'
+import type { CalendarResponse, RecurringRuleInput, ScheduleException } from '../types'
+import { describeRule, ruleInput } from '../recurring'
 
 export default function CalendarPage() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const navigate = useNavigate()
-  const { user, household, householdLoaded } = useAuth()
+  const { user, household, householdLoaded, refreshHousehold } = useAuth()
   const [data, setData] = useState<CalendarResponse | null>(null)
   const [loading, setLoading] = useState(false)
   const [exceptions, setExceptions] = useState<ScheduleException[]>([])
@@ -59,6 +60,8 @@ export default function CalendarPage() {
   // Pinceau : parent à qui va chaque jour touché ; outil jour par jour ou période.
   const [brush, setBrush] = useState<number | null>(null)
   const [tool, setTool] = useState<AdjustTool>('day')
+  // Règles qui se répètent ajoutées pendant l'ajustement, enregistrées avec les jours.
+  const [pendingRules, setPendingRules] = useState<RecurringRuleInput[]>([])
   const { range: fmtRange } = useFormat()
   // Incrémenté après chaque changement : recharge la carte de statut.
   const [refreshKey, setRefreshKey] = useState(0)
@@ -161,6 +164,13 @@ export default function CalendarPage() {
     setFlips(next)
   }
 
+  const otherParentOf = (id: number) => household?.members.find((m) => m.id !== id)?.id ?? id
+  const whoLabel = (id: number) => {
+    const m = household?.members.find((x) => x.id === id)
+    if (id === user?.id) return t('adjust.brushMe').toLowerCase()
+    return m && !m.is_placeholder ? t('adjust.recapWho', { name: m.display_name }) : t('adjust.brushOther').toLowerCase()
+  }
+
   function memberName(id: number) {
     if (id === user?.id) return t('adjust.you')
     return household?.members.find((m) => m.id === id)?.display_name ?? ''
@@ -180,8 +190,19 @@ export default function CalendarPage() {
   }
 
   /** Une période d'un coup : seuls les jours qui changent de parent sont retenus. */
-  async function applyPeriod(start: string, end: string): Promise<string | null> {
+  async function applyPeriod(start: string, end: string, repeat: PeriodRepeat): Promise<string | null> {
     if (!household || brush === null) return null
+    if (repeat !== 'once') {
+      // Chaque année : une règle, pas des jours. En alternance, parent_id = parent des années paires.
+      const other = household.members.find((m) => m.id !== brush)?.id ?? brush
+      const evenParent = repeat === 'alternate' && Number(start.slice(0, 4)) % 2 === 1 ? other : brush
+      setPendingRules((r) => [
+        ...r,
+        { kind: 'yearly', parent_id: evenParent, start_md: start.slice(5), end_md: end.slice(5), alternate: repeat === 'alternate' },
+      ])
+      track(EV.adjustRuleAdded, { kind: 'yearly' })
+      return null
+    }
     try {
       const cal = await fetchCalendar(household.id, start, end)
       setFlips((prev) => {
@@ -203,6 +224,7 @@ export default function CalendarPage() {
     setAdjusting(true)
     setFlips({})
     setTool('day')
+    setPendingRules([])
     setBrush(household?.members.find((m) => m.id !== user?.id)?.id ?? user?.id ?? null)
     setAdjustNotice(null)
     track(EV.adjustModeOpened, {})
@@ -212,12 +234,41 @@ export default function CalendarPage() {
     if (flipCount > 0) track(EV.adjustModeCancelled, { days: flipCount })
     setAdjusting(false)
     setFlips({})
+    setPendingRules([])
+  }
+
+  function addWeekly(rule: { weekdays: number[]; every_other_week: boolean; include_vacations: boolean }) {
+    if (brush === null) return
+    setPendingRules((r) => [...r, { kind: 'weekly', parent_id: brush, anchor_date: todayIso(), ...rule }])
+    track(EV.adjustRuleAdded, { kind: 'weekly' })
   }
 
   async function saveAdjust() {
-    if (!household || flipCount === 0) return
+    if (!household || (flipCount === 0 && pendingRules.length === 0)) return
     setAdjustBusy(true)
     setError(null)
+    const other = household.members.find((m) => m.id !== user?.id)?.display_name ?? ''
+    const notices: string[] = []
+    if (pendingRules.length > 0) {
+      try {
+        const existing = (household.recurring_rules ?? []).map(ruleInput)
+        const res = await api.setRecurringRules(household.id, [...existing, ...pendingRules.map(ruleInput)])
+        notices.push(isPendingChange(res) ? t('adjust.rulesProposed', { name: other }) : t('adjust.rulesApplied', { count: pendingRules.length }))
+        setPendingRules([])
+        await refreshHousehold()
+      } catch (err) {
+        setError(err instanceof Error ? err.message : t('calendar.genericError'))
+        setAdjustBusy(false)
+        return
+      }
+    }
+    if (flipCount === 0) {
+      setAdjustNotice(notices.join(' '))
+      setAdjusting(false)
+      setAdjustBusy(false)
+      onChanged()
+      return
+    }
     const set: { date: string; parent_id: number }[] = []
     const clear: number[] = []
     for (const [date, f] of Object.entries(flips)) {
@@ -226,14 +277,14 @@ export default function CalendarPage() {
     }
     try {
       const res = await api.saveAdjustments(household.id, { set, clear })
-      const other = household.members.find((m) => m.id !== user?.id)?.display_name ?? ''
-      setAdjustNotice(
+      notices.push(
         res.status === 'proposed'
           ? t('adjust.noticeProposed', { count: flipCount, name: other })
           : res.status === 'pending_consent'
             ? t('adjust.noticeConsent', { name: other })
             : t('adjust.noticeApplied', { count: flipCount }),
       )
+      setAdjustNotice(notices.join(' '))
       setAdjusting(false)
       setFlips({})
       onChanged()
@@ -351,6 +402,7 @@ export default function CalendarPage() {
             brush={brush}
             onBrush={setBrush}
             onApplyPeriod={applyPeriod}
+            onAddWeekly={addWeekly}
           />
         )}
         <ContextTips dayOpened={selectedDay !== null} />
@@ -380,8 +432,27 @@ export default function CalendarPage() {
       </div>
       {adjusting && (
         <div className="adjust-bar" role="region" aria-label={t('adjust.open')}>
-          {recap.length > 0 && (
+          {(recap.length > 0 || pendingRules.length > 0) && (
             <ul className="adjust-recap" aria-label={t('adjust.recapLabel')}>
+              {pendingRules.map((r, i) => {
+                const m = household?.members.find((x) => x.id === r.parent_id)
+                return (
+                  <li key={`rule-${i}`}>
+                    <span className="dot" style={{ background: m?.color ?? '#888888' }} />
+                    <span className="adjust-recap-text">
+                      {describeRule(t, i18n.language, r, whoLabel, otherParentOf)}
+                    </span>
+                    <button
+                      type="button"
+                      className="icon-btn"
+                      aria-label={t('adjust.recapRemoveRule')}
+                      onClick={() => setPendingRules((list) => list.filter((_, k) => k !== i))}
+                    >
+                      <Icon name="x" size={14} />
+                    </button>
+                  </li>
+                )
+              })}
               {recap.map((g) => {
                 const color = household?.members.find((m) => m.id === g.to)?.color ?? '#888888'
                 return (
@@ -405,12 +476,16 @@ export default function CalendarPage() {
           )}
           <div className="adjust-actions">
             <span className="adjust-count">
-              {flipCount === 0 ? t('adjust.countNone') : t('adjust.count', { count: flipCount })}
+              {flipCount === 0 && pendingRules.length === 0
+                ? t('adjust.countNone')
+                : [flipCount > 0 ? t('adjust.count', { count: flipCount }) : '', pendingRules.length > 0 ? t('adjust.countRules', { count: pendingRules.length }) : '']
+                    .filter(Boolean)
+                    .join(' · ')}
             </span>
             <button className="secondary" onClick={cancelAdjust} disabled={adjustBusy}>
               {t('adjust.cancel')}
             </button>
-            <button onClick={saveAdjust} disabled={adjustBusy || flipCount === 0}>
+            <button onClick={saveAdjust} disabled={adjustBusy || (flipCount === 0 && pendingRules.length === 0)}>
               {solo ? t('adjust.save') : t('adjust.propose')}
             </button>
           </div>

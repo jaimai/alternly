@@ -9,6 +9,7 @@ from ..deps import household_members
 from ..models import (
     CustodyRule,
     Household,
+    RecurringRule,
     ScheduleException,
     SchoolVacationPeriod,
     SpecialDayRule,
@@ -19,6 +20,7 @@ from . import holidays_us, public_holidays, school_holidays
 from .custody_engine import (
     DayAssignment,
     EngineException,
+    EngineRecurringRule,
     EngineRule,
     EngineSpecialRule,
     EngineVacationRule,
@@ -98,6 +100,11 @@ def _school_periods(db: Session, household: Household, start: date, end: date) -
         return [], False
 
 
+def _month_day(value: str | None) -> tuple[int, int] | None:
+    """« 07-14 » → (7, 14)."""
+    return tuple(int(x) for x in value.split("-")) if value else None  # type: ignore[return-value]
+
+
 def build_calendar(db: Session, household: Household, start: date, end: date) -> CalendarData:
     rule = db.scalar(select(CustodyRule).where(CustodyRule.household_id == household.id))
     if rule is None:
@@ -145,6 +152,18 @@ def build_calendar(db: Session, household: Household, start: date, end: date) ->
             parent_id = _auto_special_parent(sp.kind, members, users, rule.reference_parent_id)
         specials.append(EngineSpecialRule(kind=sp.kind, parent=str(parent_id), enabled=True))
 
+    recurring = []
+    for rr in db.scalars(
+        select(RecurringRule).where(RecurringRule.household_id == household.id).order_by(RecurringRule.position)
+    ):
+        other = next((uid for uid in member_ids if uid != rr.parent_id), rr.parent_id)
+        recurring.append(EngineRecurringRule(
+            kind=rr.kind, parent=str(rr.parent_id), other=str(other),
+            weekdays=tuple(rr.weekdays or ()), every_other_week=rr.every_other_week, anchor=rr.anchor_date,
+            include_vacations=rr.include_vacations, start_md=_month_day(rr.start_md), end_md=_month_day(rr.end_md),
+            alternate=rr.alternate,
+        ))
+
     all_exceptions = db.scalars(
         select(ScheduleException).where(ScheduleException.household_id == household.id)
     ).all()
@@ -176,6 +195,7 @@ def build_calendar(db: Session, household: Household, start: date, end: date) ->
         start=start,
         end=end,
         country=household.country,
+        recurring_rules=recurring,
     )
     return CalendarData(
         days=days,

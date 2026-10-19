@@ -1,0 +1,22 @@
+{
+  "organisation.title": "Mon organisation",
+  "organisation.intro": "Vos règles s’empilent : quand deux tombent le même jour, celle du dessus l’emporte.",
+  "organisation.layerAdjusted": "Jours personnalisés",
+  "organisation.adjustedTitle": "Ajustés à la main, ou échanges acceptés",
+  "organisation.openCalendar": "Calendrier",
+  "organisation.layerSpecial": "Jours spéciaux",
+  "organisation.specialCount_one": "1 jour spécial",
+  "organisation.specialCount_other": "{{count}} jours spéciaux",
+  "organisation.layerHolidays": "Vacances",
+  "organisation.periodByPeriod": "Réglé période par période",
+  "organisation.layerBase": "Rythme habituel",
+  "organisation.none": "Aucun",
+  "organisation.edit": "Modifier",
+  "organisation.remove": "Retirer",
+  "organisation.removed": "Règle retirée.",
+  "organisation.removeProposed": "Demande envoyée à l’autre parent : la règle sera retirée dès son accord.",
+  "organisation.layerYearly": "Périodes de l’année",
+  "organisation.yearlyHint": "Depuis Calendrier › Ajuster › Une période, « une année sur deux » ou « tous les ans ».",
+  "organisation.layerWeekly": "Règles de la semaine",
+  "organisation.weeklyHint": "Depuis Calendrier › Ajuster mon planning › Répéter."
+}

@@ -18,11 +18,11 @@ from sqlalchemy.orm import Session
 from ..deps import notify, other_parent_id
 from ..models import ChangeRequest, Child, HouseholdMember, ScheduleException, User, utcnow
 from ..ratelimit import DAY, check_household_limit
-from ..schemas import ChangeRequestOut, CustodyRuleIn, SpecialDayRuleIn, VacationRuleIn
+from ..schemas import ChangeRequestOut, CustodyRuleIn, RecurringRuleIn, SpecialDayRuleIn, VacationRuleIn
 from . import audit
 from . import rules as rules_service
 
-RULE_KINDS = {"custody_rule", "vacation_rule", "special_day_rules"}
+RULE_KINDS = {"custody_rule", "vacation_rule", "special_day_rules", "recurring_rules"}
 KINDS = RULE_KINDS | {"delete_child", "cancel_exchange"}
 
 # Création de demandes : même quota que les propositions d'échange.
@@ -140,6 +140,11 @@ def apply_request(db: Session, cr: ChangeRequest) -> None:
                 db, hid, [SpecialDayRuleIn(**i) for i in cr.payload.get("items", [])]
             )
             rules_service.apply_special(db, hid, items, actor)
+        elif cr.kind == "recurring_rules":
+            items = rules_service.validate_recurring(
+                db, hid, [RecurringRuleIn(**i) for i in cr.payload.get("items", [])]
+            )
+            rules_service.apply_recurring(db, hid, items, actor)
         elif cr.kind == "delete_child":
             child = db.get(Child, cr.payload.get("child_id"))
             if child is None or child.household_id != hid:

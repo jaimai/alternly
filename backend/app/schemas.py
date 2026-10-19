@@ -208,6 +208,34 @@ class SpecialDayRuleIn(BaseModel):
 SpecialDayRulesIn = Annotated[list[SpecialDayRuleIn], Field(max_length=50)]
 
 
+class RecurringRuleIn(BaseModel):
+    kind: Literal["weekly", "yearly"]
+    parent_id: int
+    weekdays: list[int] | None = Field(default=None, max_length=7)
+    every_other_week: bool = False
+    anchor_date: date | None = None
+    include_vacations: bool = False
+    start_md: str | None = Field(default=None, pattern=r"^\d{2}-\d{2}$")
+    end_md: str | None = Field(default=None, pattern=r"^\d{2}-\d{2}$")
+    alternate: bool = False
+
+
+RecurringRulesIn = Annotated[list[RecurringRuleIn], Field(max_length=20)]
+
+
+class RecurringRuleOut(ORMModel):
+    id: int
+    kind: str
+    parent_id: int
+    weekdays: list[int] | None
+    every_other_week: bool
+    anchor_date: date | None
+    include_vacations: bool
+    start_md: str | None
+    end_md: str | None
+    alternate: bool
+
+
 class SpecialDayRuleOut(ORMModel):
     kind: str
     parent_mode: str
@@ -251,6 +279,7 @@ class HouseholdOut(ORMModel):
     custody_rule: CustodyRuleOut | None = None
     vacation_rule: VacationRuleOut | None = None
     special_day_rules: list[SpecialDayRuleOut] = []
+    recurring_rules: list[RecurringRuleOut] = []
     school_vacations: list[SchoolVacationOut] = []
     my_role: str | None = None
 
