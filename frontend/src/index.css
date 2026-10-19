@@ -2469,3 +2469,27 @@ button.cr-again { display: block; width: 100%; margin-top: 6px; }
 @media (hover: hover) {
   button.cr-brush:hover { background: var(--pine-soft); }
 }
+
+/* Vacances : nouveaux modes et réglage période par période */
+.wz-option-text .vac-new, .vac-new { color: #fff; margin-left: 8px; padding: 2px 8px; border-radius: 999px; background: var(--pine); color: #fff; font-size: 0.7rem; font-weight: 700; vertical-align: 2px; }
+button.vac-more {
+  display: flex; align-items: center; gap: 12px; width: 100%; min-height: 60px; padding: 10px 14px;
+  border: 1px dashed color-mix(in srgb, var(--ink-soft) 50%, transparent); border-radius: 14px;
+  background: transparent; color: var(--ink); text-align: left; box-shadow: none;
+}
+button.vac-more > span:first-child { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+button.vac-more > span:first-child > span { font-size: 0.85rem; color: var(--ink-soft); font-weight: 400; }
+.vac-periods { display: flex; flex-direction: column; gap: 8px; }
+.vac-period { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
+.vac-period-head { display: flex; align-items: center; gap: 8px; }
+.vac-period-head strong { flex: 1; }
+button.vac-flip {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 10px; border-radius: 999px;
+  border: 1px solid var(--line); background: var(--paper); color: var(--ink); font-size: 0.82rem; font-weight: 600; box-shadow: none;
+}
+button.vac-flip .dot { width: 12px; height: 12px; border-radius: 4px; }
+.vac-seg button { flex: 1; }
+button.vac-reset { align-self: flex-start; }
+@media (hover: hover) and (pointer: fine) {
+  button.vac-more:hover, button.vac-flip:hover { background: var(--pine-soft); }
+}

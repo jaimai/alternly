@@ -25,6 +25,7 @@ from ..schemas import (
     PATTERNS,
     SPECIAL_KINDS,
     VACATION_MODES,
+    VACATION_PERIOD_KINDS,
     CustodyRuleIn,
     SpecialDayRuleIn,
     VacationRuleIn,
@@ -103,7 +104,20 @@ def validate_vacation(db: Session, household_id: int, data: VacationRuleIn) -> d
         raise HTTPException(status_code=422, detail="Mode de partage inconnu")
     if data.even_year_first_half_parent_id is not None:
         check_parent(db, household_id, data.even_year_first_half_parent_id)
-    return {"mode": data.mode, "even_year_first_half_parent_id": data.even_year_first_half_parent_id}
+    period_modes = None
+    if data.period_modes:
+        period_modes = {}
+        for kind, pm in data.period_modes.items():
+            if kind not in VACATION_PERIOD_KINDS or pm.mode not in VACATION_MODES:
+                raise HTTPException(status_code=422, detail="Réglage de période inconnu")
+            if pm.mode == "july_august" and kind != "ete":
+                raise HTTPException(status_code=422, detail="Juillet / août ne vaut que pour l'été")
+            period_modes[kind] = {"mode": pm.mode, "flip": pm.flip}
+    return {
+        "mode": data.mode,
+        "even_year_first_half_parent_id": data.even_year_first_half_parent_id,
+        "period_modes": period_modes or None,
+    }
 
 
 def get_vacation(db: Session, household_id: int) -> VacationRule | None:
@@ -113,7 +127,11 @@ def get_vacation(db: Session, household_id: int) -> VacationRule | None:
 def vacation_snapshot(rule: VacationRule | None) -> dict | None:
     if rule is None:
         return None
-    return {"mode": rule.mode, "even_year_first_half_parent_id": rule.even_year_first_half_parent_id}
+    return {
+        "mode": rule.mode,
+        "even_year_first_half_parent_id": rule.even_year_first_half_parent_id,
+        "period_modes": rule.period_modes or None,
+    }
 
 
 def apply_vacation(db: Session, household_id: int, new: dict, actor_id: int) -> VacationRule:
@@ -124,6 +142,7 @@ def apply_vacation(db: Session, household_id: int, new: dict, actor_id: int) -> 
         db.add(rule)
     rule.mode = new["mode"]
     rule.even_year_first_half_parent_id = new["even_year_first_half_parent_id"]
+    rule.period_modes = new.get("period_modes")
     db.flush()
     audit.record(
         db, household_id, actor_id, "vacation_rule.update", "vacation_rule", rule.id,

@@ -27,8 +27,11 @@ class DayAssignment:
 
 @dataclass
 class EngineVacationRule:
-    mode: str  # split_half | alternate_full
+    mode: str  # split_half | alternate_full | july_august | weekly
     even_year_first_half_parent: str
+    # Réglage période par période : {"ete": {"mode": "july_august", "flip": False}, …}.
+    # `flip` inverse, pour cette période seulement, le parent qui commence.
+    period_modes: dict | None = None
 
 
 @dataclass
@@ -182,14 +185,40 @@ def _special_day_date(kind: str, year: int) -> date:
     return special_day_date(kind, year, "FR")
 
 
+def period_kind(period: Period) -> str:
+    """Famille de la période, d'après son mois de début (zones FR comme écoles US)."""
+    month = period.start.month
+    if month in (10, 11):
+        return "toussaint"
+    if month in (12, 1):
+        return "noel"
+    if month in (2, 3):
+        return "hiver"
+    if month in (4, 5):
+        return "printemps"
+    return "ete"
+
+
 def _vacation_parent(vac: EngineVacationRule, period: Period, day: date, other_parent_of: dict[str, str]) -> str:
+    kind = period_kind(period)
+    override = (vac.period_modes or {}).get(kind) or {}
+    mode = override.get("mode") or vac.mode
     even_parent = vac.even_year_first_half_parent
     odd_parent = other_parent_of[even_parent]
     first_half_parent = even_parent if period.start.year % 2 == 0 else odd_parent
+    if override.get("flip"):
+        first_half_parent = other_parent_of[first_half_parent]
     second_half_parent = other_parent_of[first_half_parent]
 
-    if vac.mode == "alternate_full":
+    if mode == "alternate_full":
         return first_half_parent
+    if mode == "july_august" and kind == "ete":
+        # Fin juin et début septembre suivent juillet et août.
+        return first_half_parent if day.month <= 7 else second_half_parent
+    if mode == "weekly":
+        # Semaines du lundi au dimanche, la première chez le parent qui commence.
+        week = (anchor_monday(day) - anchor_monday(period.start)).days // 7
+        return first_half_parent if week % 2 == 0 else second_half_parent
 
     n_days = (period.end - period.start).days + 1
     first_half_len = math.ceil(n_days / 2)

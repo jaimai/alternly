@@ -213,3 +213,52 @@ class TestSpecialAlternation:
         sp = EngineSpecialRule(kind="christmas_day", parent="B")
         res = resolve(date(2026, 12, 25), date(2026, 12, 25), specials=[sp])
         assert res[date(2026, 12, 25)].parent == "B"
+
+
+SUMMER_26 = Period("Été", date(2026, 7, 4), date(2026, 8, 31))
+SUMMER_27 = Period("Été", date(2027, 7, 3), date(2027, 8, 31))
+
+
+class TestVacationJulyAugust:
+    VAC = EngineVacationRule(mode="july_august", even_year_first_half_parent="A")
+
+    def test_even_year_july_and_august(self):
+        days = resolve(SUMMER_26.start, SUMMER_26.end, vacation_rule=self.VAC, periods=[SUMMER_26])
+        assert {days[d].parent for d in days if d.month == 7} == {"A"}
+        assert {days[d].parent for d in days if d.month == 8} == {"B"}
+
+    def test_odd_year_is_inverted(self):
+        days = resolve(SUMMER_27.start, SUMMER_27.end, vacation_rule=self.VAC, periods=[SUMMER_27])
+        assert days[date(2027, 7, 14)].parent == "B"
+        assert days[date(2027, 8, 14)].parent == "A"
+
+    def test_short_holidays_are_split_in_half(self):
+        p = Period("Hiver", date(2026, 2, 7), date(2026, 2, 20))
+        days = resolve(p.start, p.end, vacation_rule=self.VAC, periods=[p])
+        assert [days[p.start + timedelta(i)].parent for i in range(14)] == ["A"] * 7 + ["B"] * 7
+
+
+class TestVacationWeekly:
+    def test_weeks_alternate_from_period_start(self):
+        vac = EngineVacationRule(mode="weekly", even_year_first_half_parent="A")
+        days = resolve(SUMMER_26.start, SUMMER_26.end, vacation_rule=vac, periods=[SUMMER_26])
+        # Le samedi 4 juillet appartient à la semaine du lundi 29 juin : chez A jusqu'au dimanche.
+        assert days[date(2026, 7, 5)].parent == "A"
+        assert days[date(2026, 7, 6)].parent == "B"
+        assert days[date(2026, 7, 13)].parent == "A"
+        assert days[date(2026, 7, 13)].source == "vacation"
+
+
+class TestVacationPeriodModes:
+    def test_override_one_period_and_flip_starter(self):
+        vac = EngineVacationRule(
+            mode="split_half",
+            even_year_first_half_parent="A",
+            period_modes={"hiver": {"mode": "alternate_full", "flip": True}, "ete": {"mode": "july_august"}},
+        )
+        winter = Period("Hiver", date(2026, 2, 7), date(2026, 2, 20))
+        spring = Period("Printemps", date(2026, 4, 4), date(2026, 4, 18))
+        days = resolve(winter.start, SUMMER_26.end, vacation_rule=vac, periods=[winter, spring, SUMMER_26])
+        assert {days[winter.start + timedelta(i)].parent for i in range(14)} == {"B"}
+        assert days[spring.start].parent == "A" and days[spring.end].parent == "B"  # mode général
+        assert days[date(2026, 7, 20)].parent == "A" and days[date(2026, 8, 20)].parent == "B"

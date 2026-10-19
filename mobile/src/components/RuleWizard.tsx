@@ -6,9 +6,10 @@ import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native'
 import { flipDay, mondayOf, sideOn, weekday, type Pattern, type Side } from '@/lib/custodyPreview'
 import { addDays, formatLong, parseIso, todayIso } from '@/lib/dates'
 import { colors, fonts, tint } from '@/lib/theme'
-import type { CustodyRule, Member, VacationRule } from '@/lib/types'
+import type { CustodyRule, Member, VacationMode, VacationPeriodModes, VacationRule } from '@/lib/types'
 import { CURRENT, CycleDrawer, MonthCheck, TEMPLATES, TemplatePicker, Thumb, templateCells, type Cell } from './CustomRhythm'
 import { ChoiceCard, DateField, Progress, Segmented } from './form'
+import { VacationPicker } from './VacationPicker'
 import { Avatar, Body, Button, Title } from './ui'
 
 const PATTERNS: { value: Pattern; title: string; desc: string; thumb: string }[] = [
@@ -17,6 +18,28 @@ const PATTERNS: { value: Pattern; title: string; desc: string; thumb: string }[]
   { value: 'two_two_three', title: '2-2-3', desc: '2 jours chacun, puis 3 jours. Souvent choisi pour les tout-petits.', thumb: 'aabbaaabbaabbb' },
   { value: 'custom', title: 'Autre organisation', desc: 'Partez d’un modèle proche, puis corrigez les jours qui diffèrent.', thumb: 'xxxxxxxxxxxxxx' },
 ]
+const VAC_COPY: Record<VacationMode, { who: string; me: string; other: string }> = {
+  split_half: {
+    who: 'Cette année ({year}), qui a la première moitié ?',
+    me: 'Exemple : aux prochaines vacances, vous avez la première moitié, l’autre parent la seconde. L’an prochain, c’est l’inverse.',
+    other: 'Exemple : aux prochaines vacances, l’autre parent a la première moitié, vous la seconde. L’an prochain, c’est l’inverse.',
+  },
+  alternate_full: {
+    who: 'Cette année ({year}), qui a les vacances ?',
+    me: 'Exemple : cette année, les vacances sont chez vous ; l’an prochain, chez l’autre parent.',
+    other: 'Exemple : cette année, les vacances sont chez l’autre parent ; l’an prochain, chez vous.',
+  },
+  july_august: {
+    who: 'Cette année ({year}), qui a juillet ?',
+    me: 'Exemple : l’été de cette année, juillet est chez vous et août chez l’autre parent. L’an prochain, c’est l’inverse.',
+    other: 'Exemple : l’été de cette année, juillet est chez l’autre parent et août chez vous. L’an prochain, c’est l’inverse.',
+  },
+  weekly: {
+    who: 'Cette année ({year}), qui a la première semaine ?',
+    me: 'Exemple : aux prochaines vacances, la première semaine est chez vous, la suivante chez l’autre parent, et ainsi de suite.',
+    other: 'Exemple : aux prochaines vacances, la première semaine est chez l’autre parent, la suivante chez vous, et ainsi de suite.',
+  },
+}
 const DAY_SHORT = ['L', 'M', 'M', 'J', 'V', 'S', 'D']
 const DAY_LONG = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche']
 const DEFAULT_CUSTOM: Side[] = Array.from({ length: 14 }, (_, i) => (i < 7 ? 'ref' : 'other'))
@@ -52,7 +75,8 @@ export function RuleWizard({ members, myId, childNames, busy, stepOffset, stepTo
   const [handoverDay, setHandoverDay] = useState(c?.handover_day ?? 0)
   const [handoverTime, setHandoverTime] = useState(c?.handover_time ?? '18:00')
   const [customWeeks, setCustomWeeks] = useState<Side[]>((c?.custom_weeks as Side[] | null) ?? DEFAULT_CUSTOM)
-  const [vacMode, setVacMode] = useState<'split_half' | 'alternate_full'>(v?.mode ?? 'split_half')
+  const [vacMode, setVacMode] = useState<VacationMode>(v?.mode ?? 'split_half')
+  const [periodModes, setPeriodModes] = useState<VacationPeriodModes>(v?.period_modes ?? {})
   const [evenParent, setEvenParent] = useState(v?.even_year_first_half_parent_id ?? myId)
   const [adjust, setAdjust] = useState<{ day: string; before: { pattern: Pattern; customWeeks: Side[] } } | null>(null)
   // Rythme personnalisé déjà enregistré, vu depuis « vous » (côté ref = le parent connecté).
@@ -160,7 +184,11 @@ export function RuleWizard({ members, myId, childNames, busy, stepOffset, stepTo
         handover_time: handoverTime,
         custom_weeks: pattern === 'custom' ? customWeeks : null,
       },
-      vacation: { mode: vacMode, even_year_first_half_parent_id: evenParent },
+      vacation: {
+        mode: vacMode,
+        even_year_first_half_parent_id: evenParent,
+        period_modes: Object.keys(periodModes).length ? periodModes : null,
+      },
     })
   }
 
@@ -371,58 +399,19 @@ export function RuleWizard({ members, myId, childNames, busy, stepOffset, stepTo
       {step === 3 && (
         <>
           <Title>Et pendant les vacances scolaires ?</Title>
-          <View style={{ gap: 8 }} accessibilityRole="radiogroup">
-            {(['split_half', 'alternate_full'] as const).map((mode) => {
-              const first = colorOf(thisYearParent === referenceParent ? 'ref' : 'other')
-              const second = colorOf(thisYearParent === referenceParent ? 'other' : 'ref')
-              return (
-                <ChoiceCard
-                  key={mode}
-                  title={mode === 'split_half' ? 'Moitié chacun' : 'Toutes les vacances, une année sur deux'}
-                  description={
-                    mode === 'split_half'
-                      ? 'Chaque période est coupée en deux. L’ordre s’inverse chaque année.'
-                      : 'Toute la période chez un parent, puis chez l’autre l’année suivante.'
-                  }
-                  selected={vacMode === mode}
-                  onPress={() => setVacMode(mode)}
-                  aside={
-                    <View style={{ gap: 4, width: 92 }}>
-                      {[0, 1].map((i) => (
-                        <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                          <Text style={{ fontFamily: fonts.body, fontSize: 10, color: colors.inkSoft, width: 28 }}>{year + i}</Text>
-                          <View style={{ flex: 1, height: 10, borderRadius: 3, overflow: 'hidden', flexDirection: 'row' }}>
-                            {mode === 'split_half' ? (
-                              <>
-                                <View style={{ flex: 1, backgroundColor: i === 0 ? first : second }} />
-                                <View style={{ flex: 1, backgroundColor: i === 0 ? second : first }} />
-                              </>
-                            ) : (
-                              <View style={{ flex: 1, backgroundColor: i === 0 ? first : second }} />
-                            )}
-                          </View>
-                        </View>
-                      ))}
-                    </View>
-                  }
-                />
-              )
-            })}
-          </View>
-          <Text style={s.question}>
-            {vacMode === 'split_half'
-              ? `Cette année (${year}), qui a la première moitié ?`
-              : `Cette année (${year}), qui a les vacances ?`}
-          </Text>
+          <VacationPicker
+            mode={vacMode}
+            onMode={setVacMode}
+            periodModes={periodModes}
+            onPeriodModes={setPeriodModes}
+            first={colorOf(thisYearParent === referenceParent ? 'ref' : 'other')}
+            second={colorOf(thisYearParent === referenceParent ? 'other' : 'ref')}
+            year={year}
+          />
+          <Text style={s.question}>{VAC_COPY[vacMode].who.replace('{year}', String(year))}</Text>
           {whoButtons(true, thisYearParent, setThisYearParent)}
           <Body muted style={{ fontSize: 14 }}>
-            {vacMode === 'split_half'
-              ? thisYearParent === myId
-                ? 'Exemple : aux prochaines vacances, vous avez la première moitié, l’autre parent la seconde. L’an prochain, c’est l’inverse.'
-                : 'Exemple : aux prochaines vacances, l’autre parent a la première moitié, vous la seconde. L’an prochain, c’est l’inverse.'
-              : thisYearParent === myId
-                ? 'Exemple : cette année, les vacances sont chez vous ; l’an prochain, chez l’autre parent.'
-                : 'Exemple : cette année, les vacances sont chez l’autre parent ; l’an prochain, chez vous.'}
+            {thisYearParent === myId ? VAC_COPY[vacMode].me : VAC_COPY[vacMode].other}
           </Body>
         </>
       )}

@@ -66,9 +66,15 @@ export interface CustodyRule {
   custom_weeks: string[] | null
 }
 
+export type VacationMode = 'split_half' | 'alternate_full' | 'july_august' | 'weekly'
+export type VacationPeriodKind = 'toussaint' | 'noel' | 'hiver' | 'printemps' | 'ete'
+/** Réglage période par période ; `flip` inverse le parent qui commence pour cette période. */
+export type VacationPeriodModes = Partial<Record<VacationPeriodKind, { mode: VacationMode; flip: boolean }>>
+
 export interface VacationRule {
-  mode: 'split_half' | 'alternate_full'
+  mode: VacationMode
   even_year_first_half_parent_id: number | null
+  period_modes?: VacationPeriodModes | null
 }
 
 export type SpecialDayKind =

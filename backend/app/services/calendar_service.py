@@ -123,6 +123,7 @@ def build_calendar(db: Session, household: Household, start: date, end: date) ->
         engine_vac = EngineVacationRule(
             mode=vac.mode,
             even_year_first_half_parent=str(vac.even_year_first_half_parent_id),
+            period_modes=vac.period_modes,
         )
 
     specials = []

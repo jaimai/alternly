@@ -53,6 +53,9 @@ _ADD_COLUMNS: dict[str, dict[str, str]] = {
         "settled_at": "TIMESTAMP",
         "settled_by": "INTEGER",
     },
+    "vacation_rules": {
+        "period_modes": "JSON",
+    },
     "households": {
         "country": "VARCHAR",
         "currency": "VARCHAR",

@@ -149,8 +149,10 @@ class VacationRule(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     household_id: Mapped[int] = mapped_column(ForeignKey("households.id"), unique=True)
-    mode: Mapped[str] = mapped_column(String, default="split_half")  # split_half | alternate_full
+    mode: Mapped[str] = mapped_column(String, default="split_half")  # split_half | alternate_full | july_august | weekly
     even_year_first_half_parent_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    # Réglage période par période (toussaint, noel, hiver, printemps, ete) : {"mode", "flip"}.
+    period_modes: Mapped[dict | None] = mapped_column(JSON, nullable=True)
 
 
 class SpecialDayRule(Base):

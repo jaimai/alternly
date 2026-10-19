@@ -141,8 +141,18 @@ PATTERN_LABELS = {
     },
 }
 VACATION_LABELS = {
-    "fr": {"split_half": "partage par moitié", "alternate_full": "vacances entières alternées"},
-    "en": {"split_half": "split in half", "alternate_full": "alternating whole holidays"},
+    "fr": {
+        "split_half": "partage par moitié",
+        "alternate_full": "vacances entières alternées",
+        "july_august": "juillet / août",
+        "weekly": "une semaine sur deux",
+    },
+    "en": {
+        "split_half": "split in half",
+        "alternate_full": "alternating whole holidays",
+        "july_august": "July / August",
+        "weekly": "alternating weeks",
+    },
 }
 # kind -> (libellé FR, féminin ?, libellé EN)
 SPECIAL_LABELS = {
@@ -191,6 +201,8 @@ def vacation_detail(ctx: Ctx, old: dict | None, new: dict) -> str:
             f"années paires : première partie chez {ctx.name(pid)}",
             f"even years: first half with {ctx.name(pid)}",
         ))
+    if new.get("period_modes") and (old is None or old.get("period_modes") != new.get("period_modes")):
+        parts.append(ctx.t("réglé période par période", "set period by period"))
     return ", ".join(parts)
 
 

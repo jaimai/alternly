@@ -8,7 +8,8 @@ from pydantic import AfterValidator, BaseModel, ConfigDict, EmailStr, Field
 DateType = date
 
 PATTERNS = {"alternate_weeks", "two_two_three", "every_other_weekend", "custom"}
-VACATION_MODES = {"split_half", "alternate_full"}
+VACATION_MODES = {"split_half", "alternate_full", "july_august", "weekly"}
+VACATION_PERIOD_KINDS = ("toussaint", "noel", "hiver", "printemps", "ete")
 SPECIAL_KINDS = {
     "christmas_eve", "christmas_day", "mothers_day", "fathers_day",
     # États-Unis
@@ -180,14 +181,21 @@ class CustodyRuleOut(ORMModel):
     custom_weeks: list[str] | None
 
 
+class VacationPeriodMode(BaseModel):
+    mode: str
+    flip: bool = False
+
+
 class VacationRuleIn(BaseModel):
     mode: str = "split_half"
     even_year_first_half_parent_id: int | None = None
+    period_modes: dict[str, VacationPeriodMode] | None = None
 
 
 class VacationRuleOut(ORMModel):
     mode: str
     even_year_first_half_parent_id: int | None
+    period_modes: dict | None = None
 
 
 class SpecialDayRuleIn(BaseModel):
