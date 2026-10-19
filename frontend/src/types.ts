@@ -7,6 +7,7 @@ export interface User {
   color: string
   email_opt_in: boolean
   onboarding_seen: boolean
+  whats_new_seen?: string | null
   locale: Locale
   /** Faux pour un compte créé via Google sans mot de passe défini. */
   has_password?: boolean

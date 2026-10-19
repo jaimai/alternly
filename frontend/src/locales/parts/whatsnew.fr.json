@@ -1,0 +1,15 @@
+{
+  "whatsNew.eyebrow": "Nouveau · {{n}}/{{total}}",
+  "whatsNew.brushTitle": "Coloriez plusieurs jours d’un coup",
+  "whatsNew.brushBody": "Dans « Ajuster mon planning », choisissez « Chez vous » ou « Chez l’autre parent », puis touchez les jours. Une période entière ? L’outil « Une période » le fait en deux touches.",
+  "whatsNew.repeatTitle": "Une règle qui revient",
+  "whatsNew.repeatBody": "« Chaque mercredi chez l’autre parent », « juillet chez vous une année sur deux » : ajoutez-les avec « Répéter », sans toucher à votre rythme habituel.",
+  "whatsNew.summerTitle": "Juillet / août pour l’été",
+  "whatsNew.summerBody": "Nouveaux choix pour les vacances : un mois chacun, une semaine sur deux, ou période par période. À régler dans Réglages › Garde et vacances.",
+  "whatsNew.later": "Plus tard",
+  "whatsNew.next": "Suivant",
+  "whatsNew.try": "Essayer maintenant",
+  "whatsNew.done": "C’est noté",
+  "whatsNew.settingsLink": "Quoi de neuf ?",
+  "whatsNew.badge": "Nouveau"
+}

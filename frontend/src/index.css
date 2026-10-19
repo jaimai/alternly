@@ -2537,3 +2537,19 @@ button.adjust-chip.on { border: 2px solid var(--pine); background: var(--pine-so
 .org-detail { font-size: 0.85rem; color: var(--ink-soft); }
 .org-rules { list-style: none; margin: 4px 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
 .org-rules li { display: flex; gap: 8px; align-items: center; justify-content: space-between; font-weight: 600; font-size: 0.92rem; }
+
+/* Fenêtre « Quoi de neuf » */
+.wn-art { display: grid; grid-template-columns: repeat(7, 28px); gap: 6px; justify-content: center; padding: 22px 0; margin: 4px 0 8px; border-radius: 16px; background: var(--pine-soft); }
+.wn-repeat { background: var(--terra-soft, #f5e0d5); }
+.wn-summer { background: var(--paper-deep, #f3ecdf); }
+.wn-cell { width: 28px; height: 28px; border-radius: 8px; }
+.wn-cell.a { background: var(--pine); }
+.wn-cell.b { background: var(--terra); }
+.wn-cell.ring { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--ink); }
+.wn-body { margin: 0; color: var(--ink-soft); line-height: 1.5; }
+.wn-dots { display: flex; justify-content: center; gap: 6px; padding: 12px 0; }
+.wn-dots span { width: 8px; height: 8px; border-radius: 4px; background: var(--line); transition: width 0.2s ease; }
+.wn-dots span.on { width: 22px; background: var(--pine); }
+.wn-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.new-pill { margin-left: 8px; padding: 2px 8px; border-radius: 999px; background: var(--pine); color: #fff; font-size: 0.7rem; font-weight: 700; }
+@media (prefers-reduced-motion: reduce) { .wn-dots span { transition: none; } }

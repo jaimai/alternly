@@ -105,6 +105,7 @@ class UserOut(ORMModel):
     color: str
     email_opt_in: bool
     onboarding_seen: bool
+    whats_new_seen: str | None = None
     locale: str
     has_password: bool = True
     # Mode de connexion principal (analytics, sans donnée d'identification).
@@ -121,6 +122,7 @@ class UserUpdate(BaseModel):
     color: str | None = Field(default=None, pattern=COLOR_PATTERN)
     email_opt_in: bool | None = None
     onboarding_seen: bool | None = None
+    whats_new_seen: str | None = Field(default=None, max_length=40)
     locale: Literal["fr", "en"] | None = None
     analytics_consent: bool | None = None
 

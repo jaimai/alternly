@@ -11,6 +11,7 @@ export interface User {
   color: string
   email_opt_in: boolean
   onboarding_seen: boolean
+  whats_new_seen?: string | null
   locale: Locale
   has_password?: boolean
   auth_method?: 'email' | 'google' | 'apple'

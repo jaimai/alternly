@@ -2,10 +2,12 @@
 // notifications, compte. Chaque rubrique s'ouvre dans son écran (app/(app)/settings/…).
 import Constants from 'expo-constants'
 import { router, type Href } from 'expo-router'
+import { useState } from 'react'
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native'
 import { ChangeRequests } from '@/components/ChangeRequests'
 import { Icon } from '@/components/Icon'
 import { InviteCard } from '@/components/InviteCard'
+import { WhatsNew } from '@/components/WhatsNew'
 import { Avatar, Screen, SectionLabel, Title } from '@/components/ui'
 import { useAuth } from '@/lib/auth'
 import { isSolo } from '@/lib/custody'
@@ -20,6 +22,7 @@ const PATTERN_LABEL: Record<string, string> = {
 }
 
 export default function Settings() {
+  const [whatsNewOpen, setWhatsNewOpen] = useState(false)
   const { signOut } = useAuth()
   const me = useMe().data
   const household = useHousehold().data
@@ -36,6 +39,7 @@ export default function Settings() {
 
   return (
     <Screen>
+      <WhatsNew visible={whatsNewOpen} onClose={() => setWhatsNewOpen(false)} />
       <Title>Réglages</Title>
 
       {me ? (
@@ -94,6 +98,13 @@ export default function Settings() {
           <NavRow label="Compte et mot de passe" icon="settings" href="/settings/account" />
           <NavRow label="Synchroniser mon agenda" icon="calendar" href="/settings/calendar-sync" />
           <NavRow label="Historique du foyer" href="/settings/history" />
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => setWhatsNewOpen(true)}
+            style={({ pressed }) => [s.row, pressed && { backgroundColor: colors.paperDeep }]}
+          >
+            <Text style={[s.strong, { flex: 1 }]}>Quoi de neuf ?</Text>
+          </Pressable>
         </View>
       </View>
 

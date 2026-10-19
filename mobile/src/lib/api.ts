@@ -160,7 +160,7 @@ export const api = {
   billingStatus: () => request<BillingStatus>('/billing/status'),
   /** Relit l'état des achats chez RevenueCat puis renvoie le statut à jour. */
   storeSync: () => request<BillingStatus>('/billing/store-sync', { method: 'POST' }),
-  updateMe: (data: { display_name?: string; color?: string; email_opt_in?: boolean }) =>
+  updateMe: (data: { display_name?: string; color?: string; email_opt_in?: boolean; whats_new_seen?: string }) =>
     request<User>('/auth/me', { method: 'PATCH', body: data }),
   /** Révoque les autres sessions : renvoie un nouveau jeton pour ce téléphone. */
   changePassword: (current_password: string, new_password: string) =>

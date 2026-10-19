@@ -25,6 +25,7 @@ import {
 } from '../calendarCache'
 import AdjustTools, { type AdjustTool, type PeriodRepeat } from '../components/AdjustTools'
 import AppSplash from '../components/AppSplash'
+import WhatsNew, { WHATS_NEW_ID, WHATS_NEW_SINCE } from '../components/WhatsNew'
 import StatusCard from '../components/StatusCard'
 import TopBar from '../components/TopBar'
 import { addDays, todayIso } from '../dates'
@@ -36,7 +37,7 @@ import { describeRule, ruleInput } from '../recurring'
 export default function CalendarPage() {
   const { t, i18n } = useTranslation()
   const navigate = useNavigate()
-  const { user, household, householdLoaded, refreshHousehold } = useAuth()
+  const { user, setUser, household, householdLoaded, refreshHousehold } = useAuth()
   const [data, setData] = useState<CalendarResponse | null>(null)
   const [loading, setLoading] = useState(false)
   const [exceptions, setExceptions] = useState<ScheduleException[]>([])
@@ -62,6 +63,30 @@ export default function CalendarPage() {
   const [tool, setTool] = useState<AdjustTool>('day')
   // Règles qui se répètent ajoutées pendant l'ajustement, enregistrées avec les jours.
   const [pendingRules, setPendingRules] = useState<RecurringRuleInput[]>([])
+  // « Quoi de neuf » : une fois par compte, pour les comptes antérieurs à la mise à jour.
+  const [whatsNewClosed, setWhatsNewClosed] = useState(false)
+  const showWhatsNew =
+    !whatsNewClosed &&
+    !!user &&
+    !!household?.custody_rule &&
+    user.whats_new_seen !== WHATS_NEW_ID &&
+    (user.created_at ?? '') < WHATS_NEW_SINCE
+  const [adjustIsNew, setAdjustIsNew] = useState(() => {
+    try {
+      return localStorage.getItem('alternly_adjust_tools_seen') !== WHATS_NEW_ID
+    } catch {
+      return false
+    }
+  })
+
+  function closeWhatsNew() {
+    setWhatsNewClosed(true)
+    track(EV.whatsNewClosed, { id: WHATS_NEW_ID })
+    api
+      .updateMe({ whats_new_seen: WHATS_NEW_ID })
+      .then(setUser)
+      .catch(() => {})
+  }
   const { range: fmtRange } = useFormat()
   // Incrémenté après chaque changement : recharge la carte de statut.
   const [refreshKey, setRefreshKey] = useState(0)
@@ -221,6 +246,14 @@ export default function CalendarPage() {
   }
 
   function startAdjust() {
+    if (adjustIsNew) {
+      setAdjustIsNew(false)
+      try {
+        localStorage.setItem('alternly_adjust_tools_seen', WHATS_NEW_ID)
+      } catch {
+        // stockage indisponible : le badge reviendra au prochain chargement
+      }
+    }
     setAdjusting(true)
     setFlips({})
     setTool('day')
@@ -390,6 +423,7 @@ export default function CalendarPage() {
             {adjustNotice && <div className="info-banner" role="status">{adjustNotice}</div>}
             <button className="secondary with-icon" onClick={startAdjust}>
               <Icon name="pencil" size={16} /> {t('adjust.open')}
+              {adjustIsNew && <span className="new-pill">{t('whatsNew.badge')}</span>}
             </button>
           </div>
         )}
@@ -490,6 +524,15 @@ export default function CalendarPage() {
             </button>
           </div>
         </div>
+      )}
+      {showWhatsNew && splashGone && (
+        <WhatsNew
+          onClose={closeWhatsNew}
+          onTry={() => {
+            closeWhatsNew()
+            startAdjust()
+          }}
+        />
       )}
       {inviteOpen && household && (
         <Modal eyebrow={t('invite.modalEyebrow')} title={t('invite.modalTitle')} onClose={() => setInviteOpen(false)}>

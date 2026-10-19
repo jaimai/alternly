@@ -4,6 +4,7 @@ import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { AdjustTools, type AdjustTool, type PeriodRepeat } from '@/components/AdjustTools'
 import { CalendarNotices } from '@/components/CalendarNotices'
+import { WHATS_NEW_ID, WHATS_NEW_SINCE, WhatsNew } from '@/components/WhatsNew'
 import { Icon } from '@/components/Icon'
 import { Body, Button, Card, ErrorState, Loading } from '@/components/ui'
 import { ApiError, api, isPendingChange } from '@/lib/api'
@@ -13,6 +14,7 @@ import { addDays, addMonths, formatLong, formatMonth, formatRange, monthGrid, mo
 import {
   useAcceptedExchanges, useCalendar, useCancelExchange, useHousehold, useHouseholdAction, useMe, usePrefetchCalendars,
   useSaveAdjustments,
+  useUpdateMe,
   useWithdrawExchange,
 } from '@/lib/queries'
 import { colors, fonts, tint } from '@/lib/theme'
@@ -62,6 +64,16 @@ export default function CalendarScreen() {
   const [tool, setTool] = useState<AdjustTool>('day')
   // Règles qui se répètent ajoutées pendant l'ajustement, enregistrées avec les jours.
   const [pendingRules, setPendingRules] = useState<RecurringRuleInput[]>([])
+  // « Quoi de neuf » : une fois par compte, pour les comptes antérieurs à la mise à jour.
+  const me = useMe().data
+  const updateMe = useUpdateMe()
+  const [whatsNewClosed, setWhatsNewClosed] = useState(false)
+  const showWhatsNew =
+    !whatsNewClosed && !!me && !!household?.custody_rule && me.whats_new_seen !== WHATS_NEW_ID && (me.created_at ?? '') < WHATS_NEW_SINCE
+  const closeWhatsNew = () => {
+    setWhatsNewClosed(true)
+    updateMe.mutate({ whats_new_seen: WHATS_NEW_ID })
+  }
   const saveRules = useHouseholdAction((rules: RecurringRuleInput[]) => api.setRecurringRules(household!.id, rules))
   const otherOf = (id: number) => household?.members.find((m) => m.id !== id)?.id ?? id
   const whoLabel = (id: number) => {
@@ -193,6 +205,19 @@ export default function CalendarScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.paper }} edges={['top']}>
+      <WhatsNew
+        visible={showWhatsNew && calendar.isSuccess}
+        onClose={closeWhatsNew}
+        onTry={() => {
+          closeWhatsNew()
+          setAdjusting(true)
+          setFlips({})
+          setNotice(null)
+          setTool('day')
+          setPendingRules([])
+          setBrush(household?.members.find((m) => m.id !== meId)?.id ?? meId ?? null)
+        }}
+      />
       <View style={s.header}>
         <Text accessibilityRole="header" style={s.title}>
           {capitalize(formatMonth(month))}

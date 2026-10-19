@@ -193,6 +193,7 @@ export const api = {
   updateMe: (data: {
     display_name?: string; color?: string; email_opt_in?: boolean; onboarding_seen?: boolean; locale?: Locale
     analytics_consent?: boolean
+    whats_new_seen?: string
   }) =>
     request<User>('/auth/me', { method: 'PATCH', body: JSON.stringify(data) }),
   deleteAccount: (data?: { reason: string | null; comment: string }) =>

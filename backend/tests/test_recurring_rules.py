@@ -98,3 +98,10 @@ def test_nulls_from_the_app_are_accepted(client, auth_headers):
     rule = {"kind": "yearly", "parent_id": user["id"], "weekdays": None, "every_other_week": False,
             "anchor_date": None, "include_vacations": False, "start_md": "07-01", "end_md": "07-31", "alternate": True}
     assert put(client, headers, h["id"], [rule]).status_code == 200
+
+
+def test_whats_new_seen_is_stored_per_account(client, auth_headers):
+    headers, _ = auth_headers()
+    assert client.get("/api/auth/me", headers=headers).json()["whats_new_seen"] is None
+    r = client.patch("/api/auth/me", json={"whats_new_seen": "2026-10-calendar-tools"}, headers=headers)
+    assert r.status_code == 200 and r.json()["whats_new_seen"] == "2026-10-calendar-tools"
