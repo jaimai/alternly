@@ -271,7 +271,7 @@ export default function CalendarScreen() {
               ) : null}
               <View style={{ flexDirection: 'row', gap: 8 }}>
                 <Button
-                  title="Ajuster mon planning"
+                  title={me && me.whats_new_seen !== WHATS_NEW_ID ? 'Ajuster mon planning · Nouveau' : 'Ajuster mon planning'}
                   variant="secondary"
                   icon={<Icon name="pencil" size={18} color={colors.pine} strokeWidth={2} />}
                   onPress={() => {
