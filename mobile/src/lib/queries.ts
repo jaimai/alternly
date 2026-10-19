@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useEffect } from 'react'
 import { ApiError, api, isPendingChange } from './api'
 import { useAuth } from './auth'
 import { todayIso } from './dates'
@@ -44,6 +45,19 @@ export function useCalendar(householdId: number | undefined, start: string, end:
     enabled: householdId !== undefined,
     placeholderData: (prev) => prev, // garde le mois affiché pendant le chargement du suivant
   })
+}
+
+/** Précharge les mois voisins : passer au mois suivant ou précédent est instantané. */
+export function usePrefetchCalendars(householdId: number | undefined, ranges: { start: string; end: string }[], ready: boolean) {
+  const qc = useQueryClient()
+  const key = ranges.map((r) => r.start).join(',')
+  useEffect(() => {
+    if (householdId === undefined || !ready) return
+    for (const { start, end } of ranges) {
+      qc.prefetchQuery({ queryKey: keys.calendar(householdId, start, end), queryFn: () => api.calendar(householdId, start, end) })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [qc, householdId, key, ready])
 }
 
 /** Les six prochains mois : accueil (statut, semaine, à venir) et échanges à valider. */

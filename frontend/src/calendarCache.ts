@@ -92,13 +92,38 @@ export function prefetchCurrentMonth(householdId: number) {
   fetchCalendar(householdId, start, end).catch(() => {})
 }
 
+/**
+ * Précharge les plages voisines (mois ou semaine précédente et suivante) : passer
+ * d'une période à l'autre affiche alors le calendrier sans attendre l'API.
+ */
+export function prefetchNeighbors(householdId: number, start: string, end: string) {
+  const days = Math.round((parseIso(end).getTime() - parseIso(start).getTime()) / 86_400_000) + 1
+  const neighbors =
+    days <= 7
+      ? [-7, 7].map((n) => ({ start: addDays(start, n), end: addDays(end, n) }))
+      : [-1, 1].map((n) => {
+          // Milieu de la grille = un jour du mois affiché.
+          const mid = parseIso(addDays(start, Math.floor(days / 2)))
+          return monthGridRange(isoLocal(new Date(mid.getFullYear(), mid.getMonth() + n, 15)))
+        })
+  for (const r of neighbors) {
+    if (!cachedCalendar(householdId, r.start, r.end)) fetchCalendar(householdId, r.start, r.end).catch(() => {})
+  }
+}
+
 export function cachedExceptions(householdId: number): ScheduleException[] | undefined {
   return exceptions.get(householdId)
 }
 
+const exceptionsAt = new Map<number, number>()
+
 export async function fetchExceptions(householdId: number): Promise<ScheduleException[]> {
+  // Changer de période ne redemande pas une liste reçue il y a moins de 30 s.
+  const fresh = exceptions.get(householdId)
+  if (fresh && Date.now() - (exceptionsAt.get(householdId) ?? 0) < FRESH_MS) return fresh
   const list = await api.listExceptions(householdId)
   exceptions.set(householdId, list)
+  exceptionsAt.set(householdId, Date.now())
   return list
 }
 

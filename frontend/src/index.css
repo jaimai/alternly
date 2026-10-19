@@ -2469,3 +2469,87 @@ button.cr-again { display: block; width: 100%; margin-top: 6px; }
 @media (hover: hover) {
   button.cr-brush:hover { background: var(--pine-soft); }
 }
+
+/* Vacances : nouveaux modes et réglage période par période */
+.wz-option-text .vac-new, .vac-new { color: #fff; margin-left: 8px; padding: 2px 8px; border-radius: 999px; background: var(--pine); color: #fff; font-size: 0.7rem; font-weight: 700; vertical-align: 2px; }
+button.vac-more {
+  display: flex; align-items: center; gap: 12px; width: 100%; min-height: 60px; padding: 10px 14px;
+  border: 1px dashed color-mix(in srgb, var(--ink-soft) 50%, transparent); border-radius: 14px;
+  background: transparent; color: var(--ink); text-align: left; box-shadow: none;
+}
+button.vac-more > span:first-child { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+button.vac-more > span:first-child > span { font-size: 0.85rem; color: var(--ink-soft); font-weight: 400; }
+.vac-periods { display: flex; flex-direction: column; gap: 8px; }
+.vac-period { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
+.vac-period-head { display: flex; align-items: center; gap: 8px; }
+.vac-period-head strong { flex: 1; }
+button.vac-flip {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 10px; border-radius: 999px;
+  border: 1px solid var(--line); background: var(--paper); color: var(--ink); font-size: 0.82rem; font-weight: 600; box-shadow: none;
+}
+button.vac-flip .dot { width: 12px; height: 12px; border-radius: 4px; }
+.vac-seg button { flex: 1; }
+button.vac-reset { align-self: flex-start; }
+@media (hover: hover) and (pointer: fine) {
+  button.vac-more:hover, button.vac-flip:hover { background: var(--pine-soft); }
+}
+
+/* Ajuster : pinceau et outil période */
+.adjust-tools { display: flex; flex-direction: column; gap: 10px; padding: 12px; border-radius: 14px; background: var(--pine-soft); margin-bottom: 12px; }
+.adjust-tabs button { flex: 1; }
+.adjust-brushes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+button.adjust-brush {
+  display: flex; align-items: center; gap: 8px; min-height: 46px; padding: 0 12px; border-radius: 12px;
+  border: 1px solid var(--line); background: var(--paper); color: var(--ink); font-weight: 600; box-shadow: none; text-align: left;
+}
+button.adjust-brush.on { background: var(--surface); border-width: 2.5px; padding: 0 10.5px; }
+button.adjust-brush .dot { flex: none; width: 16px; height: 16px; border-radius: 5px; }
+.adjust-tools-hint { margin: 0; font-size: 0.88rem; color: var(--ink-soft); display: flex; gap: 6px; align-items: center; }
+.adjust-period { display: flex; flex-direction: column; gap: 10px; }
+.adjust-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+button.adjust-chip {
+  min-height: 36px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--line);
+  background: var(--surface); color: var(--ink); font-size: 0.88rem; font-weight: 600; box-shadow: none;
+}
+button.adjust-chip.on { border: 2px solid var(--pine); background: var(--pine-soft); color: var(--pine); padding: 0 11px; }
+@media (hover: hover) and (pointer: fine) {
+  button.adjust-brush:hover, button.adjust-chip:hover { background: var(--surface); }
+}
+.adjust-weekdays { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
+.adjust-weekdays button {
+  min-height: 42px; padding: 0; border-radius: 10px; border: 1px solid var(--line);
+  background: var(--surface); color: var(--ink); font-weight: 700; box-shadow: none;
+}
+.adjust-weekdays button.on { background: var(--pine); border-color: var(--pine); color: #fff; }
+.adjust-tools label.check, .adjust-repeat label.check { display: flex; align-items: center; gap: 8px; min-height: 40px; font-weight: 500; }
+.adjust-tools label.check input { width: 18px; height: 18px; margin: 0; accent-color: var(--pine); }
+.adjust-repeat { margin: 0; padding: 0; border: 0; }
+.adjust-repeat legend { padding: 0 0 4px; font-size: 0.85rem; font-weight: 600; color: var(--ink-soft); }
+
+/* Réglages : Mon organisation */
+.org-layers { list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.org-layers > li { display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
+.org-layers > li > a { flex: none; font-weight: 600; font-size: 0.9rem; }
+.org-rank { flex: none; width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; font-weight: 700; font-size: 0.85rem; background: var(--paper-deep, #f3ecdf); }
+.org-rank.base { background: var(--ink); color: var(--paper); }
+.org-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.org-kind { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; color: var(--ink-soft); }
+.org-detail { font-size: 0.85rem; color: var(--ink-soft); }
+.org-rules { list-style: none; margin: 4px 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.org-rules li { display: flex; gap: 8px; align-items: center; justify-content: space-between; font-weight: 600; font-size: 0.92rem; }
+
+/* Fenêtre « Quoi de neuf » */
+.wn-art { display: grid; grid-template-columns: repeat(7, 28px); gap: 6px; justify-content: center; padding: 22px 0; margin: 4px 0 8px; border-radius: 16px; background: var(--pine-soft); }
+.wn-repeat { background: var(--terra-soft, #f5e0d5); }
+.wn-summer { background: var(--paper-deep, #f3ecdf); }
+.wn-cell { width: 28px; height: 28px; border-radius: 8px; }
+.wn-cell.a { background: var(--pine); }
+.wn-cell.b { background: var(--terra); }
+.wn-cell.ring { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--ink); }
+.wn-body { margin: 0; color: var(--ink-soft); line-height: 1.5; }
+.wn-dots { display: flex; justify-content: center; gap: 6px; padding: 12px 0; }
+.wn-dots span { width: 8px; height: 8px; border-radius: 4px; background: var(--line); transition: width 0.2s ease; }
+.wn-dots span.on { width: 22px; background: var(--pine); }
+.wn-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.new-pill { margin-left: 8px; padding: 2px 8px; border-radius: 999px; background: var(--pine); color: #fff; font-size: 0.7rem; font-weight: 700; }
+@media (prefers-reduced-motion: reduce) { .wn-dots span { transition: none; } }

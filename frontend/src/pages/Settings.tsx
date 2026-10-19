@@ -12,6 +12,8 @@ import ColorPicker from '../components/ColorPicker'
 import Icon from '../components/Icon'
 import InviteShare from '../components/InviteShare'
 import Modal from '../components/Modal'
+import OrganisationCard from '../components/OrganisationCard'
+import WhatsNew from '../components/WhatsNew'
 import RuleForm from '../components/RuleForm'
 import Spinner from '../components/Spinner'
 import type { RuleFormValue } from '../components/RuleForm'
@@ -53,6 +55,7 @@ export default function SettingsPage() {
   const [upgradeOpen, setUpgradeOpen] = useState(false)
 
   const refresh = refreshHousehold
+  const [whatsNewOpen, setWhatsNewOpen] = useState(false)
 
   useEffect(() => {
     if (householdLoaded && !household) navigate('/onboarding', { replace: true })
@@ -279,7 +282,9 @@ export default function SettingsPage() {
           <SchoolBreaks household={household} onChanged={refresh} />
         )}
 
-        <div className="card">
+        <OrganisationCard household={household} myId={user.id} onChanged={refresh} />
+
+        <div className="card" id="special-days">
           <h2>{t('settings.holidays')}</h2>
           <p style={{ color: 'var(--ink-soft)', fontSize: '0.9rem' }}>
             {t('settings.holidaysHint')}
@@ -331,7 +336,7 @@ export default function SettingsPage() {
           ))}
         </div>
 
-        <div className="card">
+        <div className="card" id="rules-form">
           <RuleForm
             members={household.members}
             myId={user.id}
@@ -343,6 +348,11 @@ export default function SettingsPage() {
             onSubmit={saveRules}
           />
           <p className="hint" style={{ marginTop: 14 }}>
+            <button type="button" className="link" onClick={() => setWhatsNewOpen(true)}>
+              {t('whatsNew.settingsLink')}
+            </button>
+            {whatsNewOpen && <WhatsNew onClose={() => setWhatsNewOpen(false)} />}
+            {' · '}
             {t('settings.restartSetupHint')}{' '}
             <Link to="/onboarding?restart=1">{t('settings.restartSetup')}</Link>
           </p>

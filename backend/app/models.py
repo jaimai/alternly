@@ -27,6 +27,8 @@ class User(Base):
     ical_token: Mapped[str] = mapped_column(String, unique=True, default=new_token)
     email_opt_in: Mapped[bool] = mapped_column(Boolean, default=True)
     onboarding_seen: Mapped[bool] = mapped_column(Boolean, default=False)
+    # Dernière fenêtre « Quoi de neuf » vue (identifiant de version), une fois par compte.
+    whats_new_seen: Mapped[str | None] = mapped_column(String, nullable=True)
     locale: Mapped[str] = mapped_column(String, default="fr")  # langue de l'UI : fr | en
     # Second parent « fantôme » : créé automatiquement pour un foyer solo afin
     # de pouvoir lui assigner des dépenses avant qu'il n'ait un vrai compte.
@@ -149,8 +151,10 @@ class VacationRule(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     household_id: Mapped[int] = mapped_column(ForeignKey("households.id"), unique=True)
-    mode: Mapped[str] = mapped_column(String, default="split_half")  # split_half | alternate_full
+    mode: Mapped[str] = mapped_column(String, default="split_half")  # split_half | alternate_full | july_august | weekly
     even_year_first_half_parent_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    # Réglage période par période (toussaint, noel, hiver, printemps, ete) : {"mode", "flip"}.
+    period_modes: Mapped[dict | None] = mapped_column(JSON, nullable=True)
 
 
 class SpecialDayRule(Base):
@@ -163,6 +167,25 @@ class SpecialDayRule(Base):
     parent_mode: Mapped[str] = mapped_column(String, default="auto")  # auto | fixed
     parent_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
     enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+
+
+class RecurringRule(Base):
+    """Règle qui se répète en plus du rythme : jours de la semaine ou période de l'année."""
+    __tablename__ = "recurring_rules"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    household_id: Mapped[int] = mapped_column(ForeignKey("households.id"), index=True)
+    kind: Mapped[str] = mapped_column(String)  # weekly | yearly
+    # Parent concerné (yearly alterné : parent des années paires).
+    parent_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    weekdays: Mapped[list | None] = mapped_column(JSON, nullable=True)  # 0 = lundi
+    every_other_week: Mapped[bool] = mapped_column(Boolean, default=False)
+    anchor_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    include_vacations: Mapped[bool] = mapped_column(Boolean, default=False)
+    start_md: Mapped[str | None] = mapped_column(String, nullable=True)  # "MM-DD"
+    end_md: Mapped[str | None] = mapped_column(String, nullable=True)
+    alternate: Mapped[bool] = mapped_column(Boolean, default=False)
+    position: Mapped[int] = mapped_column(Integer, default=0)
 
 
 class ScheduleException(Base):

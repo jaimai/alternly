@@ -1,0 +1,22 @@
+{
+  "organisation.title": "My setup",
+  "organisation.intro": "Your rules stack up: when two fall on the same day, the one on top wins.",
+  "organisation.layerAdjusted": "Customised days",
+  "organisation.adjustedTitle": "Adjusted by hand, or accepted swaps",
+  "organisation.openCalendar": "Calendar",
+  "organisation.layerSpecial": "Special days",
+  "organisation.specialCount_one": "1 special day",
+  "organisation.specialCount_other": "{{count}} special days",
+  "organisation.layerHolidays": "School breaks",
+  "organisation.periodByPeriod": "Set break by break",
+  "organisation.layerBase": "Usual schedule",
+  "organisation.none": "None",
+  "organisation.edit": "Edit",
+  "organisation.remove": "Remove",
+  "organisation.removed": "Rule removed.",
+  "organisation.removeProposed": "Request sent to the other parent: the rule goes once they agree.",
+  "organisation.layerYearly": "Periods of the year",
+  "organisation.yearlyHint": "From Calendar › Adjust › A period, “every other year” or “every year”.",
+  "organisation.layerWeekly": "Weekly rules",
+  "organisation.weeklyHint": "From Calendar › Adjust my schedule › Repeat."
+}

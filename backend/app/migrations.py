@@ -23,6 +23,7 @@ _ADD_COLUMNS: dict[str, dict[str, str]] = {
     "users": {
         "email_opt_in": "BOOLEAN",
         "onboarding_seen": "BOOLEAN",
+        "whats_new_seen": "VARCHAR",
         "subscription_status": "VARCHAR",
         "trial_ends_at": "TIMESTAMP",
         "paywall_seen_at": "TIMESTAMP",
@@ -52,6 +53,9 @@ _ADD_COLUMNS: dict[str, dict[str, str]] = {
     "expenses": {
         "settled_at": "TIMESTAMP",
         "settled_by": "INTEGER",
+    },
+    "vacation_rules": {
+        "period_modes": "JSON",
     },
     "households": {
         "country": "VARCHAR",

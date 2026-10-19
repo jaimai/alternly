@@ -36,6 +36,9 @@ export const EV = {
   exchangeWithdrawn: 'exchange_withdrawn',
   exchangeDeleted: 'exchange_deleted',
   adjustModeOpened: 'adjust_mode_opened', // « Ajuster mon planning » ouvert
+  adjustPeriodApplied: 'adjust_period_applied', // days — outil « Une période » appliqué
+  whatsNewClosed: 'whats_new_closed', // id — fenêtre « Quoi de neuf » fermée
+  adjustRuleAdded: 'adjust_rule_added', // kind (weekly|yearly) — règle qui se répète ajoutée au récap
   adjustModeCancelled: 'adjust_mode_cancelled', // days: jours touchés puis abandonnés
   changeRequestCreated: 'change_request_created', // kind
   changeRequestAccepted: 'change_request_accepted', // kind

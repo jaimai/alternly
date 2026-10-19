@@ -29,6 +29,8 @@ import type {
   WallPost,
   WallReply,
   AdjustmentsResult,
+  RecurringRule,
+  RecurringRuleInput,
 } from './types'
 import { hasPendingInvite } from './pendingInvite'
 
@@ -158,7 +160,7 @@ export const api = {
   billingStatus: () => request<BillingStatus>('/billing/status'),
   /** Relit l'état des achats chez RevenueCat puis renvoie le statut à jour. */
   storeSync: () => request<BillingStatus>('/billing/store-sync', { method: 'POST' }),
-  updateMe: (data: { display_name?: string; color?: string; email_opt_in?: boolean }) =>
+  updateMe: (data: { display_name?: string; color?: string; email_opt_in?: boolean; whats_new_seen?: string }) =>
     request<User>('/auth/me', { method: 'PATCH', body: data }),
   /** Révoque les autres sessions : renvoie un nouveau jeton pour ce téléphone. */
   changePassword: (current_password: string, new_password: string) =>
@@ -212,6 +214,8 @@ export const api = {
     request<VacationRule | PendingChange>(`/households/${householdId}/vacation-rule`, { method: 'PUT', body: rule }),
   setSpecialDayRules: (householdId: number, rules: SpecialDayRule[]) =>
     request<SpecialDayRule[] | PendingChange>(`/households/${householdId}/special-day-rules`, { method: 'PUT', body: rules }),
+  setRecurringRules: (householdId: number, rules: RecurringRuleInput[]) =>
+    request<RecurringRule[] | PendingChange>(`/households/${householdId}/recurring-rules`, { method: 'PUT', body: rules }),
   deleteChild: (householdId: number, childId: number) =>
     request<PendingChange | undefined>(`/households/${householdId}/children/${childId}`, { method: 'DELETE' }),
   updateHousehold: (householdId: number, data: { name?: string; school_zone?: 'A' | 'B' | 'C' }) =>

@@ -7,6 +7,7 @@ export interface User {
   color: string
   email_opt_in: boolean
   onboarding_seen: boolean
+  whats_new_seen?: string | null
   locale: Locale
   /** Faux pour un compte créé via Google sans mot de passe défini. */
   has_password?: boolean
@@ -66,9 +67,32 @@ export interface CustodyRule {
   custom_weeks: string[] | null
 }
 
+export type VacationMode = 'split_half' | 'alternate_full' | 'july_august' | 'weekly'
+export type VacationPeriodKind = 'toussaint' | 'noel' | 'hiver' | 'printemps' | 'ete'
+/** Réglage période par période ; `flip` inverse le parent qui commence pour cette période. */
+export type VacationPeriodModes = Partial<Record<VacationPeriodKind, { mode: VacationMode; flip: boolean }>>
+
+/** Règle qui se répète : jours de la semaine (weekly) ou période de l'année (yearly, « MM-DD »). */
+export interface RecurringRuleInput {
+  kind: 'weekly' | 'yearly'
+  parent_id: number
+  weekdays?: number[] | null // 0 = lundi
+  every_other_week?: boolean
+  anchor_date?: string | null
+  include_vacations?: boolean
+  start_md?: string | null
+  end_md?: string | null
+  alternate?: boolean
+}
+
+export interface RecurringRule extends RecurringRuleInput {
+  id: number
+}
+
 export interface VacationRule {
-  mode: 'split_half' | 'alternate_full'
+  mode: VacationMode
   even_year_first_half_parent_id: number | null
+  period_modes?: VacationPeriodModes | null
 }
 
 export type SpecialDayKind =
@@ -109,6 +133,7 @@ export interface Household {
   custody_rule: CustodyRule | null
   vacation_rule: VacationRule | null
   special_day_rules: SpecialDayRule[]
+  recurring_rules?: RecurringRule[]
   school_vacations: SchoolVacation[]
   my_role: string | null
 }
@@ -116,7 +141,7 @@ export interface Household {
 export interface CalendarDay {
   date: string
   parent_id: number
-  source: 'rule' | 'vacation' | 'special' | 'exception' | 'adjustment'
+  source: 'rule' | 'vacation' | 'special' | 'exception' | 'adjustment' | 'recurring'
 }
 
 export interface PendingExchange {
@@ -242,7 +267,13 @@ export interface Balance {
   i_owe_cents: number
 }
 
-export type ChangeKind = 'custody_rule' | 'vacation_rule' | 'special_day_rules' | 'delete_child' | 'cancel_exchange'
+export type ChangeKind =
+  | 'custody_rule'
+  | 'vacation_rule'
+  | 'special_day_rules'
+  | 'recurring_rules'
+  | 'delete_child'
+  | 'cancel_exchange'
 
 /** Changement sensible soumis à l'accord de l'autre parent. */
 export interface ChangeRequest {

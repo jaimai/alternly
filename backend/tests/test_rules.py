@@ -190,3 +190,24 @@ class TestSpecialDayAlternate:
         d27 = next(d for d in cal27["days"] if d["date"] == "2027-12-25")
         assert d26["parent_id"] == user1["id"] and d26["source"] == "special"
         assert d27["parent_id"] == user2["id"] and d27["source"] == "special"
+
+
+class TestVacationModes:
+    def test_july_august_and_period_modes_round_trip(self, client, auth_headers):
+        headers1, user1, _, _, h = setup_family(client, auth_headers)
+        body = {
+            "mode": "july_august",
+            "even_year_first_half_parent_id": user1["id"],
+            "period_modes": {"noel": {"mode": "weekly", "flip": True}},
+        }
+        resp = client.put(f"/api/households/{h['id']}/vacation-rule", json=body, headers=headers1)
+        assert resp.status_code == 200, resp.text
+        assert resp.json()["mode"] == "july_august"
+        assert resp.json()["period_modes"] == {"noel": {"mode": "weekly", "flip": True}}
+
+    def test_july_august_only_for_summer(self, client, auth_headers):
+        headers1, user1, _, _, h = setup_family(client, auth_headers)
+        body = {"mode": "split_half", "even_year_first_half_parent_id": user1["id"],
+                "period_modes": {"hiver": {"mode": "july_august"}}}
+        resp = client.put(f"/api/households/{h['id']}/vacation-rule", json=body, headers=headers1)
+        assert resp.status_code == 422

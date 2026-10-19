@@ -6,8 +6,9 @@ import { mondayOf, sideOn, weekday } from '../custodyPreview'
 import type { Side } from '../custodyPreview'
 import { addDays, daysBetween, parseIso, todayIso } from '../dates'
 import { useFormat } from '../format'
-import type { CustodyRule, Member, Pattern, VacationRule } from '../types'
+import type { CustodyRule, Member, Pattern, VacationMode, VacationPeriodModes, VacationRule } from '../types'
 import type { RuleFormValue } from './RuleForm'
+import VacationPicker from './VacationPicker'
 import { CURRENT, CycleDrawer, MonthCheck, TEMPLATES, TemplatePicker, templateCells } from './CustomRhythm'
 import type { Cell } from './CustomRhythm'
 
@@ -28,6 +29,8 @@ const THUMBS: Record<Pattern, string> = {
   two_two_three: 'aabbaaabbaabbb',
   custom: 'xxxxxxxxxxxxxx',
 }
+
+const VAC_KEY: Record<VacationMode, string> = { split_half: 'Half', alternate_full: 'Full', july_august: 'JulyAugust', weekly: 'Weekly' }
 
 const DEFAULT_CUSTOM: Side[] = Array.from({ length: 14 }, (_, i) => (i < 7 ? 'ref' : 'other'))
 
@@ -62,7 +65,8 @@ export default function RuleWizard({ members, myId, childNames, initialCustody, 
   const [customWeeks, setCustomWeeks] = useState<Side[]>(
     (initialCustody?.custom_weeks as Side[] | null | undefined) ?? DEFAULT_CUSTOM,
   )
-  const [vacMode, setVacMode] = useState<'split_half' | 'alternate_full'>(initialVacation?.mode ?? 'split_half')
+  const [vacMode, setVacMode] = useState<VacationMode>(initialVacation?.mode ?? 'split_half')
+  const [periodModes, setPeriodModes] = useState<VacationPeriodModes>(initialVacation?.period_modes ?? {})
   const [evenParent, setEvenParent] = useState<number>(initialVacation?.even_year_first_half_parent_id ?? myId)
   // Dernier jour touché à l'étape 3, et l'état d'avant pour « Annuler ».
   const [adjust, setAdjust] = useState<{
@@ -162,7 +166,11 @@ export default function RuleWizard({ members, myId, childNames, initialCustody, 
         handover_time: handoverTime,
         custom_weeks: pattern === 'custom' ? customWeeks : null,
       },
-      vacation: { mode: vacMode, even_year_first_half_parent_id: evenParent },
+      vacation: {
+        mode: vacMode,
+        even_year_first_half_parent_id: evenParent,
+        period_modes: Object.keys(periodModes).length ? periodModes : null,
+      },
     })
   }
 
@@ -445,40 +453,17 @@ export default function RuleWizard({ members, myId, childNames, initialCustody, 
       {step === 3 && (
         <>
           <h2 className="wz-title">{t('wizard.vacTitle')}</h2>
-          <div className="wz-options">
-            {(['split_half', 'alternate_full'] as const).map((mode) => {
-              const first = colorOf(thisYearParent === referenceParent ? 'ref' : 'other')
-              const second = colorOf(thisYearParent === referenceParent ? 'other' : 'ref')
-              const bars =
-                mode === 'split_half'
-                  ? [`linear-gradient(90deg, ${first} 0 50%, ${second} 50% 100%)`, `linear-gradient(90deg, ${second} 0 50%, ${first} 50% 100%)`]
-                  : [first, second]
-              return (
-                <button
-                  key={mode}
-                  type="button"
-                  aria-pressed={vacMode === mode}
-                  className={`wz-option wz-vac${vacMode === mode ? ' selected' : ''}`}
-                  onClick={() => setVacMode(mode)}
-                >
-                  <span className="wz-option-text">
-                    <strong>{t(mode === 'split_half' ? 'wizard.vacHalfTitle' : 'wizard.vacFullTitle')}</strong>
-                    <span>{t(mode === 'split_half' ? 'wizard.vacHalfDesc' : 'wizard.vacFullDesc')}</span>
-                  </span>
-                  <span className="wz-bars" aria-hidden="true">
-                    {bars.map((bg, i) => (
-                      <span key={i} className="wz-bar-row">
-                        <span>{year + i}</span>
-                        <span className="wz-bar" style={{ background: bg }} />
-                      </span>
-                    ))}
-                  </span>
-                </button>
-              )
-            })}
-          </div>
+          <VacationPicker
+            mode={vacMode}
+            onMode={setVacMode}
+            periodModes={periodModes}
+            onPeriodModes={setPeriodModes}
+            first={colorOf(thisYearParent === referenceParent ? 'ref' : 'other')}
+            second={colorOf(thisYearParent === referenceParent ? 'other' : 'ref')}
+            year={year}
+          />
           <p className="wz-question">
-            {t(vacMode === 'split_half' ? 'wizard.vacWhoHalf' : 'wizard.vacWhoFull', { year })}
+            {t(`wizard.vacWho${VAC_KEY[vacMode]}`, { year })}
           </p>
           <div className="wz-who compact">
             {[me, other].filter((m): m is Member => !!m).map((m) => (
@@ -494,7 +479,7 @@ export default function RuleWizard({ members, myId, childNames, initialCustody, 
             ))}
           </div>
           <p className="wz-example">
-            {t(`wizard.vacExample${vacMode === 'split_half' ? 'Half' : 'Full'}${thisYearParent === myId ? 'Me' : 'Other'}`)}
+            {t(`wizard.vacExample${VAC_KEY[vacMode]}${thisYearParent === myId ? 'Me' : 'Other'}`)}
           </p>
         </>
       )}

@@ -8,7 +8,8 @@ from pydantic import AfterValidator, BaseModel, ConfigDict, EmailStr, Field
 DateType = date
 
 PATTERNS = {"alternate_weeks", "two_two_three", "every_other_weekend", "custom"}
-VACATION_MODES = {"split_half", "alternate_full"}
+VACATION_MODES = {"split_half", "alternate_full", "july_august", "weekly"}
+VACATION_PERIOD_KINDS = ("toussaint", "noel", "hiver", "printemps", "ete")
 SPECIAL_KINDS = {
     "christmas_eve", "christmas_day", "mothers_day", "fathers_day",
     # États-Unis
@@ -104,6 +105,7 @@ class UserOut(ORMModel):
     color: str
     email_opt_in: bool
     onboarding_seen: bool
+    whats_new_seen: str | None = None
     locale: str
     has_password: bool = True
     # Mode de connexion principal (analytics, sans donnée d'identification).
@@ -120,6 +122,7 @@ class UserUpdate(BaseModel):
     color: str | None = Field(default=None, pattern=COLOR_PATTERN)
     email_opt_in: bool | None = None
     onboarding_seen: bool | None = None
+    whats_new_seen: str | None = Field(default=None, max_length=40)
     locale: Literal["fr", "en"] | None = None
     analytics_consent: bool | None = None
 
@@ -180,14 +183,21 @@ class CustodyRuleOut(ORMModel):
     custom_weeks: list[str] | None
 
 
+class VacationPeriodMode(BaseModel):
+    mode: str
+    flip: bool = False
+
+
 class VacationRuleIn(BaseModel):
     mode: str = "split_half"
     even_year_first_half_parent_id: int | None = None
+    period_modes: dict[str, VacationPeriodMode] | None = None
 
 
 class VacationRuleOut(ORMModel):
     mode: str
     even_year_first_half_parent_id: int | None
+    period_modes: dict | None = None
 
 
 class SpecialDayRuleIn(BaseModel):
@@ -198,6 +208,34 @@ class SpecialDayRuleIn(BaseModel):
 
 
 SpecialDayRulesIn = Annotated[list[SpecialDayRuleIn], Field(max_length=50)]
+
+
+class RecurringRuleIn(BaseModel):
+    kind: Literal["weekly", "yearly"]
+    parent_id: int
+    weekdays: list[int] | None = Field(default=None, max_length=7)
+    every_other_week: bool = False
+    anchor_date: date | None = None
+    include_vacations: bool = False
+    start_md: str | None = Field(default=None, pattern=r"^\d{2}-\d{2}$")
+    end_md: str | None = Field(default=None, pattern=r"^\d{2}-\d{2}$")
+    alternate: bool = False
+
+
+RecurringRulesIn = Annotated[list[RecurringRuleIn], Field(max_length=20)]
+
+
+class RecurringRuleOut(ORMModel):
+    id: int
+    kind: str
+    parent_id: int
+    weekdays: list[int] | None
+    every_other_week: bool
+    anchor_date: date | None
+    include_vacations: bool
+    start_md: str | None
+    end_md: str | None
+    alternate: bool
 
 
 class SpecialDayRuleOut(ORMModel):
@@ -243,6 +281,7 @@ class HouseholdOut(ORMModel):
     custody_rule: CustodyRuleOut | None = None
     vacation_rule: VacationRuleOut | None = None
     special_day_rules: list[SpecialDayRuleOut] = []
+    recurring_rules: list[RecurringRuleOut] = []
     school_vacations: list[SchoolVacationOut] = []
     my_role: str | None = None
 
@@ -292,7 +331,7 @@ class AdjustmentDay(BaseModel):
 
 class AdjustmentsIn(BaseModel):
     """« Ajuster mon planning » : jours à personnaliser et jours à rendre au rythme."""
-    set: list[AdjustmentDay] = Field(default_factory=list, max_length=62)
+    set: list[AdjustmentDay] = Field(default_factory=list, max_length=120)
     clear: list[int] = Field(default_factory=list, max_length=62)
     note: str = Field(default="", max_length=NOTE_MAX)
 

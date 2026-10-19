@@ -465,6 +465,8 @@ def update_me(data: UserUpdate, user: User = Depends(get_current_user), db: Sess
         user.email_opt_in = data.email_opt_in
     if data.onboarding_seen is not None:
         user.onboarding_seen = data.onboarding_seen
+    if data.whats_new_seen is not None:
+        user.whats_new_seen = data.whats_new_seen
     if data.locale is not None:
         user.locale = data.locale
     if data.analytics_consent is not None:

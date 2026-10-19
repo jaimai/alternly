@@ -6,7 +6,8 @@ import type { Side } from '../custodyPreview'
 import { addDays, parseIso, todayIso } from '../dates'
 import { useFormat } from '../format'
 import { isSolo } from '../members'
-import type { CustodyRule, Member, Pattern, VacationRule } from '../types'
+import type { CustodyRule, Member, Pattern, VacationMode, VacationPeriodModes, VacationRule } from '../types'
+import VacationPicker from './VacationPicker'
 
 const PATTERN_OPTIONS: Pattern[] = ['alternate_weeks', 'two_two_three', 'every_other_weekend', 'custom']
 
@@ -61,7 +62,8 @@ export default function RuleForm({
   const [customWeeks, setCustomWeeks] = useState<string[]>(
     initialCustody?.custom_weeks ?? Array.from({ length: 14 }, (_, i) => (i < 7 ? 'ref' : 'other')),
   )
-  const [vacMode, setVacMode] = useState<'split_half' | 'alternate_full'>(initialVacation?.mode ?? 'split_half')
+  const [vacMode, setVacMode] = useState<VacationMode>(initialVacation?.mode ?? 'split_half')
+  const [periodModes, setPeriodModes] = useState<VacationPeriodModes>(initialVacation?.period_modes ?? {})
   const [evenParent, setEvenParent] = useState<number>(
     initialVacation?.even_year_first_half_parent_id ?? myId,
   )
@@ -83,7 +85,11 @@ export default function RuleForm({
       handover_time: handoverTime,
       custom_weeks: pattern === 'custom' ? customWeeks : null,
     },
-    vacation: { mode: vacMode, even_year_first_half_parent_id: evenParent },
+    vacation: {
+      mode: vacMode,
+      even_year_first_half_parent_id: evenParent,
+      period_modes: Object.keys(periodModes).length ? periodModes : null,
+    },
   }
   const current = JSON.stringify(value)
   // Réglages : rien à enregistrer tant que le formulaire correspond aux règles en place.
@@ -102,6 +108,7 @@ export default function RuleForm({
         vacation: {
           mode: initialVacation?.mode ?? 'split_half',
           even_year_first_half_parent_id: initialVacation?.even_year_first_half_parent_id ?? myId,
+          period_modes: initialVacation?.period_modes ?? null,
         },
       })
   const showSaved = !!savedMessage && lastSubmitted === current
@@ -301,33 +308,17 @@ export default function RuleForm({
       </div>
 
       <h2 style={{ marginTop: 24 }}>{t('rules.vacationsTitle')}</h2>
-      <div className="choice-list">
-        <label className={`choice ${vacMode === 'split_half' ? 'selected' : ''}`}>
-          <input type="radio" name="vac" checked={vacMode === 'split_half'} onChange={() => setVacMode('split_half')} />
-          <span>
-            <strong>{t('rules.vacSplitHalfTitle')}</strong>
-            <div className="desc">
-              {t('rules.vacSplitHalfDesc')}
-            </div>
-          </span>
-        </label>
-        <label className={`choice ${vacMode === 'alternate_full' ? 'selected' : ''}`}>
-          <input
-            type="radio"
-            name="vac"
-            checked={vacMode === 'alternate_full'}
-            onChange={() => setVacMode('alternate_full')}
-          />
-          <span>
-            <strong>{t('rules.vacAlternateFullTitle')}</strong>
-            <div className="desc">{t('rules.vacAlternateFullDesc')}</div>
-          </span>
-        </label>
-      </div>
+      <VacationPicker
+        mode={vacMode}
+        onMode={setVacMode}
+        periodModes={periodModes}
+        onPeriodModes={setPeriodModes}
+        first={members.find((m) => m.id === evenParent)?.color ?? 'var(--pine)'}
+        second={members.find((m) => m.id !== evenParent)?.color ?? 'var(--terra)'}
+        year={new Date().getFullYear()}
+      />
       <label htmlFor="evenparent">
-        {vacMode === 'split_half'
-          ? t('rules.evenYearFirstHalfLabel')
-          : t('rules.evenYearVacationLabel')}
+        {vacMode === 'alternate_full' ? t('rules.evenYearVacationLabel') : t('rules.evenYearFirstHalfLabel')}
       </label>
       <select id="evenparent" value={evenParent} onChange={(e) => setEvenParent(Number(e.target.value))}>
         {members.map((m) => (

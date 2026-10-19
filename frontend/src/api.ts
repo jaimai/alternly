@@ -5,9 +5,9 @@ import type {
   CalendarResponse,
   ChangeRequest,
   Child,
+  Country,
   CustodyRule,
   Expense,
-  Country,
   HistoryEntry,
   Household,
   Invitation,
@@ -17,11 +17,13 @@ import type {
   Member,
   Notification,
   PendingChange,
-  SchoolVacation,
-  SubscriptionInfo,
+  RecurringRule,
+  RecurringRuleInput,
   ScheduleException,
+  SchoolVacation,
   Settlement,
   SpecialDayRule,
+  SubscriptionInfo,
   User,
   VacationRule,
   WallPost,
@@ -191,6 +193,7 @@ export const api = {
   updateMe: (data: {
     display_name?: string; color?: string; email_opt_in?: boolean; onboarding_seen?: boolean; locale?: Locale
     analytics_consent?: boolean
+    whats_new_seen?: string
   }) =>
     request<User>('/auth/me', { method: 'PATCH', body: JSON.stringify(data) }),
   deleteAccount: (data?: { reason: string | null; comment: string }) =>
@@ -263,6 +266,12 @@ export const api = {
     evChange(
       request<SpecialDayRule[] | PendingChange>(`/households/${householdId}/special-day-rules`, { method: 'PUT', body: JSON.stringify(data) }),
       'special_day_rules',
+    ),
+
+  setRecurringRules: (householdId: number, data: RecurringRuleInput[]) =>
+    evChange(
+      request<RecurringRule[] | PendingChange>(`/households/${householdId}/recurring-rules`, { method: 'PUT', body: JSON.stringify(data) }),
+      'recurring_rules',
     ),
 
   listChangeRequests: (householdId: number, status: 'pending' | 'all' = 'pending') =>
