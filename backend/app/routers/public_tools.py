@@ -27,7 +27,7 @@ def vacation_split(
     zone: Literal["A", "B", "C"],
     period: Literal["toussaint", "noel", "hiver", "printemps", "ete"],
     year: int = Query(ge=2000, le=2100),
-    mode: Literal["split_half", "alternate_full"] = "split_half",
+    mode: Literal["split_half", "alternate_full", "july_august", "weekly"] = "split_half",
     even_first: Literal["A", "B"] = "A",
     db: Session = Depends(get_db),
 ):
@@ -56,7 +56,7 @@ def vacation_year(
     response: Response,
     zone: Literal["A", "B", "C"],
     school_year: str = Query(pattern=r"^\d{4}-\d{4}$"),
-    mode: Literal["split_half", "alternate_full"] = "split_half",
+    mode: Literal["split_half", "alternate_full", "july_august", "weekly"] = "split_half",
     even_first: Literal["A", "B"] = "A",
     db: Session = Depends(get_db),
 ):

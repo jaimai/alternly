@@ -1,11 +1,14 @@
 // Réglages repris de l'outil « vacances » du site (zone, règle de vacances) pour
 // pré-remplir l'onboarding : le parent qui vient de faire son calcul n'a pas à
 // refaire ses choix. Conservés le temps de l'inscription (localStorage).
+import type { VacationMode } from './types'
+
 const KEY = 'tool_prefill'
+const VAC_MODES: readonly VacationMode[] = ['split_half', 'alternate_full', 'july_august', 'weekly']
 
 export interface ToolPrefill {
   zone?: 'A' | 'B' | 'C'
-  vacMode?: 'split_half' | 'alternate_full'
+  vacMode?: VacationMode
 }
 
 export function saveToolPrefill(params: URLSearchParams): ToolPrefill | null {
@@ -13,7 +16,7 @@ export function saveToolPrefill(params: URLSearchParams): ToolPrefill | null {
   const vacMode = params.get('vac_mode')
   const value: ToolPrefill = {}
   if (zone === 'A' || zone === 'B' || zone === 'C') value.zone = zone
-  if (vacMode === 'split_half' || vacMode === 'alternate_full') value.vacMode = vacMode
+  if (vacMode && (VAC_MODES as readonly string[]).includes(vacMode)) value.vacMode = vacMode as VacationMode
   if (!value.zone && !value.vacMode) return null
   try {
     localStorage.setItem(KEY, JSON.stringify(value))

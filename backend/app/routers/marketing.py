@@ -249,11 +249,71 @@ def tool_vacation_split(request: Request, db: Session = Depends(get_db)):
             "quick": quick,
             "error": error,
             "zones": ZONE_ACADEMIES,
+            "mode_labels": vacation_tool.MODE_LABELS,
             "faq": TOOL_FAQ,
             "cta_href": tool_cta_href(form if submitted else None),
             "cta_base": TOOL_CTA,
             "tool_title": TOOL_TITLE,
             "canonical": f"{site_base(request)}{TOOL_PATH}",
+        },
+    )
+
+
+NOEL_PATH = "/outils/noel-garde-alternee"
+NOEL_CTA = "/register?lang=fr&utm_source=noel&utm_medium=web&utm_campaign=noel-2026"
+NOEL_FAQ = [
+    (
+        "Qui a les enfants à Noël en garde alternée ?",
+        "Le plus souvent, les vacances de Noël sont partagées par moitié : le parent qui a la "
+        "première moitié les années paires a les enfants du début des vacances jusqu'au milieu, "
+        "donc le 24 et le 25 décembre ; l'autre parent a la seconde moitié, avec le Nouvel An. "
+        "L'ordre s'inverse l'année suivante.",
+    ),
+    (
+        "Pour Noël, quelle année compte : celle du 24 décembre ou celle de la rentrée ?",
+        "C'est l'année du premier jour des vacances qui compte : les vacances qui commencent en "
+        "décembre 2026 suivent la règle des années paires, même si elles se terminent en 2027.",
+    ),
+    (
+        "Peut-on alterner le réveillon et le jour de Noël indépendamment des vacances ?",
+        "Oui, si vous êtes d'accord ou si votre convention le prévoit : beaucoup de parents "
+        "séparent le 24 au soir et le 25, ou alternent chaque année qui a le réveillon. Alternly "
+        "permet de régler ces jours à part, ils passent alors avant le partage des vacances.",
+    ),
+    (
+        "Les dates de Noël sont-elles les mêmes dans toutes les zones ?",
+        "Oui, les vacances de Noël sont communes aux zones A, B et C.",
+    ),
+]
+
+
+def christmas_year(today: date | None = None) -> int:
+    """Année des prochaines vacances de Noël (celles en cours jusqu'au 6 janvier)."""
+    today = today or date.today()
+    return today.year - 1 if today.month == 1 and today.day <= 6 else today.year
+
+
+@router.get(NOEL_PATH, response_class=HTMLResponse, include_in_schema=False)
+def tool_christmas(request: Request, db: Session = Depends(get_db)):
+    """Page de campagne « Qui a les enfants à Noël ? » : dates officielles et les
+    partages les plus courants, calculés par le moteur de garde (dates communes aux zones)."""
+    year = christmas_year()
+    splits: dict[str, dict | None] = {}
+    for mode in ("split_half", "alternate_full", "weekly"):
+        try:
+            splits[mode] = vacation_tool.vacation_split(db, "A", "noel", year, mode, "A")
+        except (PublicDataUnavailable, vacation_tool.PeriodNotPublished):
+            splits[mode] = None
+    return templates.TemplateResponse(
+        request,
+        "outil_noel.html",
+        {
+            "year": year,
+            "splits": splits,
+            "faq": NOEL_FAQ,
+            "cta_href": NOEL_CTA,
+            "tool_href": f"{TOOL_PATH}?vacances=noel-{year}",
+            "canonical": f"{site_base(request)}{NOEL_PATH}",
         },
     )
 
@@ -315,7 +375,7 @@ def robots(request: Request):
 def sitemap(request: Request):
     base = site_base(request)
     entries = [(f"{base}/", None, "1.0"), (f"{base}/en", None, "0.9"), (f"{base}/blog", None, "0.7"),
-               (f"{base}{TOOL_PATH}", None, "0.8")]
+               (f"{base}{TOOL_PATH}", None, "0.8"), (f"{base}{NOEL_PATH}", None, "0.8")]
     for a in load_articles():
         entries.append((f"{base}/blog/{a.slug}", a.date.isoformat(), "0.6"))
     entries.append((f"{base}/en/blog", None, "0.7"))

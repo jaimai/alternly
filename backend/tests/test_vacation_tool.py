@@ -291,6 +291,52 @@ class TestSeo:
     def test_toussaint_guide_published(self, client):
         slugs = [a.slug for a in load_articles()]
         assert "vacances-toussaint-2026-garde-alternee" in slugs
-        assert len(slugs) == 14
+        assert len(slugs) == 16
         resp = client.get("/blog/vacances-toussaint-2026-garde-alternee")
         assert resp.status_code == 200 and "Toussaint 2026" in resp.text
+
+
+NOEL = "/outils/noel-garde-alternee"
+
+
+class TestNewModes:
+    def test_weekly_and_july_august_accepted(self, client):
+        weekly = split(client, period="noel", zone="A", mode="weekly")
+        assert weekly.status_code == 200, weekly.text
+        assert len(weekly.json()["segments"]) >= 2
+        summer = split(client, period="ete", zone="A", year=2027, mode="july_august")
+        assert summer.status_code == 200, summer.text
+        assert {s["parent"] for s in summer.json()["segments"]} == {"A", "B"}
+
+    def test_tool_page_shows_new_modes(self, client):
+        html = client.get(PAGE).text
+        assert 'value="july_august"' in html and 'value="weekly"' in html
+        resp = client.get(PAGE, params={"zone": "A", "vacances": "noel-2026", "mode": "weekly", "even_first": "A"})
+        assert resp.status_code == 200 and "une semaine sur deux" in resp.text
+
+
+class TestChristmasPage:
+    def test_renders(self, client, monkeypatch):
+        from app.routers import marketing
+        monkeypatch.setattr(marketing, "christmas_year", lambda today=None: 2026)
+        resp = client.get(NOEL)
+        assert resp.status_code == 200, resp.text
+        html = resp.text
+        assert "Qui a les enfants" in html and "Noël 2026" in html
+        assert '"@type": "FAQPage"' in html
+        assert 'data-cta="noel_half"' in html and "Passage de bras" in html
+        assert "utm_campaign=noel-2026" in html
+        assert f"{PAGE}?vacances=noel-2026" in html
+        assert "Une semaine sur deux" in html
+
+    def test_christmas_year(self):
+        from app.routers.marketing import christmas_year
+        assert christmas_year(date(2026, 10, 20)) == 2026
+        assert christmas_year(date(2027, 1, 3)) == 2026
+        assert christmas_year(date(2027, 1, 7)) == 2027
+
+    def test_sitemap_and_articles(self, client):
+        assert f"{NOEL}</loc>" in client.get("/sitemap.xml").text
+        for slug in ("premier-noel-apres-separation", "cadeaux-noel-parents-separes"):
+            resp = client.get(f"/blog/{slug}")
+            assert resp.status_code == 200 and NOEL in resp.text

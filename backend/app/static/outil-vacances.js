@@ -44,7 +44,8 @@
   var evenLabel = document.getElementById('f-even-label');
   function syncLabel() {
     var full = form.querySelector('input[name="mode"]:checked');
-    if (evenLabel) evenLabel.textContent = evenLabel.getAttribute(full && full.value === 'alternate_full' ? 'data-full' : 'data-split');
+    var m = full ? full.value : 'split_half';
+    if (evenLabel) evenLabel.textContent = evenLabel.getAttribute(m === 'alternate_full' ? 'data-full' : m === 'weekly' ? 'data-weekly' : 'data-split');
   }
   Array.prototype.forEach.call(form.querySelectorAll('input[name="mode"]'), function (r) { r.addEventListener('change', syncLabel); });
   form.addEventListener('input', function (e) { if (e.target.hasAttribute('data-name-for')) applyNames(); });
@@ -100,7 +101,7 @@
   function renderYear(y, href) {
     if (!yearBox) return;
     var ta = y.totals.A, tb = y.totals.B;
-    var modeLabel = y.mode === 'split_half' ? 'moitié / moitié' : 'vacances entières alternées';
+    var modeLabel = { split_half: 'moitié / moitié', alternate_full: 'vacances entières alternées', july_august: 'juillet / août', weekly: 'une semaine sur deux' }[y.mode] || '';
     var next = y.next;
     var nextHtml = next
       ? '<p class="year-next">Prochaines vacances : <strong>' + esc(next.name) + '</strong>, ' + when(next.days_until) +
@@ -133,7 +134,7 @@
       '<div class="year-totals"><p>' + dot('A') + who('A') + '<strong>' + ta + ' jours</strong></p>' +
       '<p>' + dot('B') + who('B') + '<strong>' + tb + ' jours</strong></p></div>' + nextHtml + '</div>' +
       '<ol class="year-periods">' + items + '</ol>' +
-      '<p class="hint year-hint">Années paires : ' + (y.mode === 'split_half' ? '1re moitié' : 'vacances') + ' chez ' + who(y.even_first) +
+      '<p class="hint year-hint">Années paires : ' + (y.mode === 'alternate_full' ? 'vacances' : y.mode === 'weekly' ? '1re semaine' : '1re moitié') + ' chez ' + who(y.even_first) +
       ' ; l’ordre s’inverse les années impaires (pour Noël, c’est l’année du premier jour qui compte). ' + esc(y.source) + '.</p>' +
       '<div class="year-cta" data-cta="tool_year"><h3>Gardez cette année sous la main, sans rien recalculer</h3><ul>' +
       '<li>Un rappel la veille de chaque passage de bras</li>' +
