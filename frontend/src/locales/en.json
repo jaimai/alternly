@@ -742,6 +742,8 @@
   "whatsNew.brushTitle": "Colour several days at once",
   "whatsNew.done": "Got it",
   "whatsNew.eyebrow": "New · {{n}}/{{total}}",
+  "whatsNew.jumpBody": "Tap the month at the top of the calendar, then pick the year, the month or a specific date. No more clicking through arrows to find next summer or next year’s birthday.",
+  "whatsNew.jumpTitle": "Jump straight to any date",
   "whatsNew.later": "Later",
   "whatsNew.next": "Next",
   "whatsNew.repeatBody": "“Every Wednesday with the other parent”, “July with you every other year”: add them with “Repeat”, without touching your usual schedule.",

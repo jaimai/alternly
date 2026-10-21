@@ -742,6 +742,8 @@
   "whatsNew.brushTitle": "Coloriez plusieurs jours d’un coup",
   "whatsNew.done": "C’est noté",
   "whatsNew.eyebrow": "Nouveau · {{n}}/{{total}}",
+  "whatsNew.jumpBody": "Touchez le mois en haut du calendrier, puis choisissez l’année, le mois ou une date précise. Fini les flèches pour retrouver les vacances d’été ou l’anniversaire de l’an prochain.",
+  "whatsNew.jumpTitle": "Allez directement à n’importe quelle date",
   "whatsNew.later": "Plus tard",
   "whatsNew.next": "Suivant",
   "whatsNew.repeatBody": "« Chaque mercredi chez l’autre parent », « juillet chez vous une année sur deux » : ajoutez-les avec « Répéter », sans toucher à votre rythme habituel.",

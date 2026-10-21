@@ -20,6 +20,8 @@ interface Props {
   /** « Ajuster mon planning » : jours touchés (date → parent visé), affichés tels qu'ils seront. */
   flips?: Record<string, number>
   adjusting?: boolean
+  /** Incrémenté pour ouvrir le sélecteur « Aller à » (annonce « Quoi de neuf »). */
+  jumpRequest?: number
 }
 
 const SOURCE_ICONS: Record<string, IconName> = {
@@ -59,7 +61,7 @@ function renderEvent(arg: EventContentArg) {
   )
 }
 
-export default function CalendarView({ data, onDayClick, onRangeChange, flips, adjusting = false }: Props) {
+export default function CalendarView({ data, onDayClick, onRangeChange, flips, adjusting = false, jumpRequest = 0 }: Props) {
   const { t, i18n } = useTranslation()
   const mobile = useIsMobile()
   const prevStart = useRef<number | null>(null)
@@ -68,6 +70,15 @@ export default function CalendarView({ data, onDayClick, onRangeChange, flips, a
   const [title, setTitle] = useState('')
   const [shown, setShown] = useState(() => new Date())
   const [jumpOpen, setJumpOpen] = useState(false)
+  const shell = useRef<HTMLDivElement>(null)
+  const [handledJump, setHandledJump] = useState(jumpRequest)
+  if (jumpRequest !== handledJump) {
+    setHandledJump(jumpRequest)
+    setJumpOpen(true)
+  }
+  useEffect(() => {
+    if (jumpRequest > 0) shell.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [jumpRequest])
 
   function jumpTo(date: Date) {
     calRef.current?.getApi().gotoDate(date)
@@ -165,7 +176,7 @@ export default function CalendarView({ data, onDayClick, onRangeChange, flips, a
   }, [data, memberById, t])
 
   return (
-    <div className={`calendar-shell ph-mask ph-sensitive${adjusting ? ' is-adjusting' : ''}`}>
+    <div ref={shell} className={`calendar-shell ph-mask ph-sensitive${adjusting ? ' is-adjusting' : ''}`}>
       <style>{paletteCss}</style>
       <FullCalendar
         ref={calRef}

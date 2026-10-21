@@ -11,5 +11,7 @@
   "whatsNew.try": "Try it now",
   "whatsNew.done": "Got it",
   "whatsNew.settingsLink": "What’s new?",
-  "whatsNew.badge": "New"
+  "whatsNew.badge": "New",
+  "whatsNew.jumpTitle": "Jump straight to any date",
+  "whatsNew.jumpBody": "Tap the month at the top of the calendar, then pick the year, the month or a specific date. No more clicking through arrows to find next summer or next year’s birthday."
 }

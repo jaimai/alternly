@@ -38,6 +38,7 @@ export const EV = {
   adjustModeOpened: 'adjust_mode_opened', // « Ajuster mon planning » ouvert
   adjustPeriodApplied: 'adjust_period_applied', // days — outil « Une période » appliqué
   whatsNewClosed: 'whats_new_closed', // id — fenêtre « Quoi de neuf » fermée
+  whatsNewTried: 'whats_new_tried', // id — « Essayer maintenant » dans « Quoi de neuf »
   adjustRuleAdded: 'adjust_rule_added', // kind (weekly|yearly) — règle qui se répète ajoutée au récap
   adjustModeCancelled: 'adjust_mode_cancelled', // days: jours touchés puis abandonnés
   changeRequestCreated: 'change_request_created', // kind

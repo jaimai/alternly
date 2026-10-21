@@ -11,5 +11,7 @@
   "whatsNew.try": "Essayer maintenant",
   "whatsNew.done": "C’est noté",
   "whatsNew.settingsLink": "Quoi de neuf ?",
-  "whatsNew.badge": "Nouveau"
+  "whatsNew.badge": "Nouveau",
+  "whatsNew.jumpTitle": "Allez directement à n’importe quelle date",
+  "whatsNew.jumpBody": "Touchez le mois en haut du calendrier, puis choisissez l’année, le mois ou une date précise. Fini les flèches pour retrouver les vacances d’été ou l’anniversaire de l’an prochain."
 }
