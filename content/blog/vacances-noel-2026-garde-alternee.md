@@ -125,11 +125,12 @@ ou un médiateur saura vous orienter.
   de la convention.
 - Identifier qui a la **première moitié les années paires** : c'est lui ou
   elle qui a Noël 2026.
-- Vérifier les dates et le jour de passage dans
-  l'[outil gratuit « Qui a les enfants pendant les vacances ? »](/outils/vacances-garde-alternee).
+- Vérifier les dates et le jour de passage sur la page
+  [« Qui a les enfants à Noël ? »](/outils/noel-garde-alternee).
 - Fixer **l'heure et le lieu** du passage du dimanche 27 décembre.
 - Réserver les trajets tôt.
-- Se mettre d'accord sur les cadeaux (budget, qui offre quoi, ce qui voyage).
+- Se mettre d'accord sur les cadeaux (budget, qui offre quoi, ce qui voyage) :
+  voir [« Cadeaux de Noël entre parents séparés »](/blog/cadeaux-noel-parents-separes).
 - Prévoir un appel vidéo pour le parent qui n'a pas les enfants le 24 ou le 31.
 - Préparer les affaires pour la reprise du lundi 4 janvier.
 

@@ -106,10 +106,12 @@
           <legend>Règle de partage</legend>
           <label class="radio-row"><input type="radio" name="mode" value="split_half" {{ "checked" if form.mode == "split_half" }} /><span><strong>Moitié / moitié</strong><small>chaque parent a la moitié de chaque période</small></span></label>
           <label class="radio-row"><input type="radio" name="mode" value="alternate_full" {{ "checked" if form.mode == "alternate_full" }} /><span><strong>Vacances entières alternées</strong><small>un parent a toute la période, l'autre l'année suivante</small></span></label>
+          <label class="radio-row"><input type="radio" name="mode" value="july_august" {{ "checked" if form.mode == "july_august" }} /><span><strong>Juillet / août</strong><small>l'été, un mois chacun ; les petites vacances, moitié / moitié</small></span></label>
+          <label class="radio-row"><input type="radio" name="mode" value="weekly" {{ "checked" if form.mode == "weekly" }} /><span><strong>Une semaine sur deux</strong><small>pendant les vacances, une semaine chez chacun</small></span></label>
         </fieldset>
 
         <div class="field">
-          <label for="f-even" id="f-even-label" data-split="Les années paires, la première moitié est chez" data-full="Les années paires, les vacances sont chez">{{ "Les années paires, les vacances sont chez" if form.mode == "alternate_full" else "Les années paires, la première moitié est chez" }}</label>
+          <label for="f-even" id="f-even-label" data-split="Les années paires, la première moitié est chez" data-full="Les années paires, les vacances sont chez" data-weekly="Les années paires, la première semaine est chez">{{ "Les années paires, les vacances sont chez" if form.mode == "alternate_full" else ("Les années paires, la première semaine est chez" if form.mode == "weekly" else "Les années paires, la première moitié est chez") }}</label>
           <select id="f-even" name="even_first">
             <option value="A" {{ "selected" if form.even_first == "A" }} data-parent-option="A">Parent A</option>
             <option value="B" {{ "selected" if form.even_first == "B" }} data-parent-option="B">Parent B</option>
@@ -177,7 +179,7 @@
 
     <section class="year-view" id="year-view" aria-labelledby="year-title" data-cta-base="{{ cta_base }}"{{ " hidden" if not year }}>
       {%- if year %}
-      {%- set mode_label = "moitié / moitié" if year.mode == "split_half" else "vacances entières alternées" %}
+      {%- set mode_label = mode_labels[year.mode] %}
       {%- set ta, tb = year.totals.A, year.totals.B %}
       <div class="year-head">
         <p class="result-kicker">Zone {{ year.zone }} · {{ mode_label }}</p>
@@ -211,7 +213,7 @@
         </li>
         {%- endfor %}
       </ol>
-      <p class="hint year-hint">Années paires&nbsp;: {{ "1re moitié" if year.mode == "split_half" else "vacances" }} chez {{ parent(year.even_first) }}&nbsp;; l'ordre s'inverse les années impaires (pour Noël, c'est l'année du premier jour qui compte). {{ year.source }}.</p>
+      <p class="hint year-hint">Années paires&nbsp;: {{ "vacances" if year.mode == "alternate_full" else ("1re semaine" if year.mode == "weekly" else "1re moitié") }} chez {{ parent(year.even_first) }}&nbsp;; l'ordre s'inverse les années impaires (pour Noël, c'est l'année du premier jour qui compte). {{ year.source }}.</p>
       <div class="year-cta" data-cta="tool_year">
         <h3>Gardez cette année sous la main, sans rien recalculer</h3>
         <ul>

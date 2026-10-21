@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block title %}Noël {{ year }} en garde alternée : qui a les enfants ? — Alternly{% endblock %}
+{% block description %}Vacances de Noël {{ year }}, réveillon du 24, jour de Noël, Nouvel An : les dates officielles et les partages les plus courants en garde alternée (moitié/moitié, années paires et impaires). Gratuit, sans inscription.{% endblock %}
+{% block og_image %}og-outil-vacances.png{% endblock %}
+{% block head %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {%- for q, a in faq %}
+    {"@type": "Question", "name": {{ q | tojson }}, "acceptedAnswer": {"@type": "Answer", "text": {{ a | tojson }}}}{{ "," if not loop.last }}
+    {%- endfor %}
+  ]
+}
+</script>
+{% endblock %}
+{% block content %}
+{%- set half = splits.split_half %}
+{%- set full = splits.alternate_full %}
+{%- set weekly = splits.weekly %}
+{%- set even = year % 2 == 0 %}
+<article class="tool noel" data-tool="noel-garde-alternee">
+  <div class="wrap tool-wrap">
+    <header class="tool-intro">
+      <p class="eyebrow">Noël {{ year }} · zones A, B et C</p>
+      <h1>Qui a les enfants <em>à Noël&nbsp;?</em></h1>
+      {%- if half %}
+      <p class="lede">Vacances du <strong>{{ half.period.start_label }}</strong> au <strong>{{ half.period.end_label }}</strong>, reprise le {{ half.period.resume_label }}. Les dates sont les mêmes partout&nbsp;: reste à savoir chez qui tombent le réveillon, le 25 et le Nouvel An.</p>
+      {%- else %}
+      <p class="lede">Les vacances de Noël sont communes aux trois zones. Reste à savoir chez qui tombent le réveillon, le 25 et le Nouvel An.</p>
+      {%- endif %}
+    </header>
+
+    {%- if half %}
+    {%- set a = half.segments[0] %}
+    {%- set b = half.segments[1] if half.segments | length > 1 else None %}
+    <section class="quick-answer" aria-labelledby="noel-half">
+      <p class="result-kicker">La règle la plus courante · moitié / moitié</p>
+      <h2 id="noel-half">{{ year }} est une année {{ "paire" if even else "impaire" }}</h2>
+      <ul class="result-lines">
+        <li class="seg-line seg-a"><span class="seg-dates">Du {{ a.start_label }} au {{ a.end_label }}</span> <span class="seg-who">chez le parent qui a «&nbsp;la 1<sup>re</sup> moitié les années {{ "paires" if even else "impaires" }}&nbsp;» · <strong>réveillon et jour de Noël</strong></span></li>
+        {%- if b %}
+        <li class="seg-line seg-b"><span class="seg-dates">Du {{ b.start_label }} au {{ b.end_label }}</span> <span class="seg-who">chez l'autre parent · <strong>Nouvel An</strong></span></li>
+        {%- endif %}
+      </ul>
+      {%- if half.handover %}
+      <p class="handover"><strong>Passage de bras&nbsp;: {{ half.handover.label }}</strong></p>
+      {%- endif %}
+      <div class="quick-actions">
+        <a class="cta big" href="{{ cta_href }}&vac_mode=split_half" data-cta="noel_half">Créer mon calendrier gratuit</a>
+        <a class="quick-adjust" href="{{ tool_href }}">Autre règle&nbsp;? Faire le calcul ↗</a>
+      </div>
+      <p class="hint">L'année du premier jour des vacances compte&nbsp;: Noël {{ year }} suit la règle des années {{ "paires" if even else "impaires" }}, même s'il se termine en {{ year + 1 }}. Source&nbsp;: {{ half.source }}.</p>
+    </section>
+    {%- endif %}
+
+    <section class="noel-rules" aria-labelledby="noel-rules-title">
+      <h2 id="noel-rules-title">Les autres façons de partager Noël</h2>
+      <div class="noel-grid">
+        {%- if full %}
+        <div class="noel-card">
+          <h3>Toutes les vacances, une année sur deux</h3>
+          <p>Un parent a toute la période, du {{ full.period.start_label }} au {{ full.period.end_label }}&nbsp;: réveillon, Noël et Nouvel An. L'autre parent a Noël {{ year + 1 }}.</p>
+        </div>
+        {%- endif %}
+        {%- if weekly and weekly.segments | length > 1 %}
+        <div class="noel-card">
+          <h3>Une semaine sur deux</h3>
+          <p>Le rythme continue par semaines du lundi au dimanche&nbsp;: {% for s in weekly.segments %}{{ "chez l'un" if s.parent == "A" else "chez l'autre" }} du {{ s.start_label }} au {{ s.end_label }}{{ " ; " if not loop.last else "." }}{% endfor %}</p>
+        </div>
+        {%- endif %}
+        <div class="noel-card">
+          <h3>Le 24 chez l'un, le 25 chez l'autre</h3>
+          <p>Le réveillon chez un parent, le jour de Noël chez l'autre, et on inverse l'année suivante. Pratique quand les deux familles fêtent Noël à des moments différents.</p>
+        </div>
+        <div class="noel-card">
+          <h3>Noël chez l'un, Nouvel An chez l'autre</h3>
+          <p>Chaque parent garde une fête, quelle que soit la moitié des vacances. Souvent choisi quand les deux maisons sont proches.</p>
+        </div>
+      </div>
+      <p class="hint">Dans Alternly, le réveillon et le jour de Noël se règlent à part (toujours chez le même parent, ou une année sur deux)&nbsp;: ils passent avant le partage des vacances, sans rien recalculer.</p>
+    </section>
+
+    <section class="noel-cta" aria-labelledby="noel-cta-title">
+      <h2 id="noel-cta-title">Fini les «&nbsp;tu les as quand, déjà&nbsp;?&nbsp;»</h2>
+      <ul>
+        <li>Votre rythme, les vacances et les fêtes dans un seul calendrier partagé</li>
+        <li>Un échange de dernière minute&nbsp;? Proposé et accepté dans l'app</li>
+        <li>Un rappel la veille de chaque passage de bras</li>
+      </ul>
+      <a class="cta big" href="{{ cta_href }}" data-cta="noel_bottom">Créer mon calendrier gratuit</a>
+    </section>
+
+    <section class="faq noel-faq" aria-labelledby="noel-faq-title">
+      <h2 id="noel-faq-title">Questions fréquentes</h2>
+      {%- for q, a in faq %}
+      <details>
+        <summary>{{ q }}</summary>
+        <p>{{ a }}</p>
+      </details>
+      {%- endfor %}
+    </section>
+
+    <nav class="noel-read" aria-label="À lire aussi">
+      <h2>À lire aussi</h2>
+      <ul>
+        <li><a href="/blog/vacances-noel-2026-garde-alternee">Vacances de Noël 2026 en garde alternée : le guide complet</a></li>
+        <li><a href="/blog/noel-fetes-anniversaires-garde-alternee">Noël, Nouvel An, anniversaires : organiser les fêtes</a></li>
+        <li><a href="/blog/premier-noel-apres-separation">Le premier Noël après la séparation</a></li>
+        <li><a href="/blog/cadeaux-noel-parents-separes">Cadeaux de Noël entre parents séparés : qui achète quoi ?</a></li>
+      </ul>
+    </nav>
+  </div>
+</article>
+{% endblock %}

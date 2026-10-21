@@ -44,8 +44,11 @@ export default function OnboardingPage() {
       .myHousehold()
       .then((h) => {
         setHousehold(h)
-        if (h.custody_rule && !restart) navigate('/app', { replace: true })
-        else setStep(2) // foyer déjà créé : reste la règle de garde
+        if (h.custody_rule && !restart) {
+          // Cache du foyer à jour avant d'entrer dans l'app (sinon aller-retour sans fin).
+          return refreshHousehold().then(() => navigate('/app', { replace: true }))
+        }
+        setStep(2) // foyer déjà créé : reste la règle de garde
       })
       .catch((err) => {
         if (!(err instanceof ApiError && err.status === 404)) {
@@ -53,7 +56,7 @@ export default function OnboardingPage() {
         }
       })
       .finally(() => setLoading(false))
-  }, [navigate, restart])
+  }, [navigate, restart, refreshHousehold])
 
   async function createHousehold() {
     setBusy(true)

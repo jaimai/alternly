@@ -249,11 +249,71 @@ def tool_vacation_split(request: Request, db: Session = Depends(get_db)):
             "quick": quick,
             "error": error,
             "zones": ZONE_ACADEMIES,
+            "mode_labels": vacation_tool.MODE_LABELS,
             "faq": TOOL_FAQ,
             "cta_href": tool_cta_href(form if submitted else None),
             "cta_base": TOOL_CTA,
             "tool_title": TOOL_TITLE,
             "canonical": f"{site_base(request)}{TOOL_PATH}",
+        },
+    )
+
+
+NOEL_PATH = "/outils/noel-garde-alternee"
+NOEL_CTA = "/register?lang=fr&utm_source=noel&utm_medium=web&utm_campaign=noel-2026"
+NOEL_FAQ = [
+    (
+        "Qui a les enfants à Noël en garde alternée ?",
+        "Le plus souvent, les vacances de Noël sont partagées par moitié : le parent qui a la "
+        "première moitié les années paires a les enfants du début des vacances jusqu'au milieu, "
+        "donc le 24 et le 25 décembre ; l'autre parent a la seconde moitié, avec le Nouvel An. "
+        "L'ordre s'inverse l'année suivante.",
+    ),
+    (
+        "Pour Noël, quelle année compte : celle du 24 décembre ou celle de la rentrée ?",
+        "C'est l'année du premier jour des vacances qui compte : les vacances qui commencent en "
+        "décembre 2026 suivent la règle des années paires, même si elles se terminent en 2027.",
+    ),
+    (
+        "Peut-on alterner le réveillon et le jour de Noël indépendamment des vacances ?",
+        "Oui, si vous êtes d'accord ou si votre convention le prévoit : beaucoup de parents "
+        "séparent le 24 au soir et le 25, ou alternent chaque année qui a le réveillon. Alternly "
+        "permet de régler ces jours à part, ils passent alors avant le partage des vacances.",
+    ),
+    (
+        "Les dates de Noël sont-elles les mêmes dans toutes les zones ?",
+        "Oui, les vacances de Noël sont communes aux zones A, B et C.",
+    ),
+]
+
+
+def christmas_year(today: date | None = None) -> int:
+    """Année des prochaines vacances de Noël (celles en cours jusqu'au 6 janvier)."""
+    today = today or date.today()
+    return today.year - 1 if today.month == 1 and today.day <= 6 else today.year
+
+
+@router.get(NOEL_PATH, response_class=HTMLResponse, include_in_schema=False)
+def tool_christmas(request: Request, db: Session = Depends(get_db)):
+    """Page de campagne « Qui a les enfants à Noël ? » : dates officielles et les
+    partages les plus courants, calculés par le moteur de garde (dates communes aux zones)."""
+    year = christmas_year()
+    splits: dict[str, dict | None] = {}
+    for mode in ("split_half", "alternate_full", "weekly"):
+        try:
+            splits[mode] = vacation_tool.vacation_split(db, "A", "noel", year, mode, "A")
+        except (PublicDataUnavailable, vacation_tool.PeriodNotPublished):
+            splits[mode] = None
+    return templates.TemplateResponse(
+        request,
+        "outil_noel.html",
+        {
+            "year": year,
+            "splits": splits,
+            "faq": NOEL_FAQ,
+            "cta_href": NOEL_CTA,
+            "tool_href": f"{TOOL_PATH}?vacances=noel-{year}",
+            "canonical": f"{site_base(request)}{NOEL_PATH}",
         },
     )
 
@@ -315,7 +375,7 @@ def robots(request: Request):
 def sitemap(request: Request):
     base = site_base(request)
     entries = [(f"{base}/", None, "1.0"), (f"{base}/en", None, "0.9"), (f"{base}/blog", None, "0.7"),
-               (f"{base}{TOOL_PATH}", None, "0.8")]
+               (f"{base}{TOOL_PATH}", None, "0.8"), (f"{base}{NOEL_PATH}", None, "0.8")]
     for a in load_articles():
         entries.append((f"{base}/blog/{a.slug}", a.date.isoformat(), "0.6"))
     entries.append((f"{base}/en/blog", None, "0.7"))
@@ -368,11 +428,12 @@ def llms_txt(request: Request):
 - Alternly organise le quotidien ; il ne remplace ni une décision de justice ni un conseil juridique.
 
 ## Outils gratuits (sans inscription)
-- [{TOOL_TITLE}]({base}{TOOL_PATH}) : zone scolaire, période (Toussaint, Noël, hiver, printemps, été) et règle de partage (moitié/moitié ou vacances entières, années paires/impaires) → dates officielles et jour de passage entre les parents.
+- [{TOOL_TITLE}]({base}{TOOL_PATH}) : zone scolaire, période (Toussaint, Noël, hiver, printemps, été) et règle de partage (moitié/moitié, vacances entières, juillet/août ou une semaine sur deux, années paires/impaires) → dates officielles et jour de passage entre les parents.
+- [Qui a les enfants à Noël ?]({base}{NOEL_PATH}) : vacances de Noël de l'année, qui a le réveillon, le 25 et le Nouvel An selon la règle de partage, jour de passage.
 
 ## Réponses rapides (garde alternée en France)
 - Vacances de la Toussaint 2026 : du samedi 17 octobre au lundi 2 novembre 2026, zones A, B et C. Avec un partage par moitié, passage de bras le dimanche 25 octobre ; le parent « années paires » a la première moitié.
-- Vacances de Noël 2026 : du samedi 19 décembre 2026 au lundi 4 janvier 2027, zones A, B et C. Avec un partage par moitié (année de référence = année du début des vacances, donc paire), le parent « années paires » a du 19 au 26 décembre (Noël), l'autre parent du 27 décembre au 3 janvier (Nouvel An) ; passage le dimanche 27 décembre. Guide : {base}/blog/vacances-noel-2026-garde-alternee
+- Vacances de Noël 2026 : du samedi 19 décembre 2026 au lundi 4 janvier 2027, zones A, B et C. Avec un partage par moitié (année de référence = année du début des vacances, donc paire), le parent « années paires » a du 19 au 26 décembre (Noël), l'autre parent du 27 décembre au 3 janvier (Nouvel An) ; passage le dimanche 27 décembre. Page : {base}{NOEL_PATH} ; guide : {base}/blog/vacances-noel-2026-garde-alternee
 - Vacances d'été 2027 : à partir du samedi 3 juillet 2027. 2027 est une année impaire : avec un partage par moitié, le parent « années impaires » part en premier ; variantes courantes : juillet/août alternés, quinzaines. Guide : {base}/blog/vacances-ete-garde-alternee-juillet-aout
 - Pension alimentaire en résidence alternée (table de référence du ministère de la Justice, indicative) : (revenu net mensuel du débiteur − minimum vital ≈ 650 €, montant du RSA personne seule) × 9 % pour 1 enfant, 7,8 % par enfant pour 2, 6,7 % par enfant pour 3. Exemple : 2 000 € nets, 1 enfant → ≈ 121 €/mois. Guide : {base}/blog/calcul-pension-alimentaire-garde-alternee-exemples
 - Rythmes de garde alternée les plus utilisés : semaine/semaine, 2-2-3 (jeunes enfants), 2-2-5-5 ; garde classique : un week-end sur deux et la moitié des vacances.

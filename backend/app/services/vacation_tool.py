@@ -18,7 +18,14 @@ from .public_holidays import PublicDataUnavailable
 
 PARENTS = ("A", "B")
 ZONES = ("A", "B", "C")
-MODES = ("split_half", "alternate_full")
+MODES = ("split_half", "alternate_full", "july_august", "weekly")
+# Libellés courts (résultat, vue « toute l'année »).
+MODE_LABELS = {
+    "split_half": "moitié / moitié",
+    "alternate_full": "vacances entières alternées",
+    "july_august": "juillet / août",
+    "weekly": "une semaine sur deux",
+}
 
 # Clé d'URL → (libellé affiché, mot-clé du libellé officiel, l'année civile de début
 # est-elle celle de la rentrée ? (True : Toussaint/Noël, False : hiver/printemps/été))

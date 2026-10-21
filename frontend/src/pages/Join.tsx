@@ -18,7 +18,7 @@ const MAX_PERIODS = 4
 
 export default function JoinPage() {
   const { token } = useParams<{ token: string }>()
-  const { user, loading } = useAuth()
+  const { user, loading, refreshHousehold } = useAuth()
   const navigate = useNavigate()
   const { t, i18n } = useTranslation()
   const { range } = useFormat()
@@ -66,6 +66,9 @@ export default function JoinPage() {
     try {
       await api.acceptInvitation(token)
       localStorage.removeItem('pending_invite')
+      // Le cache du foyer dit encore « pas de foyer » : sans ce rafraîchissement,
+      // le calendrier renvoie vers l'onboarding, qui renvoie vers le calendrier…
+      await refreshHousehold()
       navigate('/app', { replace: true })
     } catch (err) {
       setError(err instanceof Error ? err.message : t('auth.joinError'))
