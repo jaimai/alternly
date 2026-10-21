@@ -337,6 +337,7 @@ class TestChristmasPage:
 
     def test_sitemap_and_articles(self, client):
         assert f"{NOEL}</loc>" in client.get("/sitemap.xml").text
+        assert NOEL in client.get("/llms.txt").text
         for slug in ("premier-noel-apres-separation", "cadeaux-noel-parents-separes"):
             resp = client.get(f"/blog/{slug}")
             assert resp.status_code == 200 and NOEL in resp.text
