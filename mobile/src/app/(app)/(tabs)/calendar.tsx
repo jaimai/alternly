@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { AdjustTools, type AdjustTool, type PeriodRepeat } from '@/components/AdjustTools'
 import { CalendarNotices } from '@/components/CalendarNotices'
 import { MonthJump } from '@/components/MonthJump'
-import { WHATS_NEW_ID, WHATS_NEW_SINCE, WhatsNew } from '@/components/WhatsNew'
+import { TOOLS_ID, WHATS_NEW_ID, WHATS_NEW_SINCE, WhatsNew, slidesFor } from '@/components/WhatsNew'
 import { Icon } from '@/components/Icon'
 import { Body, Button, Card, ErrorState, Loading } from '@/components/ui'
 import { ApiError, api, isPendingChange } from '@/lib/api'
@@ -210,14 +210,11 @@ export default function CalendarScreen() {
       <WhatsNew
         visible={showWhatsNew && calendar.isSuccess}
         onClose={closeWhatsNew}
+        slides={me ? slidesFor(me) : undefined}
         onTry={() => {
           closeWhatsNew()
-          setAdjusting(true)
-          setFlips({})
-          setNotice(null)
-          setTool('day')
-          setPendingRules([])
-          setBrush(household?.members.find((m) => m.id !== meId)?.id ?? meId ?? null)
+          // Après la fermeture de l'annonce : iOS n'ouvre pas une modale pendant qu'une autre se ferme.
+          setTimeout(() => setJumpOpen(true), 400)
         }}
       />
       <View style={s.header}>
@@ -227,11 +224,13 @@ export default function CalendarScreen() {
           onPress={() => setJumpOpen(true)}
           style={s.titleBtn}
         >
+          <Icon name="calendar" size={18} color={colors.pine} />
           <Text accessibilityRole="header" style={s.title} numberOfLines={1}>
             {capitalize(formatMonth(month))}
           </Text>
           <Text style={s.titleCaret}>▾</Text>
         </Pressable>
+        <View style={s.headerSpacer} />
         <NavButton icon="back" label="Mois précédent" onPress={() => goTo(-1)} />
         <NavButton icon="chevron" label="Mois suivant" onPress={() => goTo(1)} />
       </View>
@@ -290,7 +289,7 @@ export default function CalendarScreen() {
               ) : null}
               <View style={{ flexDirection: 'row', gap: 8 }}>
                 <Button
-                  title={me && me.whats_new_seen !== WHATS_NEW_ID ? 'Ajuster mon planning · Nouveau' : 'Ajuster mon planning'}
+                  title={me && me.whats_new_seen !== WHATS_NEW_ID && me.whats_new_seen !== TOOLS_ID ? 'Ajuster mon planning · Nouveau' : 'Ajuster mon planning'}
                   variant="secondary"
                   icon={<Icon name="pencil" size={18} color={colors.pine} strokeWidth={2} />}
                   onPress={() => {
@@ -329,6 +328,7 @@ export default function CalendarScreen() {
               />
             ))}
           </View>
+          <Text style={s.jumpHint}>Touchez le mois pour aller à une autre date</Text>
 
           {!adjusting ? (
             <DayDetail
@@ -596,9 +596,14 @@ function capitalize(str: string) {
 
 const s = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 20, paddingTop: 8, paddingBottom: 10 },
-  titleBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 44 },
-  title: { flexShrink: 1, fontFamily: fonts.display, fontSize: 26, color: colors.ink },
-  titleCaret: { fontFamily: fonts.bodyBold, fontSize: 16, color: colors.inkSoft },
+  titleBtn: {
+    flexShrink: 1, flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 48, paddingLeft: 12, paddingRight: 14,
+    borderRadius: 999, borderWidth: 1.5, borderColor: colors.pine, backgroundColor: colors.pineSoft,
+  },
+  title: { flexShrink: 1, fontFamily: fonts.display, fontSize: 22, color: colors.ink },
+  titleCaret: { fontFamily: fonts.bodyBold, fontSize: 14, color: colors.pine },
+  headerSpacer: { flex: 1 },
+  jumpHint: { fontFamily: fonts.body, fontSize: 13, color: colors.inkSoft, textAlign: 'center', paddingVertical: 4 },
   nav: {
     width: 44, height: 44, borderRadius: 22, borderWidth: 1, borderColor: colors.line,
     backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center',

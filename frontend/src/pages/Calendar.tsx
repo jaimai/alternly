@@ -25,7 +25,7 @@ import {
 } from '../calendarCache'
 import AdjustTools, { type AdjustTool, type PeriodRepeat } from '../components/AdjustTools'
 import AppSplash from '../components/AppSplash'
-import WhatsNew, { WHATS_NEW_ID, WHATS_NEW_SINCE } from '../components/WhatsNew'
+import WhatsNew, { TOOLS_ID, WHATS_NEW_ID, WHATS_NEW_SINCE, slidesFor } from '../components/WhatsNew'
 import StatusCard from '../components/StatusCard'
 import TopBar from '../components/TopBar'
 import { addDays, todayIso } from '../dates'
@@ -65,6 +65,8 @@ export default function CalendarPage() {
   const [pendingRules, setPendingRules] = useState<RecurringRuleInput[]>([])
   // « Quoi de neuf » : une fois par compte, pour les comptes antérieurs à la mise à jour.
   const [whatsNewClosed, setWhatsNewClosed] = useState(false)
+  // « Essayer maintenant » de l'annonce : ouvre le sélecteur « Aller à » du calendrier.
+  const [jumpRequest, setJumpRequest] = useState(0)
   const showWhatsNew =
     !whatsNewClosed &&
     !!user &&
@@ -73,7 +75,7 @@ export default function CalendarPage() {
     (user.created_at ?? '') < WHATS_NEW_SINCE
   const [adjustIsNew, setAdjustIsNew] = useState(() => {
     try {
-      return localStorage.getItem('alternly_adjust_tools_seen') !== WHATS_NEW_ID
+      return localStorage.getItem('alternly_adjust_tools_seen') !== TOOLS_ID
     } catch {
       return false
     }
@@ -249,7 +251,7 @@ export default function CalendarPage() {
     if (adjustIsNew) {
       setAdjustIsNew(false)
       try {
-        localStorage.setItem('alternly_adjust_tools_seen', WHATS_NEW_ID)
+        localStorage.setItem('alternly_adjust_tools_seen', TOOLS_ID)
       } catch {
         // stockage indisponible : le badge reviendra au prochain chargement
       }
@@ -457,6 +459,7 @@ export default function CalendarPage() {
             }
             onDayClick={(date) => (adjusting ? paintDay(date) : setSelectedDay(date))}
             flips={adjusting ? flipTargets : undefined}
+            jumpRequest={jumpRequest}
             adjusting={adjusting}
             onRangeChange={(start, end) =>
               setRange((prev) => (prev && prev.start === start && prev.end === end ? prev : { start, end }))
@@ -527,10 +530,12 @@ export default function CalendarPage() {
       )}
       {showWhatsNew && splashGone && (
         <WhatsNew
+          slides={slidesFor(user ?? {})}
           onClose={closeWhatsNew}
           onTry={() => {
             closeWhatsNew()
-            startAdjust()
+            track(EV.whatsNewTried, { id: WHATS_NEW_ID })
+            setJumpRequest((n) => n + 1)
           }}
         />
       )}

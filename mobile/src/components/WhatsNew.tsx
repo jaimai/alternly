@@ -3,12 +3,16 @@
 import { useState } from 'react'
 import { Modal, StyleSheet, Text, View } from 'react-native'
 import { colors, fonts } from '@/lib/theme'
+import { Icon } from './Icon'
 import { Button } from './ui'
 
+/** Annonce « Outils du calendrier » (pinceau, répéter, été) : sert aussi au badge « Nouveau » d'Ajuster. */
+export const TOOLS_ID = '2026-10-calendar-tools'
+export const TOOLS_SINCE = '2026-10-19'
 /** Identifiant de la dernière fenêtre : le changer la remontre à tous. */
-export const WHATS_NEW_ID = '2026-10-calendar-tools'
+export const WHATS_NEW_ID = '2026-10-goto-date'
 /** Les comptes créés après la mise à jour découvrent ces outils d'eux-mêmes. */
-export const WHATS_NEW_SINCE = '2026-10-19'
+export const WHATS_NEW_SINCE = '2026-10-22'
 
 const SLIDES = [
   {
@@ -26,12 +30,31 @@ const SLIDES = [
     body: 'Nouveaux choix pour les vacances : un mois chacun, une semaine sur deux, ou période par période. À régler dans Réglages › Garde et vacances.',
     cells: 'aaaaaaabbbbbbb', ring: [] as number[], bg: colors.paperDeep,
   },
+  {
+    title: 'Allez directement à n’importe quelle date',
+    body: 'Touchez le mois en haut du calendrier, puis choisissez l’année et le mois. Fini les flèches pour retrouver les vacances d’été.',
+    cells: 'jump', ring: [] as number[], bg: colors.pineSoft,
+  },
 ]
+const JUMP = SLIDES.length - 1
+const MONTHS = ['Janv', 'Févr', 'Mars', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sept', 'Oct', 'Nov', 'Déc']
 
-export function WhatsNew({ visible, onClose, onTry }: { visible: boolean; onClose: () => void; onTry?: () => void }) {
+/** Diapositives à montrer : l'annonce « Aller à », précédée des outils si ce compte ne les a jamais vus. */
+export function slidesFor(me: { whats_new_seen?: string | null; created_at?: string | null }): number[] {
+  const sawTools = me.whats_new_seen === TOOLS_ID || (me.created_at ?? '') >= TOOLS_SINCE
+  return sawTools ? [JUMP] : SLIDES.map((_, k) => k)
+}
+
+export function WhatsNew({ visible, onClose, onTry, slides = SLIDES.map((_, k) => k) }: {
+  visible: boolean
+  onClose: () => void
+  onTry?: () => void
+  /** Index des diapositives à montrer, dans l'ordre. */
+  slides?: number[]
+}) {
   const [i, setI] = useState(0)
-  const slide = SLIDES[i]
-  const last = i === SLIDES.length - 1
+  const slide = SLIDES[slides[i]]
+  const last = i === slides.length - 1
   const close = () => {
     setI(0)
     onClose()
@@ -41,8 +64,23 @@ export function WhatsNew({ visible, onClose, onTry }: { visible: boolean; onClos
     <Modal visible={visible} transparent animationType="fade" onRequestClose={close}>
       <View style={s.backdrop}>
         <View style={s.sheet} accessibilityViewIsModal>
-          <Text style={s.eyebrow}>NOUVEAU · {i + 1}/{SLIDES.length}</Text>
+          <Text style={s.eyebrow}>{slides.length > 1 ? `NOUVEAU · ${i + 1}/${slides.length}` : 'NOUVEAU'}</Text>
           <Text accessibilityRole="header" style={s.title}>{slide.title}</Text>
+          {slide.cells === 'jump' ? (
+            <View style={[s.art, { backgroundColor: slide.bg, paddingHorizontal: 16 }]} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+              <View style={s.pill}>
+                <Icon name="calendar" size={15} color={colors.pine} />
+                <Text style={s.pillText}>Juillet {new Date().getFullYear() + 1} ▾</Text>
+              </View>
+              <View style={s.months}>
+                {MONTHS.map((m, k) => (
+                  <View key={m} style={[s.month, k === 6 && { backgroundColor: colors.pine }]}>
+                    <Text style={[s.monthText, k === 6 && { color: '#fff' }]}>{m}</Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          ) : (
           <View style={[s.art, { backgroundColor: slide.bg }]} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
             {[0, 1].map((w) => (
               <View key={w} style={{ flexDirection: 'row', gap: 6 }}>
@@ -55,12 +93,15 @@ export function WhatsNew({ visible, onClose, onTry }: { visible: boolean; onClos
               </View>
             ))}
           </View>
+          )}
           <Text style={s.body}>{slide.body}</Text>
-          <View style={s.dots}>
-            {SLIDES.map((_, k) => (
-              <View key={k} style={[s.dot, k === i && s.dotOn]} />
-            ))}
-          </View>
+          {slides.length > 1 ? (
+            <View style={s.dots}>
+              {slides.map((_, k) => (
+                <View key={k} style={[s.dot, k === i && s.dotOn]} />
+              ))}
+            </View>
+          ) : null}
           <View style={{ flexDirection: 'row', gap: 8 }}>
             <Button title="Plus tard" variant="secondary" onPress={close} style={{ flex: 1 }} />
             <Button
@@ -93,4 +134,12 @@ const s = StyleSheet.create({
   dots: { flexDirection: 'row', justifyContent: 'center', gap: 6, paddingVertical: 4 },
   dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.line },
   dotOn: { width: 22, backgroundColor: colors.pine },
+  pill: {
+    flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 6, paddingHorizontal: 14,
+    borderRadius: 999, borderWidth: 1.5, borderColor: colors.pine, backgroundColor: colors.surface,
+  },
+  pillText: { fontFamily: fonts.display, fontSize: 17, color: colors.ink },
+  months: { flexDirection: 'row', flexWrap: 'wrap', gap: 4, padding: 8, borderRadius: 12, backgroundColor: colors.surface, alignSelf: 'stretch' },
+  month: { width: '23%', flexGrow: 1, paddingVertical: 6, borderRadius: 8, backgroundColor: colors.paper, alignItems: 'center' },
+  monthText: { fontFamily: fonts.bodySemiBold, fontSize: 12, color: colors.ink },
 })
