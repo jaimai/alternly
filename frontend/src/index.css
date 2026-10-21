@@ -2553,3 +2553,54 @@ button.adjust-chip.on { border: 2px solid var(--pine); background: var(--pine-so
 .wn-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .new-pill { margin-left: 8px; padding: 2px 8px; border-radius: 999px; background: var(--pine); color: #fff; font-size: 0.7rem; font-weight: 700; }
 @media (prefers-reduced-motion: reduce) { .wn-dots span { transition: none; } }
+
+/* Titre du mois cliquable (« octobre 2026 ▾ ») + sélecteur « Aller à » */
+.fc .fc-button.fc-jump-button {
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 1.35rem;
+  padding: 2px 10px 2px 4px;
+  text-transform: capitalize;
+}
+.fc .fc-button.fc-jump-button:hover { background: var(--pine-soft); color: var(--ink); }
+.month-jump {
+  position: absolute;
+  top: 58px;
+  left: 14px;
+  z-index: 20;
+  width: min(320px, calc(100% - 28px));
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 12px;
+  display: grid;
+  gap: 10px;
+  animation: month-jump-in 160ms var(--ease-out);
+}
+@keyframes month-jump-in { from { opacity: 0; transform: translateY(-4px); } }
+.month-jump-year { display: flex; align-items: center; justify-content: space-between; }
+.month-jump-year strong { font-family: var(--font-display); font-weight: 500; font-size: 1.2rem; }
+.month-jump-arrow {
+  width: 40px; height: 40px; border-radius: 999px; border: none;
+  background: var(--pine-soft); color: var(--pine); font-size: 1.3rem; line-height: 1; cursor: pointer; padding: 0;
+}
+.month-jump-arrow:hover { background: var(--sage); }
+.month-jump-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.month-jump-cell {
+  min-height: 42px; border-radius: var(--radius-sm); border: 1px solid var(--line);
+  background: var(--paper); color: var(--ink); font: inherit; font-weight: 600; font-size: 0.85rem;
+  text-transform: capitalize; cursor: pointer; padding: 0;
+}
+.month-jump-cell:hover { border-color: var(--pine); }
+.month-jump-cell.is-today { border-color: var(--terra); color: var(--terra); }
+.month-jump-cell.is-shown { background: var(--pine); border-color: var(--pine); color: #fff; }
+.month-jump-foot { display: flex; align-items: flex-end; gap: 8px; flex-wrap: wrap; }
+.month-jump-date { display: grid; gap: 2px; flex: 1; min-width: 140px; font-size: 0.75rem; color: var(--ink-soft); }
+.month-jump-date input { min-height: 40px; }
+@media (max-width: 640px) {
+  .fc .fc-button.fc-jump-button { font-size: 1.1rem; }
+  .month-jump { top: 48px; left: 4px; }
+}

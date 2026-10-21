@@ -4,6 +4,7 @@ import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { AdjustTools, type AdjustTool, type PeriodRepeat } from '@/components/AdjustTools'
 import { CalendarNotices } from '@/components/CalendarNotices'
+import { MonthJump } from '@/components/MonthJump'
 import { WHATS_NEW_ID, WHATS_NEW_SINCE, WhatsNew } from '@/components/WhatsNew'
 import { Icon } from '@/components/Icon'
 import { Body, Button, Card, ErrorState, Loading } from '@/components/ui'
@@ -45,6 +46,7 @@ export default function CalendarScreen() {
   const today = todayIso()
   const [month, setMonth] = useState(monthStart(today))
   const [selected, setSelected] = useState(today)
+  const [jumpOpen, setJumpOpen] = useState(false)
   const grid = useMemo(() => monthGrid(month), [month])
   const household = useHousehold().data ?? undefined
   const meId = useMe().data?.id
@@ -197,11 +199,11 @@ export default function CalendarScreen() {
     save.mutate({ set: [], clear: [id] }, { onSuccess: (res) => setNotice(noticeFor(res.status, 1)) })
   }
 
-  const goTo = (delta: number) => {
-    const next = addMonths(month, delta)
+  const showMonth = (next: string) => {
     setMonth(next)
     setSelected(next.slice(0, 7) === today.slice(0, 7) ? today : next)
   }
+  const goTo = (delta: number) => showMonth(addMonths(month, delta))
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.paper }} edges={['top']}>
@@ -219,12 +221,29 @@ export default function CalendarScreen() {
         }}
       />
       <View style={s.header}>
-        <Text accessibilityRole="header" style={s.title}>
-          {capitalize(formatMonth(month))}
-        </Text>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`${capitalize(formatMonth(month))}, aller à un autre mois`}
+          onPress={() => setJumpOpen(true)}
+          style={s.titleBtn}
+        >
+          <Text accessibilityRole="header" style={s.title} numberOfLines={1}>
+            {capitalize(formatMonth(month))}
+          </Text>
+          <Text style={s.titleCaret}>▾</Text>
+        </Pressable>
         <NavButton icon="back" label="Mois précédent" onPress={() => goTo(-1)} />
         <NavButton icon="chevron" label="Mois suivant" onPress={() => goTo(1)} />
       </View>
+      {jumpOpen ? <MonthJump
+        visible
+        month={month}
+        onPick={(m) => {
+          setJumpOpen(false)
+          showMonth(m)
+        }}
+        onClose={() => setJumpOpen(false)}
+      /> : null}
 
       {calendar.isPending ? (
         <Loading />
@@ -577,7 +596,9 @@ function capitalize(str: string) {
 
 const s = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 20, paddingTop: 8, paddingBottom: 10 },
-  title: { flex: 1, fontFamily: fonts.display, fontSize: 26, color: colors.ink },
+  titleBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 44 },
+  title: { flexShrink: 1, fontFamily: fonts.display, fontSize: 26, color: colors.ink },
+  titleCaret: { fontFamily: fonts.bodyBold, fontSize: 16, color: colors.inkSoft },
   nav: {
     width: 44, height: 44, borderRadius: 22, borderWidth: 1, borderColor: colors.line,
     backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center',

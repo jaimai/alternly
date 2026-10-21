@@ -29,5 +29,10 @@
   "calendar.legendHandover": "Jour de passage",
   "calendar.legendProposedExchange": "Échange proposé",
   "calendar.alreadyMember": "Vous faites déjà partie de ce foyer : voici votre calendrier partagé.",
-  "calendar.premiumActivated": "Merci ! Premium est activé : rappels, dépenses, mur et historique sont débloqués."
+  "calendar.premiumActivated": "Merci ! Premium est activé : rappels, dépenses, mur et historique sont débloqués.",
+  "calendar.jumpTitle": "Aller à un mois",
+  "calendar.jumpPrevYear": "Année précédente",
+  "calendar.jumpNextYear": "Année suivante",
+  "calendar.jumpToday": "Aujourd'hui",
+  "calendar.jumpDate": "Une date précise"
 }

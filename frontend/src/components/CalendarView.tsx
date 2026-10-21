@@ -8,6 +8,7 @@ import type { EventContentArg, EventInput } from '@fullcalendar/core'
 import { track } from '../analytics'
 import { EV } from '../analyticsEvents'
 import Icon from './Icon'
+import MonthJump from './MonthJump'
 import type { IconName } from './Icon'
 import type { CalendarResponse, Member } from '../types'
 import { addDays, isoLocal } from '../dates'
@@ -31,6 +32,10 @@ const MOBILE_QUERY = '(max-width: 640px)'
 // calendar_navigated : au plus un événement toutes les 10 s (navigation rapide mois par mois).
 const NAV_THROTTLE_MS = 10_000
 let lastNavTrack = 0
+
+function monthsBetween(a: Date, b: Date): number {
+  return (b.getFullYear() - a.getFullYear()) * 12 + b.getMonth() - a.getMonth()
+}
 
 function useIsMobile(): boolean {
   const [mobile, setMobile] = useState(() => window.matchMedia(MOBILE_QUERY).matches)
@@ -58,6 +63,17 @@ export default function CalendarView({ data, onDayClick, onRangeChange, flips, a
   const { t, i18n } = useTranslation()
   const mobile = useIsMobile()
   const prevStart = useRef<number | null>(null)
+  const calRef = useRef<FullCalendar>(null)
+  // Titre du mois cliquable (« octobre 2026 ▾ ») : ouvre le sélecteur mois / année.
+  const [title, setTitle] = useState('')
+  const [shown, setShown] = useState(() => new Date())
+  const [jumpOpen, setJumpOpen] = useState(false)
+
+  function jumpTo(date: Date) {
+    calRef.current?.getApi().gotoDate(date)
+    setJumpOpen(false)
+    track(EV.calendarJumped, { months_away: monthsBetween(new Date(), date) })
+  }
   const memberById = useMemo(() => {
     const map = new Map<number, Member>()
     data.members.forEach((m) => map.set(m.id, m))
@@ -152,14 +168,18 @@ export default function CalendarView({ data, onDayClick, onRangeChange, flips, a
     <div className={`calendar-shell ph-mask ph-sensitive${adjusting ? ' is-adjusting' : ''}`}>
       <style>{paletteCss}</style>
       <FullCalendar
+        ref={calRef}
         plugins={[dayGridPlugin, interactionPlugin]}
         initialView="dayGridMonth"
         locale={i18n.language.startsWith('fr') ? frLocale : 'en'}
         headerToolbar={
           mobile
-            ? { left: 'title', center: '', right: 'today prev,next' }
-            : { left: 'title', center: '', right: 'today prevYear,prev,next,nextYear dayGridMonth,dayGridWeek' }
+            ? { left: 'jump', center: '', right: 'today prev,next' }
+            : { left: 'jump', center: '', right: 'today prevYear,prev,next,nextYear dayGridMonth,dayGridWeek' }
         }
+        customButtons={{
+          jump: { text: `${title} ▾`, hint: t('calendar.jumpTitle'), click: () => setJumpOpen((o) => !o) },
+        }}
         events={events}
         eventContent={renderEvent}
         dayCellClassNames={(arg) => {
@@ -179,6 +199,8 @@ export default function CalendarView({ data, onDayClick, onRangeChange, flips, a
           const endInclusive = new Date(info.end)
           endInclusive.setDate(endInclusive.getDate() - 1)
           onRangeChange(isoLocal(info.start), isoLocal(endInclusive))
+          setTitle(info.view.title)
+          setShown(info.view.calendar.getDate())
           const start = info.start.getTime()
           const before = prevStart.current
           prevStart.current = start
@@ -193,6 +215,7 @@ export default function CalendarView({ data, onDayClick, onRangeChange, flips, a
         dayMaxEvents={mobile ? 1 : 3}
         moreLinkText={(n) => `+${n}`}
       />
+      {jumpOpen && <MonthJump shown={shown} onPick={jumpTo} onClose={() => setJumpOpen(false)} />}
     </div>
   )
 }
