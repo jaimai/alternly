@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><title>Alternly — Reel rythmes</title>
+<link rel="stylesheet" href="base.css">
+<style>
+  .stage { width: 1080px; height: 1920px; }
+  .blob { position: absolute; border-radius: 50%; filter: blur(90px); opacity: .35; }
+  .blob.a1 { width: 760px; height: 760px; background: var(--pine-soft); top: -200px; left: -260px; animation: drift1 15s linear both; }
+  .blob.b1 { width: 700px; height: 700px; background: var(--terra-soft); bottom: -160px; right: -240px; animation: drift2 15s linear both; }
+  @keyframes drift1 { to { transform: translate(180px, 260px); } }
+  @keyframes drift2 { to { transform: translate(-160px, -300px); } }
+
+  /* Scène 1 : les rythmes */
+  .words { display: flex; flex-direction: column; align-items: center; gap: 26px; }
+  .w { font-family: 'Fraunces', serif; font-variation-settings: 'opsz' 144; font-size: 116px; line-height: 1; letter-spacing: -0.03em; --k: pop; --d: 450ms; }
+  .w:nth-child(2) { color: var(--terra); font-style: italic; }
+  .w:nth-child(3) { color: var(--pine); }
+  .w4 { margin-top: 60px; font-size: 64px; color: var(--ink-soft); font-style: italic; }
+
+  /* Scène 2 : le sélecteur */
+  .s2 { justify-content: flex-start; padding-top: 170px; }
+  .cap { font-size: 78px; line-height: 1.06; text-align: center; padding: 0 70px; margin-bottom: 60px; }
+  .cap em { color: var(--pine); font-style: italic; }
+  .panel { width: 900px; background: #fff; border-radius: 48px; padding: 46px 44px 50px; box-shadow: 0 50px 100px -40px rgba(36,49,43,.45); }
+  .tabs { position: relative; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 44px; }
+  .tab { position: relative; z-index: 1; text-align: center; font-size: 32px; font-weight: 700; padding: 22px 10px; border-radius: 999px; border: 2px solid var(--line); color: var(--ink-soft); }
+  .tab .on { position: absolute; inset: -2px; border-radius: 999px; background: var(--ink); color: #fff; display: grid; place-items: center; animation: onoff var(--len) linear var(--t) both; }
+  .tab .on.keep { animation: onkeep 200ms var(--out) var(--t) both; }
+  @keyframes onoff { 0% { opacity: 0; } 8% { opacity: 1; } 92% { opacity: 1; } 100% { opacity: 0; } }
+  @keyframes onkeep { from { opacity: 0; } to { opacity: 1; } }
+  .wkl { font-size: 28px; font-weight: 700; color: var(--ink-soft); margin: 4px 0 12px; }
+  .dow, .grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; }
+  .dow div { text-align: center; font-size: 26px; font-weight: 600; color: var(--ink-soft); padding-bottom: 8px; }
+  .grid { margin-bottom: 22px; }
+  .c { position: relative; height: 112px; border-radius: 20px; background: var(--paper); overflow: hidden; }
+  .c .f { position: absolute; inset: 0; transform-origin: top; animation: flip 360ms var(--out) var(--t) both; }
+  @keyframes flip { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+  .A { background: var(--pa); } .B { background: var(--pb); }
+  .stats { position: relative; height: 130px; margin-top: 18px; }
+  .st { position: absolute; inset: 0; display: flex; align-items: center; justify-content: space-between; background: var(--paper); border-radius: 26px; padding: 0 34px; font-size: 32px; animation: onoff var(--len) linear var(--t) both; }
+  .st.keep { animation: onkeep 200ms var(--out) var(--t) both; }
+  .st b { font-weight: 700; }
+  .st i { display: inline-block; width: 24px; height: 24px; border-radius: 7px; vertical-align: -3px; margin-right: 10px; }
+  .st .d { font-size: 28px; color: var(--ink-soft); max-width: 360px; text-align: right; line-height: 1.25; }
+
+  /* Scène 3 : toute l'année */
+  .s3 h3 { font-size: 84px; line-height: 1.06; text-align: center; padding: 0 80px; margin-bottom: 60px; }
+  .s3 h3 em { color: var(--terra); font-style: italic; }
+  .year { width: 920px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 26px; }
+  .mo { background: #fff; border-radius: 26px; padding: 20px 18px 22px; box-shadow: 0 20px 40px -26px rgba(36,49,43,.45); }
+  .mo h5 { font-size: 26px; font-weight: 700; margin-bottom: 12px; color: var(--ink-soft); }
+  .mg { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+  .mg i { height: 26px; border-radius: 6px; background: var(--paper); position: relative; overflow: hidden; }
+  .mg i.A { background-color: var(--pa); } .mg i.B { background-color: var(--pb); }
+  .mg i.A, .mg i.B { animation: fade 160ms linear var(--t) both; }
+  .mg i.v { background-image: repeating-linear-gradient(-45deg, rgba(255,255,255,.75) 0 4px, transparent 4px 8px); }
+
+  /* Scène 4 : CTA */
+  .s5 .wordmark { font-size: 200px; }
+  .s5 p { font-size: 56px; text-align: center; line-height: 1.25; margin-top: 30px; color: var(--ink-soft); padding: 0 100px; }
+  .s5 p b { color: var(--ink); }
+  .cta { margin-top: 80px; background: var(--pine); color: #fff; font-size: 54px; font-weight: 700; padding: 38px 76px; border-radius: 999px; box-shadow: 0 30px 60px -24px rgba(31,77,63,.6); }
+  .pulse { animation: pulse 1400ms var(--inout) 13800ms infinite both; }
+  @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+  .small { margin-top: 40px; font-size: 36px; color: var(--ink-soft); }
+</style></head>
+<body>
+<div class="stage" id="stage">
+  <div class="blob a1"></div><div class="blob b1"></div>
+
+  <!-- 1. 0 → 3 s -->
+  <section class="scene x" style="--x:2800ms">
+    <div class="words">
+      <div class="w a" style="--t:150ms">Semaine / semaine&nbsp;?</div>
+      <div class="w a" style="--t:650ms">2-2-3&nbsp;?</div>
+      <div class="w a" style="--t:1150ms">Un week-end sur deux&nbsp;?</div>
+    </div>
+    <div class="w4 serif a" style="--t:1800ms">Ou rien de tout ça&nbsp;?</div>
+  </section>
+
+  <!-- 2. 3 → 10,3 s -->
+  <section class="scene s2 x" style="--x:10100ms">
+    <h3 class="cap serif a" style="--t:3000ms">Votre rythme, <em>tel&nbsp;quel</em></h3>
+    <div class="panel a" style="--k:rise;--d:800ms;--t:3050ms">
+      <div class="tabs" id="tabs"></div>
+      <div class="dow"><div>L</div><div>M</div><div>M</div><div>J</div><div>V</div><div>S</div><div>D</div></div>
+      <div class="wkl">Semaine 1</div>
+      <div class="grid" id="g1"></div>
+      <div class="wkl">Semaine 2</div>
+      <div class="grid" id="g2"></div>
+      <div class="stats" id="stats"></div>
+    </div>
+  </section>
+
+  <!-- 3. 10,3 → 12,9 s -->
+  <section class="scene s3 x" style="--x:12700ms">
+    <h3 class="serif a" style="--t:10300ms">Appliqué <em>toute l'année</em>, vacances comprises</h3>
+    <div class="year a" style="--k:fade;--t:10350ms" id="year"></div>
+  </section>
+
+  <!-- 4. CTA : 13 → 15 s -->
+  <section class="scene s5">
+    <div class="wordmark a" style="--k:zoom;--d:900ms;--t:12950ms">altern<span>ly</span></div>
+    <p class="a" style="--t:13300ms">Votre organisation de garde,<br><b>sans tableau Excel.</b></p>
+    <div class="a" style="--k:pop;--t:13600ms"><div class="cta pulse">alternly.com</div></div>
+    <div class="small a" style="--k:fade;--t:13900ms">Calendrier gratuit · sans carte bancaire</div>
+  </section>
+</div>
+<script>
+  // Cycles de 14 jours (lundi → dimanche, 2 semaines), A = Camille, B = Alex,
+  // identiques au moteur de garde (custody_engine.base_pattern_parent).
+  const P = [
+    { name: 'Semaine / semaine', t: 3900, days: 'AAAAAAABBBBBBB', stat: ['7 j', '7 j'], d: 'Passage chaque lundi' },
+    { name: '2-2-3', t: 5500, days: 'AABBAAABBAABBB', stat: ['7 j', '7 j'], d: '2 jours, 2 jours, 3 jours' },
+    { name: 'Week-end sur deux', t: 7100, days: 'BBBBAAABBBBBBB', stat: ['3 j', '11 j'], d: 'Du vendredi au dimanche' },
+    { name: 'Personnalisé', t: 8700, days: 'AABBAAAAABBBBB', stat: ['7 j', '7 j'], d: 'ex. 2-2-5-5, jour par jour' },
+  ]
+  const tabs = document.getElementById('tabs'), stats = document.getElementById('stats')
+  P.forEach((p, k) => {
+    const last = k === P.length - 1
+    const len = last ? 0 : P[k + 1].t - p.t
+    tabs.insertAdjacentHTML('beforeend', `<div class="tab">${p.name}<div class="on${last ? ' keep' : ''}" style="--t:${p.t}ms;--len:${len}ms">${p.name}</div></div>`)
+    stats.insertAdjacentHTML('beforeend', `<div class="st${last ? ' keep' : ''}" style="--t:${p.t}ms;--len:${len}ms"><span><i class="A"></i>Camille <b>${p.stat[0]}</b> &nbsp; <i class="B"></i>Alex <b>${p.stat[1]}</b></span><span class="d">${p.d}</span></div>`)
+  })
+  ;['g1', 'g2'].forEach((id, w) => {
+    const g = document.getElementById(id)
+    for (let i = 0; i < 7; i++) {
+      const idx = w * 7 + i
+      // Chaque rythme pose une couche ; la case ne se rejoue que si sa couleur change.
+      let html = '', prev = null
+      P.forEach((p, k) => {
+        const who = p.days[idx]
+        if (who !== prev) html += `<div class="f ${who}" style="--t:${p.t + 120 + idx * 28}ms;z-index:${k + 1}"></div>`
+        prev = who
+      })
+      g.insertAdjacentHTML('beforeend', `<div class="c">${html}</div>`)
+    }
+  })
+  // Année scolaire en semaine/semaine, vacances hachurées (indicatif).
+  const months = ['Sept.', 'Oct.', 'Nov.', 'Déc.', 'Janv.', 'Févr.', 'Mars', 'Avr.', 'Mai', 'Juin', 'Juil.', 'Août']
+  const vac = new Set([7, 8, 15, 16, 26, 27, 32, 33, 43, 44, 45, 46, 47, 48, 49, 50, 51])  // semaines indicatives
+  const year = document.getElementById('year')
+  let wk = 0
+  months.forEach((m, mi) => {
+    let cells = ''
+    for (let i = 0; i < 28; i++) {
+      const w = wk + Math.floor(i / 7)
+      cells += `<i class="${w % 2 ? 'B' : 'A'}${vac.has(w) ? ' v' : ''}" style="--t:${10500 + mi * 110 + i * 6}ms"></i>`
+    }
+    wk += 4 + (mi % 3 === 0 ? 1 : 0)
+    year.insertAdjacentHTML('beforeend', `<div class="mo"><h5>${m}</h5><div class="mg">${cells}</div></div>`)
+  })
+</script>
+<script type="application/json" id="audio">
+{"bpm": 116, "prog": "soft", "drop": 3000, "duration": 15000, "outro": 12900,
+ "cues": [[150, "pop"], [650, "pop"], [1150, "pop"], [1800, "pop", 0.6], [1400, "riser", 0.45], [2800, "whoosh"],
+          [3900, "tap"], [4050, "tick"], [5500, "tap"], [5650, "tick"], [7100, "tap"], [7250, "tick"],
+          [8700, "tap"], [8850, "tick"], [10050, "whoosh"], [10500, "riser", 0.55], [12100, "success", 0.6],
+          [12750, "whoosh"], [13600, "pop"]]}
+</script>
+</body></html>
