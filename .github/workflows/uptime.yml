@@ -1,0 +1,94 @@
+# Surveillance de disponibilité : toutes les 10 minutes, l'API (base comprise)
+# et le site public doivent répondre. Deux échecs d'affilée (à 1 min d'écart)
+# ouvrent une issue « Site indisponible » (notification GitHub par e-mail) ;
+# le retour à la normale la commente et la ferme.
+# Contexte : 26 h de panne Railway les 22-23/10/2026, vue seulement dans PostHog.
+name: Uptime
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+concurrency:
+  group: uptime
+  cancel-in-progress: false
+
+env:
+  ISSUE_TITLE: "🔴 Site indisponible (surveillance automatique)"
+  # API directe (Railway) + pages publiques servies via Vercel.
+  CHECKS: >-
+    https://web-production-d1aa3.up.railway.app/api/health
+    https://alternly.com/
+    https://alternly.com/app
+
+jobs:
+  check:
+    name: Vérifier l'API et le site
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Requêtes de contrôle
+        id: probe
+        run: |
+          probe() {
+            failed=""
+            for url in $CHECKS; do
+              code=$(curl --silent --output /dev/null --write-out '%{http_code}' --max-time 20 --location "$url" || true)
+              echo "$url → HTTP $code"
+              case "$code" in 2??) ;; *) failed="$failed $url ($code)" ;; esac
+            done
+            echo "$failed"
+          }
+          first=$(probe | tee /dev/stderr | tail -n 1)
+          if [ -n "$first" ]; then
+            echo "Échec au premier essai :$first — nouvel essai dans 60 s"
+            sleep 60
+            second=$(probe | tee /dev/stderr | tail -n 1)
+          else
+            second=""
+          fi
+          if [ -n "$second" ]; then
+            echo "down=true" >> "$GITHUB_OUTPUT"
+            echo "failed=$second" >> "$GITHUB_OUTPUT"
+          else
+            echo "down=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Ouvrir ou mettre à jour l'issue
+        if: steps.probe.outputs.down == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          FAILED: ${{ steps.probe.outputs.failed }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          now=$(TZ=Europe/Paris date '+%d/%m/%Y %H:%M')
+          issue=$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search "\"$ISSUE_TITLE\" in:title" --json number --jq '.[0].number // empty')
+          body="Échec à $now (heure de Paris), deux essais à 1 min d'écart :$FAILED
+
+          À vérifier : Railway → service backend → Deployments (redéployer si besoin).
+          Détails : $RUN_URL"
+          if [ -z "$issue" ]; then
+            gh issue create --repo "$GITHUB_REPOSITORY" --title "$ISSUE_TITLE" --body "$body"
+          else
+            # Une ligne par heure au plus, pour ne pas noyer les notifications.
+            last=$(gh issue view "$issue" --repo "$GITHUB_REPOSITORY" --json comments --jq '.comments[-1].createdAt // empty')
+            if [ -z "$last" ] || [ $(( $(date +%s) - $(date -d "$last" +%s) )) -ge 3600 ]; then
+              gh issue comment "$issue" --repo "$GITHUB_REPOSITORY" --body "Toujours indisponible à $now :$FAILED"
+            fi
+          fi
+          exit 1
+
+      - name: Fermer l'issue au retour à la normale
+        if: steps.probe.outputs.down == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          issue=$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search "\"$ISSUE_TITLE\" in:title" --json number --jq '.[0].number // empty')
+          if [ -n "$issue" ]; then
+            now=$(TZ=Europe/Paris date '+%d/%m/%Y %H:%M')
+            gh issue close "$issue" --repo "$GITHUB_REPOSITORY" --comment "✅ De nouveau disponible à $now (heure de Paris)."
+          fi
