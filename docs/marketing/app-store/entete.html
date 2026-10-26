@@ -155,13 +155,31 @@ if (layout === 'wide169') {
   head.innerHTML = `
     <div class="eyebrow" style="font-size:15px;margin-bottom:16px">Calendrier de garde partagé</div>
     <div class="title" style="font-size:60px">La garde alternée, <em>enfin simple</em>.</div>
-    <div class="lead" style="font-size:20px;margin-top:14px">Un calendrier partagé entre les deux parents, sur l’iPhone et sur le web.</div>`
+    <div class="lead" style="font-size:20px;margin-top:14px">Un seul calendrier pour les deux parents.</div>`
   stage.append(head)
 
   stage.append(place(piece('t-cal'), { width: '470px', left: '420px', top: '270px', zIndex: 2 }))
   stage.append(place(piece('t-notif'), { width: '350px', left: '62px', top: '330px', zIndex: 3, transform: 'rotate(-2deg)' }))
   stage.append(place(piece('t-exchange'), { width: '300px', right: '128px', top: '296px', zIndex: 3, transform: 'rotate(1.5deg)' }))
   stage.append(place(piece('t-expense'), { width: '320px', right: '100px', top: '470px', zIndex: 1 }))
+} else if (layout === 'search32') {
+  // Résultats de recherche : 3840 × 2560 (3:2), conçu à 1280 × 853,33 puis rendu ×3.
+  // Une seule idée, centrée : le calendrier partagé, avec le rappel de passation.
+  Object.assign(stage.style, { width: '1280px', height: '853.333px' })
+  const b1 = place(Object.assign(document.createElement('div'), { className: 'blob' }), { width: '600px', height: '600px', right: '-200px', top: '-260px', background: 'var(--terra-soft)' })
+  const b2 = place(Object.assign(document.createElement('div'), { className: 'blob' }), { width: '560px', height: '560px', left: '-230px', bottom: '-280px', background: 'var(--pine-soft)' })
+  stage.append(b1, b2)
+
+  const head = place(document.createElement('div'), { left: '0', right: '0', top: '64px', textAlign: 'center' })
+  head.innerHTML = `
+    <div class="eyebrow" style="font-size:15px;margin-bottom:14px">Calendrier de garde partagé</div>
+    <div class="title" style="font-size:56px">Les enfants sont <em>chez qui</em> ?</div>
+    <div class="lead" style="font-size:20px;margin-top:12px">La réponse, d’un coup d’œil, pour les deux parents.</div>`
+  stage.append(head)
+
+  stage.append(place(piece('t-cal'), { width: '500px', left: '390px', top: '268px', zIndex: 2 }))
+  stage.append(place(piece('t-notif'), { width: '310px', left: '62px', top: '340px', zIndex: 3, transform: 'rotate(-2deg)' }))
+  stage.append(place(piece('t-exchange'), { width: '300px', right: '90px', top: '470px', zIndex: 3, transform: 'rotate(1.5deg)' }))
 } else {
   // 3840 × 1646 (≈ 2,33:1), conçu à 1280 × 548,67 puis rendu ×3.
   Object.assign(stage.style, { width: '1280px', height: '548.667px' })
@@ -173,7 +191,7 @@ if (layout === 'wide169') {
   head.innerHTML = `
     <div class="eyebrow" style="font-size:13px;margin-bottom:14px">Calendrier de garde partagé</div>
     <div class="title" style="font-size:50px">La garde alternée,<br><em>enfin simple</em>.</div>
-    <div class="lead" style="font-size:17.5px;margin-top:14px">Un calendrier partagé entre les deux parents, sur l’iPhone et sur le web.</div>`
+    <div class="lead" style="font-size:17.5px;margin-top:14px">Un seul calendrier pour les deux parents.</div>`
   stage.append(head)
 
   stage.append(place(piece('t-cal'), { width: '420px', left: '585px', top: '56px', zIndex: 2 }))
