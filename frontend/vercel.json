@@ -18,6 +18,7 @@
         "Cache-Control": "public, max-age=31536000, immutable"
       }, "continue": true
     },
+    { "src": "/((?!ingest/|api/|ical/|static/|assets/).+)/", "status": 308, "headers": { "Location": "/$1" } },
     { "src": "/", "dest": "https://web-production-d1aa3.up.railway.app/" },
     { "src": "/en", "dest": "https://web-production-d1aa3.up.railway.app/en" },
     { "src": "/en/blog", "dest": "https://web-production-d1aa3.up.railway.app/en/blog" },

@@ -29,6 +29,14 @@ templates.env.globals["site_url"] = settings.public_site_url.rstrip("/")
 # Jeton de projet PostHog (public) : lu au rendu, vide → ni bannière ni mesure d'audience.
 templates.env.globals["analytics_key"] = lambda: settings.posthog_token
 templates.env.globals["billing_plans"] = billing_service.plans
+# Pages traduites (chemin → (fr, en)) : seules celles-ci reçoivent des hreflang.
+# Un hreflang vers l'accueil depuis un article le déclarerait à tort « traduction ».
+HREFLANG_PAIRS = {
+    path: pair
+    for pair in [("/", "/en")] + [(f"/{s}", f"/en/{s}") for s in ("terms", "privacy", "refund")]
+    for path in pair
+}
+templates.env.globals["hreflang_pairs"] = HREFLANG_PAIRS
 
 
 def site_base(request: Request) -> str:
@@ -180,7 +188,7 @@ def _tool_form(params) -> tuple[dict, bool]:
 
 @router.get("/outils", include_in_schema=False)
 def tools_index():
-    return RedirectResponse(TOOL_PATH, status_code=302)
+    return RedirectResponse(TOOL_PATH, status_code=301)
 
 
 def _quick_answer(db: Session, vacances: str) -> dict | None:

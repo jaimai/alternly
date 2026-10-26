@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>{% block title %}Alternly{% endblock %}</title>
   <meta name="description" content="{% block description %}Alternly: the shared-custody calendar built for co-parents. Custody schedules, school breaks and vacation splits, holidays that alternate by even/odd year, shared expenses and a message board between both households.{% endblock %}" />
-  <link rel="canonical" href="{{ site_url }}/en" />
+  <link rel="canonical" href="{{ site_url }}{{ request.url.path }}" />
 
   <!-- Open Graph / Twitter -->
   <meta property="og:site_name" content="Alternly" />
@@ -13,16 +13,19 @@
   <meta property="og:type" content="website" />
   <meta property="og:title" content="{% block og_title %}{{ self.title() }}{% endblock %}" />
   <meta property="og:description" content="{{ self.description() }}" />
-  <meta property="og:url" content="{{ site_url }}/en" />
+  <meta property="og:url" content="{{ site_url }}{{ request.url.path }}" />
   <meta property="og:image" content="{{ site_url }}/static/favicon.svg" />
   <meta name="twitter:card" content="summary" />
   <meta name="twitter:title" content="{{ self.title() }}" />
   <meta name="twitter:description" content="{{ self.description() }}" />
   <meta name="theme-color" content="#1f4d3f" />
 
-  <link rel="alternate" hreflang="fr" href="{{ site_url }}/" />
-  <link rel="alternate" hreflang="en" href="{{ site_url }}/en" />
-  <link rel="alternate" hreflang="x-default" href="{{ site_url }}/" />
+  {%- set pair = hreflang_pairs.get(request.url.path) %}
+  {%- if pair %}
+  <link rel="alternate" hreflang="fr" href="{{ site_url }}{{ pair[0] }}" />
+  <link rel="alternate" hreflang="en" href="{{ site_url }}{{ pair[1] }}" />
+  <link rel="alternate" hreflang="x-default" href="{{ site_url }}{{ pair[0] }}" />
+  {%- endif %}
 
   {% block head %}{% endblock %}
 
