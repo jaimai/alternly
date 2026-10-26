@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Alternly — en-tête App Store</title>
+<style>
+@font-face { font-family: 'Fraunces'; font-style: normal; font-weight: 100 900; src: url(../../../backend/app/static/fonts/fraunces-latin-opsz-normal.woff2) format('woff2-variations'); unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215; }
+@font-face { font-family: 'Fraunces'; font-style: normal; font-weight: 100 900; src: url(../../../backend/app/static/fonts/fraunces-latin-ext-opsz-normal.woff2) format('woff2-variations'); unicode-range: U+0100-02BA,U+1E00-1E9F,U+20A0-20AB,U+20AD-20C0; }
+@font-face { font-family: 'Fraunces'; font-style: italic; font-weight: 100 900; src: url(../../../backend/app/static/fonts/fraunces-latin-opsz-italic.woff2) format('woff2-variations'); unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215; }
+@font-face { font-family: 'Instrument Sans'; font-weight: 400; src: url(../../../backend/app/static/fonts/instrument-sans-latin-400-normal.woff2) format('woff2'); }
+@font-face { font-family: 'Instrument Sans'; font-weight: 500; src: url(../../../backend/app/static/fonts/instrument-sans-latin-500-normal.woff2) format('woff2'); }
+@font-face { font-family: 'Instrument Sans'; font-weight: 600; src: url(../../../backend/app/static/fonts/instrument-sans-latin-600-normal.woff2) format('woff2'); }
+
+:root {
+  --paper: #faf6ef; --paper-deep: #f3ecdf; --ink: #24312b; --ink-soft: #5d6b63;
+  --pine: #1f4d3f; --pine-soft: #e4ede7; --terra: #c96f4a; --terra-text: #a85a39; --terra-soft: #f5e0d5;
+  --line: #e7dfd0; --holiday: #c9a227;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--paper); }
+body { font-family: 'Instrument Sans', sans-serif; color: var(--ink); overflow: hidden; -webkit-font-smoothing: antialiased; }
+
+.stage { position: relative; overflow: hidden; background: var(--paper); }
+.blob { position: absolute; border-radius: 50%; }
+
+/* Typo */
+.eyebrow { font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--terra); }
+.title { font-family: 'Fraunces', serif; font-weight: 500; font-variation-settings: 'opsz' 144; letter-spacing: -.01em; line-height: 1.04; color: var(--ink); }
+.title em { font-style: italic; color: var(--pine); }
+.lead { color: var(--ink-soft); line-height: 1.35; }
+
+/* Cartes */
+.card { background: #fff; border: 1px solid var(--line); border-radius: 22px; box-shadow: 0 18px 40px -18px rgba(36,49,43,.28), 0 2px 6px rgba(36,49,43,.05); }
+
+/* Calendrier */
+.cal { padding: 22px 22px 20px; }
+.cal-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 14px; }
+.cal-month { font-family: 'Fraunces', serif; font-weight: 500; font-size: 26px; font-variation-settings: 'opsz' 72; }
+.legend { display: flex; gap: 12px; font-size: 12.5px; color: var(--ink-soft); font-weight: 500; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+.dow, .grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+.dow div { font-size: 11px; font-weight: 600; color: var(--ink-soft); text-align: center; letter-spacing: .04em; padding-bottom: 6px; }
+.day { aspect-ratio: 1 / .86; border-radius: 10px; font-size: 14px; font-weight: 500; display: flex; align-items: flex-start; justify-content: flex-start; padding: 6px 8px; position: relative; }
+.day.a { background: var(--pine-soft); color: var(--pine); }
+.day.b { background: var(--terra-soft); color: var(--terra-text); }
+.day.empty { background: transparent; }
+.day.today { outline: 2.5px solid var(--pine); outline-offset: -2.5px; }
+.day.swap::after { content: ''; position: absolute; right: 7px; bottom: 7px; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.day.hol::before { content: ''; position: absolute; left: 8px; right: 8px; bottom: 6px; height: 3px; border-radius: 2px; background: var(--holiday); }
+
+/* Notification façon iOS */
+.notif { padding: 16px 18px; display: flex; gap: 14px; align-items: flex-start; border-radius: 24px; background: rgba(255,255,255,.96); }
+.notif img { width: 44px; height: 44px; border-radius: 11px; flex: none; }
+.notif .meta { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-soft); font-weight: 500; letter-spacing: .02em; margin-bottom: 3px; }
+.notif .t { font-weight: 600; font-size: 15.5px; margin-bottom: 2px; }
+.notif .b { font-size: 14.5px; color: var(--ink); line-height: 1.32; }
+
+/* Échange / dépense */
+.mini { padding: 18px 20px; }
+.mini .k { font-size: 11.5px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--ink-soft); margin-bottom: 8px; }
+.mini .h { font-family: 'Fraunces', serif; font-weight: 500; font-size: 21px; font-variation-settings: 'opsz' 48; line-height: 1.15; margin-bottom: 12px; }
+.pill { display: inline-flex; align-items: center; gap: 7px; font-size: 13.5px; font-weight: 600; padding: 6px 12px; border-radius: 999px; }
+.pill.ok { background: var(--pine-soft); color: var(--pine); }
+.pill.terra { background: var(--terra-soft); color: var(--terra-text); }
+.row { display: flex; justify-content: space-between; align-items: center; font-size: 14px; padding: 9px 0; border-top: 1px solid var(--line); }
+.row b { font-weight: 600; }
+
+.brand { display: flex; align-items: center; gap: 12px; }
+.brand img { width: 40px; height: 40px; border-radius: 10px; }
+.wordmark { font-family: 'Fraunces', serif; font-weight: 500; font-size: 30px; font-variation-settings: 'opsz' 72; letter-spacing: -.01em; }
+.wordmark em { font-style: italic; color: var(--terra); }
+</style>
+</head>
+<body>
+<div class="stage" id="stage"></div>
+
+<template id="t-cal">
+  <div class="card cal">
+    <div class="cal-head">
+      <div class="cal-month">Novembre 2026</div>
+      <div class="legend"><span><i style="background:var(--pine)"></i>Chez vous</span><span><i style="background:var(--terra)"></i>Chez Julie</span></div>
+    </div>
+    <div class="dow"><div>LUN</div><div>MAR</div><div>MER</div><div>JEU</div><div>VEN</div><div>SAM</div><div>DIM</div></div>
+    <div class="grid" data-grid></div>
+  </div>
+</template>
+
+<template id="t-notif">
+  <div class="card notif">
+    <img src="../brand/alternly-logo-icone-1080.png" alt="">
+    <div style="flex:1">
+      <div class="meta"><span>ALTERNLY</span><span>maintenant</span></div>
+      <div class="t">Passation demain</div>
+      <div class="b">Léa et Hugo arrivent chez vous vendredi, vers 18:00.</div>
+    </div>
+  </div>
+</template>
+
+<template id="t-exchange">
+  <div class="card mini">
+    <div class="k">Échange de garde</div>
+    <div class="h">Week-end du 14 nov.</div>
+    <span class="pill ok">✓ Accepté par Julie</span>
+  </div>
+</template>
+
+<template id="t-expense">
+  <div class="card mini">
+    <div class="k">Dépenses partagées</div>
+    <div class="row" style="border-top:0;padding-top:0"><span>Cantine de novembre</span><b>48,60 €</b></div>
+    <div class="row"><span>Chaussures de foot</span><b>59,90 €</b></div>
+    <div class="row" style="padding-bottom:0"><span class="pill terra" style="padding:5px 11px">Julie vous doit 54,25 €</span></div>
+  </div>
+</template>
+
+<script>
+// Calendrier de novembre 2026 (le 1er est un dimanche) : semaines alternées du lundi au lundi.
+function fillCalendar(root) {
+  const grid = root.querySelector('[data-grid]')
+  const cells = []
+  for (let i = 0; i < 6; i++) cells.push('<div class="day empty"></div>') // lun 26 → sam 31 oct. : vides
+  for (let d = 1; d <= 30; d++) {
+    const dow = (d + 5) % 7 // 0 = lundi
+    const week = Math.floor((d + 5) / 7) // semaine 0 = celle du 1er
+    let who = week % 2 === 0 ? 'b' : 'a'
+    if (d === 14 || d === 15) who = 'a' // échange accepté : ce week-end chez vous
+    const cls = ['day', who]
+    if (dow === 0 && d > 1) cls.push('swap')
+    if (d === 11) cls.push('hol') // 11 novembre
+    if (d === 12) cls.push('today')
+    cells.push(`<div class="${cls.join(' ')}">${d}</div>`)
+  }
+  while (cells.length % 7) cells.push('<div class="day empty"></div>')
+  grid.innerHTML = cells.join('')
+}
+function piece(id) {
+  const n = document.getElementById(id).content.firstElementChild.cloneNode(true)
+  if (id === 't-cal') fillCalendar(n)
+  return n
+}
+function place(el, css) { Object.assign(el.style, { position: 'absolute' }, css); return el }
+
+const layout = new URLSearchParams(location.search).get('layout') || 'wide169'
+const stage = document.getElementById('stage')
+
+if (layout === 'wide169') {
+  // 5244 × 2950 (16:9), conçu à 1311 × 737,5 puis rendu ×4.
+  Object.assign(stage.style, { width: '1311px', height: '737.5px' })
+  const b1 = place(Object.assign(document.createElement('div'), { className: 'blob' }), { width: '560px', height: '560px', right: '-150px', top: '-230px', background: 'var(--terra-soft)' })
+  const b2 = place(Object.assign(document.createElement('div'), { className: 'blob' }), { width: '520px', height: '520px', left: '-200px', bottom: '-260px', background: 'var(--pine-soft)' })
+  stage.append(b1, b2)
+
+  const head = place(document.createElement('div'), { left: '0', right: '0', top: '62px', textAlign: 'center' })
+  head.innerHTML = `
+    <div class="eyebrow" style="font-size:15px;margin-bottom:16px">Calendrier de garde partagé</div>
+    <div class="title" style="font-size:60px">La garde alternée, <em>enfin simple</em>.</div>
+    <div class="lead" style="font-size:20px;margin-top:14px">Un calendrier partagé entre les deux parents, sur l’iPhone et sur le web.</div>`
+  stage.append(head)
+
+  stage.append(place(piece('t-cal'), { width: '470px', left: '420px', top: '270px', zIndex: 2 }))
+  stage.append(place(piece('t-notif'), { width: '350px', left: '62px', top: '330px', zIndex: 3, transform: 'rotate(-2deg)' }))
+  stage.append(place(piece('t-exchange'), { width: '300px', right: '128px', top: '296px', zIndex: 3, transform: 'rotate(1.5deg)' }))
+  stage.append(place(piece('t-expense'), { width: '320px', right: '100px', top: '470px', zIndex: 1 }))
+} else {
+  // 3840 × 1646 (≈ 2,33:1), conçu à 1280 × 548,67 puis rendu ×3.
+  Object.assign(stage.style, { width: '1280px', height: '548.667px' })
+  const b1 = place(Object.assign(document.createElement('div'), { className: 'blob' }), { width: '520px', height: '520px', right: '-120px', top: '-250px', background: 'var(--terra-soft)' })
+  const b2 = place(Object.assign(document.createElement('div'), { className: 'blob' }), { width: '440px', height: '440px', left: '-180px', bottom: '-260px', background: 'var(--pine-soft)' })
+  stage.append(b1, b2)
+
+  const head = place(document.createElement('div'), { left: '110px', top: '88px', width: '440px' })
+  head.innerHTML = `
+    <div class="eyebrow" style="font-size:13px;margin-bottom:14px">Calendrier de garde partagé</div>
+    <div class="title" style="font-size:50px">La garde alternée,<br><em>enfin simple</em>.</div>
+    <div class="lead" style="font-size:17.5px;margin-top:14px">Un calendrier partagé entre les deux parents, sur l’iPhone et sur le web.</div>`
+  stage.append(head)
+
+  stage.append(place(piece('t-cal'), { width: '420px', left: '585px', top: '56px', zIndex: 2 }))
+  stage.append(place(piece('t-notif'), { width: '380px', left: '106px', top: '352px', zIndex: 3, transform: 'rotate(-1.5deg)' }))
+  stage.append(place(piece('t-exchange'), { width: '240px', left: '985px', top: '84px', zIndex: 3, transform: 'rotate(1.5deg)' }))
+  stage.append(place(piece('t-expense'), { width: '255px', left: '985px', top: '252px', zIndex: 3 }))
+}
+document.fonts.ready.then(() => document.body.dataset.ready = '1')
+</script>
+</body>
+</html>
