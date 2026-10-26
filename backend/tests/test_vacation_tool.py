@@ -225,7 +225,7 @@ class TestToolPage:
 
     def test_outils_redirects(self, client):
         resp = client.get("/outils", follow_redirects=False)
-        assert resp.status_code == 302 and resp.headers["location"] == PAGE
+        assert resp.status_code == 301 and resp.headers["location"] == PAGE
 
     def test_linked_from_landing_footer_and_guides(self, client):
         assert PAGE in client.get("/").text

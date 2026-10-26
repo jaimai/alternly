@@ -20,9 +20,12 @@
   <meta name="twitter:description" content="{{ self.description() }}" />
   <meta name="theme-color" content="#1f4d3f" />
 
-  <link rel="alternate" hreflang="fr" href="{{ site_url }}/" />
-  <link rel="alternate" hreflang="en" href="{{ site_url }}/en" />
-  <link rel="alternate" hreflang="x-default" href="{{ site_url }}/" />
+  {%- set pair = hreflang_pairs.get(request.url.path) %}
+  {%- if pair %}
+  <link rel="alternate" hreflang="fr" href="{{ site_url }}{{ pair[0] }}" />
+  <link rel="alternate" hreflang="en" href="{{ site_url }}{{ pair[1] }}" />
+  <link rel="alternate" hreflang="x-default" href="{{ site_url }}{{ pair[0] }}" />
+  {%- endif %}
 
   {% block head %}{% endblock %}
 

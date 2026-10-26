@@ -136,3 +136,17 @@ def test_blog_post_has_tool_box_after_intro(client):
     assert body.count("<p>", 0, box) == 1  # un seul paragraphe d'article avant l'encart
     assert 'href="/outils/vacances-garde-alternee"' in body[box:box + 800]
     assert html.count('data-cta="blog_tool"') == 1
+
+
+def test_english_pages_canonical_to_themselves(client):
+    """Chaque page anglaise est canonique d'elle-même (et non de /en) ; les hreflang
+    ne sont posés que sur les pages réellement traduites."""
+    from app.services.blog import CONTENT_DIR_EN, load_articles
+
+    slug = load_articles(CONTENT_DIR_EN)[0].slug
+    html = client.get(f"/en/blog/{slug}").text
+    assert f'/en/blog/{slug}" />' in html.split('rel="canonical"')[1].split('\n')[0]
+    assert "hreflang" not in html
+    html = client.get("/en/terms").text
+    assert 'hreflang="fr" href="' in html and '/terms" />' in html
+    assert 'hreflang="en"' in client.get("/").text
