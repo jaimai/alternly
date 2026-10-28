@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Alternly — pub Noël 2026</title>
+<!-- Visuel de l'annonce V1 « Chez qui à Noël ? ». ?f=feed (1080×1350) ou ?f=story (1080×1920).
+     Rendu : node render.mjs "$PWD/.." depuis ce dossier. Polices : ../../videos/src. -->
+<style>
+@font-face { font-family: 'Fraunces'; src: url(../../videos/src/fraunces-latin-full-normal.woff2) format('woff2'); font-weight: 100 900; font-style: normal; }
+@font-face { font-family: 'Fraunces'; src: url(../../videos/src/fraunces-latin-full-italic.woff2) format('woff2'); font-weight: 100 900; font-style: italic; }
+@font-face { font-family: 'Instrument Sans'; src: url(../../videos/src/instrument-sans-latin-400-normal.woff2) format('woff2'); font-weight: 400; }
+@font-face { font-family: 'Instrument Sans'; src: url(../../videos/src/instrument-sans-latin-500-normal.woff2) format('woff2'); font-weight: 500; }
+@font-face { font-family: 'Instrument Sans'; src: url(../../videos/src/instrument-sans-latin-600-normal.woff2) format('woff2'); font-weight: 600; }
+
+:root {
+  --paper: #faf6ef; --ink: #24312b; --ink-soft: #5d6b63; --pine: #1f4d3f; --pine-soft: #e4ede7;
+  --terra: #c96f4a; --terra-text: #a85a39; --terra-soft: #f5e0d5; --line: #e7dfd0;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--paper); overflow: hidden; }
+body { font-family: 'Instrument Sans', sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; }
+.stage { position: relative; width: 1080px; overflow: hidden; background: var(--paper); padding: 0 70px; display: flex; flex-direction: column; }
+.blob { position: absolute; width: 470px; height: 470px; border-radius: 50%; background: var(--terra-soft); right: -195px; top: -195px; }
+
+.wordmark { font-family: 'Fraunces', serif; font-weight: 500; font-variation-settings: 'opsz' 72; font-size: 64px; letter-spacing: -0.02em; }
+.wordmark em { color: var(--terra); }
+.eyebrow { font-weight: 600; font-size: 29px; letter-spacing: .07em; text-transform: uppercase; color: var(--terra); }
+.title { font-family: 'Fraunces', serif; font-weight: 500; font-variation-settings: 'opsz' 144; font-size: 86px; line-height: 1.06; letter-spacing: -0.015em; position: relative; }
+.title em { color: var(--pine); }
+.lead { font-size: 36px; line-height: 1.42; color: var(--ink-soft); }
+
+.card { background: #fff; border: 2px solid var(--line); border-radius: 36px; padding: 44px 42px 40px; box-shadow: 0 24px 48px -26px rgba(36,49,43,.3); }
+.card .k { font-weight: 500; font-size: 24px; letter-spacing: .03em; text-transform: uppercase; color: var(--ink-soft); }
+.card .h { font-family: 'Fraunces', serif; font-weight: 500; font-variation-settings: 'opsz' 72; font-size: 50px; margin: 10px 0 26px; }
+.line { display: flex; align-items: center; justify-content: space-between; gap: 20px; border-top: 2px solid var(--line); padding: 20px 0; }
+.line .l { font-size: 30px; line-height: 1.25; }
+.line .l small { display: block; font-size: 22px; color: var(--ink-soft); margin-top: 3px; }
+.pill { font-weight: 600; font-size: 28px; padding: 10px 22px; border-radius: 999px; white-space: nowrap; }
+.pill.a { background: var(--pine-soft); color: var(--pine); }
+.pill.b { background: var(--terra-soft); color: var(--terra-text); }
+.days { display: grid; grid-template-columns: repeat(16, 1fr); gap: 6px; margin-top: 18px; }
+.days i { height: 42px; border-radius: 9px; background: var(--pine); display: block; }
+.days i.b { background: var(--terra); }
+.days i.mark { position: relative; }
+.days i.mark::after { content: ''; position: absolute; left: 50%; bottom: -16px; width: 9px; height: 9px; margin-left: -4.5px; border-radius: 50%; background: var(--ink); }
+.legend { display: flex; justify-content: space-between; font-size: 21px; color: var(--ink-soft); margin-top: 22px; font-weight: 500; }
+
+.foot { display: flex; align-items: center; justify-content: space-between; }
+.foot .small { font-size: 27px; color: var(--ink-soft); line-height: 1.35; }
+.btn { background: var(--pine); color: #fff; font-weight: 600; font-size: 38px; padding: 26px 46px; border-radius: 999px; }
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <div class="blob"></div>
+  <div class="wordmark" data-gap="top">altern<em>ly</em></div>
+  <div class="eyebrow" data-gap="eyebrow">Garde alternée · Noël 2026</div>
+  <div class="title" data-gap="title">Le 24 décembre, les enfants sont <em>chez qui</em>&nbsp;?</div>
+  <div class="lead" data-gap="lead">Réveillon, Noël, Nouvel An&nbsp;: les dates exactes et le jour du passage, en 10&nbsp;secondes.</div>
+  <div class="card" data-gap="card">
+    <div class="k">Noël 2026 · zones A, B, C · moitié / moitié</div>
+    <div class="h">Du 19 décembre au 3 janvier</div>
+    <div class="line"><span class="l">1<sup>re</sup> moitié<small>réveillon et jour de Noël</small></span><span class="pill a">chez Parent A</span></div>
+    <div class="line" style="padding-bottom:6px"><span class="l">2<sup>de</sup> moitié<small>Nouvel An</small></span><span class="pill b">chez Parent B</span></div>
+    <div class="days" id="days"></div>
+    <div class="legend"><span>sam. 19 déc.</span><span>passage dim. 27</span><span>dim. 3 janv.</span></div>
+  </div>
+  <div class="foot" data-gap="foot">
+    <div class="small">Gratuit · sans inscription<br>alternly.com</div>
+    <div class="btn">Voir les dates</div>
+  </div>
+</div>
+<script>
+// 19 → 26 déc. (8 jours) chez A, 27 déc. → 3 janv. (8 jours) chez B ; passage le dimanche 27.
+const days = document.getElementById('days')
+for (let i = 0; i < 16; i++) {
+  const el = document.createElement('i')
+  if (i >= 8) el.className = 'b' + (i === 8 ? ' mark' : '')
+  days.append(el)
+}
+const story = new URLSearchParams(location.search).get('f') === 'story'
+const stage = document.getElementById('stage')
+stage.style.height = story ? '1920px' : '1350px'
+// Espacements verticaux selon le format (story : plus d'air, contenu centré dans la zone sûre).
+const gaps = story
+  ? { top: 330, eyebrow: 60, title: 26, lead: 34, card: 64, foot: 90 }
+  : { top: 80, eyebrow: 40, title: 22, lead: 28, card: 46, foot: 56 }
+for (const el of document.querySelectorAll('[data-gap]')) el.style.marginTop = gaps[el.dataset.gap] + 'px'
+document.fonts.ready.then(() => { document.body.dataset.ready = '1' })
+</script>
+</body>
+</html>

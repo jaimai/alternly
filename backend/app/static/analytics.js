@@ -65,7 +65,9 @@
     try { if (!sessionStorage.getItem(ATTR_KEY)) sessionStorage.setItem(ATTR_KEY, JSON.stringify(attribution)); } catch (e) {}
   }
   // Les UTM de l'URL d'arrivée suivent le visiteur jusqu'à l'inscription (SPA),
-  // sans stockage : on les ajoute aux liens /register et /login.
+  // sans stockage : on les ajoute aux liens /register et /login, et aux liens vers
+  // les outils (ex. « Autre règle ? Faire le calcul » de la page Noël), d'où il
+  // peut encore s'inscrire.
   function forwardAttribution() {
     var attr = attribution || storedAttribution();
     if (!attr) return;
@@ -73,7 +75,7 @@
     // posés en dur sur certains CTA (ex. utm_source=outil sur l'outil vacances) :
     // sinon une inscription venue d'une pub serait attribuée à l'outil.
     var external = !!(attr.utm_source || attr.gclid || attr.fbclid);
-    var links = document.querySelectorAll('a[href^="/register"], a[href^="/login"]');
+    var links = document.querySelectorAll('a[href^="/register"], a[href^="/login"], a[href^="/outils/"]');
     Array.prototype.forEach.call(links, function (a) {
       var url = new URL(a.getAttribute('href'), location.origin);
       if (external) ATTR_PARAMS.forEach(function (k) { url.searchParams.delete(k); });
