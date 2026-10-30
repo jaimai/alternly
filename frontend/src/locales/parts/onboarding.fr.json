@@ -19,5 +19,8 @@
   "onboarding.generateCalendar": "Générer mon calendrier",
   "onboarding.restartTitle": "Reprenons votre rythme de garde",
   "onboarding.restartSubtitle": "Votre foyer et vos enfants sont conservés : ajustez la règle pas à pas, l'aperçu se met à jour en direct.",
-  "onboarding.restartCancel": "Retour au calendrier, sans rien changer"
+  "onboarding.restartCancel": "Retour au calendrier, sans rien changer",
+  "onboarding.coparentEmailLabel": "E-mail de l'autre parent (facultatif)",
+  "onboarding.coparentEmailPlaceholder": "prenom@exemple.fr",
+  "onboarding.coparentEmailHint": "On s'occupe de l'invitation : nous lui écrirons une fois votre calendrier prêt. Vous pourrez aussi le faire plus tard."
 }

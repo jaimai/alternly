@@ -170,6 +170,40 @@ export default function InviteShare({ household, source }: { household: Househol
   return (
     <div className="invite-box">
       {error && <div className="error">{error}</div>}
+      {/* Alternly envoie l'invitation (et une relance) : la voie la plus simple, en premier. */}
+      <form className="invite-email" onSubmit={sendEmail}>
+        <label htmlFor={`invite-email-${source}`}>{t('invite.emailLabel')}</label>
+        <div className="row">
+          <input
+            id={`invite-email-${source}`}
+            type="email"
+            className="ph-mask ph-sensitive"
+            autoComplete="off"
+            placeholder={t('invite.emailPlaceholder')}
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+          <select
+            aria-label={t('invite.emailLangAria')}
+            value={emailLang}
+            onChange={(e) => setEmailLang(e.target.value as Locale)}
+            className="invite-lang"
+          >
+            <option value="fr">FR</option>
+            <option value="en">EN</option>
+          </select>
+          <button type="submit" disabled={emailBusy || !email.trim()}>
+            {emailBusy ? t('invite.emailBusy') : t('invite.emailSend')}
+          </button>
+        </div>
+        {(emailSentTo ?? inv.invitee_email) && (
+          <p className="hint ph-mask ph-sensitive">
+            <Icon name="check" size={14} /> {t('invite.emailSent', { email: emailSentTo ?? inv.invitee_email })}
+          </p>
+        )}
+        {!emailSentTo && !inv.invitee_email && <p className="hint">{t('invite.emailHint')}</p>}
+      </form>
+      <p className="invite-or"><span>{t('invite.orShare')}</span></p>
       <label htmlFor={`invite-msg-${source}`}>{t('invite.messageLabel')}</label>
       <textarea
         id={`invite-msg-${source}`}
@@ -243,38 +277,6 @@ export default function InviteShare({ household, source }: { household: Househol
       )}
       <p className="hint">{t('invite.validUntil', { date: date(inv.expires_at.slice(0, 10)) })}</p>
 
-      <form className="invite-email" onSubmit={sendEmail}>
-        <label htmlFor={`invite-email-${source}`}>{t('invite.emailLabel')}</label>
-        <div className="row">
-          <input
-            id={`invite-email-${source}`}
-            type="email"
-            className="ph-mask ph-sensitive"
-            autoComplete="off"
-            placeholder={t('invite.emailPlaceholder')}
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-          <select
-            aria-label={t('invite.emailLangAria')}
-            value={emailLang}
-            onChange={(e) => setEmailLang(e.target.value as Locale)}
-            className="invite-lang"
-          >
-            <option value="fr">FR</option>
-            <option value="en">EN</option>
-          </select>
-          <button type="submit" className="secondary" disabled={emailBusy || !email.trim()}>
-            {emailBusy ? t('invite.emailBusy') : t('invite.emailSend')}
-          </button>
-        </div>
-        {(emailSentTo ?? inv.invitee_email) && (
-          <p className="hint ph-mask ph-sensitive">
-            <Icon name="check" size={14} /> {t('invite.emailSent', { email: emailSentTo ?? inv.invitee_email })}
-          </p>
-        )}
-        {!emailSentTo && !inv.invitee_email && <p className="hint">{t('invite.emailHint')}</p>}
-      </form>
     </div>
   )
 }

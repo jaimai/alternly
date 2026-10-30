@@ -1288,11 +1288,13 @@ label {
 .invite-link-row { display: flex; gap: 8px; align-items: center; }
 .invite-link-row input { flex: 1 1 auto; min-width: 0; font-size: 0.85rem; color: var(--ink-soft); }
 .invite-link-row button { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; }
-.invite-email {
-  border-top: 1px solid var(--line);
-  padding-top: 12px;
-  margin-top: 4px;
+.invite-email { margin-bottom: 4px; }
+.invite-email > label { font-weight: 600; color: var(--ink); }
+.invite-or {
+  display: flex; align-items: center; gap: 10px; margin: 14px 0 10px;
+  color: var(--ink-soft); font-size: 0.85rem;
 }
+.invite-or::before, .invite-or::after { content: ""; flex: 1 1 auto; border-top: 1px solid var(--line); }
 .invite-email .row { flex-wrap: nowrap; }
 .invite-email input[type='email'] { flex: 1 1 auto; min-width: 0; }
 .invite-email .invite-lang { flex: 0 0 auto; width: auto; }

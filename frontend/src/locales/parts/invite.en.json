@@ -19,14 +19,15 @@
   "invite.qr": "QR code",
   "invite.qrHint": "Is your co-parent next to you? They just need to scan this code with their phone.",
   "invite.validUntil": "Personal link, valid until {{date}}. It can only be used once.",
-  "invite.emailLabel": "Or let Alternly send the invitation — co-parent's email (optional)",
+  "invite.emailLabel": "We'll send the invitation for you: enter your co-parent's email",
   "invite.emailPlaceholder": "name@example.com",
   "invite.emailLangAria": "Email language",
   "invite.emailSend": "Send",
   "invite.emailBusy": "Sending…",
   "invite.emailSent": "Invitation sent to {{email}}. We'll send them one reminder at most.",
-  "invite.emailHint": "We write to them once, with a preview of their schedule. Address never shared.",
+  "invite.emailHint": "We send the invitation with a preview of their schedule, then a single reminder if they haven't replied. Your address is never shared.",
   "invite.modalEyebrow": "Invite your co-parent",
   "invite.modalTitle": "Share the calendar in one tap",
-  "invite.close": "Close"
+  "invite.close": "Close",
+  "invite.orShare": "or share the link yourself"
 }

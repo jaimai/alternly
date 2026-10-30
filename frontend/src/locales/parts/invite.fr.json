@@ -19,14 +19,15 @@
   "invite.qr": "QR code",
   "invite.qrHint": "L'autre parent est à côté de vous ? Il lui suffit de scanner ce code avec son téléphone.",
   "invite.validUntil": "Lien personnel, valable jusqu'au {{date}}. Il ne sert qu'une fois.",
-  "invite.emailLabel": "Ou laissez Alternly lui envoyer l'invitation — e-mail de l'autre parent (facultatif)",
+  "invite.emailLabel": "On s'occupe de l'invitation : indiquez l'e-mail de l'autre parent",
   "invite.emailPlaceholder": "prenom@exemple.fr",
   "invite.emailLangAria": "Langue de l'e-mail",
   "invite.emailSend": "Envoyer",
   "invite.emailBusy": "Envoi…",
   "invite.emailSent": "Invitation envoyée à {{email}}. Nous lui enverrons au plus un rappel.",
-  "invite.emailHint": "Nous lui écrivons une seule fois, avec un aperçu de son planning. Adresse jamais partagée.",
+  "invite.emailHint": "Nous lui envoyons l'invitation avec un aperçu de son planning, puis une seule relance s'il n'a pas répondu. Adresse jamais partagée.",
   "invite.modalEyebrow": "Inviter l'autre parent",
   "invite.modalTitle": "Partagez le calendrier en un geste",
-  "invite.close": "Fermer"
+  "invite.close": "Fermer",
+  "invite.orShare": "ou partagez le lien vous-même"
 }
