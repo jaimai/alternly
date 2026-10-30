@@ -75,12 +75,12 @@ Blocs prêts à copier :
 Format 1080×1350, 6-9 slides, police lisible, 1 idée par slide. Slide 1 = promesse, dernière = CTA.
 
 ### C1 — « Noël 2026 : qui a les enfants ? » *(à poster mi-novembre, saisonnier, très enregistrable)*
-Source : `content/blog/vacances-noel-2026-garde-alternee.md`
+Source : `content/blog/vacances-noel-2026-garde-alternee.md` · Visuels : `carrousel-noel-2026/slide-1.png` à `slide-8.png` (source `src/carrousel-noel-2026.html`, export comme la couverture Facebook avec `--window-size=1080,1350` et `?s=1` à `?s=8`)
 1. Noël 2026 en garde alternée : qui a les enfants ? 🎄
 2. Les dates : du samedi 19 décembre 2026 au lundi 4 janvier 2027 (toutes zones)
 3. La règle la plus courante : la moitié des vacances, années paires / impaires
-4. 2026 est une année **paire** → le parent « 1re moitié les années paires » a le début des vacances… donc Noël
-5. L'autre parent a la 2e moitié… donc le Nouvel An
+4. 2026 est une année **paire** → le parent « 1re moitié les années paires » a les enfants du 19 au 26 décembre… donc Noël
+5. L'autre parent a la 2e moitié (27 décembre → 3 janvier)… donc le Nouvel An
 6. Et le 24 au soir ? Ça dépend de votre jugement — certains coupent le 25 à midi
 7. Le conseil : vérifiez la phrase exacte de votre jugement *maintenant*, pas le 18 décembre
 8. Enregistre ce post et envoie-le à l'autre parent 📌
