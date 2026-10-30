@@ -9,8 +9,14 @@
 | `alternly-reel-echange-9x16.mp4` | 1080×1920 (9:16) | 15 s | Reels FB / Insta, **avec son** |
 | `alternly-reel-depenses-9x16.mp4` | 1080×1920 (9:16) | 15 s | Reels FB / Insta, **avec son** |
 | `alternly-reel-rythmes-9x16.mp4` | 1080×1920 (9:16) | 15 s | Reels FB / Insta, **avec son** |
+| `alternly-reel-mur-9x16.mp4` | 1080×1920 (9:16) | 15 s | Reels FB / Insta, **avec son** |
+| `alternly-reel-agenda-9x16.mp4` | 1080×1920 (9:16) | 15 s | Reels FB / Insta, **avec son** |
+| `alternly-reel-demarrage-9x16.mp4` | 1080×1920 (9:16) | 15 s | Reels FB / Insta, **avec son** |
+| `alternly-reel-ce-soir-9x16.mp4` | 1080×1920 (9:16) | 15 s | Reels FB / Insta, **avec son** |
+| `alternly-reel-invitation-9x16.mp4` | 1080×1920 (9:16) | 15 s | Reels FB / Insta, **avec son** |
+| `alternly-reel-3-choses-9x16.mp4` | 1080×1920 (9:16) | 15 s | Reels FB / Insta, **avec son** |
 
-Les trois Reels « échange », « dépenses » et « rythmes » ne sont pas versionnés
+Les Reels « échange », « dépenses », « rythmes », « mur », « agenda », « démarrage », « ce soir », « invitation » et « 3 choses » ne sont pas versionnés
 (fichiers lourds) : regénérez-les depuis `src/` (commandes plus bas).
 
 Tout le message est à l'écran (lecture auto sans son sur Meta). Les trois Reels
@@ -42,6 +48,26 @@ mixée à −14 LUFS. Les autres sont muettes : ajoutez une musique dans Meta / 
 - **Reel rythmes** : « Semaine/semaine ? 2-2-3 ? Un week-end sur deux ? » → le même
   cycle de 2 semaines bascule entre les 4 rythmes de l'app (cycles identiques au
   moteur) → appliqué à toute l'année → CTA.
+- **Reel mur** : carnet de santé, sortie, autorisation éparpillés entre SMS, mail,
+  post-it et vocal → « Un seul mur, pour vous deux » → une info, une question
+  résolue, une tâche terminée → recherche, notifications, suivi → CTA (mur inclus
+  dans l'abonnement, indiqué).
+- **Reel agenda** : « Réunion jeudi 18h… c'est votre semaine ? » → dans l'agenda
+  perso, les jours de garde apparaissent (« 🏠 Chez Camille / Chez Alex », calendrier
+  « Garde des enfants », comme le flux iCal) → lien privé ou QR code, Google, Apple,
+  Outlook → CTA (synchro incluse dans l'abonnement, indiqué).
+- **Reel démarrage** : le tableur fait main → « Non. » → l'assistant en 3 étapes
+  (rythme, correction d'un jour, invitation avec le vrai message d'invitation) →
+  le mois prêt, vacances et fériés compris → CTA gratuit.
+- **Reel ce soir** : écran de nuit, « Ce soir, je dors chez qui ? » → la carte d'accueil
+  de l'app (« Léa et Hugo sont chez vous · prochain passage chez Alex vendredi 16 vers
+  18:00 ») vue par Camille puis par Alex → même info pour les deux parents → CTA gratuit.
+- **Reel invitation** : « Encore une appli ? C'est payant ? Tu vas tout changer ? » → la
+  page d'invitation reçue (planning des 4 semaines, garanties reprises de l'app) →
+  chaque objection barrée et sa réponse → CTA gratuit.
+- **Reel 3 choses** (format conseils, à enregistrer) : le jour et l'heure du passage,
+  le partage des vacances (paires / impaires), les frais des enfants → Alternly garde
+  les trois à jour → CTA « Enregistrez ce Reel ».
 
 Dates calculées avec le moteur de l'app (`vacation_tool.vacation_split`, moitié/moitié).
 
@@ -89,6 +115,55 @@ Reel rythmes :
 > Gratuit, sans carte bancaire 👉 alternly.com
 >
 > #gardealternee #coparentalite #residencealternee #parents #organisationfamiliale
+
+Reel mur :
+
+> Le carnet de santé, la sortie scolaire, l'autorisation à signer… Entre SMS, mails et
+> post-it, quelque chose finit toujours par se perdre. Le mur Alternly réunit infos,
+> questions et tâches des enfants, au même endroit pour les deux parents. 👉 alternly.com
+>
+> #gardealternee #coparentalite #parents #organisationfamiliale #ecole
+
+Reel agenda :
+
+> Une réunion jeudi soir… c'est votre semaine ou pas ? Avec Alternly, les jours de
+> garde s'affichent directement dans Google Agenda, Apple Calendar ou Outlook. Un lien
+> privé, une seule fois. 👉 alternly.com
+>
+> #gardealternee #coparentalite #parents #agenda #organisation
+
+Reel démarrage :
+
+> Fini le tableau fait main. Trois questions : votre rythme, les jours à ajuster,
+> l'invitation à l'autre parent. Le calendrier de garde est prêt, vacances scolaires
+> et jours fériés compris. Gratuit, sans carte bancaire 👉 alternly.com
+>
+> #gardealternee #coparentalite #residencealternee #parents #calendrierpartage
+
+Reel ce soir :
+
+> « Ce soir, je dors chez qui ? » Une question simple, qui mérite une réponse claire.
+> Dans Alternly, chaque parent voit en un coup d'œil chez qui sont les enfants et le
+> prochain passage, jour et heure. Gratuit 👉 alternly.com
+>
+> #gardealternee #coparentalite #parents #enfants #organisationfamiliale
+
+Reel invitation :
+
+> Proposer une appli à l'autre parent, pas toujours simple. Avec Alternly, il ou elle
+> voit son planning avant même de s'inscrire, c'est gratuit, et aucun changement ne se
+> fait sans son accord. 👉 alternly.com
+>
+> #gardealternee #coparentalite #parents #communication #calendrierpartage
+
+Reel 3 choses :
+
+> Garde alternée : 3 choses à caler dès le début. 1. Le jour et l'heure du passage.
+> 2. Le partage des vacances (et qui commence les années paires). 3. Les frais des
+> enfants, et dans quelle proportion. Enregistrez ce Reel 📌 Alternly garde les trois à
+> jour 👉 alternly.com
+>
+> #gardealternee #coparentalite #residencealternee #parents #conseilsparents
 
 Lien en bio sur Instagram (les liens des légendes ne sont pas cliquables). Pour le
 suivi PostHog, ajouter `?utm_source=instagram&utm_medium=social&utm_campaign=reels`

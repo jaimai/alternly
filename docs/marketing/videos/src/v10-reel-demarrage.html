@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><title>Alternly — Reel démarrage</title>
+<link rel="stylesheet" href="base.css">
+<style>
+  .stage { width: 1080px; height: 1920px; }
+  .blob { position: absolute; border-radius: 50%; filter: blur(90px); opacity: .35; }
+  .blob.a1 { width: 760px; height: 760px; background: var(--terra-soft); top: -200px; left: -260px; animation: drift1 15s linear both; }
+  .blob.b1 { width: 700px; height: 700px; background: var(--pine-soft); bottom: -160px; right: -240px; animation: drift2 15s linear both; }
+  @keyframes drift1 { to { transform: translate(180px, 260px); } }
+  @keyframes drift2 { to { transform: translate(-160px, -300px); } }
+
+  /* Scène 1 */
+  .q { font-size: 104px; line-height: 1.04; text-align: center; padding: 0 70px; }
+  .q em { color: var(--terra); font-style: italic; }
+  .sheet { margin-top: 70px; width: 820px; background: #fff; border-radius: 26px; padding: 30px; box-shadow: 0 30px 60px -30px rgba(36,49,43,.45); display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; transform: rotate(-3deg); }
+  .sheet i { height: 46px; background: var(--paper); border: 1px solid var(--line); font-style: normal; font-size: 18px; color: #a9a294; padding: 4px 6px; overflow: hidden; }
+  .sheet i.h { background: var(--paper-deep); font-weight: 700; color: var(--ink-soft); }
+  .sheet i.y { background: #fff3c4; }
+  .no { margin-top: 70px; font-family: 'Fraunces', serif; font-size: 130px; color: var(--pine); font-style: italic; }
+
+  /* Scène 2 : l'assistant */
+  .s2 { justify-content: flex-start; padding-top: 150px; }
+  .cap { font-size: 76px; line-height: 1.06; text-align: center; padding: 0 70px; margin-bottom: 50px; }
+  .cap em { color: var(--pine); font-style: italic; }
+  .phone { position: relative; width: 840px; height: 1300px; background: #fff; border-radius: 64px; box-shadow: 0 50px 100px -40px rgba(36,49,43,.45), 0 0 0 14px #1d2622; overflow: hidden; }
+  .prog { position: absolute; left: 44px; right: 44px; top: 46px; height: 12px; border-radius: 6px; background: var(--paper); overflow: hidden; }
+  .prog i { position: absolute; inset: 0; background: var(--pine); transform-origin: left; animation: p1 6000ms linear 3300ms both; }
+  @keyframes p1 { 0% { transform: scaleX(.05); } 25% { transform: scaleX(.34); } 55% { transform: scaleX(.67); } 85%, 100% { transform: scaleX(1); } }
+  .step { position: absolute; left: 0; right: 0; top: 90px; bottom: 0; padding: 30px 44px; }
+  .so { animation: slideout 450ms var(--inout) var(--so) both; }
+  @keyframes slideout { to { opacity: 0; transform: translateX(-140px); } }
+  .step h4 { font-family: 'Fraunces', serif; font-variation-settings: 'opsz' 72; font-weight: 500; font-size: 56px; line-height: 1.1; letter-spacing: -0.02em; margin-bottom: 14px; }
+  .step .sub { font-size: 30px; color: var(--ink-soft); line-height: 1.35; margin-bottom: 30px; }
+  .opt { position: relative; border: 3px solid var(--line); border-radius: 30px; padding: 26px 30px; margin-bottom: 18px; }
+  .opt b { display: block; font-size: 38px; margin-bottom: 4px; }
+  .opt span { font-size: 28px; color: var(--ink-soft); }
+  .opt .sel { position: absolute; inset: -3px; border-radius: 30px; border: 5px solid var(--pine); background: rgba(31,77,63,.06); }
+  .press { animation: press 260ms var(--inout) var(--t) both; }
+  @keyframes press { 0%, 100% { transform: none; } 50% { transform: scale(.96); } }
+  .wkl { font-size: 26px; font-weight: 700; color: var(--ink-soft); margin: 8px 0 10px; }
+  .dow, .wk { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; }
+  .dow div { text-align: center; font-size: 24px; font-weight: 600; color: var(--ink-soft); }
+  .d { position: relative; height: 110px; border-radius: 20px; overflow: hidden; }
+  .d .f { position: absolute; inset: 0; transform-origin: top; animation: flip 380ms var(--out) var(--t) both; }
+  @keyframes flip { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+  .A { background: var(--pa); } .B { background: var(--pb); }
+  .ripple { position: absolute; width: 80px; height: 80px; border-radius: 50%; background: rgba(255,255,255,.7); left: 50%; top: 50%; margin: -40px 0 0 -40px; z-index: 3; animation: ripple 600ms var(--out) var(--t) both; }
+  @keyframes ripple { from { transform: scale(.2); opacity: 1; } to { transform: scale(2.4); opacity: 0; } }
+  .legend { display: flex; gap: 26px; margin-top: 18px; font-size: 26px; color: var(--ink-soft); }
+  .legend i { display: inline-block; width: 22px; height: 22px; border-radius: 6px; vertical-align: -3px; margin-right: 8px; }
+  .toast { margin-top: 26px; background: var(--ink); color: #fff; font-size: 30px; font-weight: 600; padding: 20px 28px; border-radius: 20px; display: inline-block; }
+  .btn { position: absolute; left: 44px; right: 44px; bottom: 50px; background: var(--pine); color: #fff; text-align: center; font-size: 38px; font-weight: 700; padding: 30px; border-radius: 999px; }
+  .step .btn { position: static; margin-top: 40px; }
+  .msg { background: var(--paper); border-radius: 30px 30px 30px 10px; padding: 30px 32px; font-size: 32px; line-height: 1.4; }
+  .msg u { color: var(--pine); font-weight: 700; text-decoration: none; }
+  .share { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 30px; }
+  .share div { text-align: center; border: 2px solid var(--line); border-radius: 26px; padding: 24px 0; font-size: 28px; font-weight: 700; }
+  .share div span { display: block; font-size: 46px; margin-bottom: 6px; }
+  .free { margin-top: 26px; font-size: 30px; color: var(--pine); font-weight: 700; }
+
+  /* Scène 3 : prêt */
+  .s3 h3 { font-size: 92px; line-height: 1.04; text-align: center; padding: 0 80px; margin-bottom: 60px; }
+  .s3 h3 em { color: var(--terra); font-style: italic; }
+  .ready { width: 880px; background: #fff; border-radius: 44px; padding: 40px; box-shadow: 0 40px 80px -40px rgba(36,49,43,.45); }
+  .mg { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
+  .mg i { height: 80px; border-radius: 14px; animation: fade 200ms linear var(--t) both; }
+  .mg i.v { background-image: repeating-linear-gradient(-45deg, rgba(255,255,255,.75) 0 6px, transparent 6px 12px); }
+  .mg i.ph { box-shadow: inset 0 0 0 5px var(--ink); }
+  .ticks { margin-top: 30px; display: flex; flex-direction: column; gap: 14px; font-size: 34px; font-weight: 600; }
+  .ticks div::first-letter { color: var(--pine); }
+  .conf { position: absolute; width: 18px; height: 30px; border-radius: 4px; animation: conf 1600ms cubic-bezier(.2,.6,.4,1) var(--t) both; }
+  @keyframes conf { 0% { opacity: 0; transform: translate(0, 0) rotate(0); } 10% { opacity: 1; } 100% { opacity: 0; transform: translate(var(--dx), var(--dy)) rotate(var(--rot)); } }
+
+  /* Scène 4 : CTA */
+  .s5 .wordmark { font-size: 200px; }
+  .s5 p { font-size: 56px; text-align: center; line-height: 1.25; margin-top: 30px; color: var(--ink-soft); padding: 0 100px; }
+  .s5 p b { color: var(--ink); }
+  .cta { margin-top: 80px; background: var(--pine); color: #fff; font-size: 54px; font-weight: 700; padding: 38px 76px; border-radius: 999px; box-shadow: 0 30px 60px -24px rgba(31,77,63,.6); }
+  .pulse { animation: pulse 1400ms var(--inout) 13800ms infinite both; }
+  @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+  .small { margin-top: 40px; font-size: 36px; color: var(--ink-soft); }
+</style></head>
+<body>
+<div class="stage" id="stage">
+  <div class="blob a1"></div><div class="blob b1"></div>
+
+  <!-- 1. 0 → 3,1 s -->
+  <section class="scene x" style="--x:2900ms">
+    <h1 class="q serif a" style="--t:100ms">Mettre la garde au propre, <em>ça&nbsp;prend des heures&nbsp;?</em></h1>
+    <div class="sheet a" id="sheet" style="--k:zoom;--t:700ms"></div>
+    <div class="no a" style="--k:pop;--t:2000ms">Non.</div>
+  </section>
+
+  <!-- 2. L'assistant : 3,1 → 10,3 s -->
+  <section class="scene s2 x" style="--x:10100ms">
+    <h3 class="cap serif a" style="--t:3100ms">3 questions, <em>c'est&nbsp;prêt</em></h3>
+    <div class="phone a" style="--k:rise;--d:800ms;--t:3150ms">
+      <div class="prog"><i></i></div>
+
+      <!-- Étape 1 : 3,3 → 5,7 s -->
+      <div class="step so" style="--so:5450ms"><div>
+        <h4>Comment se passe la garde aujourd'hui&nbsp;?</h4>
+        <div class="opt press" style="--t:4700ms"><b>Semaine / semaine</b><span>Une semaine chez chacun, jour de passage fixe.</span><div class="sel a" style="--k:fade;--d:200ms;--t:4750ms"></div></div>
+        <div class="opt"><b>2-2-3</b><span>2 jours chacun, puis 3 jours.</span></div>
+        <div class="opt"><b>Un week-end sur deux</b><span>L'autre parent accueille un week-end sur deux.</span></div>
+        <div class="opt"><b>Autre organisation</b><span>Partez d'un modèle, corrigez les jours.</span></div>
+      </div></div>
+
+      <!-- Étape 2 : 5,8 → 8,2 s -->
+      <div class="step so" style="--so:8100ms"><div class="a" style="--k:right;--d:500ms;--t:5800ms">
+        <h4>Ça correspond à votre organisation&nbsp;?</h4>
+        <div class="sub">Un jour ne colle pas&nbsp;? Touchez-le pour le donner à l'autre parent.</div>
+        <div class="dow"><div>L</div><div>M</div><div>M</div><div>J</div><div>V</div><div>S</div><div>D</div></div>
+        <div class="wkl">Semaine 1</div><div class="wk" id="k1"></div>
+        <div class="wkl">Semaine 2</div><div class="wk" id="k2"></div>
+        <div class="legend"><span><i class="A"></i>Camille</span><span><i class="B"></i>Alex</span></div>
+        <div class="toast a" style="--k:pop;--t:7000ms">Le mercredi passe chez Camille.</div>
+        <div class="btn">C'est bon, continuer</div>
+      </div></div>
+
+      <!-- Étape 3 : 8,2 → 10,3 s -->
+      <div class="step"><div class="a" style="--k:right;--d:500ms;--t:8200ms">
+        <h4>Invitez l'autre parent</h4>
+        <div class="msg">Bonjour, j'ai mis en place notre calendrier de garde sur Alternly&nbsp;: les semaines, les vacances et les échanges sont au même endroit, visibles par nous deux. C'est gratuit. <u>alternly.com/…</u></div>
+        <div class="share"><div><span>💬</span>Message</div><div><span>✉️</span>E-mail</div><div><span>🔗</span>Lien</div></div>
+        <div class="free">✓ Gratuit pour lui ou elle</div>
+      </div></div>
+    </div>
+  </section>
+
+  <!-- 3. Prêt : 10,3 → 12,9 s -->
+  <section class="scene s3 x" style="--x:12700ms">
+    <h3 class="serif a" style="--t:10300ms">Et voilà votre <em>calendrier</em></h3>
+    <div class="ready a" style="--k:rise;--d:700ms;--t:10350ms">
+      <div class="mg" id="mg"></div>
+      <div class="ticks">
+        <div class="a" style="--k:fade;--t:11300ms">✓ Vacances scolaires de votre zone</div>
+        <div class="a" style="--k:fade;--t:11550ms">✓ Jours fériés</div>
+        <div class="a" style="--k:fade;--t:11800ms">✓ Partagé avec l'autre parent</div>
+      </div>
+    </div>
+    <div id="confetti"></div>
+  </section>
+
+  <!-- 4. CTA : 13 → 15 s -->
+  <section class="scene s5">
+    <div class="wordmark a" style="--k:zoom;--d:900ms;--t:12950ms">altern<span>ly</span></div>
+    <p class="a" style="--t:13300ms">Votre calendrier de garde,<br><b>prêt en quelques minutes.</b></p>
+    <div class="a" style="--k:pop;--t:13600ms"><div class="cta pulse">alternly.com</div></div>
+    <div class="small a" style="--k:fade;--t:13900ms">Gratuit · sans carte bancaire</div>
+  </section>
+</div>
+<script>
+  // Tableur « fait main » de la scène 1.
+  const sheet = document.getElementById('sheet')
+  const txt = ['Sem.', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'S1', 'C', 'C', 'C ?', 'C', 'C', 'S2', 'A', 'A', 'A/C', 'A', '??', 'S3', 'C', '…', 'C', 'C', 'C', 'S4', 'A', 'A', 'A', '…', 'A']
+  txt.forEach((t, i) => sheet.insertAdjacentHTML('beforeend', `<i class="${i < 6 || i % 6 === 0 ? 'h' : ''}${[9, 15, 17].includes(i) ? ' y' : ''}">${t}</i>`))
+  // Étape 2 : semaine/semaine, puis le mercredi de la semaine 2 passe chez Camille.
+  for (const [id, who] of [['k1', 'A'], ['k2', 'B']]) {
+    const el = document.getElementById(id)
+    for (let i = 0; i < 7; i++) {
+      let h = `<div class="f ${who}" style="--t:${6200 + (who === 'B' ? 7 : 0) * 40 + i * 40}ms"></div>`
+      if (who === 'B' && i === 2) h += `<div class="f A" style="--t:6800ms"></div><div class="ripple" style="--t:6750ms"></div>`
+      el.insertAdjacentHTML('beforeend', `<div class="d">${h}</div>`)
+    }
+  }
+  // Un mois (5 semaines) avec le rythme corrigé, vacances hachurées en fin de mois.
+  const mg = document.getElementById('mg')
+  for (let i = 0; i < 35; i++) {
+    const w = Math.floor(i / 7), dow = i % 7
+    let who = w % 2 ? 'B' : 'A'
+    if (who === 'B' && dow === 2) who = 'A'
+    mg.insertAdjacentHTML('beforeend', `<i class="${who}${i >= 26 ? ' v' : ''}" style="--t:${10700 + i * 14}ms"></i>`)
+  }
+  // Confettis (positions fixes : rendu déterministe).
+  const conf = document.getElementById('confetti')
+  const cols = ['#2f6b57', '#c96f4a', '#f2c14e', '#4a6fa5', '#e4ede7']
+  for (let i = 0; i < 46; i++) {
+    const a = (i * 137.5) % 360 * Math.PI / 180, r = 380 + (i * 53) % 320
+    conf.insertAdjacentHTML('beforeend', `<div class="conf" style="left:540px;top:1000px;background:${cols[i % 5]};--t:${11900 + (i % 6) * 25}ms;--dx:${Math.round(Math.cos(a) * r)}px;--dy:${Math.round(Math.sin(a) * r * .8 + 260)}px;--rot:${(i * 97) % 720}deg"></div>`)
+  }
+</script>
+<script type="application/json" id="audio">
+{"bpm": 118, "prog": "bright", "drop": 3100, "duration": 15000, "outro": 12900,
+ "cues": [[700, "paper"], [1400, "riser", 0.4], [2000, "pop", 1.2], [2900, "whoosh"], [3150, "whoosh", 0.5],
+          [4700, "tap"], [4750, "pop", 0.6], [5600, "whoosh", 0.6], [6200, "tick"], [6500, "tick"],
+          [6750, "tap"], [6800, "pop", 0.7], [7000, "tick"], [7700, "tap"], [8100, "whoosh", 0.6], [8600, "pop", 0.6],
+          [10150, "whoosh"], [10700, "riser", 0.4], [11900, "success", 0.9], [12750, "whoosh"], [13600, "pop"]]}
+</script>
+</body></html>
