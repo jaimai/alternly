@@ -1305,7 +1305,8 @@ label {
 }
 
 /* Page /join : aperçu du planning de l'invité */
-.join-preview h2 { margin-bottom: 4px; }
+.join-preview { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line); }
+.join-preview h2 { margin: 0 0 4px; }
 .join-strip {
   display: grid;
   grid-template-columns: repeat(7, 1fr);

@@ -106,6 +106,8 @@
   "auth.passwordTooShort": "Le mot de passe doit faire au moins 8 caractères",
   "auth.registerBusy": "Création…",
   "auth.registerError": "Erreur d'inscription",
+  "auth.registerInviteHint": "{{name}} vous invite à partager le calendrier de garde. Le compte est gratuit : une fois créé, vous arrivez directement sur le calendrier commun.",
+  "auth.registerInviteTitle": "Créer votre compte pour rejoindre le calendrier",
   "auth.registerSubmit": "Créer mon compte",
   "auth.registerTitle": "Créer un compte",
   "auth.requestNewLink": "Demander un nouveau lien",

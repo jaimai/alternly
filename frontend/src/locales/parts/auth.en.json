@@ -9,6 +9,8 @@
   "auth.createAccountLink": "Create an account",
   "auth.loginError": "Sign-in failed",
   "auth.registerTitle": "Create an account",
+  "auth.registerInviteTitle": "Create your account to join the calendar",
+  "auth.registerInviteHint": "{{name}} invited you to share the custody calendar. The account is free: once it's created, you land straight on your shared calendar.",
   "auth.firstNameLabel": "Your first name",
   "auth.emailPatternTitle": "Enter a complete email address, including a domain name (e.g. name@example.com).",
   "auth.passwordLabelMin": "Password (8 characters minimum)",
