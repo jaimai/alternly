@@ -17,6 +17,7 @@ const CalendarPage = lazy(loadCalendarPage)
 // la vérification de la session plutôt qu'après.
 if (getToken() && window.location.pathname.startsWith('/app')) void loadCalendarPage()
 const ExpensesPage = lazy(() => import('./pages/Expenses'))
+const ExpenseClaimPage = lazy(() => import('./pages/ExpenseClaim'))
 const FeedbackPage = lazy(() => import('./pages/Feedback'))
 const ForgotPasswordPage = lazy(() => import('./pages/ForgotPassword'))
 const HistoryPage = lazy(() => import('./pages/History'))
@@ -26,6 +27,7 @@ const JournalExportPage = lazy(() => import('./pages/JournalExport'))
 const LoginPage = lazy(() => import('./pages/Login'))
 const NotFoundPage = lazy(() => import('./pages/NotFound'))
 const OnboardingPage = lazy(() => import('./pages/Onboarding'))
+const PensionPage = lazy(() => import('./pages/Pension'))
 const RegisterPage = lazy(() => import('./pages/Register'))
 const ResetPasswordPage = lazy(() => import('./pages/ResetPassword'))
 const SettingsPage = lazy(() => import('./pages/Settings'))
@@ -73,6 +75,26 @@ export default function App() {
           <RequireAuth>
             <PremiumGate feature={t('paywall.featureExpenses')} featureKey="expenses">
               <ExpensesPage />
+            </PremiumGate>
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/expenses/demande"
+        element={
+          <RequireAuth>
+            <PremiumGate feature={t('paywall.featureExpenses')} featureKey="expenses">
+              <ExpenseClaimPage />
+            </PremiumGate>
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/pension"
+        element={
+          <RequireAuth>
+            <PremiumGate feature={t('paywall.featurePension')} featureKey="pension">
+              <PensionPage />
             </PremiumGate>
           </RequireAuth>
         }

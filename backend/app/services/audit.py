@@ -464,6 +464,22 @@ def _render(ctx: Ctx, action: str, d: dict, db: Session) -> str:  # noqa: C901 �
         return t("a supprimé la réponse {r} sur {p}", "deleted the reply {r} on {p}").format(
             r=ctx.q(d["body"]), p=_post_label(ctx, d["post"])
         )
+    if action in ("pension.create", "pension.update"):
+        verb = t("a enregistré", "set up") if action == "pension.create" else t("a modifié", "edited")
+        return t(f"{verb} la pension alimentaire ({{m}} / mois)", f"{verb} the child support ({{m}} / month)").format(
+            m=ctx.money(d["amount_cents"])
+        )
+    if action == "pension.delete":
+        return t("a supprimé le suivi de la pension alimentaire", "deleted the child support tracking")
+    if action == "pension.revalue":
+        return t("a revalorisé la pension : {a} → {b}", "revalued the child support: {a} → {b}").format(
+            a=ctx.money(d["before"]), b=ctx.money(d["after"])
+        )
+    if action in ("pension_payment.create", "pension_payment.delete"):
+        verb = t("a enregistré", "recorded") if action.endswith("create") else t("a supprimé", "deleted")
+        return t(f"{verb} un versement de pension de {{m}} ({{d}})", f"{verb} a child support payment of {{m}} ({{d}})").format(
+            m=ctx.money(d["amount_cents"]), d=ctx.date(d["month"])
+        )
     if action == "household.rename":
         return t("a renommé le foyer : ", "renamed the household: ") + f"{d['before']['name']} → {d['after']['name']}"
     if action == "household.zone":

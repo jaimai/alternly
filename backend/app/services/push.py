@@ -28,7 +28,7 @@ CATEGORIES = ("handover", "exchanges", "expenses", "wall", "household")
 def category(type_: str) -> str:
     if type_.startswith(("exchange_", "change_")) or type_ == "exception_deleted":
         return "exchanges"
-    if type_.startswith(("expense_", "settlement_")):
+    if type_.startswith(("expense_", "settlement_", "pension_")):
         return "expenses"
     if type_.startswith("wall_"):
         return "wall"
@@ -131,6 +131,10 @@ def message(type_: str, p: dict, locale: str) -> tuple[str, str]:
         "wall_reply_added": f"Nouvelle réponse : {q[0]}{p.get('body')}{q[1]}" if fr else f"New reply: {q[0]}{p.get('body')}{q[1]}",
         "wall_task_assigned": (f"Une tâche vous a été assignée : {q[0]}{p.get('body')}{q[1]}" if fr
                                else f"A task was assigned to you: {q[0]}{p.get('body')}{q[1]}"),
+        "pension_revaluation_due": (
+            "C'est le mois de revalorisation de la pension alimentaire : calculez le nouveau montant." if fr
+            else "It's the month to revalue the child support: work out the new amount."
+        ),
         "handover_reminder": p.get("text", ""),
     }
     body = texts.get(type_) or ("Nouvelle activité dans votre foyer" if fr else "New activity in your household")

@@ -33,7 +33,7 @@ export default function JournalExportPage() {
     if (data) document.title = `${t('journal.docTitle')} — ${data.author_name}`
   }, [data, t])
 
-  if (error) return <div className="journal-doc"><div className="error">{error}</div></div>
+  if (error) return <div className="print-doc"><div className="error">{error}</div></div>
   if (!data) return <Spinner />
 
   const locale = i18n.language.startsWith('en') ? 'en-US' : 'fr-FR'
@@ -51,8 +51,8 @@ export default function JournalExportPage() {
   const entries = [...data.entries].reverse()
 
   return (
-    <div className="journal-doc ph-mask ph-sensitive">
-      <div className="journal-doc-toolbar">
+    <div className="print-doc ph-mask ph-sensitive">
+      <div className="print-doc-toolbar">
         <button onClick={() => window.print()}>
           <Icon name="download" size={15} /> {t('journal.print')}
         </button>

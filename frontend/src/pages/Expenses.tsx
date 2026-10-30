@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { api } from '../api'
 import { useAuth } from '../auth'
 import Icon from '../components/Icon'
@@ -11,7 +11,7 @@ import TopBar from '../components/TopBar'
 import { useConfirm } from '../components/useConfirm'
 import { todayIso } from '../dates'
 import { useFormat } from '../format'
-import type { Balance, Expense, ExpenseCategory, Household, Settlement } from '../types'
+import type { Balance, Expense, ExpenseCategory, Household, Pension, Settlement } from '../types'
 
 const CATEGORIES: { value: ExpenseCategory; labelKey: string; icon: IconName }[] = [
   { value: 'sante', labelKey: 'expenses.categorySante', icon: 'health' },
@@ -54,6 +54,7 @@ export default function ExpensesPage() {
   const [expenses, setExpenses] = useState<Expense[]>([])
   const [settlements, setSettlements] = useState<Settlement[]>([])
   const [balance, setBalance] = useState<Balance | null>(null)
+  const [pension, setPension] = useState<Pension | null | undefined>(undefined)
   const [error, setError] = useState<string | null>(null)
   const [dialog, setDialog] = useState<Dialog | null>(null)
   const [renaming, setRenaming] = useState(false)
@@ -68,6 +69,7 @@ export default function ExpensesPage() {
     api.listExpenses(household.id).then(setExpenses).catch(() => {})
     api.listSettlements(household.id).then(setSettlements).catch(() => {})
     api.balance(household.id).then(setBalance).catch(() => setError(t('expenses.balanceLoadError')))
+    api.pension(household.id).then(setPension).catch(() => setPension(null))
   }, [household, t])
 
   useEffect(load, [load])
@@ -210,6 +212,13 @@ export default function ExpensesPage() {
               {t('expenses.recordReimbursement')}
             </button>
           </div>
+          {owedToMe > 0 && (
+            <p style={{ margin: '10px 0 0' }}>
+              <Link className="with-icon claim-link" to="/expenses/demande">
+                <Icon name="download" size={15} /> {t('claim.button')}
+              </Link>
+            </p>
+          )}
           <div className="stat-grid">
             <div className={`stat ${owedToMe > 0 ? 'credit' : 'zero'}`}>
               <div className="stat-label">{t('expenses.statOwedToMe')}</div>
@@ -224,6 +233,27 @@ export default function ExpensesPage() {
             {t('expenses.statsHint')}
           </p>
         </div>
+
+        {pension !== undefined && (
+          <Link to="/pension" className="card pension-card">
+            <span className="journal-icon" aria-hidden="true">
+              <Icon name="receipt" size={16} />
+            </span>
+            <span className="list-main">
+              <strong>{t('pension.card')}</strong>
+              <span className="hint" style={{ display: 'block' }}>
+                {pension === null
+                  ? t('pension.cardEmpty')
+                  : `${money(pension.amount_cents)} · ${
+                      pension.arrears_cents > 0
+                        ? t('pension.cardArrears', { amount: money(pension.arrears_cents) })
+                        : t('pension.cardUpToDate')
+                    }`}
+              </span>
+            </span>
+            <Icon name="chevron" size={16} />
+          </Link>
+        )}
 
         {partnerIsPlaceholder && (
           <div className="partner-banner">

@@ -16,6 +16,8 @@ import type {
   Household,
   Invitation,
   InvitationPreview,
+  JournalEntry,
+  JournalEntryInput,
   Notification,
   PendingChange,
   PushPrefs,
@@ -193,6 +195,12 @@ export const api = {
     request<Settlement>(`/households/${hid}/settlements`, { method: 'POST', body: data }),
   deleteSettlement: (hid: number, id: number) => request<void>(`/households/${hid}/settlements/${id}`, { method: 'DELETE' }),
   // Tableau entre parents (Premium : 402 sinon).
+  journal: (hid: number) => request<JournalEntry[]>(`/households/${hid}/journal`),
+  createJournalEntry: (hid: number, data: JournalEntryInput) =>
+    request<JournalEntry>(`/households/${hid}/journal`, { method: 'POST', body: data }),
+  updateJournalEntry: (hid: number, id: number, data: JournalEntryInput) =>
+    request<JournalEntry>(`/households/${hid}/journal/${id}`, { method: 'PATCH', body: data }),
+  deleteJournalEntry: (hid: number, id: number) => request<void>(`/households/${hid}/journal/${id}`, { method: 'DELETE' }),
   wall: (hid: number) => request<WallPost[]>(`/households/${hid}/wall`),
   createPost: (hid: number, data: Pick<WallPost, 'kind' | 'body' | 'child_id' | 'due_date' | 'assigned_to'>) =>
     request<WallPost>(`/households/${hid}/wall`, { method: 'POST', body: data }),

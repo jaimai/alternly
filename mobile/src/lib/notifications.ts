@@ -59,6 +59,8 @@ export function notificationMessage(n: Notification): string {
       return `Nouvelle réponse : « ${p.body} »`
     case 'wall_task_assigned':
       return `Une tâche vous a été assignée : « ${p.body} »`
+    case 'pension_revaluation_due':
+      return 'C’est le mois de revalorisation de la pension alimentaire : calculez le nouveau montant sur alternly.com'
     default:
       return 'Nouvelle activité dans votre foyer'
   }
@@ -68,7 +70,7 @@ export type NotificationArea = 'calendar' | 'expenses' | 'wall' | 'settings'
 
 /** Écran concerné par une notification. */
 export function notificationArea(type: string): NotificationArea {
-  if (type.startsWith('expense_') || type.startsWith('settlement_')) return 'expenses'
+  if (type.startsWith('expense_') || type.startsWith('settlement_') || type.startsWith('pension_')) return 'expenses'
   if (type.startsWith('wall_')) return 'wall'
   // Les demandes de changement (règles, jours spéciaux) se valident dans les Réglages.
   if (type.startsWith('change_')) return 'settings'

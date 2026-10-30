@@ -12,6 +12,7 @@ from ..models import (
     CustodyRule,
     Expense,
     HouseholdMember,
+    Pension,
     ScheduleException,
     Settlement,
     SpecialDayRule,
@@ -70,6 +71,8 @@ _SUBJECT_COLUMNS = [
     (CustodyRule, "reference_parent_id"),
     (VacationRule, "even_year_first_half_parent_id"),
     (SpecialDayRule, "parent_id"),
+    (Pension, "payer_id"),
+    (Pension, "payee_id"),
 ]
 
 

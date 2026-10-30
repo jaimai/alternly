@@ -13,6 +13,7 @@ export const keys = {
   pushPrefs: ['pushPrefs'] as const,
   expenses: ['expenses'] as const,
   wall: ['wall'] as const,
+  journal: ['journal'] as const,
   changeRequests: ['changeRequests'] as const,
   billing: ['billing'] as const,
 }
@@ -206,6 +207,23 @@ export function useWall(householdId: number | undefined) {
 /** Action sur un post ou une réponse, puis rafraîchit le tableau. */
 export function useWallAction<V = void, R = unknown>(fn: (v: V) => Promise<R>, onSuccess?: (r: R) => void) {
   return useRefreshingMutation(keys.wall, fn, onSuccess)
+}
+
+/** Journal de garde (notes privées). `locked` : pas d'abonnement Premium (402). */
+export function useJournal(householdId: number | undefined) {
+  const hid = householdId ?? 0
+  const journal = useQuery({
+    queryKey: [...keys.journal, hid],
+    queryFn: () => api.journal(hid),
+    enabled: householdId !== undefined,
+  })
+  const locked = journal.error instanceof ApiError && journal.error.status === 402
+  return { journal, locked }
+}
+
+/** Ajout, modification ou suppression d'une note, puis rafraîchit le journal. */
+export function useJournalAction<V = void, R = unknown>(fn: (v: V) => Promise<R>, onSuccess?: (r: R) => void) {
+  return useRefreshingMutation(keys.journal, fn, onSuccess)
 }
 
 /** Demandes de changement en attente (foyer à deux parents réels). */

@@ -8,6 +8,7 @@ import type {
   Country,
   CustodyRule,
   Expense,
+  ExpenseClaim,
   HistoryEntry,
   Household,
   Invitation,
@@ -20,8 +21,11 @@ import type {
   Member,
   Notification,
   PendingChange,
+  Pension,
+  PensionInput,
   RecurringRule,
   RecurringRuleInput,
+  Revaluation,
   ScheduleException,
   SchoolVacation,
   Settlement,
@@ -401,6 +405,25 @@ export const api = {
   deleteSettlement: (householdId: number, id: number) =>
     request<void>(`/households/${householdId}/settlements/${id}`, { method: 'DELETE' }),
 
+  expenseClaim: (householdId: number, start?: string, end?: string) => {
+    const params = new URLSearchParams()
+    if (start) params.set('start', start)
+    if (end) params.set('end', end)
+    const qs = params.toString()
+    return request<ExpenseClaim>(`/households/${householdId}/expenses/claim${qs ? `?${qs}` : ''}`)
+  },
+  pension: (householdId: number) => request<Pension | null>(`/households/${householdId}/pension`),
+  savePension: (householdId: number, data: PensionInput) =>
+    request<Pension>(`/households/${householdId}/pension`, { method: 'PUT', body: JSON.stringify(data) }),
+  deletePension: (householdId: number) => request<void>(`/households/${householdId}/pension`, { method: 'DELETE' }),
+  addPensionPayment: (
+    householdId: number,
+    data: { month: string; amount_cents: number; paid_on: string; note: string },
+  ) => request<Pension>(`/households/${householdId}/pension/payments`, { method: 'POST', body: JSON.stringify(data) }),
+  deletePensionPayment: (householdId: number, id: number) =>
+    request<Pension>(`/households/${householdId}/pension/payments/${id}`, { method: 'DELETE' }),
+  revaluePension: (householdId: number, data: { new_index: number; apply: boolean }) =>
+    request<Revaluation>(`/households/${householdId}/pension/revaluation`, { method: 'POST', body: JSON.stringify(data) }),
   listJournal: (householdId: number) => request<JournalEntry[]>(`/households/${householdId}/journal`),
   createJournalEntry: (householdId: number, data: JournalEntryInput) =>
     request<JournalEntry>(`/households/${householdId}/journal`, { method: 'POST', body: JSON.stringify(data) }),

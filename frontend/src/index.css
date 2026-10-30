@@ -2682,22 +2682,43 @@ button.journal-kind.active { background: var(--pine); border-color: var(--pine);
 button.journal-link { background: none; color: var(--pine); padding: 4px 8px; font-weight: 500; }
 .journal-foot button.danger-link { padding: 4px 8px; }
 
-/* Export imprimable du journal : document sobre, pensé pour le PDF. */
-.journal-doc { max-width: 760px; margin: 0 auto; padding: 24px 16px 48px; color: #111; }
-.journal-doc-toolbar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 24px; }
-.journal-doc h1 { font-size: 1.6rem; margin: 0 0 6px; }
-.journal-doc .doc-meta { color: #444; margin: 2px 0; font-size: 0.95rem; }
-.journal-doc table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.92rem; }
-.journal-doc th, .journal-doc td { text-align: left; vertical-align: top; padding: 8px 6px; border-bottom: 1px solid #ccc; }
-.journal-doc th { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.03em; color: #555; border-bottom: 2px solid #333; }
-.journal-doc td.when { white-space: nowrap; width: 1%; }
-.journal-doc .entry-body { white-space: pre-wrap; overflow-wrap: anywhere; margin: 2px 0 4px; }
-.journal-doc .entry-sub { color: #555; font-size: 0.82rem; }
-.journal-doc .doc-foot { margin-top: 28px; font-size: 0.8rem; color: #555; border-top: 1px solid #ccc; padding-top: 10px; }
+/* Documents imprimables (journal, demande de remboursement) : sobres, pensés pour le PDF. */
+.print-doc { max-width: 760px; margin: 0 auto; padding: 24px 16px 48px; color: #111; }
+.print-doc-toolbar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 24px; }
+.print-doc h1 { font-size: 1.6rem; margin: 0 0 6px; }
+.print-doc .doc-meta { color: #444; margin: 2px 0; font-size: 0.95rem; }
+.print-doc table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.92rem; }
+.print-doc th, .print-doc td { text-align: left; vertical-align: top; padding: 8px 6px; border-bottom: 1px solid #ccc; }
+.print-doc th { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.03em; color: #555; border-bottom: 2px solid #333; }
+.print-doc td.when { white-space: nowrap; width: 1%; }
+.print-doc .entry-body { white-space: pre-wrap; overflow-wrap: anywhere; margin: 2px 0 4px; }
+.print-doc .entry-sub { color: #555; font-size: 0.82rem; }
+.print-doc .num { text-align: right; white-space: nowrap; }
+.print-doc tfoot td { font-weight: 600; border-top: 2px solid #333; border-bottom: none; }
+.print-doc .claim-toolbar { display: block; }
+.print-doc .claim-toolbar textarea { width: 100%; }
+.print-doc .claim-note { margin-top: 16px; }
+.claim-link { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; color: var(--pine); }
+.print-doc .doc-foot { margin-top: 28px; font-size: 0.8rem; color: #555; border-top: 1px solid #ccc; padding-top: 10px; }
 @media print {
-  .journal-doc-toolbar, .tabbar, .topbar { display: none !important; }
-  .journal-doc { max-width: none; padding: 0; }
-  .journal-doc tr { break-inside: avoid; }
-  body:has(.journal-doc) { background: #fff; }
+  .print-doc-toolbar, .tabbar, .topbar { display: none !important; }
+  .print-doc { max-width: none; padding: 0; }
+  .print-doc tr { break-inside: avoid; }
+  body:has(.print-doc) { background: #fff; }
   @page { margin: 16mm 14mm; }
 }
+
+/* Pension alimentaire */
+.pension-card { display: flex; align-items: center; gap: 12px; text-decoration: none; color: inherit; }
+.pension-card .list-main { flex: 1 1 auto; }
+.pension-summary { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start; justify-content: space-between; }
+.pension-summary .stat-num { font-size: 1.6rem; font-weight: 600; }
+.pension-month-head { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
+.pension-amounts { margin-left: auto; font-variant-numeric: tabular-nums; }
+.pension-payment { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.tag.pension-paid { background: var(--pine-soft); color: var(--pine-deep); }
+.tag.pension-partial { background: #f6ecd0; color: #7a5a12; }
+.tag.pension-missing { background: var(--danger-soft); color: var(--danger); }
+.tag.pension-upcoming { background: var(--paper-deep); color: var(--ink-soft); }
+.pension-result { border-top: 1px solid var(--line); margin-top: 12px; padding-top: 4px; }
+.back-link { color: var(--ink-soft); text-decoration: none; font-size: 0.9rem; }
