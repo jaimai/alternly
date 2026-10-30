@@ -20,6 +20,7 @@ n'est pas branchée, et fournir de temps en temps des captures ou des infos.
 ```
 marketing/instagram/
   ideas.yaml                  # backlog d'idées scorées
+  veille/                     # comptes suivis, posts concurrents relevés, tendances de la semaine
   calendrier.yaml             # dates clés (vacances, fêtes, rentrée, fête des pères…)
   templates/
     carrousel/                # 6-8 mises en page HTML pilotées par des données
@@ -69,15 +70,29 @@ statut: a-relire              # idee | a-relire | valide | publie
 
 ### Étape 1 — Idées (automatique)
 
-Sources que Claude exploite pour remplir `ideas.yaml` :
+Sources que Claude exploite pour remplir `ideas.yaml`, de la plus forte à la plus faible :
 
-1. **Le blog** (`content/blog/*.md`) : chaque article donne 5 à 10 posts (une section = un carrousel, une astuce = un reel).
-2. **Le calendrier** : vacances par zone, Noël, fête des mères / pères, rentrée, Saint-Valentin (« première Saint-Valentin après la séparation »), déclaration d'impôts (enfants à charge en alternée)…
-3. **Les commentaires et DM** : chaque question posée en commentaire devient un post (« vous nous avez demandé… »), le format qui crée le plus de fidélité.
-4. **Les formats qui marchent** : l'analyse hebdo (étape 6) double les formats et piliers gagnants.
-5. **Veille** : captures de posts qui cartonnent chez d'autres comptes (fournies par Thomas, ou trouvées par recherche web), pour reprendre la *structure*, jamais le contenu.
+1. **Concurrents : refaire ce qui marche déjà** (voir « Veille » ci-dessous). Un post qui a fait 10× la moyenne d'un compte du même sujet est une idée validée par le public : on reprend le **sujet, l'accroche et la structure**, avec nos propres mots, notre charte et nos sources. Jamais de copie de texte ou de visuel.
+2. **La vague du moment** : sons et formats de reels en tendance, mèmes, actualité (réforme de la pension, calendrier scolaire publié, affaire médiatisée, saison). On colle un trend à un sujet coparentalité dans les **48-72 h**, après c'est trop tard.
+3. **Hashtags qui montent** : les meilleurs posts des hashtags cibles indiquent quels sujets prennent en ce moment.
+4. **Le calendrier** : vacances par zone, Noël, fête des mères / pères, rentrée, Saint-Valentin (« première Saint-Valentin après la séparation »), impôts (enfants à charge en alternée)…
+5. **Les commentaires et DM** : chaque question posée devient un post (« vous nous avez demandé… »).
+6. **Le blog** (`content/blog/*.md`) : il sert surtout à **vérifier les faits** et à donner de la profondeur aux carrousels, et à combler les trous du planning.
 
-Chaque idée reçoit un score : `saison (urgence) + performance du pilier + fraîcheur (pas de doublon récent)`.
+Chaque idée reçoit un score : `preuve de performance (concurrent / tendance) + urgence (tendance, saison) + performance de notre pilier + fraîcheur`.
+
+#### Veille concurrents, hashtags et tendances
+
+Fichiers : `veille/comptes.yaml` (liste suivie), `veille/posts.csv` (posts relevés), `veille/tendances.md` (la semaine).
+
+- **Comptes suivis** (15-30) : comptes coparentalité FR et EN (les tendances US arrivent en France avec quelques semaines de retard), avocats en droit de la famille, médiateurs familiaux, psys enfants, comptes « maman/papa solo », applis concurrentes (2houses, OurFamilyWizard, Cozi, TimeTree…). Première liste construite par Claude par recherche web, puis complétée par Thomas.
+- **Ce qu'on relève par post** : format, sujet, accroche (slide 1 / 1re seconde), nombre de slides, durée, likes, commentaires, vues, date. On calcule un **ratio de surperformance** = engagement du post / moyenne du compte. Ce sont les posts au-dessus de ×3 qui nous intéressent.
+- **Comment on récupère les données** :
+  - *Phase 1* : recherche web + captures envoyées par Thomas (profil d'un concurrent trié par vues, onglet Reels, page d'un hashtag, écran « audio tendance »). Claude lit les captures et remplit `veille/posts.csv`.
+  - *Phase 3* : **API Instagram officielle**, `business_discovery` (posts publics, likes et commentaires des comptes pro concurrents) et recherche de hashtags (`top_media` / `recent_media`, 30 hashtags différents par semaine). Pas de scraping : c'est contraire aux conditions d'Instagram et ça fait risquer le blocage du compte.
+- **Hashtags** : chaque semaine, on regarde les meilleurs posts de nos ~30 hashtags cibles, on repère les hashtags qui reviennent chez les posts performants et ceux qui stagnent. Les blocs de hashtags sont mis à jour, et notre propre rapport mesure la portée apportée par les hashtags.
+- **Tendances** : sons et formats en tendance (écran « audio tendance » d'Instagram envoyé par Thomas, ou classements publiés chaque semaine sur le web), actualité famille / justice / école. Une tendance validée part en **production express**, posté sous 48 h, et passe devant le planning.
+- **Rendu** : la veille alimente la section « Concurrents & tendances » du rapport hebdo (top 10 des posts de la semaine dans la niche et ce qu'on en tire).
 
 **Mix quotidien** : 1 carrousel (créneau midi) + 1 reel (créneau 20 h 30). Sur la semaine :
 5 piliers utiles, 1 émotion / relatable, 1 produit (montrer Alternly en solution).
@@ -94,7 +109,12 @@ valeur, question, CTA), bloc de hashtags. Règles reprises de
 - **Carrousels** : templates HTML → PNG 1080×1350 avec Chrome headless (méthode déjà utilisée).
 - **Reels** : templates animés HTML → MP4 1080×1920 avec `docs/marketing/videos/src/render.cjs`, + couverture PNG. Musique : choisie dans l'app Instagram au moment de poster (les sons tendance ne sont pas utilisables hors de l'app).
 - **Captures de l'app** : pour les posts « produit », Claude prend les captures lui-même dans le simulateur iOS ou dans l'app web (`mobile/assets/screen/` existe déjà).
-- **Limite honnête** : les reels face caméra (POV, question sincère) ont besoin d'un humain. Claude écrit le script, le texte à l'écran et la légende ; Thomas filme 10 s au téléphone, et Claude ajoute le texte et la mise en forme à partir du fichier vidéo. Objectif : max 2 par semaine, le reste en motion design.
+- **Reels 100 % sans face cam**, réalisés entièrement par Claude :
+  - **Motion design** : texte cinétique, listes animées, avant / après, calendrier qui se remplit, « mythe / réalité », compte à rebours (Noël J-30…), conversations SMS animées (le message énervé vs le message BIFF).
+  - **Texte sur vidéo d'ambiance** : plans neutres libres de droits (Pexels, Pixabay : sac d'enfant, voiture, porte d'école, cuisine, mains) avec le texte du hook et des étapes par-dessus. C'est le format « POV » des comptes sans visage.
+  - **Écran de l'app** : enregistrements du simulateur iOS ou de l'app web, pour les posts produit.
+  - **Voix off** optionnelle par synthèse vocale française (à tester : elle augmente le temps de visionnage mais doit sonner naturelle).
+  Les reels POV et « question sincère » du plan éditorial sont adaptés en version texte à l'écran.
 
 ### Étape 4 — Revue (Thomas, 2 min)
 
@@ -130,6 +150,7 @@ tranquillement) et envoie une planche contact + les légendes. Thomas répond �
 
 | Quand | Tâche planifiée Claude | Sortie |
 |---|---|---|
+| Lundi et jeudi, 7 h | Veille concurrents + hashtags + tendances, re-scoring du backlog | `veille/tendances.md`, idées express |
 | Chaque jour, 8 h | Produire les 2 posts de J+2 (idée → brief → rendu) | Planche contact + légendes à valider |
 | Créneaux 12 h / 20 h 30 | Phase 1 : rappel « à poster » avec les fichiers. Phase 3 : publication API | Post en ligne |
 | Lundi, 9 h | Rapport hebdo + nouvelles idées + re-scoring | `rapports/AAAA-SXX.md` |
@@ -154,5 +175,6 @@ Sinon, plus tard, on bascule le rendu dans un conteneur Railway.
 
 - **Tout de suite** : le compte Instagram est-il déjà **professionnel** et lié à la page Facebook ? (Ça conditionne la phase 3.)
 - Les stats des reels « pub » déjà postés (captures), comme point de départ.
-- 2-3 comptes Instagram que vous aimez (ton / format) comme références.
+- Les comptes concurrents ou inspirants que vous connaissez déjà (Claude complète la liste).
+- De temps en temps, des captures des profils concurrents (onglet Reels), des pages de hashtags et de l'écran « audio tendance », tant que l'API n'est pas branchée.
 - Phase 3 : accès développeur Meta (Claude guide la création de l'app pas à pas, mais c'est Thomas qui saisit ses identifiants).
