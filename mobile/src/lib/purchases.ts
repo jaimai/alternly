@@ -45,9 +45,24 @@ export async function forgetPurchaser(): Promise<void> {
 
 /** Offres du moment (annuelle, mensuelle), avec les prix du store dans la devise locale. */
 export async function loadPackages(): Promise<PurchasesPackage[]> {
-  const offerings = await Purchases.getOfferings()
+  let offerings
+  try {
+    offerings = await Purchases.getOfferings()
+  } catch (e) {
+    const err = e as { code?: string; message?: string; underlyingErrorMessage?: string }
+    console.warn('[RevenueCat] getOfferings', err)
+    throw new Error([err.code && `[${err.code}]`, err.message, err.underlyingErrorMessage].filter(Boolean).join(' '))
+  }
+  // Pas d'erreur mais rien à vendre : configuration du dashboard RevenueCat / App Store Connect.
+  if (!offerings.current) {
+    const ids = Object.keys(offerings.all)
+    throw new Error(ids.length ? `Aucune offre « Current » (offres : ${ids.join(', ')}).` : 'Aucune offre configurée dans RevenueCat.')
+  }
+  if (!offerings.current.availablePackages.length) {
+    throw new Error(`L'offre « ${offerings.current.identifier} » n'a aucun package disponible (produits store introuvables).`)
+  }
   const order = ['ANNUAL', 'MONTHLY']
-  return [...(offerings.current?.availablePackages ?? [])].sort(
+  return [...offerings.current.availablePackages].sort(
     (a, b) => order.indexOf(a.packageType) - order.indexOf(b.packageType),
   )
 }

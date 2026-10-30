@@ -70,7 +70,7 @@ export function Paywall({ title = 'Alternly Premium', intro, onPurchased, onSkip
       ) : packages.isPending ? (
         <Loading />
       ) : packages.isError || list.length === 0 ? (
-        <ErrorState message="Offres indisponibles pour le moment." onRetry={() => packages.refetch()} />
+        <ErrorState message={`Offres indisponibles pour le moment.${packages.error ? `\n${packages.error.message}` : ''}`} onRetry={() => packages.refetch()} />
       ) : (
         <>
           <View style={{ gap: 10 }} accessibilityRole="radiogroup">
