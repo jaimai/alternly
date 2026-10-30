@@ -1,0 +1,39 @@
+id: 2026-11-02-midi-rythmes
+format: carrousel
+creneau: 2026-11-02 12:00
+pilier: organisation
+source: content/blog/planning-garde-alternee-choisir-rythme.md
+statut: a-relire
+hashtags: organisation
+slides:
+  - { layout: couverture, kicker: Garde alternée, emoji: "🗓️", titre: "Semaine/semaine, 2-2-3 ou *un week-end sur deux* ?", sous: "Les 3 rythmes les plus utilisés en France, comparés." }
+  - layout: colonnes
+    kicker: "1 · Semaine / semaine"
+    titre: "Le grand *classique*"
+    gauche: { titre: "👍 Pour", items: ["Un seul passage par semaine", "Simple à retenir", "Idéal à partir de 6-7 ans"] }
+    droite: { titre: "👎 Contre", items: ["7 jours sans voir l'autre parent", "Long pour les tout-petits"] }
+  - layout: colonnes
+    kicker: "2 · Le 2-2-3"
+    titre: "Le rythme des *plus jeunes*"
+    gauche: { titre: "👍 Pour", items: ["Jamais plus de 3 jours sans chaque parent", "Adapté aux petits"] }
+    droite: { titre: "👎 Contre", items: ["Beaucoup de passages", "Demande de vivre proches"] }
+  - layout: colonnes
+    kicker: "3 · Un week-end sur deux"
+    titre: "La formule *classique*"
+    gauche: { titre: "👍 Pour", items: ["Quand les parents vivent loin", "Une seule école, une base fixe"] }
+    droite: { titre: "👎 Contre", items: ["Temps très déséquilibré", "Ce n'est pas une garde alternée"] }
+  - layout: liste
+    kicker: Comment choisir
+    titre: "Les 3 *bonnes questions*"
+    puce: "1"
+    items: ["Quel âge a l'enfant ?", "Quelle distance entre les deux maisons et l'école ?", "Quels horaires de travail de chaque côté ?"]
+    paragraphes: ["Le rythme peut **évoluer** avec l'âge de l'enfant."]
+  - { layout: cta, titre: "Et vous, *quel rythme* ?", texte: "Réponds en commentaire 👇", options: [{ emoji: "7️⃣", label: "Semaine / semaine" }, { emoji: "🔁", label: "2-2-3" }, { emoji: "🏡", label: "Un WE sur deux" }] }
+legende: |
+  Semaine/semaine, 2-2-3 ou un week-end sur deux : quel rythme de garde alternée choisir ? 🗓️
+
+  Il n'y a pas de « meilleur » rythme, seulement celui qui colle à l'âge de vos enfants, à la distance entre les deux maisons et à vos horaires. Et il peut changer avec le temps.
+
+  Chez vous, c'est quoi ? Réponds 7, 223 ou WE en commentaire 👇
+
+  📌 Enregistre pour en parler avec l'autre parent. Le comparatif complet est en lien en bio.

@@ -1,0 +1,7 @@
+{
+  "name": "alternly-instagram",
+  "private": true,
+  "type": "module",
+  "scripts": { "build": "node scripts/build.mjs" },
+  "dependencies": { "playwright-core": "^1.48.0", "yaml": "^2.6.0" }
+}

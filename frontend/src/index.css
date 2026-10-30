@@ -2701,3 +2701,6 @@ button.journal-link { background: none; color: var(--pine); padding: 4px 8px; fo
   body:has(.journal-doc) { background: #fff; }
   @page { margin: 16mm 14mm; }
 }
+
+/* Inscription : pas de « tirer pour rafraîchir » sur mobile (Onboarding) */
+html.no-pull-refresh, html.no-pull-refresh body { overscroll-behavior-y: none; }

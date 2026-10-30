@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { track } from '../analytics'
 import { EV } from '../analyticsEvents'
@@ -34,7 +34,44 @@ const VAC_KEY: Record<VacationMode, string> = { split_half: 'Half', alternate_fu
 
 const DEFAULT_CUSTOM: Side[] = Array.from({ length: 14 }, (_, i) => (i < 7 ? 'ref' : 'other'))
 
+// Brouillon de l'assistant (jours coloriés compris) : un rechargement de la page à
+// l'inscription — « tirer pour rafraîchir » sur iPhone, onglet rechargé par Safari —
+// ne fait plus tout perdre. Effacé à l'envoi, périmé au bout de 2 jours.
+const DRAFT_TTL_MS = 2 * 24 * 3600 * 1000
+interface Draft {
+  savedAt: number
+  step: number
+  pattern: Pattern
+  startDate: string
+  showDate: boolean
+  referenceParent: number
+  handoverDay: number
+  handoverTime: string
+  customWeeks: Side[]
+  vacMode: VacationMode
+  periodModes: VacationPeriodModes
+  evenParent: number
+  customFlow: boolean
+  template: number
+  cells: Cell[]
+  cellsFrom: number | null
+  brush: Side
+  monthView: boolean
+}
+const draftKey = (userId: number) => `alternly_rule_draft_${userId}`
+function readDraft(userId: number): Partial<Draft> {
+  try {
+    const raw = localStorage.getItem(draftKey(userId))
+    const d = raw ? (JSON.parse(raw) as Draft) : null
+    return d && Date.now() - d.savedAt < DRAFT_TTL_MS ? d : {}
+  } catch {
+    return {}
+  }
+}
+
 interface Props {
+  /** Reprendre un brouillon sauvegardé (inscription uniquement). */
+  keepDraft?: boolean
   members: Member[]
   myId: number
   childNames: string[]
@@ -49,32 +86,33 @@ interface Props {
  * rythme (avec vignettes) → qui a l'enfant à une date précise → vérifier et
  * ajuster jour par jour → vacances. Les réglages gardent le formulaire complet.
  */
-export default function RuleWizard({ members, myId, childNames, initialCustody, initialVacation, busy, onSubmit }: Props) {
+export default function RuleWizard({ keepDraft = false, members, myId, childNames, initialCustody, initialVacation, busy, onSubmit }: Props) {
   const { t } = useTranslation()
   const fmt = useFormat()
   const me = members.find((m) => m.id === myId)
   const other = members.find((m) => m.id !== myId)
 
-  const [step, setStep] = useState(0)
-  const [pattern, setPattern] = useState<Pattern>(initialCustody?.pattern ?? 'alternate_weeks')
-  const [startDate, setStartDate] = useState(initialCustody?.start_date ?? todayIso())
-  const [showDate, setShowDate] = useState(false)
-  const [referenceParent, setReferenceParent] = useState<number>(initialCustody?.reference_parent_id ?? myId)
-  const [handoverDay, setHandoverDay] = useState<number>(initialCustody?.handover_day ?? 0)
-  const [handoverTime, setHandoverTime] = useState(initialCustody?.handover_time ?? '18:00')
+  const [draft] = useState<Partial<Draft>>(() => (keepDraft && !initialCustody ? readDraft(myId) : {}))
+  const [step, setStep] = useState(draft.step ?? 0)
+  const [pattern, setPattern] = useState<Pattern>(draft.pattern ?? initialCustody?.pattern ?? 'alternate_weeks')
+  const [startDate, setStartDate] = useState(draft.startDate ?? initialCustody?.start_date ?? todayIso())
+  const [showDate, setShowDate] = useState(draft.showDate ?? false)
+  const [referenceParent, setReferenceParent] = useState<number>(draft.referenceParent ?? initialCustody?.reference_parent_id ?? myId)
+  const [handoverDay, setHandoverDay] = useState<number>(draft.handoverDay ?? initialCustody?.handover_day ?? 0)
+  const [handoverTime, setHandoverTime] = useState(draft.handoverTime ?? initialCustody?.handover_time ?? '18:00')
   const [customWeeks, setCustomWeeks] = useState<Side[]>(
-    (initialCustody?.custom_weeks as Side[] | null | undefined) ?? DEFAULT_CUSTOM,
+    draft.customWeeks ?? (initialCustody?.custom_weeks as Side[] | null | undefined) ?? DEFAULT_CUSTOM,
   )
-  const [vacMode, setVacMode] = useState<VacationMode>(initialVacation?.mode ?? 'split_half')
-  const [periodModes, setPeriodModes] = useState<VacationPeriodModes>(initialVacation?.period_modes ?? {})
-  const [evenParent, setEvenParent] = useState<number>(initialVacation?.even_year_first_half_parent_id ?? myId)
+  const [vacMode, setVacMode] = useState<VacationMode>(draft.vacMode ?? initialVacation?.mode ?? 'split_half')
+  const [periodModes, setPeriodModes] = useState<VacationPeriodModes>(draft.periodModes ?? initialVacation?.period_modes ?? {})
+  const [evenParent, setEvenParent] = useState<number>(draft.evenParent ?? initialVacation?.even_year_first_half_parent_id ?? myId)
   // Dernier jour touché à l'étape 3, et l'état d'avant pour « Annuler ».
   const [adjust, setAdjust] = useState<{
     day: string
     before: { pattern: Pattern; customWeeks: Side[] }
   } | null>(null)
   // « Autre organisation » : modèle proche (étape 2), puis grille à corriger et aperçu du mois (étape 3).
-  const [customFlow, setCustomFlow] = useState(false)
+  const [customFlow, setCustomFlow] = useState(draft.customFlow ?? false)
   // Rythme personnalisé déjà enregistré, vu depuis « vous » (côté ref = le parent connecté).
   const [currentCells] = useState<Cell[] | null>(() =>
     initialCustody?.pattern === 'custom' && initialCustody.custom_weeks?.length === 14
@@ -83,13 +121,27 @@ export default function RuleWizard({ members, myId, childNames, initialCustody, 
         )
       : null,
   )
-  const [template, setTemplate] = useState(currentCells ? CURRENT : 0)
-  const [cells, setCells] = useState<Cell[]>(() => currentCells ?? templateCells(0))
+  const [template, setTemplate] = useState(draft.template ?? (currentCells ? CURRENT : 0))
+  const [cells, setCells] = useState<Cell[]>(() => draft.cells ?? currentCells ?? templateCells(0))
   const cellsOf = (i: number) => (i === CURRENT && currentCells ? currentCells : templateCells(i))
   const templateId = template === CURRENT ? 'current' : TEMPLATES[template].id
-  const [cellsFrom, setCellsFrom] = useState<number | null>(null)
-  const [brush, setBrush] = useState<Side>('other')
-  const [monthView, setMonthView] = useState(false)
+  const [cellsFrom, setCellsFrom] = useState<number | null>(draft.cellsFrom ?? null)
+  const [brush, setBrush] = useState<Side>(draft.brush ?? 'other')
+  const [monthView, setMonthView] = useState(draft.monthView ?? false)
+
+  useEffect(() => {
+    if (!keepDraft || initialCustody) return
+    const d: Draft = {
+      savedAt: Date.now(), step, pattern, startDate, showDate, referenceParent, handoverDay, handoverTime,
+      customWeeks, vacMode, periodModes, evenParent, customFlow, template, cells, cellsFrom, brush, monthView,
+    }
+    try {
+      localStorage.setItem(draftKey(myId), JSON.stringify(d))
+    } catch {
+      // stockage indisponible (navigation privée) : pas de brouillon, rien de cassé
+    }
+  }, [keepDraft, initialCustody, myId, step, pattern, startDate, showDate, referenceParent, handoverDay, handoverTime,
+    customWeeks, vacMode, periodModes, evenParent, customFlow, template, cells, cellsFrom, brush, monthView])
 
   const kids = childNames.length === 1 ? childNames[0] : childNames.length > 1 ? t('wizard.theChildren') : t('wizard.theChild')
 
@@ -157,6 +209,11 @@ export default function RuleWizard({ members, myId, childNames, initialCustody, 
 
   function submit() {
     if (busy) return
+    try {
+      localStorage.removeItem(draftKey(myId))
+    } catch {
+      // rien à effacer
+    }
     onSubmit({
       custody: {
         pattern,

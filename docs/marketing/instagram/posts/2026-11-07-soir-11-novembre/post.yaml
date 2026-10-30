@@ -1,0 +1,23 @@
+id: 2026-11-07-soir-11-novembre
+format: reel
+creneau: 2026-11-07 20:30
+pilier: organisation
+source: content/blog/calendrier-garde-alternee-2027.md (jours fériés hors vacances)
+statut: a-relire
+son: son tendance « question / réponse »
+hashtags: organisation
+couverture_ms: 1500
+scenes:
+  - { layout: hook, emoji: "📅", texte: "Mercredi 11 novembre : *qui a les enfants* ?", duree: 2600 }
+  - { layout: texte, kicker: "La règle générale", titre: "Les jours fériés suivent *le rythme habituel*", texte: "C'est le parent qui a les enfants ce jour-là qui les garde.", duree: 3600 }
+  - { layout: texte, kicker: "Sauf si…", titre: "Votre jugement ou votre convention *dit autre chose*", texte: "Certains prévoient les ponts et les fériés à part.", duree: 3400 }
+  - { layout: liste, titre: "Pour éviter le débat", items: ["Relis ta convention", "Vérifie le calendrier de la semaine", "Confirme par écrit à l'autre parent"], duree: 4000 }
+  - { layout: cta, titre: "Envoie-le *à l'autre parent*", texte: "Avant mercredi 😉", duree: 2600 }
+legende: |
+  Mercredi 11 novembre : qui a les enfants en garde alternée ? 📅
+
+  En général, les jours fériés hors vacances suivent le rythme habituel : c'est le parent qui a les enfants ce jour-là qui les garde. Sauf si votre jugement ou votre convention prévoit autre chose pour les fériés et les ponts.
+
+  Chez vous, les fériés c'est 🔁 rythme habituel ou ✍️ règle à part ? 👇
+
+  Envoie-le à l'autre parent avant mercredi.

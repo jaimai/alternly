@@ -1,0 +1,24 @@
+id: 2026-11-06-midi-passage-de-bras
+format: carrousel
+creneau: 2026-11-06 12:00
+pilier: organisation
+source: content/blog/passage-de-bras-transition-deux-maisons.md
+statut: a-relire
+hashtags: organisation
+slides:
+  - { layout: couverture, kicker: Garde alternée, emoji: "🤝", titre: "La checklist du *passage de bras* serein", sous: "À enregistrer avant dimanche." }
+  - { layout: texte, kicker: "1 · Le moment", titre: "Un jour et une heure *fixes*", paragraphes: ["L'enfant sait quand il change de maison. Les adultes n'ont plus à négocier chaque semaine."] }
+  - { layout: texte, kicker: "2 · Le lieu", titre: "L'école, le *meilleur* lieu de passage", paragraphes: ["Un parent dépose le matin, l'autre récupère le soir.", "Pas de face-à-face, pas de tension sur le pas de la porte."] }
+  - { layout: texte, kicker: "Sinon", titre: "Un lieu *neutre*", paragraphes: ["Un parc, la sortie de l'activité, chez les grands-parents.", "Un endroit où personne n'est « chez soi »."] }
+  - { layout: liste, kicker: "3 · Le sac", titre: "Moins il y en a, *mieux c'est*", items: ["Des doublons dans chaque maison", "Ce qui voyage : doudou, cahiers, traitements", "Une liste partagée pour les oublis"] }
+  - { layout: texte, kicker: "4 · Un rituel", titre: "La même phrase, *le même câlin*", paragraphes: ["« Je t'aime, bonne semaine chez papa / maman. »", "Un rituel rassure plus que de longues explications."] }
+  - { layout: texte, kicker: "5 · Entre adultes", titre: "Bref et *cordial*", paragraphes: ["Bonjour, les infos utiles, au revoir.", "Les sujets qui fâchent se règlent ailleurs, jamais devant l'enfant."] }
+  - { layout: cta, titre: "Chez vous, le passage *se fait où* ?", texte: "Réponds avec un emoji 👇", options: [{ emoji: "🏫", label: "À l'école" }, { emoji: "🏠", label: "À la maison" }, { emoji: "🌳", label: "Lieu neutre" }] }
+legende: |
+  La checklist du passage de bras serein en garde alternée 🤝
+
+  Jour et heure fixes, l'école comme lieu de passage, des doublons pour alléger le sac, un petit rituel, et entre adultes : bref et cordial. Ce moment compte énormément pour l'enfant.
+
+  Chez vous, le passage se fait où ? 🏫 école, 🏠 maison ou 🌳 lieu neutre ? 👇
+
+  📌 Enregistre avant dimanche. L'article complet est en lien en bio.

@@ -1,0 +1,24 @@
+id: 2026-11-08-soir-maison-vide
+format: reel
+creneau: 2026-11-08 20:30
+pilier: emotion
+source: saison (dimanche soir de passage de bras)
+statut: a-relire
+son: piano / ambiance douce, bibliothèque Meta
+hashtags: vecu
+couverture_ms: 1600
+scenes:
+  - { layout: hook, emoji: "🌙", texte: "Pour le parent qui rentre *dans une maison vide* ce soir", duree: 3200 }
+  - { layout: texte, titre: "Le silence est *bizarre*, et c'est normal.", duree: 3000 }
+  - { layout: texte, titre: "Ton enfant n'est pas parti. Il est *chez son autre parent*.", duree: 3200 }
+  - { layout: texte, titre: "Ce temps-là est aussi *pour toi*.", texte: "Te reposer n'est pas abandonner.", duree: 3200 }
+  - { layout: liste, titre: "Ce soir, essaie", items: ["Un message doux à ton enfant (s'il a l'âge)", "Ranger sa chambre… ou pas", "Un truc rien que pour toi"], duree: 4200 }
+  - { layout: cta, titre: "Tu n'es *pas seul·e*", texte: "Partage à un parent qui vit ça ce soir 💛", duree: 3000 }
+legende: |
+  Pour le parent qui rentre dans une maison vide ce soir 🌙
+
+  Le silence, la chambre rangée trop tôt, le petit pincement. C'est normal, et ça ne veut pas dire que tu fais mal les choses. Ton enfant est avec son autre parent, et ce temps-là peut aussi être pour toi.
+
+  Toi, c'est quoi ton rituel du dimanche soir sans les enfants ? 👇
+
+  💛 Partage à un parent qui vit ça ce soir.

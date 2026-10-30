@@ -1,0 +1,24 @@
+id: 2026-11-03-midi-biff
+format: carrousel
+creneau: 2026-11-03 12:00
+pilier: communication
+source: content/blog/communiquer-avec-son-ex-sans-conflit.md
+statut: a-relire
+hashtags: communication
+slides:
+  - { layout: couverture, kicker: Coparentalité, emoji: "💬", titre: "Le message de ton ex te fait *monter en pression* ?", sous: "Essaie la méthode BIFF. 4 lettres, zéro dispute." }
+  - { layout: texte, kicker: "B · Bref", titre: "3 ou 4 phrases, *pas un roman*", paragraphes: ["Plus le message est long, plus il y a de prises pour une réponse agacée.", "Un sujet par message."] }
+  - { layout: texte, kicker: "I · Informatif", titre: "Des faits, *des dates, des heures*", paragraphes: ["« Samedi 10 h, à l'école. » plutôt que « comme d'habitude… ».", "Pas d'interprétation, pas de procès d'intention."] }
+  - { layout: texte, kicker: "F · Friendly (aimable)", titre: "Un ton *neutre et poli*", paragraphes: ["Même quand c'est dur. Surtout quand c'est dur.", "Un « merci » ne coûte rien et désamorce beaucoup."] }
+  - { layout: texte, kicker: "F · Ferme", titre: "Une réponse *qui clôt*", paragraphes: ["Une décision claire ou une question fermée (oui / non).", "Pas de « on verra », qui relance la discussion."] }
+  - { layout: duo, kicker: Exemple, titre: "Avant / *après*", non: "Comme d'habitude tu préviens au dernier moment, tu ne penses jamais aux enfants…", oui: "OK pour samedi 10 h à l'école. Je prends le sac de sport. Merci de me prévenir." }
+  - { layout: liste, kicker: Bonus, titre: "À ne *jamais* faire", puce: "✕", items: ["Faire passer un message par les enfants", "Répondre à chaud : attends 1 heure", "Mélanger argent et planning dans le même message"] }
+  - { layout: cta, titre: "Le message le plus dur *à écrire* ?", texte: "Réponds avec le chiffre 👇", options: [{ emoji: "1️⃣", label: "Changer le planning" }, { emoji: "2️⃣", label: "L'argent" }, { emoji: "3️⃣", label: "Les vacances" }], bas: "📌 **Enregistre** pour la prochaine fois que tu as envie d'écrire un pavé." }
+legende: |
+  Méthode BIFF : comment répondre à son ex sans dispute 💬
+
+  Bref, Informatif, aimable (Friendly), Ferme. C'est une méthode très utilisée en médiation familiale pour garder une communication apaisée, et elle protège surtout les enfants.
+
+  Le message le plus dur à écrire pour toi, c'est lequel ? 1️⃣ changer le planning, 2️⃣ l'argent, 3️⃣ les vacances
+
+  📌 Enregistre et garde-le sous la main. Toutes nos méthodes pour communiquer sans conflit : lien en bio.
