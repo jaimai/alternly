@@ -18,6 +18,8 @@ const FEATURES = [
   'Tableau entre parents : infos, tâches, questions',
   'Rappels par e-mail des échanges à valider',
   'Synchronisation avec votre agenda',
+  'Journal de garde privé, exportable',
+  'Suivi de la pension alimentaire et revalorisation (sur le web)',
 ]
 
 /**

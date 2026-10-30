@@ -53,5 +53,6 @@
   "common.notifPaymentFailed": "Le paiement de votre abonnement a échoué : mettez à jour votre moyen de paiement",
   "common.notifInviteReminder": "L'autre parent n'a pas encore rejoint le calendrier. Renvoyez-lui l'invitation en un geste.",
   "common.loadingCalendar": "Chargement de votre calendrier…",
-  "common.navJournal": "Journal"
+  "common.navJournal": "Journal",
+  "common.notifPensionRevaluation": "C'est le mois de revalorisation de la pension alimentaire : calculez le nouveau montant."
 }

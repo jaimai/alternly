@@ -3,19 +3,12 @@ import { useTranslation } from 'react-i18next'
 import { resetIdentity, track } from '../analytics'
 import { EV } from '../analyticsEvents'
 import PlanCheckout from './PlanCheckout'
+import { usePremiumPerks } from '../premiumPerks'
 import { api, API_BASE, setToken } from '../api'
 import type { User } from '../types'
 
 // Les pages légales sont servies par le backend (site marketing).
 const MARKETING = API_BASE.replace(/\/api\/?$/, '')
-
-const PERK_KEYS = [
-  'paywall.perkExpenses',
-  'paywall.perkMessageBoard',
-  'paywall.perkEmailReminders',
-  'paywall.perkCalendarSync',
-  'paywall.perkJournal',
-]
 
 interface Props {
   user: User
@@ -30,13 +23,14 @@ interface Props {
 
 export default function Paywall({ user, onSubscribed, onSkip, title, subtitle, feature = 'generic' }: Props) {
   const { t } = useTranslation()
+  const { perks, subtitleKey, solo } = usePremiumPerks()
 
   useEffect(() => {
-    track(EV.paywallViewed, { feature })
+    track(EV.paywallViewed, { feature, solo })
     // Intérêt réel pour Premium (pas le paywall montré à tous en fin d'onboarding) :
     // déclenche l'offre de bienvenue 48 h plus tard s'il ne souscrit pas.
     if (feature !== 'onboarding') api.markPaywallSeen().catch(() => {})
-  }, [feature])
+  }, [feature, solo])
 
   function logout() {
     setToken(null)
@@ -52,10 +46,10 @@ export default function Paywall({ user, onSubscribed, onSkip, title, subtitle, f
       <div className="card" style={{ textAlign: 'center' }}>
         <h2>{title ?? t('paywall.title')}</h2>
         <p className="hint">
-          {subtitle ?? t('paywall.subtitle')}
+          {subtitle ?? t(subtitleKey)}
         </p>
         <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 20px', textAlign: 'left' }}>
-          {PERK_KEYS.map((k) => (
+          {perks.map((k) => (
             <li key={k} style={{ padding: '6px 0 6px 26px', position: 'relative', fontSize: '0.92rem' }}>
               <span style={{ position: 'absolute', left: 2, color: 'var(--pine)', fontWeight: 700 }}>✓</span>
               {t(k)}

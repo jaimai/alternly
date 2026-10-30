@@ -6,8 +6,7 @@ import { api } from '../api'
 import type { User } from '../types'
 import Modal from './Modal'
 import PlanCheckout from './PlanCheckout'
-
-const PERK_KEYS = ['paywall.perkExpenses', 'paywall.perkMessageBoard', 'paywall.perkEmailReminders', 'paywall.perkCalendarSync']
+import { usePremiumPerks } from '../premiumPerks'
 
 /** Choix de l'offre en fenêtre (bouton « Premium », réglages) : annuel ou mensuel. */
 export default function UpgradeDialog({
@@ -24,15 +23,16 @@ export default function UpgradeDialog({
   discountCode?: string
 }) {
   const { t } = useTranslation()
+  const { perks, subtitleKey, solo } = usePremiumPerks()
   useEffect(() => {
-    track(EV.paywallViewed, { feature: source })
+    track(EV.paywallViewed, { feature: source, solo })
     api.markPaywallSeen().catch(() => {})
-  }, [source])
+  }, [source, solo])
   return (
     <Modal title={t('paywall.title')} onClose={onClose}>
-      <p className="hint" style={{ marginTop: 0 }}>{t('paywall.subtitle')}</p>
+      <p className="hint" style={{ marginTop: 0 }}>{t(subtitleKey)}</p>
       <ul className="perk-list">
-        {PERK_KEYS.map((k) => (
+        {perks.map((k) => (
           <li key={k}>{t(k)}</li>
         ))}
       </ul>

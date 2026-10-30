@@ -203,13 +203,16 @@ consentement). PostHog renseigne aussi `$initial_utm_*` sur la personne après c
 | `wall_reply_created` / `task_completed` | C | réponse / tâche cochée | — |
 | `journal_entry_created` | S | note ajoutée au journal de garde (privé) | `kind` (jamais le texte) |
 | `journal_exported` | S | export du journal ouvert (impression / PDF) | `entries` (nombre de notes) |
+| `expense_claim_exported` | S | demande de remboursement ouverte (impression / PDF) | `lines` (nombre de dépenses) |
+| `pension_set_up` | S | pension alimentaire enregistrée | `revaluation` (base d'indexation renseignée) |
+| `pension_revalued` | S | nouveau montant revalorisé appliqué | — |
 | `ical_link_generated` / `ical_link_copied` | C | lien iCal régénéré / copié | — |
 | `ical_feed_polled` | S | appel du flux iCal par un agenda (échantillon 1/20, anonyme) | `country`, `sample_rate` |
 
 ### Monétisation
 | Événement | Source | Quand | Propriétés |
 | --- | --- | --- | --- |
-| `paywall_viewed` | C | paywall affiché | `feature` (expenses, wall, onboarding) |
+| `paywall_viewed` | C | paywall affiché | `feature` (expenses, wall, journal, pension, onboarding…), `solo` (l'autre parent n'a pas rejoint) |
 | `checkout_opened` | C | ouverture du checkout Paddle | `plan`, `source` (dont `offer_email`), `discount` (code d'offre appliqué) |
 | `checkout_completed` | C | callback Paddle `checkout.completed` | `plan` |
 | `plan_changed` | C | bascule annuel/mensuel | `plan` |

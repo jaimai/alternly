@@ -97,6 +97,7 @@ export default function Settings() {
           <NavRow label="Notifications" icon="bell" href="/notification-settings" />
           <NavRow label="Compte et mot de passe" icon="settings" href="/settings/account" />
           <NavRow label="Synchroniser mon agenda" icon="calendar" href="/settings/calendar-sync" />
+          <NavRow label="Journal de garde (privé)" icon="pencil" href="/journal" />
           <NavRow label="Historique du foyer" href="/settings/history" />
           <Pressable
             accessibilityRole="button"
@@ -120,7 +121,7 @@ export default function Settings() {
   )
 }
 
-function NavRow({ label, value, icon, href }: { label: string; value?: string; icon?: 'bell' | 'settings' | 'calendar'; href: Href }) {
+function NavRow({ label, value, icon, href }: { label: string; value?: string; icon?: 'bell' | 'settings' | 'calendar' | 'pencil'; href: Href }) {
   return (
     <Pressable accessibilityRole="button" onPress={() => router.push(href)} style={({ pressed }) => [s.row, pressed && { backgroundColor: colors.paperDeep }]}>
       {icon ? <Icon name={icon} color={colors.ink} /> : null}

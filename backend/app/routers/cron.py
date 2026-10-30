@@ -15,7 +15,7 @@ from ..db import get_db
 from ..deps import is_premium, other_parent_id
 from ..models import ScheduleException, User, utcnow
 from ..services import email as email_service
-from ..services import handover_reminders, invite_reminders, lifecycle, paddle_api
+from ..services import handover_reminders, invite_reminders, lifecycle, paddle_api, pension
 
 router = APIRouter(prefix="/api/cron", tags=["cron"])
 
@@ -86,7 +86,11 @@ def lifecycle_job(
     """E-mails de cycle de vie : rappels de vacances scolaires puis séquence J1/J3/J7.
     Idempotent (email_log) ; au plus un e-mail par utilisateur et par jour."""
     _authorize(x_cron_key)
-    return lifecycle.run(db)
+    stats = lifecycle.run(db)
+    # Rappel annuel de revalorisation de la pension (in-app + push), même cadence quotidienne.
+    stats["pension_reminders"] = pension.send_reminders(db, date.today())
+    db.commit()
+    return stats
 
 
 @router.post("/handover-reminders")
