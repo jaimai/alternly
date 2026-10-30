@@ -78,6 +78,7 @@ from .routers import email_prefs as email_prefs_router
 from .routers import expenses as expenses_router
 from .routers import history as history_router
 from .routers import household as household_router
+from .routers import journal as journal_router
 from .routers import calendar as calendar_router
 from .routers import ical as ical_router
 from .routers import marketing as marketing_router
@@ -147,6 +148,7 @@ app.include_router(cron_router.router)
 app.include_router(email_prefs_router.router)
 app.include_router(expenses_router.router)
 app.include_router(wall_router.router)
+app.include_router(journal_router.router)
 app.include_router(billing_router.router)
 app.include_router(history_router.router)
 app.include_router(change_requests_router.router)

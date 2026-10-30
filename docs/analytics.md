@@ -193,7 +193,7 @@ consentement). PostHog renseigne aussi `$initial_utm_*` sur la personne après c
 | `feedback_opened` | C | ouverture du formulaire de signalement | `source` (fab, settings) |
 | `feedback_sent` | S | signalement enregistré (fait autorité) | `type` (problem, idea, question), `source` (fab, settings, footer) |
 
-### Dépenses, mur, synchro
+### Dépenses, mur, journal, synchro
 | Événement | Source | Quand | Propriétés |
 | --- | --- | --- | --- |
 | `expense_added` | C | dépense créée | `category`, `amount`, `payer_percent`, `split` (equal, custom), `has_child` |
@@ -201,6 +201,8 @@ consentement). PostHog renseigne aussi `$initial_utm_*` sur la personne après c
 | `settlement_recorded` | C | remboursement enregistré | `amount` |
 | `wall_post_created` | C | publication | `kind` (message, task, question), `has_due_date`, `assigned`, `has_child` |
 | `wall_reply_created` / `task_completed` | C | réponse / tâche cochée | — |
+| `journal_entry_created` | S | note ajoutée au journal de garde (privé) | `kind` (jamais le texte) |
+| `journal_exported` | S | export du journal ouvert (impression / PDF) | `entries` (nombre de notes) |
 | `ical_link_generated` / `ical_link_copied` | C | lien iCal régénéré / copié | — |
 | `ical_feed_polled` | S | appel du flux iCal par un agenda (échantillon 1/20, anonyme) | `country`, `sample_rate` |
 

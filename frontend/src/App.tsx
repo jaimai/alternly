@@ -21,6 +21,8 @@ const FeedbackPage = lazy(() => import('./pages/Feedback'))
 const ForgotPasswordPage = lazy(() => import('./pages/ForgotPassword'))
 const HistoryPage = lazy(() => import('./pages/History'))
 const JoinPage = lazy(() => import('./pages/Join'))
+const JournalPage = lazy(() => import('./pages/Journal'))
+const JournalExportPage = lazy(() => import('./pages/JournalExport'))
 const LoginPage = lazy(() => import('./pages/Login'))
 const NotFoundPage = lazy(() => import('./pages/NotFound'))
 const OnboardingPage = lazy(() => import('./pages/Onboarding'))
@@ -81,6 +83,26 @@ export default function App() {
           <RequireAuth>
             <PremiumGate feature={t('paywall.featureWall')} featureKey="wall">
               <WallPage />
+            </PremiumGate>
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/journal"
+        element={
+          <RequireAuth>
+            <PremiumGate feature={t('paywall.featureJournal')} featureKey="journal">
+              <JournalPage />
+            </PremiumGate>
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/journal/export"
+        element={
+          <RequireAuth>
+            <PremiumGate feature={t('paywall.featureJournal')} featureKey="journal">
+              <JournalExportPage />
             </PremiumGate>
           </RequireAuth>
         }

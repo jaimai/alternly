@@ -13,6 +13,9 @@ import type {
   Invitation,
   InvitationPreview,
   InvitationSchedulePreview,
+  JournalEntry,
+  JournalEntryInput,
+  JournalExport,
   Locale,
   Member,
   Notification,
@@ -398,6 +401,20 @@ export const api = {
   deleteSettlement: (householdId: number, id: number) =>
     request<void>(`/households/${householdId}/settlements/${id}`, { method: 'DELETE' }),
 
+  listJournal: (householdId: number) => request<JournalEntry[]>(`/households/${householdId}/journal`),
+  createJournalEntry: (householdId: number, data: JournalEntryInput) =>
+    request<JournalEntry>(`/households/${householdId}/journal`, { method: 'POST', body: JSON.stringify(data) }),
+  updateJournalEntry: (householdId: number, id: number, data: JournalEntryInput) =>
+    request<JournalEntry>(`/households/${householdId}/journal/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+  deleteJournalEntry: (householdId: number, id: number) =>
+    request<void>(`/households/${householdId}/journal/${id}`, { method: 'DELETE' }),
+  exportJournal: (householdId: number, start?: string, end?: string) => {
+    const params = new URLSearchParams()
+    if (start) params.set('start', start)
+    if (end) params.set('end', end)
+    const qs = params.toString()
+    return request<JournalExport>(`/households/${householdId}/journal/export${qs ? `?${qs}` : ''}`)
+  },
   listWall: (householdId: number) => request<WallPost[]>(`/households/${householdId}/wall`),
   createPost: (
     householdId: number,

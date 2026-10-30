@@ -327,3 +327,37 @@ export interface InvitationSchedulePreview {
   days: { date: string; who: 'you' | 'inviter' }[]
   your_periods: { start: string; end: string }[]
 }
+
+export type JournalKind = 'handover' | 'late' | 'missed' | 'change' | 'health' | 'school' | 'expense' | 'incident' | 'other'
+
+/** Journal de garde : note privée, visible par son seul auteur. */
+export interface JournalEntry {
+  id: number
+  day: string
+  time: string | null
+  kind: JournalKind
+  child_id: number | null
+  body: string
+  created_at: string
+  edited_at: string | null
+}
+
+export interface JournalEntryInput {
+  day: string
+  time: string | null
+  kind: JournalKind
+  child_id: number | null
+  body: string
+}
+
+export interface JournalExport {
+  author_name: string
+  household_name: string
+  children: Record<string, string>
+  start: string | null
+  end: string | null
+  generated_at: string
+  entries: JournalEntry[]
+  /** Jour (yyyy-mm-dd) → prénom du parent qui avait les enfants selon le calendrier. */
+  scheduled: Record<string, string>
+}

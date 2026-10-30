@@ -14,6 +14,7 @@ const PERK_KEYS = [
   'paywall.perkMessageBoard',
   'paywall.perkEmailReminders',
   'paywall.perkCalendarSync',
+  'paywall.perkJournal',
 ]
 
 interface Props {

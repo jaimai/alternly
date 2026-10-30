@@ -15,6 +15,7 @@ const TABS: { to: string; labelKey: string; icon: IconName; end: boolean; premiu
   { to: '/app', labelKey: 'common.navCalendar', icon: 'calendar', end: true, premium: false },
   { to: '/expenses', labelKey: 'common.navExpenses', icon: 'wallet', end: false, premium: true },
   { to: '/wall', labelKey: 'common.navWall', icon: 'message', end: false, premium: true },
+  { to: '/journal', labelKey: 'common.navJournal', icon: 'note', end: false, premium: true },
 ]
 
 export default function TopBar({ householdName }: { householdName?: string }) {

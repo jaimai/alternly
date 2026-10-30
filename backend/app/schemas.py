@@ -18,6 +18,8 @@ SPECIAL_KINDS = {
 PARENT_MODES = {"auto", "fixed", "alternate"}
 EXPENSE_CATEGORIES = {"sante", "ecole", "activites", "vetements", "cantine", "autre"}
 WALL_KINDS = {"message", "task", "question"}
+# Journal de garde : faits datés, formulés de façon neutre.
+JOURNAL_KINDS = {"handover", "late", "missed", "change", "health", "school", "expense", "incident", "other"}
 ZONES = {"A", "B", "C"}
 
 
@@ -570,3 +572,43 @@ class HistoryEntryOut(BaseModel):
 
 class ReadNotificationsIn(BaseModel):
     ids: list[int] = Field(max_length=200)
+
+
+class JournalEntryIn(BaseModel):
+    day: DateType
+    time: str | None = Field(default=None, pattern=TIME_PATTERN)
+    kind: str
+    child_id: int | None = None
+    body: str = Field(min_length=1, max_length=NOTE_MAX)
+
+
+class JournalEntryPatch(BaseModel):
+    day: DateType | None = None
+    time: str | None = Field(default=None, pattern=TIME_PATTERN)
+    kind: str | None = None
+    child_id: int | None = None
+    body: str | None = Field(default=None, min_length=1, max_length=NOTE_MAX)
+
+
+class JournalEntryOut(ORMModel):
+    id: int
+    day: DateType
+    time: str | None
+    kind: str
+    child_id: int | None
+    body: str
+    created_at: datetime
+    edited_at: datetime | None
+
+
+class JournalExportOut(BaseModel):
+    """Données de l'export imprimable : entrées + contexte du calendrier."""
+    author_name: str
+    household_name: str
+    children: dict[int, str]
+    start: DateType | None
+    end: DateType | None
+    generated_at: datetime
+    entries: list[JournalEntryOut]
+    # Jour → prénom du parent qui avait les enfants selon le calendrier (si connu).
+    scheduled: dict[DateType, str]

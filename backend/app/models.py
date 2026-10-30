@@ -266,6 +266,25 @@ class WallPost(Base):
     edited_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
 
+class JournalEntry(Base):
+    """Journal de garde : notes factuelles et datées, privées à leur auteur.
+
+    Jamais visibles par l'autre parent ni inscrites dans l'historique du foyer.
+    `created_at` (heure de saisie) figure dans l'export : il n'est pas modifiable."""
+    __tablename__ = "journal_entries"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    household_id: Mapped[int] = mapped_column(ForeignKey("households.id"), index=True)
+    author_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    day: Mapped[date] = mapped_column(Date)  # jour concerné (peut précéder la saisie)
+    time: Mapped[str | None] = mapped_column(String, nullable=True)  # "HH:MM"
+    kind: Mapped[str] = mapped_column(String)  # voir schemas.JOURNAL_KINDS
+    child_id: Mapped[int | None] = mapped_column(ForeignKey("children.id"), nullable=True)
+    body: Mapped[str] = mapped_column(String)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    edited_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+
 class WallReply(Base):
     __tablename__ = "wall_replies"
 

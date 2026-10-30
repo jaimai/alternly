@@ -24,6 +24,7 @@ from ..models import (
     Household,
     HouseholdMember,
     Invitation,
+    JournalEntry,
     Notification,
     PasswordResetToken,
     ScheduleException,
@@ -108,6 +109,15 @@ def export_user_data(db: Session, user: User) -> dict:
         "expenses": _rows(db, Expense, hid),
         "settlements": _rows(db, Settlement, hid),
         "wall_posts": posts,
+        # Journal de garde : uniquement les entrées de l'utilisateur (privées).
+        "journal_entries": [
+            _row(e, {"household_id", "author_id"})
+            for e in db.scalars(
+                select(JournalEntry)
+                .where(JournalEntry.household_id == hid, JournalEntry.author_id == user.id)
+                .order_by(JournalEntry.day, JournalEntry.id)
+            )
+        ],
         "change_requests": [
             {**_row(cr, {"household_id", "context"}), "summary": change_request_summary(db, cr, user.locale)}
             for cr in db.scalars(select(ChangeRequest).where(ChangeRequest.household_id == hid).order_by(ChangeRequest.id))
@@ -133,6 +143,8 @@ def _delete_user_rows(db: Session, user_ids: list[int]) -> None:
     db.execute(delete(PasswordResetToken).where(PasswordResetToken.user_id.in_(user_ids)))
     db.execute(delete(EmailLog).where(EmailLog.user_id.in_(user_ids)))
     db.execute(delete(DeviceToken).where(DeviceToken.user_id.in_(user_ids)))
+    # Journal de garde : notes personnelles, effacées avec le compte même si le foyer reste.
+    db.execute(delete(JournalEntry).where(JournalEntry.author_id.in_(user_ids)))
     # Un achat App Store / Google Play ne se résilie pas d'ici : seulement dans le store.
     db.execute(delete(StoreSubscription).where(StoreSubscription.user_id.in_(user_ids)))
 
@@ -147,7 +159,7 @@ def _delete_household(db: Session, household_id: int) -> None:
         db.execute(delete(WallReply).where(WallReply.post_id.in_(post_ids)))
 
     for model in (
-        WallPost, Expense, Settlement, ScheduleException, SchoolVacationPeriod,
+        JournalEntry, WallPost, Expense, Settlement, ScheduleException, SchoolVacationPeriod,
         SpecialDayRule, VacationRule, CustodyRule, Child, Invitation, HouseholdMember,
     ):
         db.execute(delete(model).where(model.household_id == household_id))
