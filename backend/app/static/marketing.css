@@ -93,8 +93,11 @@
 }
 
 :root {
-  --paper: #faf6ef;
-  --paper-deep: #f3ecdf;
+  --paper: #ffffff;
+  --paper-deep: #f3f6f4;
+  --night: #163a30;     /* bandeau du haut (en-tête + hero) */
+  --night-ink: #f4efe6;
+  --mint: #9fd0b8;
   --ink: #24312b;
   --ink-soft: #5d6b63;
   --pine: #1f4d3f;
@@ -102,7 +105,7 @@
   --terra: #c96f4a;
   --terra-soft: #f5e0d5;
   --sage: #dde7dd;
-  --line: #e7dfd0;
+  --line: #e3e9e5;
   --radius: 14px;
   --shadow: 0 1px 2px rgba(36, 49, 43, 0.06), 0 12px 32px -12px rgba(36, 49, 43, 0.18);
   --font-display: 'Fraunces', Georgia, serif;
@@ -733,3 +736,47 @@ h2 { font-size: clamp(1.6rem, 3.2vw, 2.3rem); }
 @media (max-width: 640px) {
   .noel-cta { padding: 18px 16px; }
 }
+
+/* ---------- thème : en-tête et hero vert profond, quadrillage discret ---------- */
+.site-header {
+  background: color-mix(in srgb, var(--night) 94%, transparent);
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+.site-header .logo, .site-header .nav-links a:not(.cta) { color: var(--night-ink); }
+.site-header .logo span { color: var(--mint); }
+.site-header .nav-links a:not(.cta):hover { color: #fff; }
+.site-header .cta { background: var(--night-ink); color: var(--night) !important; }
+.site-header .cta:hover { background: #fff; }
+
+.hero {
+  position: relative;
+  background:
+    radial-gradient(50% 60% at 80% 30%, rgba(159, 208, 184, 0.16), transparent 70%),
+    var(--night);
+  color: var(--night-ink);
+  padding-bottom: 80px;
+}
+.hero::before {
+  content: "";
+  position: absolute; inset: 0; pointer-events: none;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 44px 44px;
+  -webkit-mask-image: radial-gradient(70% 80% at 70% 40%, #000, transparent 78%);
+  mask-image: radial-gradient(70% 80% at 70% 40%, #000, transparent 78%);
+}
+.hero .wrap { position: relative; }
+.hero h1 { color: #fff; }
+.hero h1 em { color: var(--mint); }
+.hero .lede, .hero .hint, .hero .trust { color: rgba(244, 239, 230, 0.8); }
+.hero .lede strong { color: #fff; }
+.hero .trust .icon { color: var(--mint); }
+.hero .eyebrow { color: #f0b597; }
+.hero .cta { background: var(--night-ink); color: var(--night) !important; }
+.hero .cta:hover { background: #fff; }
+.hero .cal-card { color: var(--ink); border-color: transparent; box-shadow: 0 30px 60px -20px rgba(0, 0, 0, 0.45); }
+.hero .float-note { background: #0f2a22; color: var(--night-ink); }
+
+/* Cartes : ombre légère sur fond blanc */
+.cards3 article, .feature-row { box-shadow: 0 1px 2px rgba(16, 24, 20, 0.04); }
