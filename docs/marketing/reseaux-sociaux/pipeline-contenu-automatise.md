@@ -18,7 +18,7 @@ n'est pas branchée, et fournir de temps en temps des captures ou des infos.
 ## 1. Organisation dans le repo
 
 ```
-marketing/instagram/
+docs/marketing/instagram/
   ideas.yaml                  # backlog d'idées scorées
   veille/                     # comptes suivis, posts concurrents relevés, tendances de la semaine
   calendrier.yaml             # dates clés (vacances, fêtes, rentrée, fête des pères…)

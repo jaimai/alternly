@@ -1,0 +1,35 @@
+id: 2026-11-02-soir-sms-derniere-minute
+format: reel
+creneau: 2026-11-02 20:30
+pilier: communication
+source: veille:lamagiedetonex + content/blog/communiquer-avec-son-ex-sans-conflit.md
+statut: a-relire
+son: son tendance « deadpan » ou bibliothèque libre de Meta (calme, ironique)
+hashtags: communication
+couverture_ms: 1500
+scenes:
+  - { layout: hook, emoji: "📱", texte: "Le SMS que *tous* les parents séparés ont reçu", duree: 2400 }
+  - layout: sms
+    contact: L'autre parent
+    duree: 4800
+    messages:
+      - { de: ex, texte: "Tu peux prendre les enfants samedi ? J'ai un imprévu." }
+      - { de: ex, texte: "Réponds vite stp" }
+      - { de: moi, texte: "Comme d'habitude tu préviens au dernier moment, c'est toujours pareil avec toi…" }
+  - { layout: texte, kicker: "Stop ✋", titre: "Ce message-là lance *une dispute de 2 heures*", duree: 2600 }
+  - layout: sms
+    contact: L'autre parent
+    duree: 4200
+    messages:
+      - { de: ex, texte: "Tu peux prendre les enfants samedi ? J'ai un imprévu." }
+      - { de: moi, texte: "OK pour samedi. Je les récupère à 10 h à l'école de danse. Tu les reprends dimanche 18 h ?" }
+  - { layout: texte, kicker: "La méthode BIFF", titre: "Bref. Informatif. *Aimable.* Ferme.", texte: "Pas de reproche, des faits, une question fermée.", duree: 3200 }
+  - { layout: cta, titre: "Enregistre *pour le prochain SMS*", texte: "Et envoie-le à quelqu'un qui en a besoin 👀", duree: 2800 }
+legende: |
+  Le SMS de dernière minute de l'autre parent… on a tous eu envie de répondre la version 1 😅
+
+  La version 2, c'est la méthode BIFF : bref, informatif, aimable, ferme. Pas de reproche, des faits, une question fermée. La discussion s'arrête là, et les enfants ne sentent pas la tension.
+
+  Toi, tu réponds plutôt version 1 ou version 2 ? (on ne juge pas 🙈)
+
+  📌 Enregistre pour la prochaine fois.

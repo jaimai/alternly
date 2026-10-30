@@ -1,0 +1,53 @@
+# Réservoir d'idées. score = preuve (concurrent/tendance, 0-4) + urgence (0-3) + pilier (0-2) + fraîcheur (0-1).
+# statut : idee | planifie (avec le post) | publie | abandonne
+# Formats : C = carrousel, R = reel. Source : blog:<fichier>, veille:<compte>, saison, coms.
+
+# — Planifiées semaine S45 (2-8 novembre 2026) —
+- { titre: "Semaine/semaine, 2-2-3 ou un WE sur deux ?", f: C, pilier: organisation, source: blog:planning-garde-alternee-choisir-rythme, score: 7, statut: planifie, post: 2026-11-02-midi-rythmes }
+- { titre: "SMS : le changement de dernière minute + réponse BIFF", f: R, pilier: communication, source: veille:lamagiedetonex, score: 9, statut: planifie, post: 2026-11-02-soir-sms-derniere-minute }
+- { titre: "La méthode BIFF", f: C, pilier: communication, source: blog:communiquer-avec-son-ex-sans-conflit, score: 8, statut: planifie, post: 2026-11-03-midi-biff }
+- { titre: "4 questions à ne pas poser à ton enfant au retour", f: R, pilier: emotion, source: veille:drbeckyatgoodinside, score: 8, statut: planifie, post: 2026-11-03-soir-questions-retour }
+- { titre: "Ce que les enfants de parents séparés aimeraient dire", f: C, pilier: emotion, source: veille:drbeckyatgoodinside, score: 8, statut: planifie, post: 2026-11-04-midi-enfants-aimeraient-dire }
+- { titre: "Ce qu'il y a vraiment dans le sac du dimanche", f: R, pilier: organisation, source: blog:passage-de-bras-transition-deux-maisons, score: 6, statut: planifie, post: 2026-11-04-soir-sac-du-dimanche }
+- { titre: "Noël 2026 : qui a les enfants ?", f: C, pilier: vacances, source: blog:vacances-noel-2026-garde-alternee, score: 9, statut: planifie, post: 2026-11-05-midi-noel-2026 }
+- { titre: "Noël 2026 en 10 secondes", f: R, pilier: vacances, source: saison, score: 9, statut: planifie, post: 2026-11-05-soir-noel-10-secondes }
+- { titre: "Checklist du passage de bras serein", f: C, pilier: organisation, source: blog:passage-de-bras-transition-deux-maisons, score: 7, statut: planifie, post: 2026-11-06-midi-passage-de-bras }
+- { titre: "SMS : « tu me dois 37 € de cantine »", f: R, pilier: produit, source: veille:lamagiedetonex, score: 8, statut: planifie, post: 2026-11-06-soir-sms-cantine }
+- { titre: "Frais ordinaires vs exceptionnels", f: C, pilier: argent, source: blog:pension-alimentaire-frais-partages-garde-alternee, score: 7, statut: planifie, post: 2026-11-07-midi-frais }
+- { titre: "11 novembre : qui a les enfants ?", f: R, pilier: organisation, source: saison, score: 8, statut: planifie, post: 2026-11-07-soir-11-novembre }
+- { titre: "Années paires / impaires enfin compris", f: C, pilier: vacances, source: blog:partage-vacances-scolaires-annees-paires-impaires, score: 7, statut: planifie, post: 2026-11-08-midi-paires-impaires }
+- { titre: "Pour le parent qui rentre dans une maison vide ce soir", f: R, pilier: emotion, source: saison, score: 8, statut: planifie, post: 2026-11-08-soir-maison-vide }
+
+# — Réservoir —
+- { titre: "Noël : 5 façons de partager le 24 et le 25", f: C, pilier: vacances, source: blog:noel-fetes-anniversaires-garde-alternee, score: 8, statut: idee }
+- { titre: "Le premier Noël séparé : 5 conseils pour tenir", f: R, pilier: emotion, source: saison, score: 8, statut: idee }
+- { titre: "Cadeaux de Noël : qui offre quoi, sans surenchère", f: C, pilier: vacances, source: saison, score: 7, statut: idee }
+- { titre: "Noël J-30 : la checklist à faire avec l'autre parent", f: R, pilier: vacances, source: saison, score: 7, statut: idee }
+- { titre: "Nouvel An : passage de bras le 27 décembre, comment le préparer", f: R, pilier: vacances, source: blog:vacances-noel-2026-garde-alternee, score: 6, statut: idee }
+- { titre: "Zones A, B, C : c'est l'école de l'enfant qui compte", f: C, pilier: vacances, source: blog:zones-abc-calendrier-scolaire-parents-separes, score: 6, statut: idee }
+- { titre: "Vacances d'hiver 2027 par zone (dates)", f: C, pilier: vacances, source: saison, score: 6, statut: idee }
+- { titre: "Garde alternée et bébé : quel rythme selon l'âge", f: C, pilier: organisation, source: blog:garde-alternee-bebe-rythme-selon-age, score: 6, statut: idee }
+- { titre: "Le 2-2-5-5 expliqué en 15 s", f: R, pilier: organisation, source: blog:planning-garde-alternee-choisir-rythme, score: 6, statut: idee }
+- { titre: "Les doublons qui changent tout (brosse à dents, doudou, chargeur)", f: R, pilier: organisation, source: blog:passage-de-bras-transition-deux-maisons, score: 6, statut: idee }
+- { titre: "10 choses à mettre dans la convention parentale", f: C, pilier: juridique, source: blog:convention-parentale-que-mettre-dedans, score: 6, statut: idee }
+- { titre: "Déménager après la séparation : ce qu'il faut savoir", f: C, pilier: juridique, source: blog:demenagement-parent-apres-separation-garde, score: 5, statut: idee }
+- { titre: "Pension alimentaire en garde alternée : 3 exemples chiffrés", f: C, pilier: argent, source: blog:calcul-pension-alimentaire-garde-alternee-exemples, score: 7, statut: idee }
+- { titre: "L'intermédiation de la CAF expliquée", f: C, pilier: argent, source: blog:pension-alimentaire-frais-partages-garde-alternee, score: 5, statut: idee }
+- { titre: "« Je paie pas les lunettes puisque j'ai payé le foot »", f: R, pilier: argent, source: blog:pension-alimentaire-frais-partages-garde-alternee, score: 7, statut: idee }
+- { titre: "Les enfants ne sont pas des messagers", f: R, pilier: communication, source: blog:communiquer-avec-son-ex-sans-conflit, score: 7, statut: idee }
+- { titre: "Un seul canal pour parler à son ex", f: C, pilier: communication, source: blog:communiquer-avec-son-ex-sans-conflit, score: 5, statut: idee }
+- { titre: "5 phrases qui désamorcent une dispute avec son ex", f: C, pilier: communication, source: veille:drbeckyatgoodinside, score: 8, statut: idee }
+- { titre: "SMS : « il a oublié son cahier chez toi »", f: R, pilier: communication, source: veille:lamagiedetonex, score: 7, statut: idee }
+- { titre: "SMS : « tu peux échanger ton week-end ? »", f: R, pilier: produit, source: veille:lamagiedetonex, score: 7, statut: idee }
+- { titre: "Mythes et réalités de la garde alternée", f: C, pilier: emotion, source: veille, score: 6, statut: idee }
+- { titre: "Ce que je dirais à moi-même le jour de la séparation", f: R, pilier: emotion, source: veille, score: 7, statut: idee }
+- { titre: "Deux maisons, deux règles : faut-il les harmoniser ?", f: C, pilier: organisation, source: veille, score: 6, statut: idee }
+- { titre: "Écrans, coucher, devoirs : les règles à aligner", f: C, pilier: organisation, source: veille, score: 6, statut: idee }
+- { titre: "Le nouveau partenaire : quand le présenter aux enfants ?", f: C, pilier: emotion, source: veille, score: 7, statut: idee }
+- { titre: "Anniversaire de l'enfant : une fête ou deux ?", f: C, pilier: vacances, source: blog:noel-fetes-anniversaires-garde-alternee, score: 5, statut: idee }
+- { titre: "Saint-Valentin : la première après la séparation", f: R, pilier: emotion, source: saison, score: 5, statut: idee }
+- { titre: "Impôts : enfants en résidence alternée et quotient familial", f: C, pilier: argent, source: saison, score: 5, statut: idee }
+- { titre: "Fête des mères / des pères quand on est séparés", f: C, pilier: vacances, source: saison, score: 5, statut: idee }
+- { titre: "Avant/après : l'organisation en SMS vs dans un calendrier partagé", f: R, pilier: produit, source: veille, score: 6, statut: idee }
+- { titre: "Le calendrier de toute l'année calculé en 30 s (démo app)", f: R, pilier: produit, source: veille, score: 5, statut: idee }
+- { titre: "Vous nous avez demandé… (réponses aux commentaires)", f: C, pilier: emotion, source: coms, score: 8, statut: idee }

@@ -1,0 +1,24 @@
+id: 2026-11-03-soir-questions-retour
+format: reel
+creneau: 2026-11-03 20:30
+pilier: emotion
+source: veille:drbeckyatgoodinside (format « dites plutôt »)
+statut: a-relire
+son: piano doux, bibliothèque libre de Meta
+hashtags: vecu
+couverture_ms: 1500
+scenes:
+  - { layout: hook, emoji: "🎒", texte: "Ton enfant revient de chez l'autre parent. *Évite ces 4 questions.*", duree: 2800 }
+  - { layout: duo, non: "« C'était bien chez ton père / ta mère ? » (avec ce ton-là)", oui: "« Je suis content·e de te retrouver. »", duree: 3600 }
+  - { layout: duo, non: "« Il y avait qui là-bas ? »", oui: "« Tu veux me raconter un truc chouette de ta semaine ? »", duree: 3600 }
+  - { layout: duo, non: "« Ton père / ta mère a dit quoi sur moi ? »", oui: "Rien. Ce qui se passe là-bas lui appartient.", duree: 3600 }
+  - { layout: duo, non: "« Tu préfères quelle maison ? »", oui: "« Tu as le droit d'aimer tes deux maisons. »", duree: 3600 }
+  - { layout: cta, titre: "Ton enfant *n'est pas un messager*", texte: "Partage à un parent qui vit ça cette semaine 💛", duree: 3000 }
+legende: |
+  Le retour de chez l'autre parent, c'est un moment fragile pour l'enfant 🎒
+
+  Les questions « innocentes » le mettent souvent en position de choisir ou de rapporter. Ce qui l'aide : se sentir accueilli, sans enquête, et avoir le droit d'aimer ses deux maisons.
+
+  Quelle phrase tu dis à ton enfant quand il revient ? Partage-la en commentaire, ça aidera d'autres parents 👇
+
+  📌 Enregistre pour le prochain retour.

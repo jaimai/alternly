@@ -1,0 +1,58 @@
+# Comptes suivis pour la veille. Statut « a-verifier » : trouvé par recherche web,
+# stats à relever sur Instagram (captures de l'onglet Reels trié par vues).
+# Thomas : ajouter ici les comptes que vous connaissez.
+
+- handle: lesconseilsdevanessa
+  nom: Vanessa Sève · Coparentalité & séparation
+  pays: FR
+  type: experte (ex-avocate devenue coach, podcast)
+  abonnes: ~5k
+  pourquoi: conseils coparentalité FR, même cible exacte
+  statut: a-verifier
+
+- handle: lamagiedetonex
+  nom: La Magie de ton ex
+  pays: FR
+  type: humour / relatable
+  pourquoi: SMS entre ex, retards au passage de bras, pension → format « capture de SMS » très partagé
+  statut: a-verifier
+
+- handle: exrelou
+  nom: Exrelou
+  pays: FR
+  type: humour / relatable
+  pourquoi: captures de SMS d'ex, mécanique de partage
+  statut: a-verifier
+
+- handle: lesnichees
+  nom: Les Nichées
+  pays: FR
+  type: média parentalité (rubrique parent séparé)
+  statut: a-verifier
+
+- handle: textsfromyourex
+  nom: Texts From Your Ex
+  pays: US
+  type: humour
+  pourquoi: tendances US qui arrivent en FR quelques semaines après
+  statut: a-verifier
+
+- handle: drbeckyatgoodinside
+  nom: Dr Becky Kennedy (Good Inside)
+  pays: US
+  type: psy parentalité (~3M)
+  pourquoi: maître du carrousel « phrase à dire à son enfant » → à adapter à la séparation
+  statut: a-verifier
+
+- handle: biglittlefeelings
+  nom: Big Little Feelings
+  pays: US
+  type: parentalité jeunes enfants
+  pourquoi: reels sketchs avant/après très performants
+  statut: a-verifier
+
+# Applis concurrentes : surveiller leur ton et ce qu'elles mettent en avant
+- { handle: 2houses, nom: 2houses, type: appli concurrente, statut: a-verifier }
+- { handle: copareo, nom: Copareo, type: appli concurrente (FR), statut: a-verifier }
+- { handle: wefamapp, nom: WeFam, type: appli concurrente (CH), statut: a-verifier }
+- { handle: ourfamilywizard, nom: OurFamilyWizard, type: appli concurrente (US), statut: a-verifier }
