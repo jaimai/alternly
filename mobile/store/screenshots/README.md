@@ -10,3 +10,5 @@
 
 Pas de captures iPad : `supportsTablet` vaut `false` dans `app.json`.
 Régénérées depuis `mobile/assets/screen/` (captures brutes 1179×2556).
+
+`iphone-6.3/` — 1179×2556 (iPhone 6,1"/6,3"), mêmes images, même ordre.
