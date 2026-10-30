@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% block title %}Revalorisation pension alimentaire : calcul gratuit avec l'indice INSEE — Alternly{% endblock %}
+{% block description %}Calculez en quelques secondes le nouveau montant de la pension alimentaire : montant du jugement × nouvel indice INSEE ÷ indice de référence. Gratuit, sans inscription, avec la formule détaillée.{% endblock %}
+{% block head %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebApplication",
+      "name": {{ tool_title | tojson }},
+      "url": {{ canonical | tojson }},
+      "applicationCategory": "FinanceApplication",
+      "operatingSystem": "Web",
+      "inLanguage": "fr-FR",
+      "isAccessibleForFree": true,
+      "offers": {"@type": "Offer", "price": "0", "priceCurrency": "EUR"},
+      "publisher": {"@id": "{{ site_url }}/#organization"}
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        {%- for q, a in faq %}
+        {"@type": "Question", "name": {{ q | tojson }}, "acceptedAnswer": {"@type": "Answer", "text": {{ a | tojson }}}}{{ "," if not loop.last }}
+        {%- endfor %}
+      ]
+    }
+  ]
+}
+</script>
+{% endblock %}
+{% block content %}
+<article class="tool" data-tool="revalorisation-pension-alimentaire">
+  <div class="wrap tool-wrap">
+    <header class="tool-intro">
+      <p class="eyebrow">Outil gratuit · sans inscription</p>
+      <h1>Revalorisation de la <em>pension alimentaire</em></h1>
+      <p class="lede">Indiquez le montant fixé par le jugement et les deux valeurs de l'indice INSEE&nbsp;:
+      vous obtenez le nouveau montant mensuel, avec le détail du calcul.</p>
+    </header>
+
+    <div class="tool-grid">
+      <form class="tool-form" method="get" action="{{ request.url.path }}" id="tool-form">
+        <div class="field">
+          <label for="p-montant">Montant fixé par la décision (€ / mois)</label>
+          <input id="p-montant" type="text" inputmode="decimal" name="montant" value="{{ form.montant }}" placeholder="ex. 200" required />
+        </div>
+        <div class="field">
+          <label for="p-base">Indice de référence (date de la décision)</label>
+          <input id="p-base" type="text" inputmode="decimal" name="indice_base" value="{{ form.indice_base }}" placeholder="ex. 112,03" required />
+          <p class="hint">L'indice que cite votre jugement, ou celui du mois de la décision.</p>
+        </div>
+        <div class="field">
+          <label for="p-new">Nouvel indice (dernier publié)</label>
+          <input id="p-new" type="text" inputmode="decimal" name="indice_nouveau" value="{{ form.indice_nouveau }}" placeholder="ex. 118,52" required />
+          <p class="hint">Même série INSEE que l'indice de référence, souvent «&nbsp;ensemble des ménages, hors tabac&nbsp;», à relever sur <a href="https://www.insee.fr" target="_blank" rel="noopener">insee.fr</a>.</p>
+        </div>
+        <button type="submit" class="cta big tool-submit">Calculer le nouveau montant</button>
+      </form>
+
+      <section class="tool-result" id="tool-result" aria-live="polite">
+        {%- if error %}
+        <div class="result-card"><p class="error-text">{{ error }}</p></div>
+        {%- elif result %}
+        <div class="result-card pension-result">
+          <p class="result-kicker">Nouveau montant mensuel</p>
+          <h2>{{ result.revalued }}</h2>
+          <p class="pension-formula">{{ result.amount }} × {{ result.new }} ÷ {{ result.base }} = <strong>{{ result.revalued }}</strong></p>
+          <p>Soit <strong>{{ result.diff }}</strong> par mois ({{ result.percent }}&nbsp;%), {{ result.yearly }} sur un an.</p>
+          <p class="hint">Résultat indicatif : seul le texte de votre décision fait foi (indice, date et modalités de revalorisation).</p>
+        </div>
+        {%- else %}
+        <div class="result-card result-empty">
+          <h2>Votre résultat s'affichera ici</h2>
+          <p class="hint">Formule&nbsp;: montant de la décision × nouvel indice ÷ indice de référence.</p>
+        </div>
+        {%- endif %}
+        <div class="result-card tool-upsell">
+          <h3>{{ icon("calendar", 20) }} Chaque année, au bon mois</h3>
+          <p>Alternly suit les versements mois par mois, applique la revalorisation et vous la rappelle chaque année.</p>
+          <a class="cta" href="{{ cta_href }}">Suivre ma pension gratuitement</a>
+        </div>
+      </section>
+    </div>
+
+    <section class="faq tool-faq">
+      <h2>Questions fréquentes</h2>
+      {%- for q, a in faq %}
+      <details>
+        <summary>{{ q }}</summary>
+        <p>{{ a }}</p>
+      </details>
+      {%- endfor %}
+      <p class="related-links"><a href="/pension-alimentaire">Suivre la pension alimentaire dans Alternly →</a></p>
+    </section>
+  </div>
+</article>
+{% endblock %}

@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% block title %}{{ page.title }}{% endblock %}
+{% block description %}{{ page.description }}{% endblock %}
+{% block head %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {%- for q, a in page.faq %}
+    {"@type": "Question", "name": {{ q | tojson }}, "acceptedAnswer": {"@type": "Answer", "text": {{ a | tojson }}}}{{ "," if not loop.last }}
+    {%- endfor %}
+  ]
+}
+</script>
+{% endblock %}
+{% block content %}
+<section class="hero page-hero">
+  <div class="wrap">
+    <p class="eyebrow">{{ page.eyebrow }}</p>
+    <h1>{{ page.h1 }}<br/><em>{{ page.h1_em }}</em></h1>
+    <p class="lede">{{ page.lede }}</p>
+    <div class="hero-actions">
+      <a class="cta big" href="{{ page.cta_href }}">{{ page.cta }}</a>
+      {%- if page.cta_href.startswith('/register') %}
+      <span class="hint">Calendrier gratuit · sans carte bancaire</span>
+      {%- endif %}
+    </div>
+  </div>
+</section>
+
+<section class="pains">
+  <div class="wrap">
+    <div class="cards2">
+      {%- for name, title, text in page.points %}
+      <article>
+        {{ icon(name, 22, "h3-icon") }}
+        <h3>{{ title }}</h3>
+        <p>{{ text }}</p>
+      </article>
+      {%- endfor %}
+    </div>
+  </div>
+</section>
+
+{%- if page.steps %}
+<section class="how">
+  <div class="wrap">
+    <h2>Comment ça marche</h2>
+    <ol class="steps">
+      {%- for title, text in page.steps %}
+      <li><strong>{{ title }}</strong><span>{{ text }}</span></li>
+      {%- endfor %}
+    </ol>
+  </div>
+</section>
+{%- endif %}
+
+<section class="faq">
+  <div class="wrap narrow">
+    <h2>Questions fréquentes</h2>
+    {%- for q, a in page.faq %}
+    <details>
+      <summary>{{ q }}</summary>
+      <p>{{ a }}</p>
+    </details>
+    {%- endfor %}
+    {%- if page.related %}
+    <p class="related-links">
+      {%- for href, label in page.related %}
+      <a href="{{ href }}">{{ label }} →</a>
+      {%- endfor %}
+    </p>
+    {%- endif %}
+  </div>
+</section>
+
+<section class="final-cta">
+  <div class="wrap center">
+    <h2>Un seul endroit pour tout ce qui concerne la garde.</h2>
+    <a class="cta big" href="{{ page.cta_href }}">{{ page.cta }}</a>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% block title %}Tarifs Alternly : calendrier de garde gratuit, Premium 69 € par an et par foyer{% endblock %}
+{% block description %}Le calendrier de garde alternée est gratuit. Premium (dépenses, journal de garde, pension, mur, notifications, synchronisation) : 69 € par an pour tout le foyer, un seul parent paie.{% endblock %}
+{% block head %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {%- for q, a in faq %}
+    {"@type": "Question", "name": {{ q | tojson }}, "acceptedAnswer": {"@type": "Answer", "text": {{ a | tojson }}}}{{ "," if not loop.last }}
+    {%- endfor %}
+  ]
+}
+</script>
+{% endblock %}
+{% block content %}
+<section class="hero page-hero">
+  <div class="wrap">
+    <p class="eyebrow">Tarifs</p>
+    <h1>Un prix par foyer,<br/><em>pas par parent.</em></h1>
+    <p class="lede">Le calendrier de garde est gratuit, sans limite de durée. Premium coûte
+    69&nbsp;€ par an pour tout le foyer&nbsp;: un seul parent paie, les deux en profitent.</p>
+  </div>
+</section>
+
+{% include "_pricing_table.html" %}
+
+<section class="compare">
+  <div class="wrap narrow">
+    <h2 class="center">Pourquoi « par foyer » change tout</h2>
+    <p class="center hint">Beaucoup d'applications de coparentalité facturent <strong>chaque parent</strong>&nbsp;:
+    le coût double, et il suffit que l'un refuse de payer pour que l'outil ne serve à rien.</p>
+    <div class="compare-grid">
+      <div class="compare-card">
+        <h3>Abonnement par parent</h3>
+        <ul>
+          <li>Chaque parent paie son abonnement</li>
+          <li>Inutile si l'autre refuse de s'inscrire</li>
+          <li>Prix souvent affiché en dollars, à l'année</li>
+        </ul>
+      </div>
+      <div class="compare-card featured">
+        <h3>Alternly</h3>
+        <ul>
+          <li>{{ icon("check", 16) }} Calendrier gratuit pour les deux parents</li>
+          <li>{{ icon("check", 16) }} Un seul abonnement pour tout le foyer</li>
+          <li>{{ icon("check", 16) }} Utile même seul&nbsp;: journal, frais, pension</li>
+          <li>{{ icon("check", 16) }} Prix en euros, mensuel ou annuel, sans engagement</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="faq">
+  <div class="wrap narrow">
+    <h2>Questions fréquentes</h2>
+    {%- for q, a in faq %}
+    <details>
+      <summary>{{ q }}</summary>
+      <p>{{ a }}</p>
+    </details>
+    {%- endfor %}
+  </div>
+</section>
+{% endblock %}

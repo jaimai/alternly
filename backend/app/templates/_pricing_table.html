@@ -1,0 +1,53 @@
+{#- Tableau comparatif Gratuit / Premium (/tarifs, /en/pricing). Langue : `pricing_lang`. -#}
+{%- from "_icons.html" import icon %}
+{%- set plans = billing_plans() %}
+{%- set en = (pricing_lang | default("fr")) == "en" %}
+{%- macro row(label, free) -%}
+<tr><td>{{ label }}</td><td class="mark">{% if free %}{{ icon("check", 16) }}{% else %}<span class="dash" aria-label="{{ 'Not included' if en else 'Non inclus' }}">—</span>{% endif %}</td><td class="mark pro">{{ icon("check", 16) }}</td></tr>
+{%- endmacro %}
+{%- if en %}
+{%- set calendar_rows = [("Custody calendar, years in advance", true), ("School breaks and holidays that alternate by even/odd year", true), ("Special days (Thanksgiving, Mother's and Father's Day…)", true), ("Day swaps proposed and accepted", true), ("Invite your co-parent", true)] %}
+{%- set daily_rows = [("Shared expenses and reimbursement requests", false), ("Custody journal, exportable as PDF", false), ("Child support payment tracking", false), ("Message board (notes, tasks, questions)", false), ("Email reminders and Google / Apple Calendar sync", false)] %}
+{%- else %}
+{%- set calendar_rows = [("Calendrier de garde, des années à l'avance", true), ("Vacances scolaires A/B/C, années paires/impaires", true), ("Jours de fête (Noël, fête des mères et des pères…)", true), ("Échanges de jours proposés et acceptés", true), ("Invitation de l'autre parent", true)] %}
+{%- set daily_rows = [("Dépenses partagées et demandes de remboursement", false), ("Journal de garde exportable en PDF", false), ("Suivi de la pension et revalorisation", false), ("Mur de communication (infos, tâches, questions)", false), ("Rappels e-mail et synchronisation Google / Apple", false)] %}
+{%- endif %}
+{%- set signup = "/register?lang=en" if en else "/register?lang=fr" %}
+<section class="plans-compare" id="{{ 'pricing' if en else 'tarifs' }}">
+  <div class="wrap">
+    <h2 class="center">{{ "Compare the two plans" if en else "Comparez les deux formules" }}</h2>
+    <p class="plans-sub">{{ "One subscription per household · one parent pays, both get access." if en else "Un seul abonnement par foyer · un parent paie, les deux en profitent." }}</p>
+    <div class="plans-table-wrap">
+      <table class="plans-table">
+        <thead>
+          <tr>
+            <th><span class="visually-hidden">{{ "Feature" if en else "Fonctionnalité" }}</span></th>
+            <th class="col"><span class="plan-name">{{ "Free" if en else "Gratuit" }}</span><span class="amt">{{ "$0" if en else "0&nbsp;€" | safe }}</span><span class="per">{{ "forever" if en else "pour toujours" }}</span></th>
+            <th class="col pro">
+              {%- if plans.annual.trial_days %}<span class="badge">{{ plans.annual.trial_days }}{{ "-day free trial" if en else " jours offerts" }}</span>{% endif %}
+              <span class="plan-name">Premium</span>
+              <span class="amt">{% if en %}$79<small> / year</small>{% else %}69&nbsp;€<small> / an</small>{% endif %}</span>
+              <span class="per">{% if en %}or $8.99 / month{% else %}ou 8,99&nbsp;€ / mois{% endif %}</span>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="group"><td colspan="3">{{ "Calendar" if en else "Calendrier" }}</td></tr>
+          {%- for label, free in calendar_rows %}
+          {{ row(label, free) }}
+          {%- endfor %}
+          <tr class="group"><td colspan="3">{{ "Day to day" if en else "Au quotidien" }}</td></tr>
+          {%- for label, free in daily_rows %}
+          {{ row(label, free) }}
+          {%- endfor %}
+          <tr class="ctas">
+            <td></td>
+            <td class="mark"><a class="plan-btn" href="{{ signup }}">{{ "Get started" if en else "Commencer" }}</a></td>
+            <td class="mark pro"><a class="plan-btn" href="{{ signup }}">{{ "Try it" if en else "Essayer" }}</a></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="plans-fine center">{{ "No commitment · cancel anytime" if en else "Sans engagement · résiliable à tout moment" }}</p>
+  </div>
+</section>

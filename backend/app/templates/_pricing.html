@@ -1,0 +1,77 @@
+{#- Bloc tarifs des landings : deux cartes, bascule annuel / mensuel sans JavaScript
+    (boutons radio + :has). Langue : variable `pricing_lang` ("fr" par défaut, "en" pour
+    les US). Le détail ligne à ligne vit sur /tarifs et /en/pricing (_pricing_table.html). -#}
+{%- from "_icons.html" import icon %}
+{%- set plans = billing_plans() %}
+{%- set en = (pricing_lang | default("fr")) == "en" %}
+{%- set T = {
+  "id": "pricing" if en else "tarifs",
+  "eyebrow": "Pricing" if en else "Tarifs",
+  "title": "Free to start. $79 a year to do more." if en else "Gratuit pour commencer. 69&nbsp;€ par an pour aller plus loin.",
+  "sub": "One subscription for the whole household: one parent pays, both get access." if en else "Un seul abonnement pour tout le foyer&nbsp;: un parent paie, les deux en profitent.",
+  "aria": "Billing" if en else "Facturation",
+  "yearly": "Yearly" if en else "Annuel",
+  "save": "−27%" if en else "−36&nbsp;%",
+  "monthly": "Monthly" if en else "Mensuel",
+  "free": "Free" if en else "Gratuit",
+  "zero": "$0" if en else "0&nbsp;€",
+  "free_note": "Forever, for both parents." if en else "Pour toujours, pour les deux parents.",
+  "free_items": ["Unlimited custody calendar, years in advance", "School breaks and holidays that alternate by even/odd year", "Day swaps proposed and accepted", "Invite your co-parent"] if en else ["Calendrier de garde illimité, des années à l'avance", "Vacances scolaires A/B/C, années paires/impaires", "Échanges de jours proposés et acceptés", "Invitation de l'autre parent"],
+  "free_cta": "Create my calendar" if en else "Créer mon calendrier",
+  "pill": "Per household" if en else "Par foyer",
+  "year_price": "$79 <small>/ year</small>" if en else "69&nbsp;€ <small>/ an</small>",
+  "month_price": "$8.99 <small>/ month</small>" if en else "8,99&nbsp;€ <small>/ mois</small>",
+  "year_note": "Just $6.58 a month." if en else "Soit 5,75&nbsp;€ par mois.",
+  "month_note": "No commitment, cancel anytime." if en else "Sans engagement, résiliable à tout moment.",
+  "trial": "-day free trial." if en else " jours d'essai gratuit.",
+  "pro_items": ["Everything in Free, plus:", "Shared expenses and reimbursement requests", "Private custody journal, exportable as PDF", "Child support payment tracking", "Message board, reminders and calendar sync"] if en else ["Tout le gratuit, plus&nbsp;:", "Dépenses partagées et demandes de remboursement", "Journal de garde privé, exportable en PDF", "Suivi de la pension et revalorisation", "Mur de communication, rappels et synchro agenda"],
+  "try": "Start your {n}-day free trial" if en else "Essayer {n} jours gratuitement",
+  "start": "Get started" if en else "Commencer",
+  "fine": "No commitment · cancel anytime · " if en else "Sans engagement · résiliable à tout moment · ",
+  "compare": "compare plans" if en else "tout comparer",
+  "compare_href": "/en/pricing" if en else "/tarifs",
+  "signup": "/register?lang=en" if en else "/register?lang=fr",
+} %}
+{%- macro trial_note(days) %}{% if days %} {{ days }}{{ T.trial | safe }}{% endif %}{% endmacro %}
+<section class="plans" id="{{ T.id }}">
+  <div class="wrap">
+    <div class="plans-head">
+      <p class="eyebrow center">{{ T.eyebrow }}</p>
+      <h2>{{ T.title | safe }}</h2>
+      <p class="plans-sub">{{ T.sub | safe }}</p>
+      <div class="plans-toggle" role="radiogroup" aria-label="{{ T.aria }}">
+        <input type="radio" name="billing" id="bill-year" checked />
+        <label for="bill-year">{{ T.yearly }} <em>{{ T.save | safe }}</em></label>
+        <input type="radio" name="billing" id="bill-month" />
+        <label for="bill-month">{{ T.monthly }}</label>
+      </div>
+    </div>
+    <div class="plans-grid">
+      <div class="plan-card">
+        <div class="plan-name">{{ T.free }}</div>
+        <div class="plan-price">{{ T.zero | safe }}</div>
+        <p class="plan-note">{{ T.free_note }}</p>
+        <ul>
+          {%- for item in T.free_items %}
+          <li>{{ icon("check", 16) }} {{ item | safe }}</li>
+          {%- endfor %}
+        </ul>
+        <a class="plan-btn" href="{{ T.signup }}">{{ T.free_cta }}</a>
+      </div>
+      <div class="plan-card pro">
+        <div class="plan-name">Premium <span class="plan-pill">{{ T.pill }}</span></div>
+        <div class="plan-price for-year">{{ T.year_price | safe }}</div>
+        <div class="plan-price for-month">{{ T.month_price | safe }}</div>
+        <p class="plan-note for-year">{{ T.year_note | safe }}{{ trial_note(plans.annual.trial_days) }}</p>
+        <p class="plan-note for-month">{{ T.month_note | safe }}{{ trial_note(plans.monthly.trial_days) }}</p>
+        <ul>
+          {%- for item in T.pro_items %}
+          <li>{{ icon("check", 16) }} {{ item | safe }}</li>
+          {%- endfor %}
+        </ul>
+        <a class="plan-btn" href="{{ T.signup }}">{% if plans.annual.trial_days %}{{ T.try.format(n=plans.annual.trial_days) }}{% else %}{{ T.start }}{% endif %}</a>
+        <p class="plan-fine">{{ T.fine }}<a href="{{ T.compare_href }}">{{ T.compare }}</a></p>
+      </div>
+    </div>
+  </div>
+</section>
