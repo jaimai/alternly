@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import GoogleButton from '../components/GoogleButton'
 import { useTranslation } from 'react-i18next'
@@ -15,11 +15,13 @@ import type { InvitationPreview, InvitationSchedulePreview } from '../types'
 type InvalidState = { code: 'expired' | 'used' | 'unknown'; inviter: string }
 
 const MAX_PERIODS = 4
+const AUTO_JOIN_KEY = 'invite_autojoin'
 
 export default function JoinPage() {
   const { token } = useParams<{ token: string }>()
   const { user, loading, refreshHousehold } = useAuth()
   const navigate = useNavigate()
+  const autoJoinTried = useRef(false)
   const { t, i18n } = useTranslation()
   const { range } = useFormat()
   const [preview, setPreview] = useState<InvitationPreview | null>(null)
@@ -77,11 +79,29 @@ export default function JoinPage() {
     }
   }
 
+  // Retour d'une inscription ou d'une connexion lancée depuis cette page (e-mail ou
+  // Google) : on rejoint le foyer directement, sans redemander un clic sur
+  // « Rejoindre le foyer ». Le marqueur de session survit aux redirections.
+  useEffect(() => {
+    if (!user || !preview || !token || autoJoinTried.current) return
+    if (sessionStorage.getItem(AUTO_JOIN_KEY) !== token) return
+    autoJoinTried.current = true
+    sessionStorage.removeItem(AUTO_JOIN_KEY)
+    void accept()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, preview, token])
+
   // Invitation mémorisée tant qu'on n'est pas connecté : après « Continuer avec
   // Google » (ou inscription), on revient ici pour rejoindre le foyer.
   useEffect(() => {
-    if (!user && token && !invalid) localStorage.setItem('pending_invite', token)
-    if (invalid) localStorage.removeItem('pending_invite')
+    if (!user && token && !invalid) {
+      localStorage.setItem('pending_invite', token)
+      sessionStorage.setItem(AUTO_JOIN_KEY, token)
+    }
+    if (invalid) {
+      localStorage.removeItem('pending_invite')
+      sessionStorage.removeItem(AUTO_JOIN_KEY)
+    }
   }, [user, token, invalid])
 
   function saveAndGo(path: string) {
@@ -131,76 +151,77 @@ export default function JoinPage() {
         </div>
       )}
 
-      {!invalid && (
+      {!invalid && preview && (
         <div className="card">
-          {error && <div className="error">{error}</div>}
-          {preview && (
-            <>
-              <p className="ph-mask ph-sensitive">
-                <strong>{preview.invited_by_name}</strong> {t('auth.inviteMiddle')}{' '}
-                <strong>{preview.household_name}</strong> {t('auth.inviteTail')}
+          <p className="ph-mask ph-sensitive" style={{ marginTop: 0 }}>
+            <strong>{preview.invited_by_name}</strong> {t('auth.inviteMiddle')}{' '}
+            <strong>{preview.household_name}</strong> {t('auth.inviteTail')}
+          </p>
+          {schedule?.has_schedule && schedule.days.length > 0 && (
+            <div className="join-preview ph-mask ph-sensitive">
+              <h2>{t('join.previewTitle')}</h2>
+              <p className="hint" style={{ marginTop: 0 }}>
+                {kidsLabel
+                  ? t('join.previewSubtitle', { children: kidsLabel, name: schedule.inviter_first_name })
+                  : t('join.previewSubtitleNoChildren', { name: schedule.inviter_first_name })}
               </p>
-              {user ? (
-                <button onClick={accept} disabled={busy} style={{ width: '100%' }}>
-                  {busy ? t('auth.joinBusy') : t('auth.joinSubmit')}
-                </button>
-              ) : (
+              <div className="join-strip" role="img" aria-label={t('join.stripAria')}>
+                {schedule.days.slice(0, 7).map((d) => (
+                  <span key={`wd-${d.date}`} className="wd">{weekday(d.date)}</span>
+                ))}
+                {schedule.days.map((d) => (
+                  <span
+                    key={d.date}
+                    className={`join-day ${d.who === 'you' ? 'you' : ''} ${d.date === today ? 'today' : ''}`}
+                    title={d.who === 'you' ? t('join.legendYou') : schedule.inviter_first_name}
+                  >
+                    {parseIso(d.date).getDate()}
+                  </span>
+                ))}
+              </div>
+              <div className="join-legend">
+                <span><span className="sw" style={{ background: 'var(--terra)' }} />{t('join.legendYou')}</span>
+                <span><span className="sw" style={{ background: 'var(--pine-soft)' }} />{schedule.inviter_first_name}</span>
+              </div>
+              {schedule.your_periods.length > 0 && (
                 <>
-                  <p>{t('auth.signInPrompt')}</p>
-                  <GoogleButton consent />
-                  <div className="row">
-                    <button onClick={() => saveAndGo('/register')}>{t('auth.createAccountLink')}</button>
-                    <button className="secondary" onClick={() => saveAndGo('/login')}>
-                      {t('auth.loginLink')}
-                    </button>
-                  </div>
+                  <p style={{ margin: '14px 0 0', fontWeight: 600 }}>{t('join.yourPeriods')}</p>
+                  <ul className="join-periods">
+                    {schedule.your_periods.slice(0, MAX_PERIODS).map((p) => (
+                      <li key={p.start}>{range(p.start, p.end)}</li>
+                    ))}
+                  </ul>
                 </>
               )}
-            </>
+              {schedule.handover_time && (
+                <p className="hint">{t('join.handover', { time: schedule.handover_time })}</p>
+              )}
+            </div>
           )}
-          {!preview && !error && <p>{t('auth.verifyingInvitation')}</p>}
         </div>
       )}
 
-      {!invalid && schedule?.has_schedule && schedule.days.length > 0 && (
-        <div className="card join-preview ph-mask ph-sensitive">
-          <h2>{t('join.previewTitle')}</h2>
-          <p className="hint" style={{ marginTop: 0 }}>
-            {kidsLabel
-              ? t('join.previewSubtitle', { children: kidsLabel, name: schedule.inviter_first_name })
-              : t('join.previewSubtitleNoChildren', { name: schedule.inviter_first_name })}
-          </p>
-          <div className="join-strip" role="img" aria-label={t('join.stripAria')}>
-            {schedule.days.slice(0, 7).map((d) => (
-              <span key={`wd-${d.date}`} className="wd">{weekday(d.date)}</span>
+      {!invalid && (
+        <div className="card">
+          {error && <div className="error">{error}</div>}
+          {preview &&
+            (user ? (
+              <button onClick={accept} disabled={busy} style={{ width: '100%' }}>
+                {busy ? t('auth.joinBusy') : t('auth.joinSubmit')}
+              </button>
+            ) : (
+              <>
+                <p style={{ marginTop: 0 }}>{t('auth.signInPrompt')}</p>
+                <GoogleButton consent />
+                <div className="row">
+                  <button onClick={() => saveAndGo('/register')}>{t('auth.createAccountLink')}</button>
+                  <button className="secondary" onClick={() => saveAndGo('/login')}>
+                    {t('auth.loginLink')}
+                  </button>
+                </div>
+              </>
             ))}
-            {schedule.days.map((d) => (
-              <span
-                key={d.date}
-                className={`join-day ${d.who === 'you' ? 'you' : ''} ${d.date === today ? 'today' : ''}`}
-                title={d.who === 'you' ? t('join.legendYou') : schedule.inviter_first_name}
-              >
-                {parseIso(d.date).getDate()}
-              </span>
-            ))}
-          </div>
-          <div className="join-legend">
-            <span><span className="sw" style={{ background: 'var(--terra)' }} />{t('join.legendYou')}</span>
-            <span><span className="sw" style={{ background: 'var(--pine-soft)' }} />{schedule.inviter_first_name}</span>
-          </div>
-          {schedule.your_periods.length > 0 && (
-            <>
-              <p style={{ margin: '14px 0 0', fontWeight: 600 }}>{t('join.yourPeriods')}</p>
-              <ul className="join-periods">
-                {schedule.your_periods.slice(0, MAX_PERIODS).map((p) => (
-                  <li key={p.start}>{range(p.start, p.end)}</li>
-                ))}
-              </ul>
-            </>
-          )}
-          {schedule.handover_time && (
-            <p className="hint">{t('join.handover', { time: schedule.handover_time })}</p>
-          )}
+          {!preview && !error && <p>{t('auth.verifyingInvitation')}</p>}
         </div>
       )}
 

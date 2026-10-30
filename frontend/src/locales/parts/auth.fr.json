@@ -9,6 +9,8 @@
   "auth.createAccountLink": "Créer un compte",
   "auth.loginError": "Erreur de connexion",
   "auth.registerTitle": "Créer un compte",
+  "auth.registerInviteTitle": "Créer votre compte pour rejoindre le calendrier",
+  "auth.registerInviteHint": "{{name}} vous invite à partager le calendrier de garde. Le compte est gratuit : une fois créé, vous arrivez directement sur le calendrier commun.",
   "auth.firstNameLabel": "Votre prénom",
   "auth.emailPatternTitle": "Saisissez une adresse e-mail complète, avec un nom de domaine (ex. prenom@exemple.fr).",
   "auth.passwordLabelMin": "Mot de passe (8 caractères minimum)",

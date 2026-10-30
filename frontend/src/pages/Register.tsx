@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
@@ -30,6 +30,14 @@ export default function RegisterPage() {
   const { setUser } = useAuth()
   const navigate = useNavigate()
   const { t, i18n } = useTranslation()
+  // Arrivée depuis une invitation (/join/…) : on rappelle qui invite, pour que le
+  // co-parent ne tombe pas sur un formulaire d'inscription générique.
+  const [inviter, setInviter] = useState<string | null>(null)
+  useEffect(() => {
+    const pending = localStorage.getItem('pending_invite')
+    if (!pending) return
+    api.previewInvitation(pending).then((p) => setInviter(p.invited_by_name)).catch(() => {})
+  }, [])
   // Pages légales servies par le backend sur le même domaine (proxy Vercel).
   const legal = (page: 'terms' | 'privacy') => (i18n.language.startsWith('en') ? `/en/${page}` : `/${page}`)
 
@@ -69,7 +77,8 @@ export default function RegisterPage() {
         <p>{t('auth.tagline')}</p>
       </div>
       <form className="card" onSubmit={submit}>
-        <h2>{t('auth.registerTitle')}</h2>
+        <h2>{inviter ? t('auth.registerInviteTitle') : t('auth.registerTitle')}</h2>
+        {inviter && <p className="hint ph-mask ph-sensitive">{t('auth.registerInviteHint', { name: inviter })}</p>}
         {prefill?.zone && <p className="hint">{t('auth.toolPrefill', { zone: prefill.zone })}</p>}
         {!showEmail && <p className="hint signup-fastest">{t('auth.googleFastest')}</p>}
         <GoogleButton text="signup_with" consent onUnavailable={googleUnavailable} />

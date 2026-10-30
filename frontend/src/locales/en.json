@@ -106,6 +106,8 @@
   "auth.passwordTooShort": "Password must be at least 8 characters",
   "auth.registerBusy": "Creating…",
   "auth.registerError": "Sign-up failed",
+  "auth.registerInviteHint": "{{name}} invited you to share the custody calendar. The account is free: once it's created, you land straight on your shared calendar.",
+  "auth.registerInviteTitle": "Create your account to join the calendar",
   "auth.registerSubmit": "Create my account",
   "auth.registerTitle": "Create an account",
   "auth.requestNewLink": "Request a new link",
