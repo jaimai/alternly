@@ -5,6 +5,7 @@ resynchronisation à la demande) alimentent `StoreSubscription`, et l'accès Pre
 foyer combine Paddle et stores (cf. deps.user_has_premium). Conception :
 docs/mobile/architecture-technique.md §7.3.
 """
+import logging
 from datetime import datetime, timezone
 
 import httpx
@@ -167,6 +168,11 @@ def sync_user(db: Session, user: User) -> None:
     subscriber = fetch_subscriber(str(user.id))
     now = utcnow()
     entitlement = (subscriber.get("entitlements") or {}).get(settings.revenuecat_entitlement) or {}
+    if not entitlement:
+        logging.getLogger("coparent.billing").warning(
+            "store-sync : pas d'entitlement %r pour l'user %s (entitlements : %s)",
+            settings.revenuecat_entitlement, user.id, list(subscriber.get("entitlements") or {}),
+        )
     premium_products = {entitlement.get("product_identifier")} - {None}
     best: dict[str, tuple[datetime | None, str, dict]] = {}
     for product_id, info in (subscriber.get("subscriptions") or {}).items():

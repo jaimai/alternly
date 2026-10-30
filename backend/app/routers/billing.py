@@ -1,5 +1,6 @@
 """Abonnement : Paddle (web) et achats intégrés via RevenueCat (mobile) — statut d'accès + webhooks."""
 import hmac
+import logging
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from fastapi.responses import JSONResponse
@@ -15,6 +16,8 @@ from ..models import HouseholdMember, PaddleEvent, RevenueCatEvent, User, utcnow
 from ..ratelimit import HOUR, rate_limit
 from ..schemas import ChangePlanIn, CheckoutSyncIn
 from ..services import analytics, audit, billing, paddle_api, store_billing
+
+logger = logging.getLogger("coparent.billing")
 
 router = APIRouter(prefix="/api/billing", tags=["billing"])
 
@@ -96,6 +99,7 @@ def store_sync(user: User = Depends(get_current_user), db: Session = Depends(get
         store_billing.sync_user(db, user)
         db.commit()
     except Exception:  # RevenueCat injoignable : le webhook prendra le relais
+        logger.exception("store-sync : relecture RevenueCat impossible (user %s)", user.id)
         db.rollback()
     return billing_status(user, db)
 
