@@ -52,5 +52,7 @@
   "common.notifChangeRefused": "Your request was declined: {{summary}}",
   "common.notifPaymentFailed": "Your subscription payment failed: please update your payment method",
   "common.notifInviteReminder": "Your co-parent hasn't joined the calendar yet. Resend the invitation in one tap.",
-  "common.loadingCalendar": "Loading your calendar…"
+  "common.loadingCalendar": "Loading your calendar…",
+  "common.navJournal": "Journal",
+  "common.notifPensionRevaluation": "It's the month to revalue the child support: work out the new amount."
 }

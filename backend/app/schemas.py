@@ -18,6 +18,8 @@ SPECIAL_KINDS = {
 PARENT_MODES = {"auto", "fixed", "alternate"}
 EXPENSE_CATEGORIES = {"sante", "ecole", "activites", "vetements", "cantine", "autre"}
 WALL_KINDS = {"message", "task", "question"}
+# Journal de garde : faits datés, formulés de façon neutre.
+JOURNAL_KINDS = {"handover", "late", "missed", "change", "health", "school", "expense", "incident", "other"}
 ZONES = {"A", "B", "C"}
 
 
@@ -500,6 +502,32 @@ class BalanceOut(BaseModel):
     i_owe_cents: int = 0       # ce que je dois (à payer)
 
 
+class ClaimLineOut(BaseModel):
+    id: int
+    date: DateType
+    label: str
+    category: str
+    child_id: int | None
+    amount_cents: int
+    payer_percent: int
+    owed_cents: int  # part due par l'autre parent
+
+
+class ExpenseClaimOut(BaseModel):
+    """Demande de remboursement imprimable : dépenses ouvertes avancées par le parent."""
+    author_name: str
+    other_name: str
+    household_name: str
+    currency: str
+    children: dict[int, str]
+    start: DateType | None
+    end: DateType | None
+    generated_at: datetime
+    lines: list[ClaimLineOut]
+    total_paid_cents: int
+    total_owed_cents: int
+
+
 class WallPostIn(BaseModel):
     kind: str
     body: str = Field(min_length=1, max_length=NOTE_MAX)
@@ -570,3 +598,115 @@ class HistoryEntryOut(BaseModel):
 
 class ReadNotificationsIn(BaseModel):
     ids: list[int] = Field(max_length=200)
+
+
+class JournalEntryIn(BaseModel):
+    day: DateType
+    time: str | None = Field(default=None, pattern=TIME_PATTERN)
+    kind: str
+    child_id: int | None = None
+    body: str = Field(min_length=1, max_length=NOTE_MAX)
+
+
+class JournalEntryPatch(BaseModel):
+    day: DateType | None = None
+    time: str | None = Field(default=None, pattern=TIME_PATTERN)
+    kind: str | None = None
+    child_id: int | None = None
+    body: str | None = Field(default=None, min_length=1, max_length=NOTE_MAX)
+
+
+class JournalEntryOut(ORMModel):
+    id: int
+    day: DateType
+    time: str | None
+    kind: str
+    child_id: int | None
+    body: str
+    created_at: datetime
+    edited_at: datetime | None
+
+
+class JournalExportOut(BaseModel):
+    """Données de l'export imprimable : entrées + contexte du calendrier."""
+    author_name: str
+    household_name: str
+    children: dict[int, str]
+    start: DateType | None
+    end: DateType | None
+    generated_at: datetime
+    entries: list[JournalEntryOut]
+    # Jour → prénom du parent qui avait les enfants selon le calendrier (si connu).
+    scheduled: dict[DateType, str]
+
+
+class PensionIn(BaseModel):
+    payer_id: int
+    amount_cents: int = Field(gt=0, le=MAX_AMOUNT_CENTS)
+    due_day: int = Field(default=5, ge=1, le=28)
+    start_month: DateType  # n'importe quel jour du mois : ramené au 1er
+    base_amount_cents: int | None = Field(default=None, gt=0, le=MAX_AMOUNT_CENTS)
+    base_index: float | None = Field(default=None, gt=0, le=10_000)
+    index_label: str | None = Field(default=None, max_length=120)
+    revaluation_month: int | None = Field(default=None, ge=1, le=12)
+
+
+class PensionRateOut(ORMModel):
+    id: int
+    effective_from: DateType
+    amount_cents: int
+    index_value: float | None
+
+
+class PensionPaymentIn(BaseModel):
+    month: DateType
+    amount_cents: int = Field(gt=0, le=MAX_AMOUNT_CENTS)
+    paid_on: DateType
+    note: str = Field(default="", max_length=300)
+
+
+class PensionPaymentOut(ORMModel):
+    id: int
+    month: DateType
+    amount_cents: int
+    paid_on: DateType
+    note: str
+    created_by: int
+
+
+class PensionMonthOut(BaseModel):
+    month: DateType
+    due_cents: int
+    paid_cents: int
+    status: Literal["paid", "partial", "missing", "upcoming"]
+
+
+class PensionOut(BaseModel):
+    payer_id: int
+    payee_id: int
+    due_day: int
+    start_month: DateType
+    amount_cents: int  # montant en vigueur
+    base_amount_cents: int | None
+    base_index: float | None
+    index_label: str | None
+    revaluation_month: int | None
+    rates: list[PensionRateOut]
+    payments: list[PensionPaymentOut]
+    months: list[PensionMonthOut]  # du plus récent au plus ancien
+    arrears_cents: int  # total restant dû sur les mois échus
+
+
+class RevaluationIn(BaseModel):
+    new_index: float = Field(gt=0, le=10_000)
+    effective_from: DateType | None = None  # défaut : mois en cours
+    apply: bool = False
+
+
+class RevaluationOut(BaseModel):
+    current_cents: int
+    new_cents: int
+    base_amount_cents: int
+    base_index: float
+    new_index: float
+    applied: bool

@@ -24,7 +24,11 @@ from ..models import (
     Household,
     HouseholdMember,
     Invitation,
+    JournalEntry,
     Notification,
+    Pension,
+    PensionPayment,
+    PensionRate,
     PasswordResetToken,
     ScheduleException,
     SchoolVacationPeriod,
@@ -108,6 +112,16 @@ def export_user_data(db: Session, user: User) -> dict:
         "expenses": _rows(db, Expense, hid),
         "settlements": _rows(db, Settlement, hid),
         "wall_posts": posts,
+        # Journal de garde : uniquement les entrées de l'utilisateur (privées).
+        "pension": _pension_export(db, hid),
+        "journal_entries": [
+            _row(e, {"household_id", "author_id"})
+            for e in db.scalars(
+                select(JournalEntry)
+                .where(JournalEntry.household_id == hid, JournalEntry.author_id == user.id)
+                .order_by(JournalEntry.day, JournalEntry.id)
+            )
+        ],
         "change_requests": [
             {**_row(cr, {"household_id", "context"}), "summary": change_request_summary(db, cr, user.locale)}
             for cr in db.scalars(select(ChangeRequest).where(ChangeRequest.household_id == hid).order_by(ChangeRequest.id))
@@ -115,6 +129,19 @@ def export_user_data(db: Session, user: User) -> dict:
         "history": history_rows(db, hid, user.locale),
     }
     return data
+
+
+def _pension_export(db: Session, household_id: int) -> dict | None:
+    pension = db.scalar(select(Pension).where(Pension.household_id == household_id))
+    if pension is None:
+        return None
+    return {
+        **_row(pension, {"household_id"}),
+        "rates": [_row(r, {"pension_id"}) for r in db.scalars(select(PensionRate).where(PensionRate.pension_id == pension.id))],
+        "payments": [
+            _row(p, {"pension_id"}) for p in db.scalars(select(PensionPayment).where(PensionPayment.pension_id == pension.id))
+        ],
+    }
 
 
 def history_rows(db: Session, household_id: int, locale: str | None) -> list[dict]:
@@ -133,6 +160,8 @@ def _delete_user_rows(db: Session, user_ids: list[int]) -> None:
     db.execute(delete(PasswordResetToken).where(PasswordResetToken.user_id.in_(user_ids)))
     db.execute(delete(EmailLog).where(EmailLog.user_id.in_(user_ids)))
     db.execute(delete(DeviceToken).where(DeviceToken.user_id.in_(user_ids)))
+    # Journal de garde : notes personnelles, effacées avec le compte même si le foyer reste.
+    db.execute(delete(JournalEntry).where(JournalEntry.author_id.in_(user_ids)))
     # Un achat App Store / Google Play ne se résilie pas d'ici : seulement dans le store.
     db.execute(delete(StoreSubscription).where(StoreSubscription.user_id.in_(user_ids)))
 
@@ -146,8 +175,13 @@ def _delete_household(db: Session, household_id: int) -> None:
     if post_ids:
         db.execute(delete(WallReply).where(WallReply.post_id.in_(post_ids)))
 
+    pension_ids = [p.id for p in db.scalars(select(Pension).where(Pension.household_id == household_id))]
+    if pension_ids:
+        db.execute(delete(PensionPayment).where(PensionPayment.pension_id.in_(pension_ids)))
+        db.execute(delete(PensionRate).where(PensionRate.pension_id.in_(pension_ids)))
+
     for model in (
-        WallPost, Expense, Settlement, ScheduleException, SchoolVacationPeriod,
+        Pension, JournalEntry, WallPost, Expense, Settlement, ScheduleException, SchoolVacationPeriod,
         SpecialDayRule, VacationRule, CustodyRule, Child, Invitation, HouseholdMember,
     ):
         db.execute(delete(model).where(model.household_id == household_id))

@@ -32,5 +32,11 @@
   "paywall.startTrial_other": "Start {{count}}-day free trial",
   "paywall.offerApplied": "🎁 Code {{code}}: 20% off your first year, applied at checkout.",
   "paywall.offerAnnualOnly": "Code {{code}} applies to the yearly plan.",
-  "paywall.checkoutFailed": "The payment couldn't go through on our side. Try again in a few minutes, or write to us with the help button at the bottom right: we'll reply quickly by email."
+  "paywall.checkoutFailed": "The payment couldn't go through on our side. Try again in a few minutes, or write to us with the help button at the bottom right: we'll reply quickly by email.",
+  "paywall.featureJournal": "Custody journal",
+  "paywall.perkJournal": "Private custody journal, exportable as PDF",
+  "paywall.featurePension": "Child support",
+  "paywall.perkPension": "Child support tracking and revaluation",
+  "paywall.perkClaim": "Reimbursement requests as PDF, even if your co-parent doesn’t use Alternly",
+  "paywall.subtitleSolo": "Even if your co-parent doesn’t use Alternly: keep your journal, claim your expenses and track child support."
 }

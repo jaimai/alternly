@@ -1,17 +1,21 @@
 """Dépenses partagées : dépenses, contestation, remboursements, solde."""
+from datetime import date
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ..db import get_db
 from ..deps import get_membership, household_members, notify, other_parent_id, require_premium
-from ..models import Child, Expense, HouseholdMember, Settlement, utcnow
+from ..models import Child, Expense, Household, HouseholdMember, Settlement, User, utcnow
 from ..ratelimit import DAY, rate_limit
 from ..schemas import (
     EXPENSE_CATEGORIES,
     BalanceNet,
     BalanceOut,
+    ClaimLineOut,
     DisputeIn,
+    ExpenseClaimOut,
     ExpenseIn,
     ExpenseOut,
     ExpensePatch,
@@ -19,7 +23,8 @@ from ..schemas import (
     SettlementOut,
 )
 from ..services import audit
-from ..services.expenses_service import compute_balance, outstanding_for
+from ..services import analytics
+from ..services.expenses_service import compute_balance, outstanding_for, owed_to_payer
 
 # Fonctionnalité premium : tout le routeur exige un abonnement.
 router = APIRouter(
@@ -328,4 +333,56 @@ def get_balance(member: HouseholdMember = Depends(get_membership), db: Session =
         amount_cents=bal.amount_cents,
         owed_to_me_cents=owed_to_me,
         i_owe_cents=i_owe,
+    )
+
+
+@router.get("/expenses/claim", response_model=ExpenseClaimOut)
+def expense_claim(
+    start: date | None = Query(None),
+    end: date | None = Query(None),
+    member: HouseholdMember = Depends(get_membership),
+    db: Session = Depends(get_db),
+):
+    """Demande de remboursement à imprimer (PDF) ou à envoyer à l'autre parent, même
+    s'il n'utilise pas Alternly : dépenses avancées par le demandeur, ni réglées ni
+    contestées, avec la part due par l'autre parent."""
+    if start and end and end < start:
+        raise HTTPException(status_code=422, detail="end doit suivre start")
+    household = db.get(Household, member.household_id)
+    other_id = next((uid for uid in _member_ids(db, household.id) if uid != member.user_id), None)
+    stmt = select(Expense).where(
+        Expense.household_id == household.id,
+        Expense.paid_by == member.user_id,
+        Expense.status == "active",
+        Expense.settled_at.is_(None),
+    )
+    if start is not None:
+        stmt = stmt.where(Expense.date >= start)
+    if end is not None:
+        stmt = stmt.where(Expense.date <= end)
+    expenses = db.scalars(stmt.order_by(Expense.date, Expense.id)).all()
+    lines = [
+        ClaimLineOut(
+            id=e.id, date=e.date, label=e.label, category=e.category, child_id=e.child_id,
+            amount_cents=e.amount_cents, payer_percent=e.payer_percent,
+            owed_cents=owed_to_payer(e.amount_cents, e.payer_percent),
+        )
+        for e in expenses
+    ]
+    author = db.get(User, member.user_id)
+    other = db.get(User, other_id) if other_id else None
+    children = db.scalars(select(Child).where(Child.household_id == household.id)).all()
+    analytics.capture_for_user(author, "expense_claim_exported", {"lines": len(lines)}, household_id=household.id)
+    return ExpenseClaimOut(
+        author_name=author.display_name,
+        other_name=other.display_name if other else "",
+        household_name=household.name,
+        currency=household.currency or "EUR",
+        children={c.id: c.first_name for c in children},
+        start=start,
+        end=end,
+        generated_at=utcnow(),
+        lines=lines,
+        total_paid_cents=sum(line.amount_cents for line in lines),
+        total_owed_cents=sum(line.owed_cents for line in lines),
     )

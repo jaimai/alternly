@@ -327,3 +327,109 @@ export interface InvitationSchedulePreview {
   days: { date: string; who: 'you' | 'inviter' }[]
   your_periods: { start: string; end: string }[]
 }
+
+export type JournalKind = 'handover' | 'late' | 'missed' | 'change' | 'health' | 'school' | 'expense' | 'incident' | 'other'
+
+/** Journal de garde : note privée, visible par son seul auteur. */
+export interface JournalEntry {
+  id: number
+  day: string
+  time: string | null
+  kind: JournalKind
+  child_id: number | null
+  body: string
+  created_at: string
+  edited_at: string | null
+}
+
+export interface JournalEntryInput {
+  day: string
+  time: string | null
+  kind: JournalKind
+  child_id: number | null
+  body: string
+}
+
+export interface JournalExport {
+  author_name: string
+  household_name: string
+  children: Record<string, string>
+  start: string | null
+  end: string | null
+  generated_at: string
+  entries: JournalEntry[]
+  /** Jour (yyyy-mm-dd) → prénom du parent qui avait les enfants selon le calendrier. */
+  scheduled: Record<string, string>
+}
+
+/** Demande de remboursement imprimable : dépenses avancées, part due par l'autre parent. */
+export interface ExpenseClaim {
+  author_name: string
+  other_name: string
+  household_name: string
+  currency: string
+  children: Record<string, string>
+  start: string | null
+  end: string | null
+  generated_at: string
+  lines: {
+    id: number
+    date: string
+    label: string
+    category: ExpenseCategory
+    child_id: number | null
+    amount_cents: number
+    payer_percent: number
+    owed_cents: number
+  }[]
+  total_paid_cents: number
+  total_owed_cents: number
+}
+
+export type PensionMonthStatus = 'paid' | 'partial' | 'missing' | 'upcoming'
+
+export interface PensionPayment {
+  id: number
+  month: string
+  amount_cents: number
+  paid_on: string
+  note: string
+  created_by: number
+}
+
+/** Pension alimentaire du foyer : montant en vigueur, échéancier, versements. */
+export interface Pension {
+  payer_id: number
+  payee_id: number
+  due_day: number
+  start_month: string
+  amount_cents: number
+  base_amount_cents: number | null
+  base_index: number | null
+  index_label: string | null
+  revaluation_month: number | null
+  rates: { id: number; effective_from: string; amount_cents: number; index_value: number | null }[]
+  payments: PensionPayment[]
+  months: { month: string; due_cents: number; paid_cents: number; status: PensionMonthStatus }[]
+  arrears_cents: number
+}
+
+export interface PensionInput {
+  payer_id: number
+  amount_cents: number
+  due_day: number
+  start_month: string
+  base_amount_cents: number | null
+  base_index: number | null
+  index_label: string | null
+  revaluation_month: number | null
+}
+
+export interface Revaluation {
+  current_cents: number
+  new_cents: number
+  base_amount_cents: number
+  base_index: number
+  new_index: number
+  applied: boolean
+}

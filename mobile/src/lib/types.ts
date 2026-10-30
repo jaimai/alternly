@@ -290,3 +290,19 @@ export interface HistoryEntry {
   summary: string
   created_at: string
 }
+
+export type JournalKind = 'handover' | 'late' | 'missed' | 'change' | 'health' | 'school' | 'expense' | 'incident' | 'other'
+
+/** Journal de garde : note privée, visible par son seul auteur (même API que le web). */
+export interface JournalEntry {
+  id: number
+  day: string
+  time: string | null
+  kind: JournalKind
+  child_id: number | null
+  body: string
+  created_at: string
+  edited_at: string | null
+}
+
+export type JournalEntryInput = Pick<JournalEntry, 'day' | 'time' | 'kind' | 'child_id' | 'body'>

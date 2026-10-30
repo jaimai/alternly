@@ -1,7 +1,7 @@
 import uuid
 from datetime import date, datetime, timezone
 
-from sqlalchemy import JSON, Boolean, Date, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy import JSON, Boolean, Date, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .db import Base
@@ -264,6 +264,71 @@ class WallPost(Base):
     completed_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
     edited_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+
+class JournalEntry(Base):
+    """Journal de garde : notes factuelles et datées, privées à leur auteur.
+
+    Jamais visibles par l'autre parent ni inscrites dans l'historique du foyer.
+    `created_at` (heure de saisie) figure dans l'export : il n'est pas modifiable."""
+    __tablename__ = "journal_entries"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    household_id: Mapped[int] = mapped_column(ForeignKey("households.id"), index=True)
+    author_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    day: Mapped[date] = mapped_column(Date)  # jour concerné (peut précéder la saisie)
+    time: Mapped[str | None] = mapped_column(String, nullable=True)  # "HH:MM"
+    kind: Mapped[str] = mapped_column(String)  # voir schemas.JOURNAL_KINDS
+    child_id: Mapped[int | None] = mapped_column(ForeignKey("children.id"), nullable=True)
+    body: Mapped[str] = mapped_column(String)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    edited_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+
+class Pension(Base):
+    """Pension alimentaire du foyer : qui verse à qui, échéance, base de revalorisation.
+
+    Le montant en vigueur vit dans PensionRate (historique : un montant par date
+    d'effet), pour que les mois passés restent comparés au bon montant."""
+    __tablename__ = "pensions"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    household_id: Mapped[int] = mapped_column(ForeignKey("households.id"), unique=True)
+    payer_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    payee_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    due_day: Mapped[int] = mapped_column(Integer, default=5)  # jour du mois de l'échéance
+    start_month: Mapped[date] = mapped_column(Date)  # 1er du premier mois suivi
+    # Revalorisation (formule du jugement) : montant × nouvel indice / indice de base.
+    base_amount_cents: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    base_index: Mapped[float | None] = mapped_column(Float, nullable=True)
+    index_label: Mapped[str | None] = mapped_column(String, nullable=True)  # ex. « INSEE hors tabac, sept. 2024 »
+    revaluation_month: Mapped[int | None] = mapped_column(Integer, nullable=True)  # 1–12
+    last_reminder_year: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+
+class PensionRate(Base):
+    __tablename__ = "pension_rates"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    pension_id: Mapped[int] = mapped_column(ForeignKey("pensions.id"), index=True)
+    effective_from: Mapped[date] = mapped_column(Date)  # 1er du mois
+    amount_cents: Mapped[int] = mapped_column(Integer)
+    index_value: Mapped[float | None] = mapped_column(Float, nullable=True)  # si revalorisation
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+
+class PensionPayment(Base):
+    __tablename__ = "pension_payments"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    pension_id: Mapped[int] = mapped_column(ForeignKey("pensions.id"), index=True)
+    month: Mapped[date] = mapped_column(Date)  # 1er du mois concerné
+    amount_cents: Mapped[int] = mapped_column(Integer)
+    paid_on: Mapped[date] = mapped_column(Date)
+    note: Mapped[str] = mapped_column(String, default="")
+    created_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
 
 class WallReply(Base):

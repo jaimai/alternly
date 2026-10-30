@@ -32,5 +32,11 @@
   "paywall.startTrial_other": "Essayer {{count}} jours gratuitement",
   "paywall.offerApplied": "🎁 Code {{code}} : -20 % sur votre première année, appliqué au paiement.",
   "paywall.offerAnnualOnly": "Le code {{code}} s'applique à l'offre annuelle.",
-  "paywall.checkoutFailed": "Le paiement n'a pas pu aboutir de notre côté. Réessayez dans quelques minutes, ou écrivez-nous avec le bouton d'aide en bas à droite : on vous répond rapidement par e-mail."
+  "paywall.checkoutFailed": "Le paiement n'a pas pu aboutir de notre côté. Réessayez dans quelques minutes, ou écrivez-nous avec le bouton d'aide en bas à droite : on vous répond rapidement par e-mail.",
+  "paywall.featureJournal": "Journal de garde",
+  "paywall.perkJournal": "Journal de garde privé, exportable en PDF",
+  "paywall.featurePension": "Pension alimentaire",
+  "paywall.perkPension": "Suivi de la pension alimentaire et revalorisation",
+  "paywall.perkClaim": "Demandes de remboursement en PDF, même si l’autre parent n’utilise pas Alternly",
+  "paywall.subtitleSolo": "Même si l’autre parent n’utilise pas Alternly : tenez votre journal, réclamez vos frais et suivez la pension."
 }

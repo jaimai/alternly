@@ -39,6 +39,8 @@ export default function AppLayout() {
           <Stack.Screen name="expense/settle" options={{ presentation: 'modal' }} />
           <Stack.Screen name="wall/[id]" />
           <Stack.Screen name="wall/new" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="journal/index" />
+          <Stack.Screen name="journal/edit" options={{ presentation: 'modal' }} />
           <Stack.Screen name="settings/profile" />
           <Stack.Screen name="settings/household" />
           <Stack.Screen name="settings/rules" />
