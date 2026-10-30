@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Carrousel Noël 2026</title>
+<style>
+@font-face { font-family: 'Fraunces'; src: url(../../videos/src/fraunces-latin-full-normal.woff2) format('woff2'); font-weight: 100 900; }
+@font-face { font-family: 'Fraunces'; src: url(../../videos/src/fraunces-latin-full-italic.woff2) format('woff2'); font-weight: 100 900; font-style: italic; }
+@font-face { font-family: 'Instrument Sans'; src: url(../../videos/src/instrument-sans-latin-500-normal.woff2) format('woff2'); font-weight: 500; }
+@font-face { font-family: 'Instrument Sans'; src: url(../../videos/src/instrument-sans-latin-600-normal.woff2) format('woff2'); font-weight: 600; }
+@font-face { font-family: 'Instrument Sans'; src: url(../../videos/src/instrument-sans-latin-700-normal.woff2) format('woff2'); font-weight: 700; }
+:root {
+  --paper: #faf6ef; --paper-deep: #f3ecdf; --ink: #24312b; --ink-soft: #5d6b63;
+  --pine: #1f4d3f; --pine-soft: #e4ede7; --terra: #c96f4a; --terra-soft: #f5e0d5; --line: #e7dfd0;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 1080px; height: 1350px; overflow: hidden; background: var(--paper); }
+body { font-family: 'Instrument Sans', sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; }
+.slide { display: none; position: relative; width: 1080px; height: 1350px; padding: 110px 96px; flex-direction: column; justify-content: center; }
+.slide.on { display: flex; }
+.serif { font-family: 'Fraunces', Georgia, serif; font-variation-settings: 'opsz' 72; letter-spacing: -0.02em; }
+.pine { background: var(--pine); color: var(--paper); }
+.kicker { font-size: 30px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--terra); margin-bottom: 36px; }
+h1 { font-size: 118px; line-height: 1.02; font-weight: 500; }
+h2 { font-size: 86px; line-height: 1.06; font-weight: 500; margin-bottom: 48px; }
+em { font-style: italic; color: var(--terra); }
+.pine em { color: #f0b597; }
+p { font-size: 42px; line-height: 1.4; color: var(--ink-soft); font-weight: 500; }
+.pine p { color: #d6e3dc; }
+p + p { margin-top: 28px; }
+b { color: var(--ink); font-weight: 700; }
+.pine b { color: var(--paper); }
+.foot { position: absolute; left: 96px; right: 96px; bottom: 70px; display: flex; justify-content: space-between; align-items: center; font-size: 28px; font-weight: 600; color: var(--ink-soft); }
+.pine .foot { color: #a9c2b6; }
+.wm { font-family: 'Fraunces', serif; font-size: 40px; letter-spacing: -0.02em; color: var(--ink); }
+.wm span { font-style: italic; color: var(--pine); }
+.pine .wm, .pine .wm span { color: var(--paper); }
+.card { background: #fff; border: 2px solid var(--line); border-radius: 36px; padding: 44px 48px; }
+.dates { display: flex; gap: 28px; margin: 12px 0 44px; }
+.dates .card { flex: 1; }
+.dates small { display: block; font-size: 28px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); margin-bottom: 14px; }
+.dates strong { font-family: 'Fraunces', serif; font-size: 64px; font-weight: 500; line-height: 1.05; display: block; }
+.dates span { font-size: 32px; color: var(--ink-soft); }
+.split { display: flex; border-radius: 36px; overflow: hidden; margin: 8px 0 44px; font-size: 34px; font-weight: 700; }
+.split div { flex: 1; padding: 40px 36px; }
+.split .a { background: var(--pine); color: var(--paper); }
+.split .b { background: var(--terra); color: #fff; }
+.split big { display: block; white-space: nowrap; font-family: 'Fraunces', serif; font-size: 50px; font-weight: 500; margin-top: 8px; }
+.split.dim .b, .split.dim2 .a { opacity: .28; }
+.badge { align-self: flex-start; background: var(--terra-soft); color: var(--terra); font-weight: 700; font-size: 32px; padding: 14px 28px; border-radius: 99px; margin-bottom: 40px; }
+.cta { display: flex; gap: 24px; margin-top: 56px; }
+.cta div { flex: 1; text-align: center; background: rgba(255,255,255,.08); border: 2px solid rgba(255,255,255,.18); border-radius: 30px; padding: 34px 20px; font-size: 32px; font-weight: 600; color: var(--paper); }
+.cta i { display: block; font-style: normal; font-size: 64px; margin-bottom: 12px; }
+.swipe { font-size: 34px; font-weight: 700; color: var(--pine); margin-top: 64px; }
+.tree { position: absolute; right: 70px; top: 90px; font-size: 150px; transform: rotate(8deg); }
+</style>
+</head>
+<body>
+
+<section class="slide pine" data-n="1">
+  <div class="tree">🎄</div>
+  <div class="kicker" style="color:#f0b597">Garde alternée</div>
+  <h1 class="serif">Noël 2026 :<br>qui a <em>les enfants&nbsp;?</em></h1>
+  <p style="margin-top:48px">Dates, règle des années paires et impaires, réveillon et Nouvel An.</p>
+  <div class="swipe" style="color:#f0b597">Fais défiler →</div>
+  <div class="foot"><span class="wm">Altern<span>ly</span></span><span>1 / 8</span></div>
+</section>
+
+<section class="slide" data-n="2">
+  <div class="kicker">Les dates officielles</div>
+  <h2 class="serif">Les mêmes dans <em>les 3 zones</em></h2>
+  <div class="dates">
+    <div class="card"><small>Début</small><strong>19 déc.</strong><span>samedi · 2026</span></div>
+    <div class="card"><small>Reprise</small><strong>4 janv.</strong><span>lundi · 2027</span></div>
+  </div>
+  <p>Zones A, B et C partent et rentrent en même temps à Noël. Pas de casse-tête de zone cette fois.</p>
+  <div class="foot"><span class="wm">Altern<span>ly</span></span><span>2 / 8</span></div>
+</section>
+
+<section class="slide" data-n="3">
+  <div class="kicker">La règle la plus courante</div>
+  <h2 class="serif">La moitié des vacances, <em>années paires / impaires</em></h2>
+  <div class="card" style="font-size:38px;line-height:1.45;font-family:'Fraunces',serif;font-style:italic;color:var(--ink)">
+    « La première moitié des vacances les années paires, la seconde moitié les années impaires. »
+  </div>
+  <p style="margin-top:40px">Un parent a cette phrase dans son jugement, l'autre a l'inverse.</p>
+  <div class="foot"><span class="wm">Altern<span>ly</span></span><span>3 / 8</span></div>
+</section>
+
+<section class="slide" data-n="4">
+  <div class="badge">2026 = année paire</div>
+  <h2 class="serif">Le parent « années paires » a <em>Noël</em> 🎅</h2>
+  <div class="split dim">
+    <div class="a">1re moitié<big>19 → 26 déc.</big></div>
+    <div class="b">2e moitié<big>27 déc. → 3 janv.</big></div>
+  </div>
+  <p>C'est l'année de <b>début</b> des vacances qui compte : elles commencent en 2026, donc année paire. Sauf si ton jugement dit autre chose.</p>
+  <div class="foot"><span class="wm">Altern<span>ly</span></span><span>4 / 8</span></div>
+</section>
+
+<section class="slide" data-n="5">
+  <div class="kicker">Et l'autre parent ?</div>
+  <h2 class="serif">Il a la 2e moitié… donc <em>le Nouvel An</em> 🥂</h2>
+  <div class="split dim2">
+    <div class="a">1re moitié<big>19 → 26 déc.</big></div>
+    <div class="b">2e moitié<big>27 déc. → 3 janv.</big></div>
+  </div>
+  <p>En 2027 (impaire), on inverse : Noël change de maison chaque année.</p>
+  <div class="foot"><span class="wm">Altern<span>ly</span></span><span>5 / 8</span></div>
+</section>
+
+<section class="slide" data-n="6">
+  <div class="kicker">La question piège</div>
+  <h2 class="serif">Et le <em>24 au soir</em>&nbsp;?</h2>
+  <p>Ça dépend de votre jugement. La règle de la moitié ne dit rien du réveillon.</p>
+  <p>Certaines familles coupent le <b>25 à midi</b>, d'autres alternent le réveillon et le jour de Noël, d'autres le fêtent ensemble.</p>
+  <p>Ce qui compte : <b>l'écrire</b>, pour ne pas renégocier chaque année.</p>
+  <div class="foot"><span class="wm">Altern<span>ly</span></span><span>6 / 8</span></div>
+</section>
+
+<section class="slide" data-n="7">
+  <div class="kicker">Notre conseil</div>
+  <h2 class="serif">Vérifie <em>maintenant</em>,<br>pas le 18 décembre</h2>
+  <p>✓ Relis la phrase exacte de ton jugement</p>
+  <p>✓ Fixe l'heure et le lieu du passage de bras</p>
+  <p>✓ Envoie les dates à l'autre parent par écrit</p>
+  <p>✓ Prévois les cadeaux et le trajet de chaque côté</p>
+  <div class="foot"><span class="wm">Altern<span>ly</span></span><span>7 / 8</span></div>
+</section>
+
+<section class="slide pine" data-n="8">
+  <h2 class="serif" style="margin-bottom:28px">Et chez vous, <em>comment ça se passe&nbsp;?</em></h2>
+  <p>Réponds avec un emoji en commentaire 👇</p>
+  <div class="cta">
+    <div><i>🎅</i>On alterne chaque année</div>
+    <div><i>🥂</i>On coupe le 25 à midi</div>
+    <div><i>🏠</i>On le fête ensemble</div>
+  </div>
+  <p style="margin-top:56px">📌 <b>Enregistre</b> ce post et <b>envoie-le</b> à l'autre parent.</p>
+  <div class="foot"><span class="wm">Altern<span>ly</span></span><span>Guide complet : lien en bio</span></div>
+</section>
+
+<script>
+  const n = new URLSearchParams(location.search).get('s') || '1';
+  document.querySelector(`.slide[data-n="${n}"]`).classList.add('on');
+</script>
+</body>
+</html>

@@ -1,0 +1,30 @@
+id: 2026-11-06-soir-sms-cantine
+format: reel
+creneau: 2026-11-06 20:30
+pilier: produit
+source: veille:lamagiedetonex + content/blog/pension-alimentaire-frais-partages-garde-alternee.md
+statut: a-relire
+son: son tendance ironique
+hashtags: argent
+couverture_ms: 1500
+scenes:
+  - { layout: hook, emoji: "💸", texte: "« Tu me dois *37 €* de cantine »", sous: "Le SMS qui ruine un vendredi soir.", duree: 2800 }
+  - layout: sms
+    contact: L'autre parent
+    duree: 5600
+    messages:
+      - { de: ex, texte: "Tu me dois 37 € de cantine" }
+      - { de: moi, texte: "Et les 60 € de lunettes du mois dernier ?" }
+      - { de: ex, texte: "J'ai payé le foot donc on est quittes" }
+      - { de: moi, texte: "Non mais attends…" }
+  - { layout: texte, kicker: "Le problème", titre: "Personne ne sait *qui a payé quoi*", texte: "Alors chaque dépense devient une dispute.", duree: 3000 }
+  - { layout: liste, titre: "Ce qui marche", items: ["Une seule liste des dépenses, partagée", "Le ticket ou la facture à chaque fois", "Le solde visible par les deux"], duree: 4400 }
+  - { layout: cta, titre: "Fini les comptes *par SMS*", texte: "Dans Alternly, les dépenses partagées se suivent au même endroit. Lien en bio.", duree: 3400 }
+legende: |
+  « Tu me dois 37 € de cantine. » « Et mes lunettes alors ? » 💸
+
+  Les comptes par SMS finissent toujours en « on est quittes » qui ne convainc personne. Ce qui apaise : une seule liste partagée, avec le ticket à chaque fois, et un solde que les deux voient.
+
+  C'est quelle dépense qui crée le plus de débats chez vous ? 👇
+
+  Dans Alternly, les dépenses partagées se suivent au même endroit que le calendrier. Gratuit pour commencer, lien en bio.

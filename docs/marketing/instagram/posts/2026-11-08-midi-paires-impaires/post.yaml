@@ -1,0 +1,23 @@
+id: 2026-11-08-midi-paires-impaires
+format: carrousel
+creneau: 2026-11-08 12:00
+pilier: vacances
+source: content/blog/partage-vacances-scolaires-annees-paires-impaires.md
+statut: a-relire
+hashtags: vacances
+slides:
+  - { layout: couverture, kicker: Vacances scolaires, emoji: "🧮", titre: "Années paires / impaires : *enfin compris*", sous: "La phrase de votre jugement, expliquée simplement." }
+  - { layout: citation, kicker: La formule la plus courante, citation: "« Le père a la première moitié des vacances les années paires, la mère la seconde, et inversement les années impaires. »", texte: "Le but : que personne ne garde pour toujours le premier départ ou le réveillon." }
+  - { layout: cartes, kicker: Comment ça tourne, titre: "Ça s'inverse *chaque année*", cartes: [{ label: "2026 · paire", valeur: Parent A, sous: 1re moitié }, { label: "2027 · impaire", valeur: Parent B, sous: 1re moitié }], texte: "Le parent A est celui que votre jugement désigne pour la 1re moitié les années paires." }
+  - { layout: texte, kicker: Couper en deux, titre: "Le départ, c'est *le samedi*", paragraphes: ["Les vacances commencent après la classe, en général le samedi. C'est lui qui ouvre la 1re moitié.", "Durée impaire ? L'usage rattache le jour en plus à la 1re moitié (sauf mention contraire)."] }
+  - { layout: texte, kicker: Le piège, titre: "Noël, *à cheval* sur deux années", paragraphes: ["La règle admise : **c'est l'année du début des vacances qui compte**.", "Noël 2026 commence en décembre 2026 → année paire."] }
+  - { layout: liste, kicker: Pour ne plus se tromper, titre: "3 réflexes", items: ["Relire la phrase exacte du jugement", "Noter l'heure du passage au milieu des vacances", "Mettre les dates dans un calendrier partagé"] }
+  - { layout: cta, titre: "Cette année, tu as *la 1re ou la 2e moitié* ?", texte: "Réponds 1 ou 2 👇", bas: "📌 **Enregistre** : tu en auras besoin à chaque vacances." }
+legende: |
+  Années paires et impaires en garde alternée : enfin compris 🧮
+
+  « La première moitié des vacances les années paires… » C'est la formule la plus courante des jugements, et la première source de malentendus. L'astuce pour Noël : c'est l'année du début des vacances qui compte.
+
+  Cette année, tu as la 1re ou la 2e moitié ? Réponds 1 ou 2 👇
+
+  📌 Enregistre, tu en auras besoin à chaque vacances. Notre outil gratuit calcule les dates pour vous : lien en bio.

@@ -1,0 +1,24 @@
+id: 2026-11-05-soir-noel-10-secondes
+format: reel
+creneau: 2026-11-05 20:30
+pilier: vacances
+source: content/blog/vacances-noel-2026-garde-alternee.md
+statut: a-relire
+son: son de Noël tendance (bibliothèque Meta)
+hashtags: vacances
+hashtags_extra: ['#noel2026', '#vacancesdenoel']
+couverture_ms: 1500
+scenes:
+  - { layout: hook, emoji: "🎄", texte: "Noël 2026 en garde alternée : *qui a les enfants* ?", sous: "Réponse en 15 secondes.", duree: 2800 }
+  - { layout: texte, kicker: Vacances de Noël, titre: "Du *19 décembre* au *3 janvier*", texte: "Toutes zones. Reprise le lundi 4 janvier.", duree: 3000 }
+  - { layout: texte, kicker: "2026 = année paire", titre: "Le parent « 1re moitié les années paires » a *Noël* 🎅", texte: "Du 19 au 26 décembre.", duree: 3400 }
+  - { layout: texte, kicker: L'autre parent, titre: "Il a *le Nouvel An* 🥂", texte: "Du 27 décembre au 3 janvier. Passage de bras le dimanche 27.", duree: 3400 }
+  - { layout: cta, titre: "Envoie-le *à l'autre parent*", texte: "Avec la règle classique. Vérifiez votre jugement !", duree: 3000 }
+legende: |
+  Noël 2026 : qui a les enfants en garde alternée ? 🎄 Réponse en 15 secondes.
+
+  Avec la règle classique (la moitié des vacances, années paires / impaires) : 1re moitié du 19 au 26 décembre, 2e moitié du 27 décembre au 3 janvier. En 2027, on inverse.
+
+  Cette année, tu as Noël 🎅 ou le Nouvel An 🥂 ? Réponds avec l'emoji 👇
+
+  Envoie-le à l'autre parent pour vous mettre d'accord dès maintenant.

@@ -1,0 +1,8 @@
+# Blocs de hashtags (référencés par `hashtags:` dans post.yaml ; #alternly est ajouté d'office).
+# Mis à jour par la veille hebdomadaire.
+organisation: ['#gardealternee', '#coparentalite', '#coparenting', '#coparent', '#residencealternee', '#parentsseparés', '#organisationfamiliale', '#chargementale', '#deuxmaisons', '#parentalite']
+vecu: ['#coparentalite', '#coparenting', '#separation', '#divorce', '#mamansolo', '#papasolo', '#parentsolo', '#apresladivorce', '#coparentalitébienveillante', '#parentalite']
+vacances: ['#gardealternee', '#vacancesscolaires', '#calendrierscolaire', '#coparentalite', '#coparenting', '#parentsseparés', '#residencealternee', '#zoneA', '#zoneB', '#zoneC']
+communication: ['#coparentalite', '#coparenting', '#communicationbienveillante', '#communicationnonviolente', '#gestiondesconflits', '#separation', '#parentsseparés', '#gardealternee', '#parentalite']
+argent: ['#pensionalimentaire', '#gardealternee', '#coparentalite', '#coparenting', '#budgetfamille', '#fraisdesenfants', '#parentsseparés', '#separation', '#divorce']
+juridique: ['#conventionparentale', '#jaf', '#droitdelafamille', '#gardealternee', '#residencealternee', '#coparentalite', '#coparenting', '#separation', '#divorce']

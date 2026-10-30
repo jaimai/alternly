@@ -1,0 +1,23 @@
+id: 2026-11-04-soir-sac-du-dimanche
+format: reel
+creneau: 2026-11-04 20:30
+pilier: organisation
+source: content/blog/passage-de-bras-transition-deux-maisons.md
+statut: a-relire
+son: son tendance comique / « inventaire »
+hashtags: organisation
+couverture_ms: 1400
+scenes:
+  - { layout: hook, emoji: "🎒", texte: "Ce qu'il y a *vraiment* dans le sac du passage de bras", duree: 2600 }
+  - { layout: liste, titre: "L'inventaire officiel", items: ["Le doudou (critique ⚠️)", "Le cahier de liaison", "Le traitement + l'ordonnance", "Une chaussette. Une seule.", "3 cailloux « très importants »"], duree: 6000 }
+  - { layout: texte, kicker: "L'astuce", titre: "Des *doublons* dans chaque maison", texte: "Brosse à dents, pyjama, chargeur, tenue de sport. Le sac s'allège, les oublis aussi.", duree: 3600 }
+  - { layout: texte, kicker: "Ce qui voyage vraiment", titre: "Doudou, cahiers, *traitements*, objets du cœur", duree: 3000 }
+  - { layout: cta, titre: "Il y a quoi *dans le tien* ?", texte: "Dis-le en commentaire 👇", duree: 2800 }
+legende: |
+  Le sac du dimanche soir, ce grand mystère 🎒😅
+
+  Doudou, cahier, médicaments… et toujours une chaussette orpheline. L'astuce qui change tout : des doublons dans chaque maison (brosse à dents, pyjama, chargeur). Le sac ne transporte plus que l'essentiel.
+
+  Et toi, c'est quoi l'objet le plus improbable que tu as retrouvé dans le sac ? 👇
+
+  📌 Enregistre avant le prochain passage de bras.

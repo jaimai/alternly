@@ -1,0 +1,23 @@
+id: 2026-11-07-midi-frais
+format: carrousel
+creneau: 2026-11-07 12:00
+pilier: argent
+source: content/blog/pension-alimentaire-frais-partages-garde-alternee.md
+statut: a-relire
+hashtags: argent
+slides:
+  - { layout: couverture, kicker: Garde alternée, emoji: "🧾", titre: "Qui paie quoi ? *Frais ordinaires vs exceptionnels*", sous: "La distinction qui évite la moitié des disputes." }
+  - { layout: texte, kicker: "Frais ordinaires", titre: "Le *quotidien*", paragraphes: ["Nourriture, vêtements du quotidien, petites fournitures, loisirs courants.", "→ Chaque parent pendant sa période (ou couverts par la pension)."] }
+  - { layout: texte, kicker: "Frais scolaires", titre: "L'école, *la cantine*", paragraphes: ["Cantine, garderie, fournitures de rentrée, assurance scolaire.", "→ Souvent partagés, parfois au prorata des revenus."] }
+  - { layout: texte, kicker: "Santé non remboursée", titre: "Lunettes, *orthodontie*…", paragraphes: ["Orthodontie, lunettes, psychologue, dépassements.", "→ Partagés sur justificatif, après remboursements."] }
+  - { layout: texte, kicker: "Frais exceptionnels", titre: "Les *grosses* dépenses", paragraphes: ["Voyage scolaire, permis, séjour linguistique, ordinateur.", "→ Partagés après **accord préalable écrit**."] }
+  - { layout: liste, kicker: La règle d'or, titre: "Écrivez-le *une fois*", items: ["Quels frais sont partagés, et à quel pourcentage", "Comment on se met d'accord avant une dépense", "Comment et quand on se rembourse"], paragraphes: ["Ce que dit votre jugement ou votre convention prime toujours."] }
+  - { layout: cta, titre: "La dépense qui crée *le plus de débats* ?", texte: "Dis-le en commentaire 👇", options: [{ emoji: "🍽️", label: Cantine }, { emoji: "👓", label: Santé }, { emoji: "⚽", label: Activités }] }
+legende: |
+  Garde alternée : qui paie quoi ? 🧾
+
+  Frais ordinaires, scolaires, santé non remboursée, exceptionnels : chaque catégorie a sa règle habituelle. Les disputes viennent presque toujours d'une catégorie qui n'a jamais été écrite noir sur blanc.
+
+  Chez vous, la dépense qui crée le plus de débats : 🍽️ cantine, 👓 santé ou ⚽ activités ? 👇
+
+  📌 Enregistre pour la prochaine discussion « argent ». Le guide complet est en lien en bio.

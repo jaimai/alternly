@@ -2722,3 +2722,6 @@ button.journal-link { background: none; color: var(--pine); padding: 4px 8px; fo
 .tag.pension-upcoming { background: var(--paper-deep); color: var(--ink-soft); }
 .pension-result { border-top: 1px solid var(--line); margin-top: 12px; padding-top: 4px; }
 .back-link { color: var(--ink-soft); text-decoration: none; font-size: 0.9rem; }
+
+/* Inscription : pas de « tirer pour rafraîchir » sur mobile (Onboarding) */
+html.no-pull-refresh, html.no-pull-refresh body { overscroll-behavior-y: none; }
