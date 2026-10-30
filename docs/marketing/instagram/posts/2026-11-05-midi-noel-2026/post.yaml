@@ -1,0 +1,30 @@
+id: 2026-11-05-midi-noel-2026
+format: carrousel
+creneau: 2026-11-05 12:00
+pilier: vacances
+source: content/blog/vacances-noel-2026-garde-alternee.md
+statut: a-relire
+hashtags: vacances
+hashtags_extra: ['#noel2026', '#vacancesdenoel']
+note: reprend le carrousel docs/marketing/reseaux-sociaux/carrousel-noel-2026 dans le nouveau gabarit
+slides:
+  - { layout: couverture, kicker: Garde alternée, emoji: "🎄", titre: "Noël 2026 : qui a *les enfants* ?", sous: "Dates, règle des années paires et impaires, réveillon et Nouvel An." }
+  - { layout: cartes, kicker: Les dates officielles, titre: "Les mêmes dans *les 3 zones*", cartes: [{ label: Début, valeur: 19 déc., sous: samedi · 2026 }, { label: Reprise, valeur: 4 janv., sous: lundi · 2027 }], texte: "Zones A, B et C partent et rentrent en même temps à Noël." }
+  - { layout: citation, kicker: La règle la plus courante, citation: "« La première moitié des vacances les années paires, la seconde moitié les années impaires. »", texte: "Un parent a cette phrase dans son jugement, l'autre a l'inverse." }
+  - { layout: cartes, kicker: "2026 = année paire", titre: "Le parent « années paires » a *Noël* 🎅", cartes: [{ label: 1re moitié, valeur: "19 → 26 déc.", sous: Noël }, { label: 2e moitié, valeur: "27 déc. → 3 janv.", sous: Nouvel An }], texte: "C'est l'année de **début** des vacances qui compte. Sauf si ton jugement dit autre chose." }
+  - { layout: texte, kicker: Et en 2027 ?, titre: "On inverse : *Noël change de maison* chaque année", paragraphes: ["Passage de bras le dimanche 27 décembre dans la règle de la moitié."] }
+  - { layout: texte, kicker: La question piège, titre: "Et le *24 au soir* ?", paragraphes: ["La règle de la moitié ne dit rien du réveillon.", "Certaines familles coupent le **25 à midi**, d'autres alternent réveillon et jour de Noël.", "Ce qui compte : **l'écrire**, pour ne pas renégocier chaque année."] }
+  - { layout: liste, kicker: Notre conseil, titre: "Vérifie *maintenant*, pas le 18 décembre", items: ["Relis la phrase exacte de ton jugement", "Fixe l'heure et le lieu du passage de bras", "Envoie les dates à l'autre parent par écrit", "Prévois cadeaux et trajets de chaque côté"] }
+  - { layout: cta, titre: "Et chez vous, *comment ça se passe* ?", texte: "Réponds avec un emoji 👇", options: [{ emoji: "🎅", label: On alterne chaque année }, { emoji: "🥂", label: On coupe le 25 à midi }, { emoji: "🏠", label: On le fête ensemble }], bas: "📌 **Enregistre** ce post et **envoie-le** à l'autre parent.", pied: "Guide complet : lien en bio" }
+legende: |
+  Noël 2026 en garde alternée : qui a les enfants ? 🎄
+
+  Vacances de Noël du 19 décembre 2026 au 4 janvier 2027, toutes zones. Avec la règle classique « la moitié des vacances, années paires / impaires », le parent qui a la 1re moitié les années paires passe Noël avec les enfants (19 → 26 décembre). L'autre a le Nouvel An.
+
+  Et chez vous, comment vous faites ?
+  🎅 On alterne chaque année
+  🥂 On coupe le 25 à midi
+  🏠 On le fête ensemble
+  Réponds avec l'emoji 👇
+
+  📌 Enregistre pour ne pas te tromper de dates. Le guide complet (avec checklist) est en lien en bio.

@@ -1,0 +1,24 @@
+id: 2026-11-04-midi-enfants-aimeraient-dire
+format: carrousel
+creneau: 2026-11-04 12:00
+pilier: emotion
+source: veille (format citation)
+statut: a-relire
+hashtags: vecu
+slides:
+  - { layout: couverture, kicker: Parents séparés, emoji: "💛", titre: "Ce que les enfants *aimeraient vous dire*", sous: "Et qu'ils n'osent pas toujours." }
+  - { layout: citation, citation: "« Je n'ai pas à choisir entre vous deux. »", texte: "Ni une maison préférée, ni un parent préféré." }
+  - { layout: citation, citation: "« Ne me demandez pas ce qui se passe chez l'autre. »", texte: "Je ne suis pas un espion, ni un facteur." }
+  - { layout: citation, citation: "« Mon doudou doit pouvoir voyager. »", texte: "Mes affaires importantes vont avec moi." }
+  - { layout: citation, citation: "« Quand vous vous disputez, j'ai l'impression que c'est de ma faute. »", texte: "Même si vous me dites le contraire." }
+  - { layout: citation, citation: "« J'ai le droit d'être triste en partant, et content en arrivant. »", texte: "Les deux en même temps." }
+  - { layout: citation, citation: "« J'aime mes deux maisons. »", texte: "Et c'est une bonne nouvelle." }
+  - { layout: cta, titre: "Laquelle *te touche* le plus ?", texte: "Réponds avec le numéro de la slide 👇", bas: "💛 **Partage** à un parent qui a besoin de l'entendre aujourd'hui." }
+legende: |
+  Ce que les enfants de parents séparés aimeraient vous dire 💛
+
+  Ils le disent rarement avec des mots. Mais on le voit dans un sac qu'ils ne veulent pas défaire, une question qu'ils évitent, un silence au moment du passage de bras.
+
+  Laquelle te touche le plus ? Réponds avec le numéro de la slide 👇
+
+  Partage à un parent qui a besoin de l'entendre aujourd'hui.
