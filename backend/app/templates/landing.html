@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_icons.html" import icon %}
 {% block title %}Alternly — Le calendrier de garde alternée pensé pour la France{% endblock %}
 {% block description %}Alternly transforme votre accord de garde en calendrier clair et partagé : rythmes de garde, vacances scolaires A/B/C, années paires/impaires, échanges de jours, dépenses partagées et mur de communication. Le calendrier est gratuit ; premium à 69 € par an et par foyer.{% endblock %}
 {% block head %}
@@ -57,9 +58,9 @@
         <span class="hint">Calendrier gratuit · sans carte bancaire</span>
       </div>
       <ul class="trust reveal d4">
-        <li>🇫🇷 Vacances scolaires officielles A/B/C</li>
-        <li>🔁 Années paires / impaires automatiques</li>
-        <li>🇪🇺 Données hébergées en Europe</li>
+        <li>{{ icon("school", 16) }} Vacances scolaires officielles A/B/C</li>
+        <li>{{ icon("repeat", 16) }} Années paires / impaires automatiques</li>
+        <li>{{ icon("shield", 16) }} Données hébergées en Europe</li>
       </ul>
     </div>
     <div class="hero-visual reveal d2" aria-hidden="true">
@@ -76,10 +77,10 @@
         <div class="cal-legend">
           <span><i class="dot p1"></i>Camille</span>
           <span><i class="dot p2"></i>Dominique</span>
-          <span class="vac-tag">🏖️ Vacances d'hiver — 1<sup>re</sup> moitié : Camille</span>
+          <span class="vac-tag">{{ icon("sun", 13) }} Vacances d'hiver — 1<sup>re</sup> moitié : Camille</span>
         </div>
       </div>
-      <div class="float-note">↔️ Mercredi 3 échangé — accepté</div>
+      <div class="float-note">{{ icon("swap", 14) }} Mercredi 3 échangé — accepté</div>
     </div>
   </div>
 </section>
@@ -89,17 +90,17 @@
     <h2>Le planning de garde, sans les disputes de planning</h2>
     <div class="cards3">
       <article>
-        <h3>📅 Le rythme, posé une fois pour toutes</h3>
+        <h3>{{ icon("calendar", 22, "h3-icon") }}Le rythme, posé une fois pour toutes</h3>
         <p>Semaine/semaine, 2-2-3, un week-end sur deux ou votre rythme à vous :
         Alternly génère le calendrier sur plusieurs années, jour de passage compris.</p>
       </article>
       <article>
-        <h3>🏖️ Les vacances, enfin limpides</h3>
+        <h3>{{ icon("sun", 22, "h3-icon") }}Les vacances, enfin limpides</h3>
         <p>Dates officielles de votre zone, partage par moitié ou alternance complète,
         inversion automatique années paires/impaires. Noël alterné compris.</p>
       </article>
       <article>
-        <h3>🤝 Le même calendrier pour les deux foyers</h3>
+        <h3>{{ icon("users", 22, "h3-icon") }}Le même calendrier pour les deux foyers</h3>
         <p>Chaque parent voit la même chose, reçoit une notification à chaque changement,
         et garde une trace des échanges de jours. Neutre, factuel, apaisé.</p>
       </article>
@@ -113,7 +114,7 @@
     <h2 class="center">Bien plus qu'un calendrier</h2>
     <div class="feature-rows">
       <article class="feature-row">
-        <div class="feature-icon">↔️</div>
+        <div class="feature-icon">{{ icon("swap", 22) }}</div>
         <div>
           <h3>Échanges de jours, proposés et acceptés</h3>
           <p>Besoin d'un mercredi&nbsp;? Proposez l'échange en deux clics. L'autre parent
@@ -122,7 +123,7 @@
         </div>
       </article>
       <article class="feature-row">
-        <div class="feature-icon">💶</div>
+        <div class="feature-icon">{{ icon("wallet", 22) }}</div>
         <div>
           <h3>Dépenses partagées &amp; solde clair</h3>
           <p>Cantine, lunettes, foot… chacun note ce qu'il a payé. Alternly calcule qui doit
@@ -131,7 +132,7 @@
         </div>
       </article>
       <article class="feature-row">
-        <div class="feature-icon">📝</div>
+        <div class="feature-icon">{{ icon("message", 22) }}</div>
         <div>
           <h3>Mur de communication</h3>
           <p>Les devoirs à rendre, les démarches d'école, une question à l'autre parent&nbsp;:
@@ -140,7 +141,7 @@
         </div>
       </article>
       <article class="feature-row">
-        <div class="feature-icon">🔔</div>
+        <div class="feature-icon">{{ icon("bell", 22) }}</div>
         <div>
           <h3>Notifications &amp; synchronisation</h3>
           <p>Un e-mail dès qu'une proposition d'échange arrive, un rappel avant échéance,

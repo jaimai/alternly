@@ -1,4 +1,5 @@
 {% extends "base_en.html" %}
+{% from "_icons.html" import icon %}
 {% block title %}Alternly — The shared-custody calendar built for co-parents{% endblock %}
 {% block description %}Alternly turns your parenting plan into a clear, shared custody calendar: parenting-time schedules, school breaks and vacation splits, major holidays that alternate by even/odd year, day swaps, shared expenses and a message board. The calendar is free; premium is $79/year per household.{% endblock %}
 {% block head %}
@@ -58,9 +59,9 @@
         <span class="hint">Free calendar · no credit card</span>
       </div>
       <ul class="trust reveal d4">
-        <li>🎒 Your district's school breaks &amp; vacation splits</li>
-        <li>🔁 Holidays that alternate by even/odd year</li>
-        <li>🇺🇸 Federal holidays shown automatically</li>
+        <li>{{ icon("school", 16) }} Your district's school breaks &amp; vacation splits</li>
+        <li>{{ icon("repeat", 16) }} Holidays that alternate by even/odd year</li>
+        <li>{{ icon("calendar", 16) }} Federal holidays shown automatically</li>
       </ul>
     </div>
     <div class="hero-visual reveal d2" aria-hidden="true">
@@ -77,10 +78,10 @@
         <div class="cal-legend">
           <span><i class="dot p1"></i>Alex</span>
           <span><i class="dot p2"></i>Jordan</span>
-          <span class="vac-tag">🏖️ Spring break — 1<sup>st</sup> half: Alex</span>
+          <span class="vac-tag">{{ icon("sun", 13) }} Spring break — 1<sup>st</sup> half: Alex</span>
         </div>
       </div>
-      <div class="float-note">↔️ Wednesday the 3rd swapped — accepted</div>
+      <div class="float-note">{{ icon("swap", 14) }} Wednesday the 3rd swapped — accepted</div>
     </div>
   </div>
 </section>
@@ -90,17 +91,17 @@
     <h2>The custody schedule, without the scheduling fights</h2>
     <div class="cards3">
       <article>
-        <h3>📅 The routine, set once and for all</h3>
+        <h3>{{ icon("calendar", 22, "h3-icon") }}The routine, set once and for all</h3>
         <p>Week-on/week-off, 2-2-3, every other weekend or your own rhythm:
         Alternly builds the calendar years out, handoff day included.</p>
       </article>
       <article>
-        <h3>🏖️ School breaks, finally clear</h3>
+        <h3>{{ icon("sun", 22, "h3-icon") }}School breaks, finally clear</h3>
         <p>Add your district's breaks, split each one in half or alternate it in full,
         with an automatic flip between even and odd years. Christmas break included.</p>
       </article>
       <article>
-        <h3>🤝 One calendar for both households</h3>
+        <h3>{{ icon("users", 22, "h3-icon") }}One calendar for both households</h3>
         <p>Each parent sees the same thing, gets a notification on every change,
         and keeps a record of day swaps. Neutral, factual, calmer.</p>
       </article>
@@ -114,7 +115,7 @@
     <h2 class="center">Much more than a calendar</h2>
     <div class="feature-rows">
       <article class="feature-row">
-        <div class="feature-icon">↔️</div>
+        <div class="feature-icon">{{ icon("swap", 22) }}</div>
         <div>
           <h3>Day swaps, proposed and accepted</h3>
           <p>Need to trade a Wednesday? Propose the swap in two clicks. Your co-parent
@@ -123,7 +124,7 @@
         </div>
       </article>
       <article class="feature-row">
-        <div class="feature-icon">💵</div>
+        <div class="feature-icon">{{ icon("wallet", 22) }}</div>
         <div>
           <h3>Shared expenses &amp; a clear balance</h3>
           <p>Medical bills, glasses, soccer… each parent logs what they paid. Alternly
@@ -132,7 +133,7 @@
         </div>
       </article>
       <article class="feature-row">
-        <div class="feature-icon">📝</div>
+        <div class="feature-icon">{{ icon("message", 22) }}</div>
         <div>
           <h3>Message board</h3>
           <p>Homework due, school paperwork, a question for your co-parent:
@@ -141,7 +142,7 @@
         </div>
       </article>
       <article class="feature-row">
-        <div class="feature-icon">🔔</div>
+        <div class="feature-icon">{{ icon("bell", 22) }}</div>
         <div>
           <h3>Reminders &amp; calendar sync</h3>
           <p>An email the moment a swap request arrives, a reminder before a due date,
