@@ -13,7 +13,7 @@ from ..legal import PAGES as LEGAL_PAGES
 from ..legal import PAGES_EN as LEGAL_PAGES_EN
 from ..legal import UPDATED as LEGAL_UPDATED
 from ..legal import UPDATED_EN as LEGAL_UPDATED_EN
-from ..marketing_pages import FEATURE_PAGES, PRICING_FAQ
+from ..marketing_pages import FEATURE_PAGES, PRICING_FAQ, PRICING_FAQ_EN
 from ..ratelimit import MINUTE, rate_limit
 from ..services import billing as billing_service
 from ..services import vacation_tool
@@ -35,7 +35,8 @@ templates.env.globals["billing_plans"] = billing_service.plans
 # Un hreflang vers l'accueil depuis un article le déclarerait à tort « traduction ».
 HREFLANG_PAIRS = {
     path: pair
-    for pair in [("/", "/en")] + [(f"/{s}", f"/en/{s}") for s in ("terms", "privacy", "refund")]
+    for pair in [("/", "/en"), ("/tarifs", "/en/pricing")]
+    + [(f"/{s}", f"/en/{s}") for s in ("terms", "privacy", "refund")]
     for path in pair
 }
 templates.env.globals["hreflang_pairs"] = HREFLANG_PAIRS
@@ -440,6 +441,11 @@ def pricing_page(request: Request):
     return templates.TemplateResponse(request, "tarifs.html", {"faq": PRICING_FAQ})
 
 
+@router.get("/en/pricing", response_class=HTMLResponse, include_in_schema=False)
+def pricing_page_en(request: Request):
+    return templates.TemplateResponse(request, "tarifs_en.html", {"faq": PRICING_FAQ_EN})
+
+
 # Crawlers de moteurs de réponse IA : on les autorise explicitement (visibilité AEO).
 _AI_AGENTS = [
     "GPTBot", "OAI-SearchBot", "ChatGPT-User", "PerplexityBot", "Perplexity-User",
@@ -498,7 +504,8 @@ def sitemap(request: Request):
     base = site_base(request)
     entries = [(f"{base}/", None, "1.0"), (f"{base}/en", None, "0.9"), (f"{base}/blog", None, "0.7"),
                (f"{base}{TOOL_PATH}", None, "0.8"), (f"{base}{NOEL_PATH}", None, "0.8"),
-               (f"{base}{PENSION_TOOL_PATH}", None, "0.8"), (f"{base}/tarifs", None, "0.7")]
+               (f"{base}{PENSION_TOOL_PATH}", None, "0.8"), (f"{base}/tarifs", None, "0.7"),
+               (f"{base}/en/pricing", None, "0.6")]
     entries += [(f"{base}{p['path']}", None, "0.7") for p in FEATURE_PAGES.values()]
     for a in load_articles():
         entries.append((f"{base}/blog/{a.slug}", a.date.isoformat(), "0.6"))

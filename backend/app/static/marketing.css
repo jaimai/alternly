@@ -819,3 +819,97 @@ h2 { font-size: clamp(1.6rem, 3.2vw, 2.3rem); }
   .cards2, .compare-grid { grid-template-columns: 1fr; }
   .page-hero { padding: 48px 0 44px; }
 }
+
+/* ---------- tarifs : cartes (landings) ---------- */
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.plans { padding: 80px 0; }
+.plans-head { text-align: center; }
+.plans-head h2 { margin: 0 0 10px; }
+.plans-sub { color: var(--ink-soft); margin: 0 auto 26px; max-width: 34em; text-align: center; }
+.plans-toggle {
+  display: inline-flex; gap: 4px; padding: 4px; margin-bottom: 32px;
+  background: var(--paper-deep); border: 1px solid var(--line); border-radius: 999px;
+}
+.plans-toggle input { position: absolute; opacity: 0; pointer-events: none; }
+.plans-toggle label {
+  padding: 8px 18px; border-radius: 999px; cursor: pointer;
+  font-weight: 600; font-size: 0.92rem; color: var(--ink-soft);
+}
+.plans-toggle label em { font-style: normal; color: var(--terra); font-size: 0.8rem; margin-left: 6px; }
+.plans-toggle input:checked + label { background: #fff; color: var(--ink); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08); }
+.plans-toggle input:focus-visible + label { outline: 2px solid var(--pine); outline-offset: 2px; }
+.plans .for-month { display: none; }
+.plans:has(#bill-month:checked) .for-month { display: block; }
+.plans:has(#bill-month:checked) .for-year { display: none; }
+.plans-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; max-width: 860px; margin: 0 auto; }
+.plan-card {
+  background: #fff; border: 1px solid var(--line); border-radius: 18px;
+  padding: 32px; display: flex; flex-direction: column;
+}
+.plan-card.pro { background: var(--night); color: var(--night-ink); border-color: var(--night); }
+.plan-name { font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
+.plan-pill { background: rgba(159, 208, 184, 0.18); color: var(--mint); border-radius: 999px; padding: 3px 10px; font-size: 0.75rem; }
+.plan-price { font-family: var(--font-display); font-size: 3.2rem; line-height: 1; margin: 18px 0 6px; }
+.plan-price small { font-family: var(--font-body); font-size: 1rem; opacity: 0.7; }
+.plan-note { font-size: 0.9rem; opacity: 0.78; min-height: 2.8em; margin: 0; }
+.plan-card ul { list-style: none; padding: 0; margin: 22px 0 28px; display: grid; gap: 11px; font-size: 0.95rem; flex: 1; align-content: start; }
+.plan-card li { display: flex; gap: 10px; align-items: flex-start; }
+.plan-card li .icon { flex: 0 0 auto; margin-top: 4px; color: var(--pine); }
+.plan-card.pro li .icon { color: var(--mint); }
+.plan-btn {
+  display: block; text-align: center; padding: 13px 18px; border-radius: 999px;
+  font-weight: 600; text-decoration: none; background: var(--paper-deep); color: var(--pine);
+  transition: transform 0.18s cubic-bezier(0.2, 0, 0, 1);
+}
+.plan-btn:hover { transform: translateY(-1px); }
+.plan-card.pro .plan-btn { background: var(--night-ink); color: var(--night); }
+.plan-fine { text-align: center; font-size: 0.82rem; opacity: 0.75; margin: 10px 0 0; }
+.plan-fine a { color: inherit; }
+
+/* ---------- tarifs : tableau comparatif (/tarifs, /en/pricing) ---------- */
+.plans-compare { padding: 72px 0 40px; }
+.plans-compare h2 { margin: 0 0 8px; }
+.plans-table-wrap { max-width: 860px; margin: 0 auto; }
+.plans-table {
+  width: 100%; border-collapse: separate; border-spacing: 0; background: #fff;
+  border: 1px solid var(--line); border-radius: 18px; overflow: hidden;
+}
+.plans-table th, .plans-table td { padding: 14px 20px; border-bottom: 1px solid var(--line); text-align: left; font-size: 0.95rem; }
+.plans-table tbody tr:last-child td { border-bottom: none; }
+.plans-table thead th { vertical-align: bottom; padding-top: 26px; padding-bottom: 20px; }
+.plans-table th.col { text-align: center; width: 26%; }
+.plans-table .plan-name { display: block; }
+.plans-table .amt { font-family: var(--font-display); font-size: 2.2rem; line-height: 1.1; display: block; margin: 6px 0 2px; }
+.plans-table .amt small { font-family: var(--font-body); font-size: 0.9rem; }
+.plans-table .per { color: var(--ink-soft); font-size: 0.82rem; display: block; font-weight: 400; }
+.plans-table .pro { background: #e9f1ec; }
+.plans-table thead th.pro { background: var(--night); color: var(--night-ink); }
+.plans-table thead th.pro .per { color: rgba(244, 239, 230, 0.75); }
+.plans-table .badge {
+  display: inline-block; background: var(--mint); color: var(--night); border-radius: 999px;
+  padding: 2px 9px; font-size: 0.72rem; font-weight: 700; margin-bottom: 6px;
+}
+.plans-table td.mark { text-align: center; }
+.plans-table td.mark .icon { color: var(--pine); }
+.plans-table .dash { color: #b8c2bc; }
+.plans-table .group td {
+  background: var(--paper-deep); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--ink-soft); font-weight: 600; padding: 9px 20px;
+}
+.plans-table .ctas td { padding: 20px; }
+.plans-table .plan-btn { display: inline-block; padding: 11px 20px; font-size: 0.9rem; }
+.plans-table .pro .plan-btn { background: var(--pine); color: #fff; }
+.plans-fine { font-size: 0.85rem; color: var(--ink-soft); margin-top: 14px; }
+
+@media (max-width: 760px) {
+  .plans-grid { grid-template-columns: 1fr; }
+  .plan-card { padding: 24px; }
+  .plans-table { table-layout: fixed; }
+  .plans-table th, .plans-table td { padding: 11px 10px; font-size: 0.88rem; }
+  .plans-table th.col { width: 27%; }
+  .plans-table .amt { font-size: 1.25rem; }
+  .plans-table .amt small { display: block; font-size: 0.7rem; }
+  .plans-table .per, .plans-table .plan-name { font-size: 0.75rem; }
+  .plans-table .badge { display: none; }
+  .plans-table .plan-btn { padding: 8px 10px; font-size: 0.8rem; }
+}

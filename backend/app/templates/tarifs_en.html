@@ -1,0 +1,68 @@
+{% extends "base_en.html" %}
+{% from "_icons.html" import icon %}
+{% block title %}Alternly pricing: free custody calendar, Premium $79 a year per household{% endblock %}
+{% block description %}The shared custody calendar is free. Premium (shared expenses, custody journal, child support tracking, message board, reminders, calendar sync) is $79 a year for the whole household — one parent pays.{% endblock %}
+{% block head %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {%- for q, a in faq %}
+    {"@type": "Question", "name": {{ q | tojson }}, "acceptedAnswer": {"@type": "Answer", "text": {{ a | tojson }}}}{{ "," if not loop.last }}
+    {%- endfor %}
+  ]
+}
+</script>
+{% endblock %}
+{% block content %}
+<section class="hero page-hero">
+  <div class="wrap">
+    <p class="eyebrow">Pricing</p>
+    <h1>One price per household,<br/><em>not per parent.</em></h1>
+    <p class="lede">The custody calendar is free, with no time limit. Premium is $79 a year for
+    the whole household: one parent pays, both get access.</p>
+  </div>
+</section>
+
+{% set pricing_lang = "en" %}{% include "_pricing_table.html" %}
+
+<section class="compare">
+  <div class="wrap narrow">
+    <h2 class="center">Why “per household” matters</h2>
+    <p class="center hint">Many co-parenting apps charge <strong>each parent</strong>: the cost doubles,
+    and if one parent refuses to pay, the tool is useless.</p>
+    <div class="compare-grid">
+      <div class="compare-card">
+        <h3>Per-parent subscription</h3>
+        <ul>
+          <li>Each parent pays for their own plan</li>
+          <li>Useless if your co-parent won't sign up</li>
+          <li>Often yearly billing only</li>
+        </ul>
+      </div>
+      <div class="compare-card featured">
+        <h3>Alternly</h3>
+        <ul>
+          <li>{{ icon("check", 16) }} Free calendar for both parents</li>
+          <li>{{ icon("check", 16) }} One subscription for the whole household</li>
+          <li>{{ icon("check", 16) }} Useful on your own: journal, expenses, child support</li>
+          <li>{{ icon("check", 16) }} Monthly or yearly, cancel anytime</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="faq">
+  <div class="wrap narrow">
+    <h2>Frequently asked questions</h2>
+    {%- for q, a in faq %}
+    <details>
+      <summary>{{ q }}</summary>
+      <p>{{ a }}</p>
+    </details>
+    {%- endfor %}
+  </div>
+</section>
+{% endblock %}

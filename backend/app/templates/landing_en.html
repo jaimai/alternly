@@ -166,55 +166,7 @@
   </div>
 </section>
 
-<section class="pricing" id="pricing">
-  <div class="wrap narrow">
-    <p class="eyebrow center">Pricing</p>
-    <h2 class="center">The calendar is free</h2>
-    <div class="price-grid">
-      <div class="price-card">
-        <h3>Free</h3>
-        <div class="price-head"><span class="price-amount">$0</span></div>
-        <ul class="price-list">
-          <li>Unlimited custody calendar, years in advance</li>
-          <li>School breaks &amp; holidays that alternate by even/odd year</li>
-          <li>Day swaps proposed / accepted</li>
-          <li>Invite your co-parent</li>
-        </ul>
-        <a class="cta big secondary-cta" href="/register?lang=en">Create my calendar</a>
-      </div>
-      <div class="price-card featured">
-        <span class="price-badge">Premium</span>
-        {%- set plans = billing_plans() %}
-        <div class="price-options">
-          <div class="price-option">
-            <span class="price-option-label">Yearly</span>
-            <span class="price-option-amount"><span class="price-amount">$79</span><span class="price-per">/ year</span></span>
-            {%- if plans.annual.trial_days %}
-            <span class="price-option-note strong">{{ plans.annual.trial_days }}-day free trial</span>
-            {%- else %}
-            <span class="price-option-note">just $6.58 / month</span>
-            {%- endif %}
-          </div>
-          <div class="price-option">
-            <span class="price-option-label">Monthly</span>
-            <span class="price-option-amount"><span class="price-amount">$8.99</span><span class="price-per">/ month</span></span>
-            <span class="price-option-note">no commitment</span>
-          </div>
-        </div>
-        <p class="price-trial">Per household · one parent pays, both get access</p>
-        <ul class="price-list">
-          <li>Everything in Free, plus:</li>
-          <li>Shared expenses &amp; balance between parents</li>
-          <li>Message board (notes, tasks, questions)</li>
-          <li>Email reminders &amp; alerts</li>
-          <li>Google / Apple Calendar sync</li>
-        </ul>
-        <a class="cta big" href="/register?lang=en">Get started</a>
-        <p class="hint center">No commitment — cancel anytime.</p>
-      </div>
-    </div>
-  </div>
-</section>
+{% set pricing_lang = "en" %}{% include "_pricing.html" %}
 
 <section class="faq">
   <div class="wrap narrow">

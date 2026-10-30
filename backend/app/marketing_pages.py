@@ -196,3 +196,16 @@ PRICING_FAQ = [
      "Vous profitez quand même du calendrier, du journal de garde, des dépenses (avec demande de remboursement "
      "en PDF) et du suivi de la pension."),
 ]
+
+PRICING_FAQ_EN = [
+    ("Is the calendar really free?",
+     "Yes, with no time limit: custody schedule, school breaks, holidays that alternate by even/odd year, "
+     "day swaps and inviting your co-parent."),
+    ("Do both parents have to pay?",
+     "No. The subscription is per household: one parent pays, both get access."),
+    ("Can I cancel anytime?",
+     "Yes, from your settings. The free trial can be canceled at no cost before it ends."),
+    ("What if my co-parent doesn't use Alternly?",
+     "You still get the calendar, the custody journal, expenses (with reimbursement requests as PDF) "
+     "and child support tracking."),
+]

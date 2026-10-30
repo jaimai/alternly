@@ -54,3 +54,16 @@ def test_no_emoji_left_on_landings(client):
     emoji = re.compile("[\U0001F300-\U0001FAFF☀-➿\U0001F1E6-\U0001F1FF]")
     for path in ("/", "/en"):
         assert not emoji.search(client.get(path).text), path
+
+
+def test_pricing_blocks_in_both_languages(client):
+    fr, en = client.get("/").text, client.get("/en").text
+    # Landings : deux cartes avec bascule annuel / mensuel.
+    assert 'id="bill-month"' in fr and "8,99" in fr and "69" in fr
+    assert 'id="bill-month"' in en and "$79" in en and "$8.99" in en and "€" not in en.split('class="plans"')[1].split("</section>")[0]
+    # Pages tarifs : tableau comparatif, liées entre elles par hreflang.
+    tarifs, pricing = client.get("/tarifs").text, client.get("/en/pricing").text
+    assert 'class="plans-table"' in tarifs and 'class="plans-table"' in pricing
+    assert "$79" in pricing and "per household" in pricing.lower()
+    assert 'hreflang="en"' in tarifs and "/en/pricing" in tarifs
+    assert "/en/pricing" in client.get("/sitemap.xml").text
