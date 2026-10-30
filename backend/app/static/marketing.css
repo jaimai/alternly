@@ -780,3 +780,42 @@ h2 { font-size: clamp(1.6rem, 3.2vw, 2.3rem); }
 
 /* Cartes : ombre légère sur fond blanc */
 .cards3 article, .feature-row { box-shadow: 0 1px 2px rgba(16, 24, 20, 0.04); }
+
+/* ---------- pages par fonctionnalité / tarifs / calculateur ---------- */
+.page-hero { padding: 72px 0 64px; }
+.page-hero .lede { max-width: 40em; }
+.cards2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+.cards2 article {
+  background: #fff; border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 26px; box-shadow: 0 1px 2px rgba(16, 24, 20, 0.04);
+}
+.cards2 h3 { font-size: 1.15rem; }
+.cards2 p { color: var(--ink-soft); margin: 0; font-size: 0.97rem; }
+.cards2 .h3-icon {
+  display: block; width: 40px; height: 40px; padding: 9px; margin-bottom: 14px;
+  border-radius: 11px; background: var(--sage); color: var(--pine); box-sizing: border-box;
+}
+.related-links { display: flex; flex-wrap: wrap; gap: 10px 24px; margin-top: 24px; }
+.related-links a { color: var(--pine); font-weight: 600; text-decoration: none; }
+.related-links a:hover { text-decoration: underline; }
+
+.compare { padding: 24px 0 72px; }
+.compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 28px; }
+.compare-card { border: 1px solid var(--line); border-radius: var(--radius); padding: 24px; background: var(--paper-deep); }
+.compare-card.featured { background: #fff; border-color: var(--pine); }
+.compare-card h3 { margin-top: 0; }
+.compare-card ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; color: var(--ink-soft); }
+.compare-card.featured li { color: var(--ink); display: flex; gap: 8px; align-items: flex-start; }
+.compare-card.featured .icon { color: var(--pine); margin-top: 4px; flex: 0 0 auto; }
+
+.pension-result h2 { font-size: clamp(2rem, 5vw, 2.6rem); margin: 4px 0 10px; color: var(--pine); }
+.pension-formula { font-variant-numeric: tabular-nums; background: var(--paper-deep); border-radius: 10px; padding: 10px 14px; }
+.tool-upsell h3 { display: flex; align-items: center; gap: 8px; margin-top: 0; }
+.tool-upsell .icon { color: var(--pine); }
+.error-text { color: #a84a42; margin: 0; }
+.tool-faq { padding: 56px 0 24px; max-width: 720px; }
+
+@media (max-width: 760px) {
+  .cards2, .compare-grid { grid-template-columns: 1fr; }
+  .page-hero { padding: 48px 0 44px; }
+}

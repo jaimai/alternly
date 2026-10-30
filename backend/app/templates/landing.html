@@ -178,55 +178,7 @@
   </div>
 </section>
 
-<section class="pricing" id="tarifs">
-  <div class="wrap narrow">
-    <p class="eyebrow center">Tarifs</p>
-    <h2 class="center">Le calendrier est gratuit</h2>
-    <div class="price-grid">
-      <div class="price-card">
-        <h3>Gratuit</h3>
-        <div class="price-head"><span class="price-amount">0&nbsp;€</span></div>
-        <ul class="price-list">
-          <li>Calendrier de garde illimité, des années à l'avance</li>
-          <li>Vacances scolaires A/B/C &amp; années paires/impaires</li>
-          <li>Échanges de jours proposés / acceptés</li>
-          <li>Invitation du second parent</li>
-        </ul>
-        <a class="cta big secondary-cta" href="/register?lang=fr">Créer mon calendrier</a>
-      </div>
-      <div class="price-card featured">
-        <span class="price-badge">Premium</span>
-        {%- set plans = billing_plans() %}
-        <div class="price-options">
-          <div class="price-option">
-            <span class="price-option-label">Annuel</span>
-            <span class="price-option-amount"><span class="price-amount">69&nbsp;€</span><span class="price-per">/ an</span></span>
-            {%- if plans.annual.trial_days %}
-            <span class="price-option-note strong">{{ plans.annual.trial_days }} jours d'essai gratuit</span>
-            {%- else %}
-            <span class="price-option-note">soit 5,75&nbsp;€ / mois</span>
-            {%- endif %}
-          </div>
-          <div class="price-option">
-            <span class="price-option-label">Mensuel</span>
-            <span class="price-option-amount"><span class="price-amount">8,99&nbsp;€</span><span class="price-per">/ mois</span></span>
-            <span class="price-option-note">sans engagement</span>
-          </div>
-        </div>
-        <p class="price-trial">Par foyer · un seul parent paie, les deux en profitent</p>
-        <ul class="price-list">
-          <li>Tout le gratuit, plus&nbsp;:</li>
-          <li>Dépenses partagées &amp; solde entre parents</li>
-          <li>Mur de communication (infos, tâches, questions)</li>
-          <li>Notifications e-mail &amp; rappels</li>
-          <li>Synchronisation Google / Apple Calendar</li>
-        </ul>
-        <a class="cta big" href="/register?lang=fr">Commencer</a>
-        <p class="hint center">Sans engagement — résiliable à tout moment.</p>
-      </div>
-    </div>
-  </div>
-</section>
+{% include "_pricing.html" %}
 
 <section class="faq">
   <div class="wrap narrow">

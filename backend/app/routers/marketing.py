@@ -1,4 +1,5 @@
 from datetime import date
+from decimal import ROUND_HALF_UP, Decimal, InvalidOperation
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -12,6 +13,7 @@ from ..legal import PAGES as LEGAL_PAGES
 from ..legal import PAGES_EN as LEGAL_PAGES_EN
 from ..legal import UPDATED as LEGAL_UPDATED
 from ..legal import UPDATED_EN as LEGAL_UPDATED_EN
+from ..marketing_pages import FEATURE_PAGES, PRICING_FAQ
 from ..ratelimit import MINUTE, rate_limit
 from ..services import billing as billing_service
 from ..services import vacation_tool
@@ -326,6 +328,118 @@ def tool_christmas(request: Request, db: Session = Depends(get_db)):
     )
 
 
+# ---------------------------------------------------------------- calculateur pension
+PENSION_TOOL_PATH = "/outils/revalorisation-pension-alimentaire"
+PENSION_TOOL_TITLE = "Calculer la revalorisation d'une pension alimentaire"
+PENSION_TOOL_CTA = "/register?lang=fr&utm_source=outil-pension&utm_medium=web&utm_campaign=pension"
+PENSION_TOOL_FAQ = [
+    (
+        "Quelle est la formule de revalorisation d'une pension alimentaire ?",
+        "Nouveau montant = montant fixé par la décision × nouvel indice ÷ indice de référence. "
+        "L'indice de référence est celui en vigueur à la date de la décision (ou celui qu'elle cite) ; "
+        "le nouvel indice est le dernier publié par l'INSEE avant la date de revalorisation.",
+    ),
+    (
+        "Quel indice INSEE utiliser ?",
+        "Celui que cite votre jugement ou votre convention, le plus souvent l'indice des prix à la "
+        "consommation (ensemble des ménages, France, hors tabac). Utilisez toujours la même série "
+        "pour l'indice de référence et le nouvel indice.",
+    ),
+    (
+        "Qui doit faire le calcul ?",
+        "Le parent qui verse la pension doit appliquer la revalorisation à la date prévue, sans "
+        "attendre que l'autre parent la réclame.",
+    ),
+    (
+        "La revalorisation est-elle rétroactive ?",
+        "Les sommes non revalorisées restent dues, dans la limite de la prescription. En cas de "
+        "doute sur un rattrapage, rapprochez-vous de l'ARIPA (CAF ou MSA) ou d'un avocat.",
+    ),
+]
+
+
+def _decimal(value: str | None) -> Decimal | None:
+    """« 1 234,56 » / « 1234.56 » → Decimal positif, sinon None."""
+    if not value:
+        return None
+    try:
+        number = Decimal(value.replace("\u202f", "").replace("\xa0", "").replace(" ", "").replace(",", "."))
+    except InvalidOperation:
+        return None
+    return number if number.is_finite() and 0 < number < 1_000_000 else None
+
+
+def _euros(amount: Decimal) -> str:
+    """Decimal → « 1 234,56 € » (format français)."""
+    whole, cents = f"{amount.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP):.2f}".split(".")
+    groups = f"{int(whole):,}".replace(",", "\u202f")
+    return f"{groups},{cents}\u00a0€"
+
+
+def _index_label(value: Decimal) -> str:
+    return f"{value.normalize():f}".replace(".", ",")
+
+
+@router.get(PENSION_TOOL_PATH, response_class=HTMLResponse, include_in_schema=False)
+def tool_pension(request: Request):
+    """Calculateur public : montant × nouvel indice ÷ indice de référence (sans inscription)."""
+    params = request.query_params
+    raw = {k: params.get(k, "").strip()[:20] for k in ("montant", "indice_base", "indice_nouveau")}
+    submitted = any(raw.values())
+    amount, base, new = (_decimal(raw[k]) for k in ("montant", "indice_base", "indice_nouveau"))
+    result = error = None
+    if submitted:
+        if amount is None or base is None or new is None:
+            error = "Renseignez les trois valeurs avec des nombres positifs (ex. 200 ; 112,03 ; 118,52)."
+        else:
+            revalued = (amount * new / base).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+            diff = revalued - amount
+            result = {
+                "amount": _euros(amount),
+                "base": _index_label(base),
+                "new": _index_label(new),
+                "revalued": _euros(revalued),
+                "diff": ("+" if diff >= 0 else "−") + _euros(abs(diff)),
+                "percent": f"{(diff / amount * 100).quantize(Decimal('0.1'), rounding=ROUND_HALF_UP)}".replace(".", ","),
+                "yearly": _euros(abs(diff) * 12),
+            }
+    return templates.TemplateResponse(
+        request,
+        "outil_pension.html",
+        {
+            "form": raw,
+            "result": result,
+            "error": error,
+            "faq": PENSION_TOOL_FAQ,
+            "cta_href": PENSION_TOOL_CTA,
+            "tool_title": PENSION_TOOL_TITLE,
+            "canonical": f"{site_base(request)}{PENSION_TOOL_PATH}",
+        },
+    )
+
+
+# ---------------------------------------------------------------- pages par fonctionnalité
+def _feature_page(key: str):
+    page = FEATURE_PAGES[key]
+
+    def view(request: Request):
+        return templates.TemplateResponse(request, "page_feature.html", {"page": page})
+
+    view.__name__ = f"feature_{key}"
+    return view
+
+
+for _key, _page in FEATURE_PAGES.items():
+    router.add_api_route(
+        _page["path"], _feature_page(_key), methods=["GET"], response_class=HTMLResponse, include_in_schema=False
+    )
+
+
+@router.get("/tarifs", response_class=HTMLResponse, include_in_schema=False)
+def pricing_page(request: Request):
+    return templates.TemplateResponse(request, "tarifs.html", {"faq": PRICING_FAQ})
+
+
 # Crawlers de moteurs de réponse IA : on les autorise explicitement (visibilité AEO).
 _AI_AGENTS = [
     "GPTBot", "OAI-SearchBot", "ChatGPT-User", "PerplexityBot", "Perplexity-User",
@@ -383,7 +497,9 @@ def robots(request: Request):
 def sitemap(request: Request):
     base = site_base(request)
     entries = [(f"{base}/", None, "1.0"), (f"{base}/en", None, "0.9"), (f"{base}/blog", None, "0.7"),
-               (f"{base}{TOOL_PATH}", None, "0.8"), (f"{base}{NOEL_PATH}", None, "0.8")]
+               (f"{base}{TOOL_PATH}", None, "0.8"), (f"{base}{NOEL_PATH}", None, "0.8"),
+               (f"{base}{PENSION_TOOL_PATH}", None, "0.8"), (f"{base}/tarifs", None, "0.7")]
+    entries += [(f"{base}{p['path']}", None, "0.7") for p in FEATURE_PAGES.values()]
     for a in load_articles():
         entries.append((f"{base}/blog/{a.slug}", a.date.isoformat(), "0.6"))
     entries.append((f"{base}/en/blog", None, "0.7"))
@@ -426,10 +542,14 @@ def llms_txt(request: Request):
 - Dépenses partagées : suivi de qui a payé quoi, solde entre parents (50/50 ou part ajustée), contestations et remboursements.
 - Mur de communication : infos, tâches à cocher (avec échéance visible sur le calendrier) et questions entre parents.
 - Notifications e-mail et synchronisation avec Google Agenda / Apple Calendar.
+- Journal de garde privé et horodaté, exportable en PDF ({base}/journal-de-garde).
+- Suivi de la pension alimentaire mois par mois et revalorisation annuelle selon l'indice INSEE ({base}/pension-alimentaire).
+- Demande de remboursement des frais en PDF, même si l'autre parent n'utilise pas Alternly ({base}/depenses-partagees).
+- Page professionnels (avocats, médiateurs) : {base}/professionnels.
 
 ## Tarif
 - Le calendrier de garde est entièrement gratuit.
-- Premium (dépenses partagées, mur de communication, notifications e-mail, synchronisation) : 69 € par an et par foyer, ou 8,99 € par mois. Un seul parent paie et tout le foyer en profite.
+- Premium (dépenses partagées, mur de communication, journal de garde, pension alimentaire, notifications e-mail, synchronisation) : 69 € par an et par foyer, ou 8,99 € par mois. Un seul parent paie et tout le foyer en profite. Détails : {base}/tarifs
 
 ## Confidentialité
 - Données hébergées en Union européenne, minimisation stricte (le prénom de l'enfant suffit).
@@ -438,6 +558,7 @@ def llms_txt(request: Request):
 ## Outils gratuits (sans inscription)
 - [{TOOL_TITLE}]({base}{TOOL_PATH}) : zone scolaire, période (Toussaint, Noël, hiver, printemps, été) et règle de partage (moitié/moitié, vacances entières, juillet/août ou une semaine sur deux, années paires/impaires) → dates officielles et jour de passage entre les parents.
 - [Qui a les enfants à Noël ?]({base}{NOEL_PATH}) : vacances de Noël de l'année, qui a le réveillon, le 25 et le Nouvel An selon la règle de partage, jour de passage.
+- [{PENSION_TOOL_TITLE}]({base}{PENSION_TOOL_PATH}) : montant fixé par la décision × nouvel indice INSEE ÷ indice de référence → nouveau montant mensuel, avec le détail du calcul.
 
 ## Réponses rapides (garde alternée en France)
 - Vacances de la Toussaint 2026 : du samedi 17 octobre au lundi 2 novembre 2026, zones A, B et C. Avec un partage par moitié, passage de bras le dimanche 25 octobre ; le parent « années paires » a la première moitié.
