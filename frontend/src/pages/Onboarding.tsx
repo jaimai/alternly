@@ -39,6 +39,13 @@ export default function OnboardingPage() {
   const [busy, setBusy] = useState(false)
   const [loading, setLoading] = useState(true)
 
+  // Pendant l'inscription, pas de « tirer pour rafraîchir » (mobile) : un geste de
+  // trop en coloriant les jours rechargeait la page.
+  useEffect(() => {
+    document.documentElement.classList.add('no-pull-refresh')
+    return () => document.documentElement.classList.remove('no-pull-refresh')
+  }, [])
+
   useEffect(() => {
     api
       .myHousehold()
@@ -260,6 +267,7 @@ export default function OnboardingPage() {
       {step === 2 && household && user && (
         <div className="card">
           <RuleWizard
+            keepDraft
             members={household.members}
             myId={user.id}
             childNames={household.children.map((c) => c.first_name)}

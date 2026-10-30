@@ -2632,3 +2632,6 @@ button.adjust-chip.on { border: 2px solid var(--pine); background: var(--pine-so
 .wn-jump-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; width: min(300px, 100%); padding: 10px; border-radius: 12px; background: var(--surface); box-sizing: border-box; }
 .wn-jump-grid span { padding: 6px 0; text-align: center; border-radius: 8px; font-size: 0.75rem; font-weight: 600; background: var(--paper); text-transform: capitalize; }
 .wn-jump-grid span.on { background: var(--pine); color: #fff; }
+
+/* Inscription : pas de « tirer pour rafraîchir » sur mobile (Onboarding) */
+html.no-pull-refresh, html.no-pull-refresh body { overscroll-behavior-y: none; }
