@@ -35,6 +35,9 @@ export default function OnboardingPage() {
   }, [user?.locale])
   const [childName, setChildName] = useState('')
   const [childNames, setChildNames] = useState<string[]>([])
+  // E-mail de l'autre parent (facultatif) : Alternly lui envoie l'invitation une fois
+  // le calendrier créé, pour qu'il découvre un planning déjà rempli.
+  const [coparentEmail, setCoparentEmail] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -125,6 +128,14 @@ export default function OnboardingPage() {
         children_count: household.children.length,
         pattern: value.custody.pattern,
       })
+      const invitee = coparentEmail.trim()
+      if (invitee) {
+        // Jamais bloquant : en cas d'échec, l'invitation reste proposée sur le calendrier.
+        await api
+          .emailInvitation(household.id, { email: invitee, locale: i18n.language.startsWith('en') ? 'en' : 'fr' })
+          .then(() => track(EV.onboardingStepCompleted, { step: 'invite_email' }))
+          .catch(() => {})
+      }
       // L'invitation de l'autre parent n'est plus une étape de l'inscription : les
       // nouveaux inscrits quittaient l'app dès qu'elle s'affichait, sans avoir vu
       // leur calendrier. Elle est proposée sur le calendrier, dans les réglages et
@@ -256,6 +267,17 @@ export default function OnboardingPage() {
               </span>
             ))}
           </div>
+          <label htmlFor="coparent-email" style={{ marginTop: 16 }}>{t('onboarding.coparentEmailLabel')}</label>
+          <input
+            id="coparent-email"
+            type="email"
+            className="ph-mask ph-sensitive"
+            autoComplete="off"
+            value={coparentEmail}
+            onChange={(e) => setCoparentEmail(e.target.value)}
+            placeholder={t('onboarding.coparentEmailPlaceholder')}
+          />
+          <p className="hint" style={{ marginTop: 6 }}>{t('onboarding.coparentEmailHint')}</p>
           <p style={{ marginTop: 16 }}>
             <button onClick={saveChildren} disabled={busy || childNames.length === 0} style={{ width: '100%' }}>
               {t('onboarding.continue')}
