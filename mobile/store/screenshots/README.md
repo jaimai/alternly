@@ -10,3 +10,5 @@
 
 Pas de captures iPad : `supportsTablet` vaut `false` dans `app.json`.
 Régénérées depuis `mobile/assets/screen/` (captures brutes 1179×2556).
+
+`ipad-13/` — 2752×2064 (iPad 13", paysage), même ordre : accueil, calendrier, échange, dépenses, réglages. Maquettes générées, pas des captures réelles.
