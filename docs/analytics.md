@@ -213,6 +213,8 @@ consentement). PostHog renseigne aussi `$initial_utm_*` sur la personne après c
 | Événement | Source | Quand | Propriétés |
 | --- | --- | --- | --- |
 | `paywall_viewed` | C | paywall affiché | `feature` (expenses, wall, journal, pension, onboarding…), `solo` (l'autre parent n'a pas rejoint) |
+| `feature_teaser_viewed` | C | écran « découverte » d'une fonction premium (compte gratuit), avant l'offre | `feature`, `solo` |
+| `feature_teaser_cta` | C | clic « Essayer » sur cet écran (ouvre l'offre, `paywall_viewed` avec `feature` = `teaser_<fonction>`) | `feature`, `solo` |
 | `checkout_opened` | C | ouverture du checkout Paddle | `plan`, `source` (dont `offer_email`), `discount` (code d'offre appliqué) |
 | `checkout_completed` | C | callback Paddle `checkout.completed` | `plan` |
 | `plan_changed` | C | bascule annuel/mensuel | `plan` |
