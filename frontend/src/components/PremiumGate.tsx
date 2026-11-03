@@ -1,38 +1,23 @@
 import type { ReactNode } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { useTranslation } from 'react-i18next'
 import { useAuth } from '../auth'
+import FeatureTeaser from './FeatureTeaser'
 import Spinner from './Spinner'
-import Paywall from './Paywall'
 
-/** Protège une fonctionnalité premium : montre un paywall (skippable) aux
- *  utilisateurs gratuits, sinon rend le contenu. */
+/** Protège une fonctionnalité premium : les comptes gratuits voient d'abord un écran
+ *  « découverte » (aperçu et bénéfices), l'offre ne s'ouvre qu'à leur demande. */
 export default function PremiumGate({
-  feature,
   featureKey,
   children,
 }: {
+  /** Libellé traduit de la fonctionnalité (gardé pour les appelants existants). */
   feature: string
   /** Identifiant stable pour l'analytics (le libellé `feature` est traduit). */
   featureKey: string
   children: ReactNode
 }) {
-  const { user, billing, refreshBilling } = useAuth()
-  const navigate = useNavigate()
-  const { t } = useTranslation()
+  const { user, billing } = useAuth()
 
   if (!user || billing === null) return <Spinner />
-  if (!billing.access) {
-    return (
-      <Paywall
-        user={user}
-        onSubscribed={refreshBilling}
-        onSkip={() => navigate('/app')}
-        feature={featureKey}
-        title={t('paywall.gateTitle', { feature })}
-        subtitle={t('paywall.gateSubtitle')}
-      />
-    )
-  }
+  if (!billing.access) return <FeatureTeaser featureKey={featureKey} />
   return <>{children}</>
 }
