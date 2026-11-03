@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<!-- Couverture de page Facebook : 1640×856.
+     Ordinateur : bande centrale 1640×624 (≈116 px rognés en haut et en bas).
+     Mobile : 1522×856 centrés (≈59 px rognés à gauche et à droite).
+     Tout le contenu tient dans x 140→1500, y 150→700. -->
+<style>
+@font-face { font-family: 'Fraunces'; src: url(../../videos/src/fraunces-latin-full-normal.woff2) format('woff2'); font-weight: 100 900; font-style: normal; }
+@font-face { font-family: 'Fraunces'; src: url(../../videos/src/fraunces-latin-full-italic.woff2) format('woff2'); font-weight: 100 900; font-style: italic; }
+@font-face { font-family: 'Instrument Sans'; src: url(../../videos/src/instrument-sans-latin-400-normal.woff2) format('woff2'); font-weight: 400; }
+@font-face { font-family: 'Instrument Sans'; src: url(../../videos/src/instrument-sans-latin-500-normal.woff2) format('woff2'); font-weight: 500; }
+@font-face { font-family: 'Instrument Sans'; src: url(../../videos/src/instrument-sans-latin-600-normal.woff2) format('woff2'); font-weight: 600; }
+@font-face { font-family: 'Instrument Sans'; src: url(../../videos/src/instrument-sans-latin-700-normal.woff2) format('woff2'); font-weight: 700; }
+
+:root {
+  --paper: #faf6ef; --ink: #24312b; --ink-soft: #5d6b63;
+  --pine: #1f4d3f; --pine-soft: #e4ede7; --terra: #c96f4a; --terra-soft: #f5e0d5;
+  --line: #e7dfd0; --pa: #2f6b57; --pb: #c96f4a;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 1640px; height: 856px; overflow: hidden; background: var(--paper); }
+body { font-family: 'Instrument Sans', sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; position: relative; }
+.serif { font-family: 'Fraunces', Georgia, serif; font-variation-settings: 'opsz' 72; letter-spacing: -0.02em; }
+
+.blob { position: absolute; border-radius: 50%; }
+.blob.t { width: 620px; height: 620px; background: var(--terra-soft); right: -120px; top: -260px; }
+.blob.p { width: 420px; height: 420px; background: var(--pine-soft); right: 430px; bottom: -300px; }
+
+.left { position: absolute; left: 150px; top: 190px; width: 760px; }
+.wordmark { font-family: 'Fraunces', serif; font-variation-settings: 'opsz' 72; font-size: 46px; letter-spacing: -0.02em; }
+.wordmark span { color: var(--terra); font-style: italic; }
+.kicker { margin-top: 30px; color: var(--terra); font-weight: 600; font-size: 21px; letter-spacing: .12em; text-transform: uppercase; }
+h1 { margin-top: 14px; font-weight: 400; font-size: 76px; line-height: 1.02; }
+h1 em { color: var(--pine); }
+.sub { margin-top: 24px; font-size: 26px; line-height: 1.4; color: var(--ink-soft); max-width: 660px; }
+
+/* Carte calendrier */
+.card { position: absolute; left: 980px; top: 140px; width: 500px; background: #fff; border: 2px solid var(--line);
+  border-radius: 34px; padding: 30px 32px 34px; box-shadow: 0 30px 60px -30px rgba(31,77,63,.35); transform: rotate(1.5deg); }
+.card .head { display: flex; justify-content: space-between; align-items: baseline; }
+.card .month { font-size: 34px; }
+.card .zone { font-size: 16px; font-weight: 600; color: var(--ink-soft); letter-spacing: .08em; text-transform: uppercase; }
+.dow, .grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 7px; }
+.dow { margin-top: 18px; font-size: 15px; font-weight: 600; color: var(--ink-soft); text-align: center; }
+.grid { margin-top: 8px; }
+.d { height: 46px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 18px; position: relative; }
+.d.a { background: #d4e3db; color: var(--pine); }
+.d.b { background: var(--terra-soft); color: #9a4b2b; }
+.d.e { background: transparent; }
+.d.v::after { content: ''; position: absolute; left: 7px; right: 7px; bottom: 5px; height: 3px; border-radius: 2px; background: currentColor; opacity: .55; }
+.d.h { outline: 3px solid var(--ink); outline-offset: -3px; }
+.legend { margin-top: 10px; display: flex; gap: 22px; font-size: 17px; color: var(--ink-soft); align-items: center; }
+.legend i { display: inline-block; width: 13px; height: 13px; border-radius: 50%; margin-right: 8px; vertical-align: -1px; }
+.legend .vac { margin-left: auto; font-weight: 600; color: var(--ink); }
+
+/* Notification flottante */
+.toast { position: absolute; left: 880px; top: 568px; display: flex; gap: 16px; align-items: center; background: var(--pine); color: #fff;
+  border-radius: 22px; padding: 18px 26px 18px 20px; box-shadow: 0 24px 50px -24px rgba(31,77,63,.6); transform: rotate(-2deg); }
+.toast .ic { width: 44px; height: 44px; border-radius: 50%; background: rgba(255,255,255,.16); display: flex; align-items: center; justify-content: center; font-size: 24px; }
+.toast b { display: block; font-size: 20px; font-weight: 600; }
+.toast span { font-size: 17px; opacity: .82; }
+</style>
+</head>
+<body>
+  <div class="blob t"></div>
+  <div class="blob p"></div>
+
+  <div class="left">
+    <div class="wordmark">altern<span>ly</span></div>
+    <div class="kicker">Garde alternée</div>
+    <h1 class="serif">Qui a les enfants&nbsp;?<br><em><i>Plus besoin de demander.</i></em></h1>
+    <p class="sub">Un seul calendrier partagé entre les deux parents, vacances scolaires comprises.</p>
+  </div>
+
+  <div class="card">
+    <div class="month serif">Octobre 2026</div>
+    <div class="legend"><span><i style="background:var(--pa)"></i>Camille</span><span><i style="background:var(--pb)"></i>Alex</span><span class="vac">— vacances de la Toussaint</span></div>
+    <div class="dow"><div>L</div><div>M</div><div>M</div><div>J</div><div>V</div><div>S</div><div>D</div></div>
+    <div class="grid" id="grid"></div>
+  </div>
+
+  <div class="toast">
+    <div class="ic">⇄</div>
+    <div><b>Échange accepté</b><span>Alex garde les enfants samedi 10</span></div>
+  </div>
+
+<script>
+// Octobre 2026 commence un jeudi. Semaine/semaine (passage le lundi),
+// Toussaint du 17 oct. au 1er nov. en moitié/moitié avec passage le dimanche 25.
+const who = (d) => {
+  if (d === 10) return 'b'                 // le samedi échangé
+  if (d >= 17 && d <= 24) return 'a'
+  if (d >= 25) return 'b'
+  if (d <= 4) return 'b'
+  if (d <= 11) return 'a'
+  return 'b'
+}
+const g = document.getElementById('grid')
+let html = '<div class="d e"></div>'.repeat(3)
+for (let d = 1; d <= 31; d++) {
+  const cls = ['d', who(d)]
+  if (d >= 17) cls.push('v')
+  if (d === 25) cls.push('h')
+  html += `<div class="${cls.join(' ')}">${d}</div>`
+}
+g.innerHTML = html + '<div class="d e"></div>'
+</script>
+</body>
+</html>
