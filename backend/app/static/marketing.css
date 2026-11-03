@@ -913,3 +913,8 @@ h2 { font-size: clamp(1.6rem, 3.2vw, 2.3rem); }
   .plans-table .badge { display: none; }
   .plans-table .plan-btn { padding: 8px 10px; font-size: 0.8rem; }
 }
+
+/* Marqueurs oui / non des articles (services/blog.py) */
+.icon.mark { vertical-align: -0.2em; margin-right: 2px; }
+.icon.mark-yes { color: var(--pine); }
+.icon.mark-no { color: #a84a42; }

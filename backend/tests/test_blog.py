@@ -150,3 +150,29 @@ def test_english_pages_canonical_to_themselves(client):
     html = client.get("/en/terms").text
     assert 'hreflang="fr" href="' in html and '/terms" />' in html
     assert 'hreflang="en"' in client.get("/").text
+
+
+def test_checkmarks_rendered_as_svg_icons(client):
+    """Les ✅ / ❌ des articles deviennent des icônes SVG (aucun emoji affiché)."""
+    html = client.get("/blog/planning-garde-alternee-choisir-rythme").text
+    assert "✅" not in html and "❌" not in html
+    assert 'class="icon mark mark-yes"' in html and 'class="icon mark mark-no"' in html
+
+
+def test_new_guides_published(client):
+    for slug in (
+        "semaine-53-garde-alternee-janvier-2027",
+        "revalorisation-pension-alimentaire-calcul-2027",
+        "journal-de-garde-que-noter-comment",
+        "demander-remboursement-frais-autre-parent",
+    ):
+        resp = client.get(f"/blog/{slug}")
+        assert resp.status_code == 200, slug
+        assert '"@type":"FAQPage"' in resp.text
+
+
+def test_tool_box_follows_frontmatter(client):
+    pension = client.get("/blog/revalorisation-pension-alimentaire-calcul-2027").text
+    assert 'data-tool="pension"' in pension and "/outils/revalorisation-pension-alimentaire" in pension
+    default = client.get("/blog/semaine-53-garde-alternee-janvier-2027").text
+    assert 'data-tool="vacances"' in default
