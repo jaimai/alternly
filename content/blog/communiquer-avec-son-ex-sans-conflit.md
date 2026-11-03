@@ -48,11 +48,11 @@ conflictuels. L'acronyme anglais se traduit en quatre consignes :
 
 ### Exemple : avant / après
 
-❌ *« Comme d'habitude tu ne m'as pas prévenu pour la sortie scolaire, c'est
+**À éviter** : *« Comme d'habitude tu ne m'as pas prévenu pour la sortie scolaire, c'est
 toujours moi qui dois tout gérer. Tu pourrais au moins lire les mails de
 l'école. Bref, il faut 15 € pour vendredi. »*
 
-✅ *« Bonjour, la sortie scolaire de Léa a lieu vendredi 12. La participation
+**À privilégier** : *« Bonjour, la sortie scolaire de Léa a lieu vendredi 12. La participation
 est de 15 €, je l'ai réglée. Je l'ajoute aux frais partagés. Bonne journée. »*
 
 Le second message dit exactement la même chose d'utile. Il ne laisse aucune
@@ -109,12 +109,12 @@ rester samedi. » Ces phrases paraissent anodines, mais elles placent l'enfant
 au milieu du conflit des adultes, avec la responsabilité de transmettre (et
 parfois de subir) la réaction de l'autre.
 
-- ✅ Les informations passent **d'adulte à adulte**.
-- ✅ L'enfant peut raconter librement sa semaine chez l'autre parent, sans être
+- **Oui** : les informations passent **d'adulte à adulte**.
+- **Oui** : l'enfant peut raconter librement sa semaine chez l'autre parent, sans être
   interrogé.
-- ❌ Ne demandez pas à l'enfant de rapporter ce qui se passe dans l'autre
+- **Non** : ne demandez pas à l'enfant de rapporter ce qui se passe dans l'autre
   foyer.
-- ❌ Ne critiquez pas l'autre parent devant lui, même à demi-mot.
+- **Non** : ne critiquez pas l'autre parent devant lui, même à demi-mot.
 
 ## Poser un cadre commun
 
@@ -146,13 +146,18 @@ contactez les services d'aide spécialisés et un professionnel du droit.
 
 ## Checklist : avant d'envoyer un message à l'autre parent
 
-- ✅ Mon message parle-t-il uniquement de l'enfant et d'un sujet précis ?
-- ✅ Est-il court (quelques lignes) ?
-- ✅ Contient-il des faits vérifiables (date, heure, montant) ?
-- ✅ Se termine-t-il par une proposition claire ?
-- ✅ Accepterais-je qu'un juge ou mon enfant, plus tard, le lise ?
-- ❌ Contient-il un reproche, une ironie, un « comme d'habitude » ?
-- ❌ Est-ce que je l'écris sous le coup de la colère ?
+Vous devez pouvoir répondre **oui** à ces questions :
+
+- Mon message parle-t-il uniquement de l'enfant et d'un sujet précis ?
+- Est-il court (quelques lignes) ?
+- Contient-il des faits vérifiables (date, heure, montant) ?
+- Se termine-t-il par une proposition claire ?
+- Accepterais-je qu'un juge ou mon enfant, plus tard, le lise ?
+
+Et **non** à celles-ci :
+
+- Contient-il un reproche, une ironie, un « comme d'habitude » ?
+- Est-ce que je l'écris sous le coup de la colère ?
 
 ## Un outil neutre pour les échanges du quotidien
 

@@ -20,6 +20,8 @@ class Article:
     body_md: str
     # Questions/réponses de la section « Questions fréquentes » (données structurées FAQPage).
     faq: list[tuple[str, str]] = field(default_factory=list)
+    # Encart outil affiché après l'introduction (frontmatter `tool:`) : vacances par défaut.
+    tool: str = "vacances"
 
 
 def _parse_frontmatter(text: str) -> tuple[dict[str, str], str]:
@@ -92,11 +94,28 @@ def load_articles(content_dir: Path = CONTENT_DIR) -> list[Article]:
                 date=published,
                 body_md=body,
                 faq=extract_faq(body),
+                tool=meta.get("tool", "vacances"),
             )
         )
     articles.sort(key=lambda a: a.date, reverse=True)
     return articles
 
 
+# Marqueurs « oui / non » des listes et tableaux : icônes SVG plutôt que des emojis
+# (rendu identique sur tous les appareils, cohérent avec les icônes du site).
+_SVG = (
+    '<svg class="icon mark mark-{cls}" width="16" height="16" viewBox="0 0 24 24" fill="none" '
+    'stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" '
+    'role="img" aria-label="{label}">{path}</svg>'
+)
+_MARKS = {
+    "\u2705": _SVG.format(cls="yes", label="Oui", path='<path d="M20 6L9 17l-5-5"/>'),
+    "\u274c": _SVG.format(cls="no", label="Non", path='<path d="M18 6L6 18M6 6l12 12"/>'),
+}
+
+
 def render_article(article: Article) -> str:
-    return markdown.markdown(article.body_md, extensions=["extra", "toc"])
+    html = markdown.markdown(article.body_md, extensions=["extra", "toc"])
+    for emoji, svg in _MARKS.items():
+        html = html.replace(emoji + " ", svg + " ").replace(emoji, svg)
+    return html
