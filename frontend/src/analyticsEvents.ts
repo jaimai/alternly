@@ -73,6 +73,8 @@ export const EV = {
 
   // Monétisation
   paywallViewed: 'paywall_viewed', // feature
+  featureTeaserViewed: 'feature_teaser_viewed', // feature, solo : écran « découverte » avant l'offre
+  featureTeaserCta: 'feature_teaser_cta', // feature, solo : clic « Essayer » sur cet écran
   checkoutOpened: 'checkout_opened', // plan, source
   checkoutCompleted: 'checkout_completed', // plan
   checkoutSynced: 'checkout_synced', // status (active|trialing|timeout), attempts : accès activé après paiement
