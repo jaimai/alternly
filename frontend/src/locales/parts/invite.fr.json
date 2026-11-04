@@ -28,6 +28,7 @@
   "invite.emailHint": "Nous lui envoyons l'invitation avec un aperçu de son planning, puis une seule relance s'il n'a pas répondu. Adresse jamais partagée.",
   "invite.modalEyebrow": "Inviter l'autre parent",
   "invite.modalTitle": "Partagez le calendrier en un geste",
+  "invite.readyTitle": "Votre planning est prêt. On l'envoie à l'autre parent ?",
   "invite.close": "Fermer",
   "invite.orShare": "ou partagez le lien vous-même"
 }
