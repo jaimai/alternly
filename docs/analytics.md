@@ -145,7 +145,7 @@ consentement). PostHog renseigne aussi `$initial_utm_*` sur la personne après c
 | `user_signed_up` | S | compte créé (fait autorité) | `method`, `via_invite`, `locale` |
 | `login` | C | connexion réussie | `method` |
 | `household_created` | S | foyer créé | `country` |
-| `onboarding_step_completed` | C | étape d'onboarding | `step` (household, children, rules, invite), `skipped`, `country`, `zone`, `children_count`, `pattern` |
+| `onboarding_step_completed` | C | étape d'onboarding | `step` (household, children, rules, invite), `skipped`, `country`, `zone`, `children_count`, `coparent_email_filled` (étape children), `pattern` |
 | `onboarding_completed` | C | règles de garde enregistrées | `country`, `children_count`, `pattern` |
 | `custody_rule_set` | S | règle de garde appliquée (fait autorité ; pas émis pour une demande en attente d'accord) | `pattern`, `first` |
 | `child_added` | C | enfant ajouté | `has_birthdate` |
@@ -154,8 +154,9 @@ consentement). PostHog renseigne aussi `$initial_utm_*` sur la personne après c
 | `tool_answer_viewed` | C | outil vacances : réponse « moitié / moitié » affichée d'emblée (lien `?vacances=…` sans zone, dates communes aux 3 zones) | `tool`, `period`, `lang` |
 | `invite_created` | C | lien d'invitation généré | — |
 | `invite_prompt_clicked` | C | clic sur « Inviter l'autre parent » dans l'encadré du calendrier (foyer solo) | `source` |
+| `invite_prompt_shown` | C | invitation proposée une fois, après le premier réglage du planning (foyer solo sans invitation active) | `source` (after_adjust) |
 | `invite_link_created` | S | lien d'invitation généré (fait autorité) | — |
-| `invite_shared` | C | partage de l'invitation | `channel` (native, whatsapp, sms, email, copy, qr, alternly_email), `source` (settings, onboarding, calendar) |
+| `invite_shared` | C | partage de l'invitation | `channel` (native, whatsapp, sms, email, copy, qr, alternly_email), `source` (settings, onboarding, calendar, after_adjust) |
 | `invite_message_edited` | C | message pré-rédigé modifié (1 fois par écran) | `source` |
 | `invite_email_sent` | S | invitation envoyée par Alternly (Resend a accepté) | `reminder` |
 | `invite_reminder_sent` | S | relance cron (inviteur à J+2/J+5, invité à J+3) | `day`, `target` (inviter, invitee), `email` |

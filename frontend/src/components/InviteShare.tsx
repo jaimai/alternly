@@ -10,7 +10,7 @@ import Icon from './Icon'
 import type { IconName } from './Icon'
 import type { Household, Invitation, Locale } from '../types'
 
-export type InviteSource = 'settings' | 'onboarding' | 'calendar'
+export type InviteSource = 'settings' | 'onboarding' | 'calendar' | 'after_adjust'
 type Channel = 'native' | 'whatsapp' | 'sms' | 'email' | 'copy' | 'qr'
 
 const UA = typeof navigator !== 'undefined' ? navigator.userAgent : ''
