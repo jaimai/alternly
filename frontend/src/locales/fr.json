@@ -428,6 +428,7 @@
   "invite.messageNoChildren": "Bonjour, j'ai mis en place notre calendrier de garde sur Alternly : les semaines, les vacances et les échanges sont au même endroit, visibles par nous deux. C'est gratuit. Tu peux le rejoindre ici : {{link}}",
   "invite.modalEyebrow": "Inviter l'autre parent",
   "invite.modalTitle": "Partagez le calendrier en un geste",
+  "invite.readyTitle": "Votre planning est prêt. On l'envoie à l'autre parent ?",
   "invite.native": "Partager…",
   "invite.orShare": "ou partagez le lien vous-même",
   "invite.qr": "QR code",

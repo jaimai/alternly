@@ -28,6 +28,7 @@
   "invite.emailHint": "We send the invitation with a preview of their schedule, then a single reminder if they haven't replied. Your address is never shared.",
   "invite.modalEyebrow": "Invite your co-parent",
   "invite.modalTitle": "Share the calendar in one tap",
+  "invite.readyTitle": "Your schedule is ready. Shall we send it to the other parent?",
   "invite.close": "Close",
   "invite.orShare": "or share the link yourself"
 }

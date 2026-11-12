@@ -51,6 +51,7 @@ export default function CalendarPage() {
   const [splashGone, setSplashGone] = useState(false)
   const [selectedDay, setSelectedDay] = useState<string | null>(null)
   const [inviteOpen, setInviteOpen] = useState(false)
+  const [inviteReady, setInviteReady] = useState(false)
   const [error, setError] = useState<string | null>(null)
   // « Ajuster mon planning » : jours touchés (date → parent visé, ajustement à retirer
   // quand le jour revient au rythme), enregistrés d'un coup.
@@ -89,6 +90,24 @@ export default function CalendarPage() {
       .then(setUser)
       .catch(() => {})
   }
+  // Foyer solo : une fois le planning réglé, il y a enfin quelque chose à montrer à
+  // l'autre parent. Proposé une seule fois, et jamais si une invitation est déjà active.
+  async function promptInviteOnce() {
+    if (!household || !isSolo(household.members)) return
+    const key = `alternly_invite_after_adjust_${household.id}`
+    try {
+      if (localStorage.getItem(key)) return
+      const { invitation } = await api.currentInvitation(household.id)
+      if (invitation) return
+      localStorage.setItem(key, '1')
+    } catch {
+      return
+    }
+    track(EV.invitePromptShown, { source: 'after_adjust' })
+    setInviteReady(true)
+    setInviteOpen(true)
+  }
+
   const { range: fmtRange } = useFormat()
   // Incrémenté après chaque changement : recharge la carte de statut.
   const [refreshKey, setRefreshKey] = useState(0)
@@ -302,6 +321,7 @@ export default function CalendarPage() {
       setAdjusting(false)
       setAdjustBusy(false)
       onChanged()
+      void promptInviteOnce()
       return
     }
     const set: { date: string; parent_id: number }[] = []
@@ -323,6 +343,7 @@ export default function CalendarPage() {
       setAdjusting(false)
       setFlips({})
       onChanged()
+      void promptInviteOnce()
     } catch (err) {
       setError(err instanceof Error ? err.message : t('calendar.genericError'))
     } finally {
@@ -368,6 +389,7 @@ export default function CalendarPage() {
             <button
               onClick={() => {
                 track(EV.invitePromptClicked, { source: 'calendar' })
+                setInviteReady(false)
                 setInviteOpen(true)
               }}
             >
@@ -540,8 +562,12 @@ export default function CalendarPage() {
         />
       )}
       {inviteOpen && household && (
-        <Modal eyebrow={t('invite.modalEyebrow')} title={t('invite.modalTitle')} onClose={() => setInviteOpen(false)}>
-          <InviteShare household={household} source="calendar" />
+        <Modal
+          eyebrow={t('invite.modalEyebrow')}
+          title={inviteReady ? t('invite.readyTitle') : t('invite.modalTitle')}
+          onClose={() => setInviteOpen(false)}
+        >
+          <InviteShare household={household} source={inviteReady ? 'after_adjust' : 'calendar'} />
           <p style={{ marginTop: 12, textAlign: 'right' }}>
             <button className="secondary" onClick={() => setInviteOpen(false)}>{t('invite.close')}</button>
           </p>

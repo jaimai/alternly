@@ -23,6 +23,7 @@ export const EV = {
   childAdded: 'child_added', // source: onboarding|settings
   inviteCreated: 'invite_created',
   invitePromptClicked: 'invite_prompt_clicked', // source: calendar
+  invitePromptShown: 'invite_prompt_shown', // source: after_adjust
   inviteShared: 'invite_shared', // channel: native|whatsapp|sms|email|copy|qr|alternly_email, source
   inviteMessageEdited: 'invite_message_edited', // source
   inviteOpened: 'invite_opened', // valid, already_member (page /join)

@@ -99,7 +99,11 @@ export default function OnboardingPage() {
       }
       const fresh = await api.myHousehold()
       setHousehold(fresh)
-      track(EV.onboardingStepCompleted, { step: 'children', children_count: childNames.length })
+      track(EV.onboardingStepCompleted, {
+        step: 'children',
+        children_count: childNames.length,
+        coparent_email_filled: coparentEmail.trim() !== '',
+      })
       setStep(2)
     } catch (err) {
       setError(err instanceof Error ? err.message : t('onboarding.errorGeneric'))
