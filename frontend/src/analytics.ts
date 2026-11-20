@@ -130,8 +130,36 @@ function isInternalDevice(): boolean {
   }
 }
 
+// Erreurs levées par des extensions ou par la protection intégrée de certains
+// navigateurs (DuckDuckGo, Brave…) : elles ne viennent pas d'Alternly et ne gênent
+// pas l'utilisateur, on ne les envoie pas au suivi des erreurs.
+const EXTENSION_ERROR = new RegExp(
+  [
+    'runtime\\.sendMessage',
+    'Extension context invalidated',
+    'Could not establish connection\\. Receiving end does not exist',
+    '(?:chrome|moz|safari|safari-web|ms-browser)-extension://',
+  ].join('|'),
+)
+
+function isExtensionError(props: Properties | undefined): boolean {
+  if (!props) return false
+  const parts: unknown[] = [props.$exception_values, props.$exception_sources, props.$exception_message]
+  const list = props.$exception_list
+  if (Array.isArray(list)) {
+    for (const ex of list) {
+      if (!ex || typeof ex !== 'object') continue
+      parts.push(ex.value)
+      const frames = ex.stacktrace?.frames
+      if (Array.isArray(frames)) for (const f of frames) parts.push(f?.filename, f?.abs_path)
+    }
+  }
+  return EXTENSION_ERROR.test(JSON.stringify(parts))
+}
+
 function beforeSend(cr: CaptureResult | null): CaptureResult | null {
   if (!cr) return cr
+  if (cr.event === '$exception' && isExtensionError(cr.properties)) return null
   if (isInternalDevice()) cr.properties = { ...cr.properties, is_internal: true }
   scrubProps(cr.properties)
   scrubProps(cr.$set)
