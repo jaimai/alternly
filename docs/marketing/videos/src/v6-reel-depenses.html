@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><title>Alternly — Reel dépenses</title>
+<link rel="stylesheet" href="base.css">
+<style>
+  .stage { width: 1080px; height: 1920px; }
+  .blob { position: absolute; border-radius: 50%; filter: blur(90px); opacity: .35; }
+  .blob.a1 { width: 760px; height: 760px; background: var(--terra-soft); top: -200px; right: -260px; animation: drift1 15s linear both; }
+  .blob.b1 { width: 700px; height: 700px; background: var(--pine-soft); bottom: -160px; left: -240px; animation: drift2 15s linear both; }
+  @keyframes drift1 { to { transform: translate(-180px, 260px); } }
+  @keyframes drift2 { to { transform: translate(160px, -300px); } }
+
+  /* Scène 1 : les tickets */
+  .q { font-size: 100px; line-height: 1.04; text-align: center; padding: 0 80px; }
+  .q em { color: var(--terra); font-style: italic; }
+  .pile { position: relative; width: 900px; height: 860px; margin: 40px 0 30px; }
+  .tk { position: absolute; width: 520px; background: #fff; padding: 40px 44px 54px; box-shadow: 0 30px 60px -30px rgba(36,49,43,.5); font-size: 34px; --k: fall; --d: 550ms;
+        -webkit-mask: radial-gradient(14px at 50% 100%, #0000 98%, #000) 50% / 40px 100%; }
+  .tk small { display: block; font-size: 26px; font-weight: 600; color: var(--ink-soft); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 18px; }
+  .tk .amt { font-family: 'Fraunces', serif; font-variation-settings: 'opsz' 72; font-size: 76px; letter-spacing: -0.02em; margin-top: 8px; }
+  .tk hr { border: 0; border-top: 3px dashed var(--line); margin: 22px 0 16px; }
+  .tk .by { font-size: 28px; color: var(--ink-soft); }
+  @keyframes fall { from { opacity: 0; transform: translateY(-500px) rotate(var(--r0)); } to { opacity: 1; transform: rotate(var(--r)); } }
+  .q2 { font-size: 92px; line-height: 1.04; text-align: center; padding: 0 80px; }
+  .q2 em { color: var(--terra); font-style: italic; }
+
+  /* Scène 2 : l'app */
+  .s2 { justify-content: flex-start; padding-top: 160px; }
+  .cap { font-size: 74px; line-height: 1.06; text-align: center; padding: 0 70px; margin-bottom: 56px; }
+  .cap em { color: var(--pine); font-style: italic; }
+  .phone { width: 820px; background: #fff; border-radius: 64px; padding: 44px 40px 50px; box-shadow: 0 50px 100px -40px rgba(36,49,43,.45), 0 0 0 14px #1d2622; }
+  .ph-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 30px; }
+  .ph-top .wordmark { font-size: 46px; }
+  .ph-top .t { font-size: 34px; font-weight: 700; color: var(--ink-soft); }
+  .bal { position: relative; background: var(--pine); color: #fff; border-radius: 34px; padding: 34px 38px; margin-bottom: 30px; height: 210px; }
+  .bal small { font-size: 28px; font-weight: 600; opacity: .75; text-transform: uppercase; letter-spacing: .06em; }
+  .bal .v { position: absolute; left: 38px; right: 38px; top: 82px; font-size: 44px; font-weight: 600; line-height: 1.25; }
+  .bal .v b { font-family: 'Fraunces', serif; font-variation-settings: 'opsz' 72; font-weight: 500; font-size: 76px; letter-spacing: -0.02em; }
+  .swapv { animation: swapv 1500ms linear var(--t) both; }
+  .swapv.last { animation: swapin 300ms var(--out) var(--t) both; }
+  @keyframes swapv { 0% { opacity: 0; transform: translateY(30px); } 12% { opacity: 1; transform: none; } 88% { opacity: 1; transform: none; } 100% { opacity: 0; transform: translateY(-30px); } }
+  @keyframes swapin { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: none; } }
+  .row { display: flex; align-items: center; gap: 24px; padding: 24px 6px; border-top: 2px solid var(--line); }
+  .ico { width: 92px; height: 92px; border-radius: 26px; display: grid; place-items: center; font-size: 46px; flex: none; }
+  .row h4 { font-size: 36px; font-weight: 700; }
+  .row p { font-size: 27px; color: var(--ink-soft); margin-top: 4px; }
+  .row .amt { margin-left: auto; font-size: 38px; font-weight: 700; }
+  .add { margin-top: 24px; border: 3px dashed var(--line); border-radius: 26px; text-align: center; font-size: 34px; font-weight: 700; color: var(--pine); padding: 24px; }
+
+  /* Scène 3 : contester / rembourser */
+  .s3 h3 { font-size: 82px; line-height: 1.06; text-align: center; padding: 0 80px; margin-bottom: 70px; }
+  .s3 h3 em { color: var(--terra); font-style: italic; }
+  .card { width: 880px; background: #fff; border-radius: 40px; padding: 40px 44px; display: flex; gap: 34px; align-items: center; margin-bottom: 34px; box-shadow: 0 30px 60px -34px rgba(36,49,43,.45); }
+  .card .ic { width: 120px; height: 120px; border-radius: 32px; display: grid; place-items: center; flex: none; font-size: 56px; }
+  .card h4 { font-size: 46px; font-weight: 700; margin-bottom: 8px; }
+  .card p { font-size: 33px; color: var(--ink-soft); line-height: 1.3; }
+
+  /* Scène 4 : CTA */
+  .s5 .wordmark { font-size: 200px; }
+  .s5 p { font-size: 56px; text-align: center; line-height: 1.25; margin-top: 30px; color: var(--ink-soft); padding: 0 100px; }
+  .s5 p b { color: var(--ink); }
+  .cta { margin-top: 80px; background: var(--pine); color: #fff; font-size: 54px; font-weight: 700; padding: 38px 76px; border-radius: 999px; box-shadow: 0 30px 60px -24px rgba(31,77,63,.6); }
+  .pulse { animation: pulse 1400ms var(--inout) 13800ms infinite both; }
+  @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+  .small { margin-top: 40px; font-size: 34px; color: var(--ink-soft); text-align: center; }
+</style></head>
+<body>
+<div class="stage" id="stage">
+  <div class="blob a1"></div><div class="blob b1"></div>
+
+  <!-- 1. 0 → 3,4 s -->
+  <section class="scene x" style="--x:3200ms">
+    <h1 class="q serif a" style="--t:100ms">Qui a <em>avancé quoi&nbsp;?</em></h1>
+    <div class="pile">
+      <div class="tk a" style="--t:500ms;--r0:-20deg;--r:-7deg;left:40px;top:40px"><small>Opticien</small>Lunettes de Léo<div class="amt">189,00 €</div><hr><div class="by">Payé par Camille</div></div>
+      <div class="tk a" style="--t:950ms;--r0:18deg;--r:6deg;left:340px;top:170px"><small>Club de foot</small>Inscription au club<div class="amt">120,00 €</div><hr><div class="by">Payé par Alex</div></div>
+      <div class="tk a" style="--t:1400ms;--r0:-12deg;--r:-2deg;left:150px;top:420px"><small>Cantine</small>Restauration scolaire<div class="amt">64,00 €</div><hr><div class="by">Payé par Camille</div></div>
+    </div>
+    <h2 class="q2 serif a" style="--t:2000ms">Et qui doit <em>combien&nbsp;?</em></h2>
+  </section>
+
+  <!-- 2. L'app : 3,4 → 9,9 s -->
+  <section class="scene s2 x" style="--x:9700ms">
+    <h3 class="cap serif a" style="--t:3400ms">Le solde, <em>toujours à jour</em></h3>
+    <div class="phone a" style="--k:rise;--d:800ms;--t:3450ms">
+      <div class="ph-top"><div class="wordmark">altern<span>ly</span></div><div class="t">Dépenses</div></div>
+      <div class="bal">
+        <small>Solde</small>
+        <div class="v swapv" style="--t:3450ms"><b>0,00 €</b></div>
+        <div class="v swapv" style="--t:4950ms;"><span>Alex doit <b>94,50 €</b> à Camille</span></div>
+        <div class="v swapv" style="--t:6450ms;"><span>Alex doit <b>34,50 €</b> à Camille</span></div>
+        <div class="v swapv last" style="--t:7950ms;"><span>Alex doit <b>66,50 €</b> à Camille</span></div>
+      </div>
+      <div class="row a" style="--k:right;--t:4700ms"><div class="ico" style="background:#e3eaf4">👓</div><div><h4>Lunettes de Léo</h4><p>Santé · payé par Camille · 50/50</p></div><div class="amt">189,00 €</div></div>
+      <div class="row a" style="--k:right;--t:6200ms"><div class="ico" style="background:var(--terra-soft)">⚽</div><div><h4>Licence de foot</h4><p>Activités · payé par Alex · 50/50</p></div><div class="amt">120,00 €</div></div>
+      <div class="row a" style="--k:right;--t:7700ms"><div class="ico" style="background:var(--pine-soft)">🍝</div><div><h4>Cantine</h4><p>Cantine · payé par Camille · 50/50</p></div><div class="amt">64,00 €</div></div>
+      <div class="add a" style="--k:fade;--t:8400ms">+ Ajouter une dépense</div>
+    </div>
+  </section>
+
+  <!-- 3. 9,9 → 12,9 s -->
+  <section class="scene s3 x" style="--x:12700ms">
+    <h3 class="serif a" style="--t:9900ms">Et sans <em>se disputer</em></h3>
+    <div class="card a" style="--k:right;--t:10100ms"><div class="ic" style="background:var(--terra-soft)">✋</div><div><h4>Contester</h4><p>La dépense sort du solde, l'autre parent est prévenu.</p></div></div>
+    <div class="card a" style="--k:right;--t:10500ms"><div class="ic" style="background:var(--pine-soft)">✓</div><div><h4>Marquer remboursée</h4><p>Un virement&nbsp;? Le solde se remet à zéro.</p></div></div>
+    <div class="card a" style="--k:right;--t:10900ms"><div class="ic" style="background:#e3eaf4">%</div><div><h4>Répartition au choix</h4><p>50/50 ou la part prévue entre vous.</p></div></div>
+  </section>
+
+  <!-- 4. CTA : 13 → 15 s -->
+  <section class="scene s5">
+    <div class="wordmark a" style="--k:zoom;--d:900ms;--t:12950ms">altern<span>ly</span></div>
+    <p class="a" style="--t:13300ms">Les frais des enfants,<br><b>clairs pour les deux.</b></p>
+    <div class="a" style="--k:pop;--t:13600ms"><div class="cta pulse">alternly.com</div></div>
+    <div class="small a" style="--k:fade;--t:13900ms">Calendrier gratuit · dépenses incluses dans l'abonnement</div>
+  </section>
+</div>
+<script type="application/json" id="audio">
+{"bpm": 104, "prog": "bright", "drop": 3400, "duration": 15000, "outro": 12900,
+ "cues": [[500, "paper"], [950, "paper"], [1400, "paper"], [2000, "pop"], [1800, "riser", 0.45], [3200, "whoosh"],
+          [4700, "pop", 0.7], [4950, "coin"], [6200, "pop", 0.7], [6450, "coin"], [7700, "pop", 0.7],
+          [7950, "coin"], [8400, "tick"], [9750, "whoosh"], [10100, "pop", 0.7], [10500, "pop", 0.7], [10900, "pop", 0.7],
+          [12750, "whoosh"], [13600, "success", 0.7]]}
+</script>
+</body></html>
