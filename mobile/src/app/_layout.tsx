@@ -12,6 +12,7 @@ import * as SplashScreen from 'expo-splash-screen'
 import { StatusBar } from 'expo-status-bar'
 import { useEffect, useState } from 'react'
 import { ApiError } from '@/lib/api'
+import { Sentry } from '@/lib/sentry'
 import { AuthProvider, useAuth } from '@/lib/auth'
 import { colors } from '@/lib/theme'
 
@@ -57,7 +58,7 @@ function SplashGate({ ready }: { ready: boolean }) {
   return null
 }
 
-export default function RootLayout() {
+function RootLayout() {
   const [queryClient] = useState(makeQueryClient)
   const [fontsLoaded, fontError] = useFonts({
     Fraunces_500Medium,
@@ -78,3 +79,5 @@ export default function RootLayout() {
     </QueryClientProvider>
   )
 }
+
+export default Sentry.wrap(RootLayout)
