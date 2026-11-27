@@ -1,5 +1,6 @@
 // Complète app.json avec ce qui dépend de l'environnement (variables EXPO_PUBLIC_*,
 // définies dans .env.local ou dans les variables d'environnement EAS).
+import { withSentry } from '@sentry/react-native/expo'
 import type { ConfigContext, ExpoConfig } from 'expo/config'
 
 const GOOGLE_IOS_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID
@@ -11,5 +12,9 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     const iosUrlScheme = `com.googleusercontent.apps.${GOOGLE_IOS_CLIENT_ID.replace('.apps.googleusercontent.com', '')}`
     plugins.push(['@react-native-google-signin/google-signin', { iosUrlScheme }])
   }
-  return { ...config, name: config.name ?? 'Alternly', slug: config.slug ?? 'alternly', plugins }
+  // Envoi des source maps et symboles à Sentry pendant les builds EAS (SENTRY_AUTH_TOKEN).
+  return withSentry(
+    { ...config, name: config.name ?? 'Alternly', slug: config.slug ?? 'alternly', plugins },
+    { url: 'https://sentry.io/', organization: 'hono-9i', project: 'alternly-mobile' },
+  )
 }
