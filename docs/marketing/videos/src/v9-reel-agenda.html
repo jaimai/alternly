@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><title>Alternly — Reel agenda</title>
+<link rel="stylesheet" href="base.css">
+<style>
+  .stage { width: 1080px; height: 1920px; }
+  .blob { position: absolute; border-radius: 50%; filter: blur(90px); opacity: .35; }
+  .blob.a1 { width: 760px; height: 760px; background: var(--pine-soft); top: -200px; right: -260px; animation: drift1 15s linear both; }
+  .blob.b1 { width: 700px; height: 700px; background: #e3eaf4; bottom: -160px; left: -240px; animation: drift2 15s linear both; }
+  @keyframes drift1 { to { transform: translate(-180px, 260px); } }
+  @keyframes drift2 { to { transform: translate(160px, -300px); } }
+
+  .cap { font-size: 80px; line-height: 1.05; text-align: center; padding: 0 70px; }
+  .cap em { color: var(--terra); font-style: italic; }
+  .cap em.g { color: var(--pine); }
+
+  /* L'agenda (scènes 1 et 2, un seul téléphone qui reste à l'écran) */
+  .phone { position: absolute; left: 120px; top: 520px; width: 840px; height: 1180px; background: #fff; border-radius: 64px; padding: 40px 30px; box-shadow: 0 50px 100px -40px rgba(36,49,43,.45), 0 0 0 14px #1d2622; overflow: hidden; }
+  .ag-top { display: flex; justify-content: space-between; align-items: center; padding: 0 10px; margin-bottom: 22px; }
+  .ag-top b { font-size: 40px; font-weight: 700; }
+  .ag-top span { font-size: 28px; color: var(--ink-soft); font-weight: 600; }
+  .cols { display: grid; grid-template-columns: 64px repeat(7, 1fr); gap: 6px; }
+  .dh { text-align: center; font-size: 24px; font-weight: 600; color: var(--ink-soft); }
+  .dh b { display: block; font-size: 34px; color: var(--ink); font-weight: 700; }
+  .allday { position: relative; grid-column: 2 / 9; height: 70px; margin: 12px 0 10px; border-radius: 14px; background: var(--paper); }
+  .bar { position: absolute; top: 8px; bottom: 8px; border-radius: 12px; display: flex; align-items: center; padding: 0 18px; font-size: 26px; font-weight: 700; color: #fff; white-space: nowrap; transform-origin: left; animation: grow 600ms var(--out) var(--t) both; }
+  @keyframes grow { from { transform: scaleX(0); opacity: 0; } to { transform: scaleX(1); opacity: 1; } }
+  .adl { font-size: 20px; color: var(--ink-soft); font-weight: 600; align-self: center; text-align: right; padding-right: 6px; }
+  .grid { position: relative; grid-column: 1 / 9; height: 800px; display: grid; grid-template-columns: 64px repeat(7, 1fr); gap: 6px; }
+  .hours { position: relative; }
+  .hours div { position: absolute; right: 8px; font-size: 20px; color: #a9a294; transform: translateY(-50%); }
+  .col { position: relative; border-left: 2px solid var(--line); }
+  .ev { position: absolute; left: 3px; right: 3px; border-radius: 12px; padding: 8px 8px; font-size: 19px; font-weight: 700; line-height: 1.15; overflow: hidden; }
+  .w { background: #e3eaf4; color: #3d5f92; border-left: 6px solid #4a6fa5; }
+  .p { background: #efe7f6; color: #6b4a8c; border-left: 6px solid #8b67ad; }
+  .hl { box-shadow: 0 0 0 4px var(--terra); animation: ring 600ms var(--inout) var(--t) both; }
+  @keyframes ring { 0% { box-shadow: 0 0 0 0 rgba(201,111,74,0); } 100% { box-shadow: 0 0 0 5px var(--terra); } }
+  .qbub { position: absolute; background: var(--terra); color: #fff; font-family: 'Fraunces', serif; font-size: 64px; width: 96px; height: 96px; border-radius: 50%; display: grid; place-items: center; box-shadow: 0 14px 30px -12px rgba(0,0,0,.4); }
+  .cals { position: absolute; left: 30px; right: 30px; bottom: 30px; background: var(--paper); border-radius: 30px; padding: 22px 28px; display: flex; gap: 28px; font-size: 26px; font-weight: 600; }
+  .cals span { display: flex; align-items: center; gap: 10px; }
+  .cals i { width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center; color: #fff; font-style: normal; font-size: 18px; }
+
+  .pg-out { animation: pgout 500ms var(--inout) 9700ms both; }
+  @keyframes pgout { to { opacity: 0; transform: translateY(80px) scale(.96); } }
+
+  /* Scène 3 : comment */
+  .s3 h3 { font-size: 82px; line-height: 1.06; text-align: center; padding: 0 80px; margin-bottom: 60px; }
+  .s3 h3 em { color: var(--pine); font-style: italic; }
+  .step { width: 880px; background: #fff; border-radius: 40px; padding: 34px 40px; display: flex; gap: 30px; align-items: center; margin-bottom: 26px; box-shadow: 0 30px 60px -34px rgba(36,49,43,.45); }
+  .step .n { width: 90px; height: 90px; border-radius: 50%; background: var(--pine); color: #fff; display: grid; place-items: center; font-size: 44px; font-weight: 700; flex: none; }
+  .step h4 { font-size: 40px; font-weight: 700; margin-bottom: 4px; }
+  .step p { font-size: 30px; color: var(--ink-soft); line-height: 1.3; }
+  .apps { display: flex; gap: 16px; margin-top: 18px; }
+  .apps div { background: var(--paper); border: 2px solid var(--line); border-radius: 999px; padding: 14px 26px; font-size: 30px; font-weight: 700; }
+
+  /* Scène 4 : CTA */
+  .s5 .wordmark { font-size: 200px; }
+  .s5 p { font-size: 56px; text-align: center; line-height: 1.25; margin-top: 30px; color: var(--ink-soft); padding: 0 100px; }
+  .s5 p b { color: var(--ink); }
+  .cta { margin-top: 80px; background: var(--pine); color: #fff; font-size: 54px; font-weight: 700; padding: 38px 76px; border-radius: 999px; box-shadow: 0 30px 60px -24px rgba(31,77,63,.6); }
+  .pulse { animation: pulse 1400ms var(--inout) 13800ms infinite both; }
+  @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+  .small { margin-top: 40px; font-size: 34px; color: var(--ink-soft); text-align: center; }
+</style></head>
+<body>
+<div class="stage" id="stage">
+  <div class="blob a1"></div><div class="blob b1"></div>
+
+  <!-- Titres des scènes 1 et 2 -->
+  <section class="scene x" style="--x:3300ms;justify-content:flex-start;padding-top:170px">
+    <h1 class="cap serif a" style="--t:100ms">Réunion jeudi 18h…<br><em>c'est votre semaine&nbsp;?</em></h1>
+  </section>
+  <section class="scene x" style="--x:9700ms;justify-content:flex-start;padding-top:170px">
+    <h3 class="cap serif a" style="--t:3600ms">La garde, <em class="g">dans&nbsp;votre&nbsp;agenda</em></h3>
+  </section>
+
+  <!-- Téléphone agenda : 0,3 → 10,2 s -->
+  <div class="pg-out">
+    <div class="phone a" style="--k:rise;--d:900ms;--t:300ms">
+      <div class="ag-top"><b>Mon agenda</b><span>Semaine</span></div>
+      <div class="cols">
+        <div></div>
+        <div class="dh">L<b>12</b></div><div class="dh">M<b>13</b></div><div class="dh">M<b>14</b></div><div class="dh">J<b>15</b></div><div class="dh">V<b>16</b></div><div class="dh">S<b>17</b></div><div class="dh">D<b>18</b></div>
+        <div class="adl">jour</div>
+        <div class="allday" style="grid-column:2/9">
+          <div class="bar" style="--t:4400ms;left:0;width:calc(100% * 3 / 7 - 4px);background:var(--pa)">🏠 Chez Camille</div>
+          <div class="bar" style="--t:4800ms;left:calc(100% * 3 / 7);right:0;background:var(--pb)">🏠 Chez Alex</div>
+        </div>
+        <div class="grid" id="grid"></div>
+      </div>
+      <div class="cals a" style="--k:up;--t:5600ms">
+        <span><i style="background:#4a6fa5"></i>Travail</span>
+        <span><i style="background:#8b67ad"></i>Perso</span>
+        <span><i style="background:var(--pine)">✓</i>Garde des enfants</span>
+      </div>
+    </div>
+  </div>
+  <div class="pg-out">
+  <div class="x" style="--x:5100ms;--xk:exitfade"><div class="qbub a" id="qb" style="--k:pop;--t:1700ms">?</div></div>
+  <div class="qbub a" id="ok" style="--k:pop;--t:5300ms;background:var(--pine);font-family:'Instrument Sans';font-size:52px;font-weight:700">✓</div>
+  </div>
+
+  <!-- 3. Comment : 10,2 → 12,9 s -->
+  <section class="scene s3 x" style="--x:12700ms">
+    <h3 class="serif a" style="--t:10200ms">Un lien privé, <em>une seule fois</em></h3>
+    <div class="step a" style="--k:right;--t:10400ms"><div class="n">1</div><div><h4>Copiez le lien ou scannez le QR code</h4><p>Dans les réglages d'Alternly.</p></div></div>
+    <div class="step a" style="--k:right;--t:10750ms"><div class="n">2</div><div><h4>Abonnez-vous dans votre agenda</h4><div class="apps"><div>Google</div><div>Apple</div><div>Outlook</div></div></div></div>
+    <div class="step a" style="--k:right;--t:11100ms"><div class="n">3</div><div><h4>C'est tout</h4><p>Les jours de garde restent à jour, rien à ressaisir.</p></div></div>
+  </section>
+
+  <!-- 4. CTA : 13 → 15 s -->
+  <section class="scene s5">
+    <div class="wordmark a" style="--k:zoom;--d:900ms;--t:12950ms">altern<span>ly</span></div>
+    <p class="a" style="--t:13300ms">Votre agenda et la garde,<br><b>enfin au même endroit.</b></p>
+    <div class="a" style="--k:pop;--t:13600ms"><div class="cta pulse">alternly.com</div></div>
+    <div class="small a" style="--k:fade;--t:13900ms">Calendrier gratuit · synchro incluse dans l'abonnement</div>
+  </section>
+</div>
+<script>
+  // Semaine type : rendez-vous pro (bleu) et perso (violet), 8h → 20h.
+  const H0 = 8, H1 = 20, PX = 800 / (H1 - H0)
+  const grid = document.getElementById('grid')
+  let hours = '<div class="hours">'
+  for (let h = 9; h < H1; h += 2) hours += `<div style="top:${(h - H0) * PX}px">${h}h</div>`
+  grid.insertAdjacentHTML('beforeend', hours + '</div>')
+  const EV = [
+    [0, 9, 10.5, 'w', 'Point équipe'], [0, 14, 15, 'p', 'Dentiste'], [1, 10, 12, 'w', 'Atelier client'],
+    [2, 9.5, 10.5, 'w', 'Point équipe'], [2, 13, 14, 'p', 'Déjeuner'], [3, 11, 12.5, 'w', 'Revue projet'],
+    [3, 18, 19.5, 'w', 'Réunion budget', 'hit'], [4, 9, 10, 'w', 'Point équipe'], [4, 16, 17, 'w', 'Bilan'],
+    [5, 10, 12, 'p', 'Marché'], [6, 11, 13, 'p', 'Déjeuner famille'],
+  ]
+  for (let d = 0; d < 7; d++) {
+    let html = `<div class="col">`
+    EV.filter(e => e[0] === d).forEach((e, k) => {
+      const hit = e[5] ? ` hl" id="hit" style="--t:1500ms;` : `" style="`
+      html += `<div class="ev ${e[3]} a${hit}--k:fade;--t:${700 + d * 90 + k * 60}ms;top:${(e[1] - H0) * PX}px;height:${(e[2] - e[1]) * PX - 4}px">${e[4]}</div>`
+    })
+    grid.insertAdjacentHTML('beforeend', html + '</div>')
+  }
+  // Correctif : l'événement surligné garde son fondu d'entrée et ajoute l'anneau.
+  const hit = document.getElementById('hit')
+  hit.style.animation = 'fade 700ms var(--out) 1000ms both, ring 500ms var(--inout) 1500ms both'
+  window.layout = () => {
+    const r = hit.getBoundingClientRect()
+    for (const id of ['qb', 'ok']) {
+      const q = document.getElementById(id)
+      q.style.left = (r.right - 40) + 'px'
+      q.style.top = (r.top - 70) + 'px'
+    }
+  }
+</script>
+<script type="application/json" id="audio">
+{"bpm": 110, "prog": "warm", "drop": 3600, "duration": 15000, "outro": 12900,
+ "cues": [[300, "whoosh", 0.6], [800, "tick"], [1000, "tick"], [1200, "tick"], [1500, "tap"], [1700, "pop"],
+          [2000, "riser", 0.5], [3500, "whoosh", 0.7], [4400, "pop", 0.8], [4800, "pop", 0.8], [5300, "success", 0.7],
+          [5600, "tick"], [9700, "whoosh"], [10400, "pop", 0.6], [10750, "pop", 0.6], [11100, "pop", 0.6],
+          [12750, "whoosh"], [13600, "pop"]]}
+</script>
+</body></html>
